@@ -1,0 +1,200 @@
+//HeaderImportExport-->
+//SiteId=0
+//Enterprise=True
+//ScriptType=0
+//ScriptGroup=
+//HeaderImportExport<--
+const
+  ExcelTemplate = 'EngenixCNCDrillDetails.xlsx';
+  ExcelReport   = StringReplace(ExcelTemplate,'.xlsx', Fnc.GetJobData.Values['JobName'] + '.xlsx', SetOf([rfReplaceAll, rfIgnoreCase]));
+  FileTemplateDir = 'C:\Engenix\Report\Template\';
+  WorkingDir = 'C:\Engenix\Report\';
+
+var
+  ErrFound : boolean;
+  ErrMsg : string;
+  Excelquery : TADOQuery;
+
+procedure CheckTemplatesExists;
+begin
+  if (DirectoryExists(FileTemplateDir)) then
+  begin
+    if not (FileExists(FileTemplateDir + ExcelTemplate)) then
+    begin
+      ErrFound := True;
+      ErrMsg := 'Template file ' + FileTemplateDir + ExcelTemplate + ' not found';
+    end;
+  end
+  else
+  begin
+    ErrFound := True;
+    ErrMsg := 'Template directory ' + FileTemplateDir + ' not found.';
+  end;
+end;
+
+function FileCopy(Source,Dest : String): Boolean;
+var                                                                    
+  SourceStream,DestStream : TFileStream;
+begin
+  try
+    SourceStream:=TFileStream.Create(Source,fmOpenRead);
+    DestStream:=TFileStream.Create(Dest,fmCreate);
+    DestStream.CopyFrom(SourceStream,SourceStream.Size);
+    SourceStream.Free;
+    DestStream.Free;
+    Result := True;
+  except
+    Result := False;
+  end;
+end;
+
+procedure CopyTemplateToWorkingDir;
+begin
+  try
+    begin
+      if not(FileCopy(FileTemplateDir+ExcelTemplate,WorkingDir+ExcelReport)) then
+      begin
+        ErrFound := True;
+        ErrMsg := 'Unable to copy Excel file from the template directory';
+      end;
+    end
+  except
+    ErrFound := True;
+    ErrMsg := 'Exception error copying Excel file from the template directory';
+  end;
+end;
+
+
+function ExcelColumnMap(jobAttributeID : integer) : string
+begin
+  result := '';
+  case jobAttributeID of
+      1     : result := 'Rules Version';
+      2     : result := 'Layer Count';
+      19    : result := 'Thick Board';
+      3     : result := 'Sequential Build';
+      26    : result := 'Build-Up';
+      4     : result := 'Core Capping';
+      5     : result := 'Hybrid Construction';
+      27    : result := 'VIPPO';
+      28    : result := 'Cu Filled Via';
+      8     : result := 'Skip BVH';
+      9     : result := 'Surface BVH';
+      7     : result := 'Mech Blind Via';
+      29    : result := '2-mil Core';
+      30    : result := '1-mil or less Core';
+      14    : result := 'Back Drill';
+      11    : result := 'Back Drill VIP';
+      10    : result := 'Dual Drilling';
+      15    : result := 'Surface Finish';
+      24    : result := 'Selective Gold';
+      25    : result := 'Gold Finger';
+      12    : result := 'Stacked BVH over BVH';
+      13    : result := 'Stacked BVH over Buried Hole';
+      21    : result := 'PTH AR 1-15';
+      22    : result := 'BVH AR 1-075';
+      23    : result := 'New Customer';
+      16    : result := 'Application';
+      18    : result := 'Cavity Milling';
+      31    : result := 'Material Type';
+      32    : result := '065mm Drill Pitch';
+      33    : result := 'Nano Connector';
+  end;
+  //showmessage(result);
+end;
+
+procedure ExcelHandler(currentJob : integer; jobAttributes : TSysTable; ExcelQuery : TadoQuery);
+var
+  ExcelColumn : string;
+  i : integer;
+  ExceptionMessage : string;
+begin
+  // Query declaration moved to initializing procedure so it is only accessed one time
+
+  Excelquery.Append; // Add a new row for the next Job
+  ExcelColumn := '';
+
+  //if currentJob = 1 then
+  //  Fnc.OpenDataGrid(jobAttributes);
+  jobAttributes.First;
+
+  // Add Job Values
+  Excelquery.FieldByName('JobID').AsString := jobAttributes.FieldByName('JobID').AsString;
+  Excelquery.FieldByName('Job Name').AsString := jobAttributes.FieldByName('JobName').AsString;
+  Excelquery.FieldByName('Job Revision').AsString := jobAttributes.FieldByName('JobRev').AsString;
+  Excelquery.FieldByName('Customer').AsString := jobAttributes.FieldByName('CustomerName').AsString;
+  Excelquery.FieldByName('Part Description').AsString := jobAttributes.FieldByName('PartDescription').AsString;
+  Excelquery.FieldByName('Part Revision').AsString := jobAttributes.FieldByName('PartRevision').AsString;
+  Excelquery.FieldByName('Job Type').AsString := jobAttributes.FieldByName('JobType').AsString;
+  Excelquery.FieldByName('Engr').AsString := jobAttributes.FieldByName('UserName').AsString;
+  Excelquery.FieldByName('Status').AsString := jobAttributes.FieldByName('Status').AsString;
+  Excelquery.FieldByName('Completed Date').AsDateTime := jobAttributes.FieldByName('CompletedDate').AsDateTime;
+  Excelquery.FieldByName('Done').AsBoolean := jobAttributes.FieldByName('Done').AsBoolean;
+
+  // Add Attribute Values
+  while not jobAttributes.EOF do
+  begin
+    ExcelColumn := ExcelColumnMap(jobAttributes.FieldByName('JobAttributeID').AsInteger);
+    try
+      Excelquery.FieldByName(ExcelColumn).AsString := jobAttributes.FieldByName('EntryValue').AsString;
+    except
+      //Fnc.SysShowException('Failed updating Excel sheet for Job ' + IntToStr(currentJob));
+      //Fnc.SysShowException(ExceptionMessage);
+    end;
+
+    jobAttributes.Next;
+  end;
+  //Fnc.OpenDataGrid(Excelquery);
+  Excelquery.Post;
+end;
+
+begin
+  ErrMsg := '';
+  ErrFound := false;
+
+  CheckTemplatesExists;
+  if ErrFound then
+  begin
+    MessageDlg(ErrMsg, mtError, Setof([mbOK]), 0);
+    exit;
+  end
+  else
+    CopyTemplateToWorkingDir;
+  if ErrFound then
+    MessageDlg(ErrMsg, mtError, Setof([mbOK]), 0);
+
+  if not ErrFound then
+  begin
+
+    Excelquery := TadoQuery.Create(nil);
+    Excelquery.ConnectionString := Fnc.ExcelConnect(WorkingDir + ExcelReport, true, 0);
+    Excelquery.Close;
+    Excelquery.Sql.Clear;
+    Excelquery.Sql.Add('SELECT * FROM [CNC Drill Report$]');
+    try
+    Excelquery.Open;
+    except
+      MessageDlg('Error on Excel query', mtError, Setof([mbOK]), 0);
+      Excelquery.Close;
+      Excelquery.Free;
+      exit;
+    end;
+    Fnc.MouseBusy;
+    //Fnc.OpenDataGrid(ExcelQuery)
+    Excelquery.Append; // Add a new row for the next Job
+    Excelquery.FieldByName('Material type').AsString := Fnc.GetJobData.Values['JobName'];
+
+    ExcelQuery.Post
+    {try
+      GenReport(Excelquery);
+      Fnc.MouseNormal;
+      MessageDlg('The report generated successfully', mtInformation, Setof([mbOK]), 0);
+    except
+      MessageDlg('Error generating report', mtError, Setof([mbOK]), 0);
+    end;}
+
+    Excelquery.Close;
+    Excelquery.Free;
+
+  end;
+end;
