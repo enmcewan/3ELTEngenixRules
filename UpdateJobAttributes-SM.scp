@@ -1,0 +1,118 @@
+//HeaderImportExport-->
+//SiteId=0
+//Enterprise=True
+//ScriptType=0
+//ScriptGroup=
+//HeaderImportExport<--
+uses                                                          
+  RouteFunctions;
+  
+procedure AppendJobAttribute(jbID : integer; attVal : variant);
+var
+  Qry : TADOQuery;
+
+begin
+  //ShowMessage(IntToStr(jbID)  + ' ' + attVal);
+  Qry := TAdoQuery.Create(nil);                                                                                 
+  Qry.Connection := Fnc.DbConnection;
+  Qry.SQL.Clear;
+                                                         
+  Qry.SQL.Add('SELECT * from JobAnswers');
+  Qry.SQL.Add('WHERE JobID = ' + jbID + ' AND JobAttributeID = 10014');
+  Qry.Open
+  //Fnc.OpenDataGrid(Qry);
+  
+  Qry.first;
+  //if Qry.IsEmpty then //no file exists
+  //begin 
+    Qry.Append;                                           
+    Qry.FieldByName('JobAttributeID').AsInteger := 10014;
+    Qry.FieldByName('JobID').AsInteger := jbID;
+    Qry.FieldByName('EntryValue').AsString := attVal;
+    Qry.Post;                                 
+  //end;                                                     
+                                          
+  Qry.Close;                                             
+  Qry.Free; 
+end;
+
+procedure UpdateJobAttribute(jbID : integer; attVal : variant);
+var
+  Qry : TADOQuery;
+
+begin
+  //ShowMessage(IntToStr(jbID)  + ' ' + attVal);
+  Qry := TAdoQuery.Create(nil);                                                                                 
+  Qry.Connection := Fnc.DbConnection;
+  Qry.SQL.Clear;
+                                                         
+  Qry.SQL.Add('SELECT * from JobAnswers');
+  Qry.SQL.Add('WHERE JobID = ' + jbID + ' AND JobAttributeID = 10014');
+  Qry.Open
+  //Fnc.OpenDataGrid(Qry);
+  
+  Qry.first;
+  //if Qry.IsEmpty then //no file exists
+  //begin 
+    Qry.Append;                                           
+    Qry.FieldByName('JobAttributeID').AsInteger := 10014;
+    Qry.FieldByName('JobID').AsInteger := jbID;
+    Qry.FieldByName('EntryValue').AsString := attVal;
+    Qry.Post;                                 
+  //end;                                                     
+                                          
+  Qry.Close;                                             
+  Qry.Free; 
+end;
+                                
+procedure getJobAnswers;
+var
+  Qry : TADOQuery;  
+  tbl : TSysTable; 
+
+  jobAttributes : TSysTable;
+  
+  lastJobID : integer;
+  currSMask: string;
+  lastSMask : string
+       
+begin
+                                              
+  Qry := TAdoQuery.Create(nil);
+  Qry.Connection := Fnc.DbConnection;
+  Qry.SQL.Clear;                
+
+  Qry.SQL.Add('SELECT JobID, ItemFamily FROM CUST_JOBSTACKUP');                                                    
+  Qry.SQL.Add('WHERE ItemDesc = ' + QuotedStr('SolderMask') ); 
+  Qry.SQL.Add('GROUP BY JobID, ItemFamily');
+  ShowMEssage(Qry.SQL.text);
+  Qry.Open;                                                                       
+  Fnc.OpenDataGrid(Qry);
+  Qry.First;              
+  
+  lastJobID := -1;
+  lastSMask := '';
+  currSMask := '';
+                                  
+  While not Qry.EOF do                       
+  begin
+    ShowMessage(IntToStr(Qry.FieldByName('JobID').AsInteger) + ' / ' + IntToStr(lastJobID) + ' || ' + Qry.FieldByName('ItemFamily').AsString + ' / ' + lastSmask);
+    
+    if lastJobID = Qry.FieldByName('JobID').AsInteger then
+      AppendJobAttribute(Qry.FieldByName('JobID').AsString, Qry.FieldByName('ItemFamily').AsString + '/' + lastSMask)
+    else
+      UpdateJobAttribute(Qry.FieldByName('JobID').AsString, Qry.FieldByName('c').AsString);
+    //updateJobAttribute(Qry.FieldByName('JobID').AsString, Qry.FieldByName('ATTRIBUTENAME').AsString, Qry.FieldByName('VALUE').AsString); 
+    lastJobID := Qry.FieldByName('JobID').AsInteger;
+    LastSMask := Qry.FieldByName('ItemFamily').AsString;
+    Qry.Next;
+  end;
+  
+  Qry.Close;
+  Qry.Free; 
+  
+end;
+
+begin
+  getJobAnswers;
+end;

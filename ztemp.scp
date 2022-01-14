@@ -1,0 +1,252 @@
+//HeaderImportExport-->
+//SiteId=0
+//Enterprise=True
+//ScriptType=0
+//ScriptGroup=
+//HeaderImportExport<--
+procedure DisplayNumberOfLines(FileData: TStringList; Offset: integer);
+var
+  i: integer;
+  TempList: TStringList;
+begin
+  TempList := TStringList.Create;
+
+  for i := Offset to Offset + 75 do
+  begin
+    if i < FileData.Count - 1 then
+      TempList.Add(FileData.Strings[i]);
+  end;
+
+  showmessage(TempList.Text);
+                                                            
+  // IL P/G Table                
+  // Get list of Layers 
+  // Create List of Layer Names Transformed to Job Layer name style (Default or ODB)
+  // Get list of 1st attribute values
+
+  TempList.Free;
+end;
+
+function GetHTMLFileName: string;
+var
+  OpenDialog: TOpenDialog;
+begin
+  Result := '';
+
+  OpenDialog := TOpenDialog.Create(nil);
+
+//  OpenDialog.InitialDir := InitDir;
+  OpenDialog.Filter := 'Default (*.html)|*.html' + '|htm (*.htm)|*.htm' + '|All (*.*)|*.*';
+
+  if OpenDialog.Execute(nil) then
+    Result := OpenDialog.FileName;
+
+  OpenDialog.Free;
+end;
+
+function isHTMLTableValue(HTMLStr: string; item: string) : boolean;
+begin
+  result := false;
+  if
+    ( pos('<td', HTMLStr) = 0 ) and
+    ( pos('/td>', HTMLStr) = 0 ) and
+    ( pos('</th>', HTMLStr) = 0 ) and
+    ( pos(item, HTMLStr) = 0 ) and
+    ( pos('</tr>', HTMLStr) = 0 )
+  then
+    result := true;
+end;
+
+function getHTMLValues(HTMLData : TStringList; dataset: string) : TStringList;
+var
+  i : integer;
+  dataSection : boolean;
+begin 
+  dataSection := false;
+  result := TStringList.Create;
+  //ShowMessage(HTMLData.text);
+  
+  for i := 0 to HTMLData.Count - 1 do
+  begin
+    // Process Cu Thickness Values
+    if HTMLData.Strings[i] = dataset then dataSection := true;
+    
+    if dataSection then
+    begin
+      if isHTMLTableValue(HTMLData.Strings[i], dataset) 
+      then 
+        result.Add(HTMLData.Strings[i]);
+      
+      if HTMLData.Strings[i] = '</tr>' then
+        Break;      
+    end;                                     
+  end;
+  //ShowMessage(result.text);
+end;
+
+function tableUpdater(table : TSysTable; method: string; layers: TStringList; values: TStringList) : TSysTable;
+var
+  i : integer;
+begin
+  if method = 'Append' then
+    table.Append
+  else if method = 'Edit' then
+    table.Edit;
+  
+  for i := 0 to layers.Count - 1 do
+  begin
+    table.Edit;               
+    table.FieldByName(layers.Strings[i]).AsString := values.Strings[i];
+    table.Post;  
+  end;
+  
+  result := table;
+end;
+
+function tableUpdater2(table : TSysTable; method: string; layers: TStringList; attributes: TStringList; values: TStringList) : TSysTable;
+var
+  i : integer;
+begin
+  if method = 'Append' then
+    table.Append
+  else if method = 'Edit' then
+    table.Edit;
+    
+  // Attributes is a list of all attributes for all layers
+  // Each attribute will have a set of values for each layer
+  // Layer count divided into the attrbute count will show the start position of attribute values
+  // 16 Layers -> 0-15, 16-31, 32-47, 48-64, 65-81...
+  // attributes.count = number of values sections
+  // loop through values
+  
+  
+  for i := 0 to layers.Count - 1 do
+  begin
+    table.Edit;                
+    table.FieldByName(layers.Strings[i]).AsString := values.Strings[i];
+    table.Post;  
+  end;
+  
+  result := table;
+end;
+
+procedure main(HTMLData: TStringList);
+var
+  layerList: TStringList;
+  cuWList: TStringList;
+  minLAV: TStringList;
+  minLAP: TStringList;
+  minV2C: TStringList;
+  minP2C: TStringList;
+  
+  attributes: TStringList;    
+  attrValues: TStringList;
+  
+  i: integer
+  hasILDesignItemTable: boolean;
+  copperValues: boolean;
+  minLandAreaVia: boolean;
+  ILPGTable: TSysTable;   
+
+begin
+  layerList := TStringList.Create;           
+  cuWList := TStringList.Create;
+  minLAV := TStringList.Create;
+  minLAP := TStringList.Create;
+  minV2C := TStringList.Create;
+  minP2C := TStringList.Create;
+  
+  attributes := TStringList.Create;
+  attrValues := TStringList.Create;
+  
+  hasILDesignItemTable := false;
+  copperValues := false;
+  minLandAreaVia := false;
+  
+  ILPGTable := Fnc.SysTableCreate('MyTable');
+  Fnc.SysTableAddField(ILPGTable, 'Attribute', 50, FtString, False);
+  
+  // Add Layers as table Columns        
+  for i := 0 to HTMLData.Count - 1 do      
+  begin
+    if HTMLData.Strings[i] = 'IL Design Item +ve P/G' then hasILDesignItemTable := true;
+    
+    if hasILDesignItemTable then
+    begin                                        
+      if pos('layer-', HTMLData.Strings[i] ) > 0 then // We have layer name data
+      begin           
+         layerList.Add(HTMLData.Strings[i]);
+         Fnc.SysTableAddField(ILPGTable, HTMLData.Strings[i], 50, FtString, False);
+      end;
+    end; 
+                                                       
+    if HTMLData.Strings[i] = '</tr>' then
+      Break;         
+  end;
+ 
+  cuWList := getHTMLValues(HTMLData, 'Copper Thickness');         
+  minLAV := getHTMLValues(HTMLData, 'Min_Land_area_Via');
+  minLAP := getHTMLValues(HTMLData, 'Min_Land_area_Pth');
+  minV2C := getHTMLValues(HTMLData, 'Min_Via2Cu');                  
+  minP2C := getHTMLValues(HTMLData, 'Min_Pth2Cu');
+                 
+  // Add amended layer names as first table row
+  ILPGTable.Open; 
+  for i := 0 to layerList.Count - 1 do
+  begin
+    ILPGTable.Edit;
+    ILPGTable.FieldByName(layerList.Strings[i]).AsString := copy(layerList.Strings[i], 1, length(layerList.Strings[i]) -2);
+    ILPGTable.Post;  
+  end;  
+  
+  attributes.Delimiter := ',';
+  attributes.StrictDelimiter := true;
+  attributes.DelimitedText := 'Copper Thickness,Min_Land_area_Via,Min_Land_area_Pth,Min_Via2Cu,Min_Pth2Cu';
+  //ShowMessage(attributes.text);
+  for i := 0 to attributes.count -1 do
+  begin                                              
+    attrValues := getHTMLValues(HTMLData, attributes.strings[i]);
+    tableUpdater(ILPGTable, 'Append', layerList, attrValues); 
+  end;
+                                 
+  
+  //tableUpdater(ILPGTable, 'Edit', layerList, cuWList);
+  
+  // /Append Values to table
+  {tableUpdater(ILPGTable, 'Append', layerList, cuWList); 
+  tableUpdater(ILPGTable, 'Append', layerList, minLAV);
+  tableUpdater(ILPGTable, 'Append', layerList, minLAP);
+  tableUpdater(ILPGTable, 'Append', layerList, minV2C); 
+  tableUpdater(ILPGTable, 'Append', layerList, minP2C);}
+  
+  Fnc.OpenDataGrid(ILPGTable);
+  ILPGTable.Close;
+  
+  layerList.Free;           
+  cuWList.Free;
+  minLAV.Free;
+  minLAP.Free;
+  minV2C.Free;
+  minP2C.Free;
+
+end;
+
+
+var
+  HTMLFileName: string;
+  FileData: TStringList;
+begin
+  HTMLFileName := GetHTMLFileName;
+
+  if HTMLFileName <> '' then
+  begin
+    FileData := TStringList.Create;
+    FileData.LoadFromFile(HTMLFileName);
+
+    //DisplayNumberOfLines(FileData, 0);
+    main(FileData);
+
+    FileData.Free;
+  end;
+end;
+

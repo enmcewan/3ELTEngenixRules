@@ -1059,6 +1059,93 @@ begin
   else
     RouteFlow02;                       
 end;
+
+procedure PostProc_Set_QR_Barcode;
+var
+  i: integer;
+                                                                                  
+  SeqNo: integer;
+  SeqStr: string;
+  DeptCode: string;
+
+  QRCode: string;
+
+  ParamValue: string;
+  ParamList: TStringList;
+
+  DeptCodeCount: TStringList;
+
+  RouteCopyTable: TSysTable;
+begin
+  DeptCodeCount := TStringList.Create;
+
+  RouteCopyTable := Fnc.SysTableCreate('CopyRouteStepDetails');
+
+  Fnc.SysTableAddField(RouteCopyTable, 'RecId', 0, ftAutoInc);
+  Fnc.SysTableAddField(RouteCopyTable, 'StepNo', 0, ftInteger);
+  Fnc.SysTableAddField(RouteCopyTable, 'DeptCode', 50, ftString);
+  Fnc.SysTableAddField(RouteCopyTable, 'Manual', 5, ftString);
+
+  RouteCopyTable.Active := True;
+
+  i := 1;
+
+  while Fnc.SysRouteGenGetStepDetails(i, 'ProcLibName', ParamValue) do
+  begin
+    RouteCopyTable.Append;
+
+    RouteCopyTable.FieldByName('StepNo').AsInteger := i;
+    RouteCopyTable.FieldByName('DeptCode').AsString := ParamValue;
+
+    Fnc.SysRouteGenGetStepDetails(i, 'Manual', ParamValue);
+    RouteCopyTable.FieldByName('Manual').AsString := ParamValue;
+
+    RouteCopyTable.Post;
+
+    Inc(i);
+  end;
+
+  //--
+
+  ParamList := TStringList.Create;
+  ParamList.Add('ShowExportToCSV=True');
+
+  //Fnc.OpenDataGrid(RouteCopyTable, ParamList);
+
+  ParamList.Free;
+
+  //--
+
+  RouteCopyTable.First; 
+
+  while not RouteCopyTable.Eof do
+  begin                   
+    DeptCode := RouteCopyTable.FieldByName('DeptCode').AsString;
+    if LowerCase(RouteCopyTable.FieldByName('Manual').AsString) = 'true' then
+      DeptCode := DeptCode + '-M';
+
+    SeqNo := StrToIntDef(DeptCodeCount.Values[DeptCode], 0); 
+    Inc(SeqNo);
+    DeptCodeCount.Values[DeptCode] := IntToStr(SeqNo);
+
+    SeqStr := IntToStr(SeqNo);
+
+    {if SeqNo = 1 then
+      SeqStr := ''
+    else}
+      SeqStr := '-' + IntToStr(SeqNo);
+
+    Fnc.SysRouteGenUpdAddlParam(RouteCopyTable.FieldByName('StepNo').AsInteger, 'QR Code', 'AddlParamValue' , DeptCode + SeqStr); 
+
+    RouteCopyTable.Next;
+  end; 
+
+  //--
+
+  Fnc.SysTableDestroy(RouteCopyTable);
+
+  DeptCodeCount.Free;
+end;
                                             
 procedure RoutePostProcess;
 var
@@ -1094,6 +1181,10 @@ begin
   end;
   
   //Fnc.SysSetAttrValue('In_Process_Cu_Thk', InProcessCuThk); // (364) Surface Cu thickness calculation correction
-  //ShowMessage( 'Ending Cu Thk ' + IntToStr(InProcessCuThk) + 'um'  );   
+  //ShowMessage( 'Ending Cu Thk ' + IntToStr(InProcessCuThk) + 'um'  ); 
+  
+  PostProc_Set_QR_Barcode; 
+  
+  //ShowMessage(Fnc.GetJobData.Values['JobName'])
   
 end;

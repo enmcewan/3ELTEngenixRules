@@ -11,7 +11,7 @@ uses
 procedure Scale_Meas_SD;
 begin
   SysRouteInsDepartment('Erp', 'EXPSM-A', '');
-  SysRouteInsWorkCenter('Erp', 'EXPSM-A', ''); 
+  SysRouteInsWorkCenter('Erp', 'EXPSM-A', '');
 end;
  
 procedure OL_Photo_L3_SD;

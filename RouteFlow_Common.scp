@@ -2,7 +2,7 @@
 //SiteId=0
 //Enterprise=True
 //ScriptType=0
-//ScriptGroup=HCS
+//ScriptGroup=
 //HeaderImportExport<--
 uses
   Event_RouteGenLibrary, //Route System Scripts

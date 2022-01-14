@@ -1,0 +1,208 @@
+//HeaderImportExport-->
+//SiteId=0
+//Enterprise=True
+//ScriptType=0
+//ScriptGroup=
+//HeaderImportExport<--
+procedure DisplayNumberOfLines(FileData: TStringList; Offset: integer);
+var
+  i: integer;
+  TempList: TStringList;
+begin
+  TempList := TStringList.Create;
+
+  for i := Offset to Offset + 75 do
+  begin
+    if i < FileData.Count - 1 then
+      TempList.Add(FileData.Strings[i]);
+  end;                              
+
+  showmessage(TempList.Text);                                                           
+              
+  TempList.Free;                           
+end;
+
+function isHTMLTableValue(HTMLStr: string; item: string) : boolean;
+begin
+  result := false;
+  if
+    ( pos('<td', HTMLStr) = 0 ) and
+    ( pos('/td>', HTMLStr) = 0 ) and
+    ( pos('</th>', HTMLStr) = 0 ) and
+    ( pos(item, HTMLStr) = 0 ) and
+    ( pos('</tr>', HTMLStr) = 0 )
+  then
+    result := true;
+end;
+
+function getHTMLValues(HTMLData : TStringList; dataset: string; dataTable: string) : TStringList;
+var
+  i : integer;
+  dataSection : boolean;
+  dataTableFound : boolean
+begin            
+  dataSection := false;
+  dataTableFound := false                  
+  result := TStringList.Create;
+  //ShowMessage(HTMLData.text);
+  
+  for i := 0 to HTMLData.Count - 1 do
+  begin        
+    // Find the correct table in the HTML Data
+    if HTMLData.Strings[i] = dataTable then dataTableFound := true;
+    
+    if dataTableFound then
+    begin
+      // Then find the correction section in the table
+      if HTMLData.Strings[i] = dataset then dataSection := true; 
+      
+      if dataSection then
+      begin
+        if isHTMLTableValue(HTMLData.Strings[i], dataset) 
+        then                 
+          result.Add(HTMLData.Strings[i]);
+                                         
+        if ( dataTableFound ) and ( dataSection ) and ( HTMLData.Strings[i] = '</tr>' ) then
+          Break;      
+      end;
+    end;
+  end;
+  //ShowMessage(result.text);
+end;                                        
+
+procedure tableUpdater(table : TSysTable; method: string; layers: TStringList; values: TStringList; attr: string);
+var
+  i : integer;
+begin
+  if method = 'Append' then
+    table.Append
+  else if method = 'Edit' then                                    
+    table.Edit;                     
+    
+  // Add Attribute name as first column value
+  table.Edit;
+  table.FieldByName('Attribute').AsString := attr;
+  table.Post;
+  
+  // Add attribute values to the record
+  for i := 0 to layers.Count - 1 do
+  begin
+    table.Edit;                                         
+    table.FieldByName(layers.Strings[i]).AsString := values.Strings[i];
+    table.Post;  
+  end;
+end;        
+
+procedure main(HTMLData: TStringList; dataTable: string; layernameClip: integer);
+var
+  layerList: TStringList;           
+  attributes: TStringList;    
+  attrValues: TStringList;                  
+  
+  i: integer                                          
+  foundDataTable: boolean;
+  copperValues: boolean;
+  minLandAreaVia: boolean;
+  attrTable: TSysTable;   
+
+begin
+  layerList := TStringList.Create;            
+  attributes := TStringList.Create;
+  attrValues := TStringList.Create; 
+                                                  
+  foundDataTable := false;
+  copperValues := false;
+  minLandAreaVia := false;
+  
+  attrTable := Fnc.SysTableCreate('MyTable');
+  Fnc.SysTableAddField(attrTable, 'Attribute', 50, FtString, False);
+  
+  // Add Layers as table Columns                                                 
+  for i := 0 to HTMLData.Count - 1 do      
+  begin    
+    if HTMLData.Strings[i] = dataTable then foundDataTable := true;
+    
+    if foundDataTable then
+    begin                                        
+      if pos('layer-', HTMLData.Strings[i] ) > 0 then // We have layer name data
+      begin           
+         layerList.Add(HTMLData.Strings[i]);
+         Fnc.SysTableAddField(attrTable, HTMLData.Strings[i], 50, FtString, False);
+      end;
+    end; 
+                                                       
+    if ( foundDataTable ) and ( HTMLData.Strings[i] = '</tr>' ) then
+      Break;         
+  end;
+                 
+  // Add amended layer names as first table row - handled spearately to other attributes
+  attrTable.Open;              
+  for i := 0 to layerList.Count - 1 do
+  begin
+    attrTable.Edit;
+    attrTable.FieldByName(layerList.Strings[i]).AsString := copy(layerList.Strings[i], 1, length(layerList.Strings[i]) - layernameClip);
+    attrTable.Post;  
+  end;  
+                                                      
+  //Add remaining values
+  // It would be possible to extract the list of attibutes from the HTML as well, but it's a 'fixed' list.
+  attributes.Delimiter := ',';                 
+  attributes.StrictDelimiter := true;
+  
+  if dataTable = 'IL Design Item +ve P/G' then
+    attributes.DelimitedText := 'Copper Thickness,Min_Land_area_Via,Min_Land_area_Pth,Min_Via2Cu,Min_Pth2Cu,Min_Npth2Cu,Min_Rout2Cu,Min_Cu_Web,Thermal_A/G,Thermal_Tie_Cu_Width,Split_Plane_A/G';
+  else if dataTable = 'IL Design Item SIG' then
+    attributes.DelimitedText := 'Copper Thickness,Min_Spacing_Pad2Pad,Min_Spacing_Pad2Cu_feat,Min_Spacing_Cu_feat2feat,Min_Spacing_Cu_feat2Gnd,Min_Land_area_Via,Min_Land_area_Pth,Min_Rout2Cu,Min_Line_width,Min_Via2Cu,Min_Pth2Cu,Min_Npth2Cu,Min_Cu_Web';
+  
+  
+  //ShowMessage(attributes.text);                                                                                                                                
+  for i := 0 to attributes.count -1 do                
+  begin                                              
+    attrValues := getHTMLValues(HTMLData, attributes.strings[i], dataTable);
+    tableUpdater(attrTable, 'Append', layerList, attrValues, attributes.strings[i]); 
+  end;
+  
+  Fnc.OpenDataGrid(attrTable);
+  attrTable.Close;
+   
+  layerList.Free;
+  attributes.free;     
+  attrValues.free;
+
+end;
+
+function GetHTMLFileName: string;
+var
+  OpenDialog: TOpenDialog;
+begin
+  Result := '';
+
+  OpenDialog := TOpenDialog.Create(nil);
+
+//  OpenDialog.InitialDir := InitDir;
+  OpenDialog.Filter := 'Default (*.html)|*.html' + '|htm (*.htm)|*.htm' + '|All (*.*)|*.*';
+                            
+  if OpenDialog.Execute(nil) then
+    Result := OpenDialog.FileName;
+
+  OpenDialog.Free;                             
+end; 
+
+var
+  HTMLFileName: string;
+  FileData: TStringList;     
+begin
+  HTMLFileName := GetHTMLFileName;
+                           
+  if HTMLFileName <> '' then
+  begin             
+    FileData := TStringList.Create;
+    FileData.LoadFromFile(HTMLFileName);
+
+    //DisplayNumberOfLines(FileData, 0);
+    main(FileData, 'IL Design Item +ve P/G', 2);
+    main(FileData, 'IL Design Item SIG', 4);
+
+    FileData.Free;
+  end;
+end;

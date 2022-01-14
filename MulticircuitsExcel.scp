@@ -1,0 +1,960 @@
+//HeaderImportExport-->
+//SiteId=0
+//Enterprise=True
+//ScriptType=0
+//ScriptGroup=
+//HeaderImportExport<--
+Uses                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            
+  UserLibrary,
+  {Kwickfit}
+  Eng_RouteFunctions,                                                                             
+  RouteFunctions;
+
+const
+  FileTemplateDir = 'I:\Document\Engineering\ExcelTemplates\';
+//  FileTemplateDir = 'C:\Temp\';
+  //Templates will be copied to C:\Engenix\Jobs\<JobFolder>\
+  {If any change is needed look for "ProcessFile" procedure where the
+  variable JobFolder name is updated}
+//  JobFilesDir   = 'C:\Engenix\Jobs\';
+  JobInfoFile   = 'JobInfo.xls';                                                                                      
+  FormFile      = 'Forms.xls';
+  JobInfoSheet  = 'Info Sheet';
+  FormInfoSheet = 'Info Sheet';
+
+Var
+  ErrFound : Boolean;
+  ErrMsg : String;                 
+  JobFilesDir : String;
+  JobFolder : String;                                         
+  JobInfoFileExists : Boolean;
+  FormFileExists : Boolean;                             
+
+  RowIdSave: integer;                    
+  LayerList: TStringList;
+  i: integer;
+  LayerName: string;
+
+function GetValue(aSeq: integer; aString: string): string;
+var
+  TempList: TStringList;
+begin
+  TempList := TStringList.Create;
+  TempList.Text := aString;
+
+  if aSeq > TempList.Count then
+    Result := ''
+  else
+    Result := TempList.Strings[aSeq];
+
+  TempList.Free;
+end;
+
+function GetListOfAllLayers: TStringList;
+var
+  aList: TStringList;
+  I01: integer;
+begin
+  {
+    Specify what data you need, form the Stack-up, Attributes, etc, etc. This
+    function will return a line for each item in the stack-up including the
+    value of the specified parameter/attribute. The first value is the Cimnet
+    pre-defined ItemType as what you can see in the 'Debug Construction' tab.
+    All values are seperated by a #13, makes it easier to extract the parameter
+    value you need
+  }
+
+  aList := Fnc.SysGetAllItemAttrValueList('ItemLayerName;ItemMatrlDesc');
+
+//  for I01 := 0 to aList.Count - 1 do
+//    ShowMessage(aList.Strings[I01]);
+
+  Result := TStringList.Create;
+
+  for I01 := 0 to aList.Count - 1 do
+  begin
+    {
+      Get the first parameter value, this is ALWAYS the 'ItemType' as from
+      the 'Debug Construction' tab. Depending on the itemtype, include/exclude
+      a stackup item, or make your choise on extracting the required parameter
+    }
+    case GetValue(0, aList.Strings[I01]) of
+
+{      cStackupMfgTopLevel,
+      cStackupMfgSubLevel,
+      cStackupMfgSubAssy,
+      cStackupMfgTooling:
+        begin
+          // In the 'Debug Construction' tab, you can see that the MfgPart description
+          // is in the 'ItemMatrlDesc' column, the second parameter as specified in the
+          // SysGetAllItemAttrValueList(.....) call
+          Result.Add(GetValue(2, aList.Strings[I01]));
+        end;
+}
+      cStackupLayer,
+      cStackupSolderMask,
+      cStackupSolderPaste,
+      cStackupLegend,
+      'GOLD',
+      'MISC':                           
+//      cStackupDrill,               
+//      cStackupRout:
+        begin
+          // In the 'Debug Construction' tab, you can see that the Layer Name
+          // is in the 'ItemLayerName' column, the first parameter as specified in the
+          // SysGetAllItemAttrValueList(.....) call
+          Result.Add(GetValue(1, aList.Strings[I01]));
+        end;
+    end;
+  end;
+  //Showmessage(Result.Text);
+  aList.Free;
+end;
+
+{Procedure to check whether the templates exists}
+Procedure CheckTemplatesExists;
+Begin
+  If (DirectoryExists(FileTemplateDir)) Then
+    Begin
+      If Not(FileExists(FileTemplateDir+JobInfoFile)) Then
+        Begin
+          ErrFound := True;
+          ErrMsg   := 'Template file ' + FileTemplateDir+JobInfoFile + ' not found';
+          Exit;
+        End;
+      If Not(FileExists(FileTemplateDir+FormFile)) Then
+        Begin
+          ErrFound := True;
+          ErrMsg   := 'Template file ' + FileTemplateDir+FormFile + ' not found';
+          Exit;
+        End;
+    End
+  Else
+    Begin
+      ErrFound := True;
+      ErrMsg   := 'Template directory ' + FileTemplateDir + ' not found.';
+    End;
+
+End;
+
+{Procedure to check file exists or not. If not, then it will copy the files from the tempalte}
+Procedure CheckFileExists;
+Begin
+  //Check whether the job directory exists or not. If not create a directory
+  try
+    if not(DirectoryExists(JobFolder)) then begin
+      CreateDir(JobFolder);
+    end;
+  except
+    ErrFound := True;
+    ErrMsg := 'Unable to create Job Directory';
+  end;
+
+  //Check whether JobInfoFile exists in the JobFolder. If not copy it from the template directory
+  {if not(ErrFound) then begin
+    try
+      if not(FileExists(JobFolder+JobInfoFile)) then begin
+        if not(FileCopy(FileTemplateDir+JobInfoFile,JobFolder+JobInfoFile)) then begin
+          ErrFound := False;
+          ErrMsg   := 'Unable to copy JobInfo file from the template directory';
+          JobInfoFileExists := False;
+        end;
+        end
+      else begin
+        JobInfoFileExists := True;
+      end;
+    except
+      ErrFound := True;
+      ErrMsg := 'Unable to copy JobInfo file from the template directory';
+    end;
+  End;}       
+
+  {Copy the form file even if one already exists, overwrite the existing file with the template
+  if not(ErrFound) then begin
+    try
+      if not(FileExists(JobFolder+FormFile)) then begin
+        if not(FileCopy(FileTemplateDir+FormFile,JobFolder+FormFile)) then begin
+          ErrFound := True;
+          ErrMsg := 'Unable to copy FormFile file from the template directory';
+        end;
+        end
+      else begin
+        //If the template need to be copied incase Form.xls exists, then uncomment this line
+        FileCopy(FileTemplateDir+FormFile,JobFolder+FormFile);
+        FormFileExists := True;
+      end;
+    except
+      ErrFound := True;
+      ErrMsg := 'Unable to copy FormFile file from the template directory';
+    end;
+  end;}
+
+end;
+
+{Procedure to update the excel files}
+Procedure UpdateFiles;
+Var
+  Qry : TAdoQuery;
+  ExcelConnection : TADOConnection;
+  ExcelQry : TAdoQuery;
+  CustName, CustPartWithRev, JobNameWithoutRev, Spec1, Spec2, Spec3, DCLoc, DCFormat : String;
+  PanelSize, FinishedThickness, ArraySingle, DueDate, TestType, FixtureDueDate  : String;
+  XPanelBorder, YPanelBorder, SurfaceFinish, NickelThickness, ImmGoldThickness, HardGoldThickness : String;
+  PalladiumThickness: String;
+  LayerCount, PartsPerPanel, I  : Integer;
+  OutsideServiceRequired, ScoringRequired {GoldFingers} : Boolean;
+  GoldFingersText, JobHasImpedance  : String;
+   SubcontractHardGold : Boolean;
+  GoldFingerCount : Int;
+  GoldFingers, ArtworkSerialization : String;
+  X : Integer;
+Begin
+  Try
+    ExcelConnection := TADOConnection.Create(Nil);
+    ExcelQry        := TAdoQuery.Create(Nil);
+    ExcelConnection.LoginPrompt := False;
+    ExcelQry.Connection := ExcelConnection;
+    CustName  := '';
+    CustPartWithRev := '';
+    JobNameWithoutRev := '';
+    Spec1 := '';
+    Spec2 := '';
+    Spec3 := '';
+    LayerCount  := 0;
+    PanelSize := '';
+    FinishedThickness := '';
+    ArraySingle := '';
+    DueDate := '';
+    TestType := '';
+    FixtureDueDate := '';
+    DCLoc := '';
+    DCFormat := '';
+    PartsPerPanel := 0;
+    XPanelBorder := '';
+    YPanelBorder := '';
+    SurfaceFInish := '';
+    NickelThickness := '';
+    ImmGoldThickness := '';
+    PalladiumThickness := '';
+    HardGoldThickness := '';
+    GoldFingers := 'False';
+    OutsideServiceRequired := false;
+    JobHasImpedance := 'None';
+    ArtworkSerialization := '';
+//    GoldFingers := 0.00;      // Miten
+    SubcontractHardGold := False;
+    GoldFingerCount := 0;
+
+    {Gather information to update the excel files}
+    Try
+      Qry := TAdoQuery.Create(nil);
+      Qry.Connection := Fnc.DbConnection;
+      Qry.SQL.Add('SELECT JOBS.JOBNAME AS JOBNAME, CUST.CUSTOMERNAME AS CUSTOMERNAME, ');
+      Qry.SQL.Add('PART.PARTNUMBERNAME AS PARTNUMBERNAME, PART.PARTREVISION AS PARTREVISION, PART.PARTDESCRIPTION AS PARTDESCRIPTION ');
+      Qry.SQL.Add('FROM JOBS JOBS, CUSTOMERS CUST, PARTNUMBERS PART ');
+      Qry.SQL.Add('WHERE ');
+      Qry.SQL.Add('JOBS.CUSTOMERID =  CUST.CUSTOMERID AND ');
+      Qry.SQL.Add('JOBS.PARTNUMBERID = PART.PARTNUMBERID ');
+      Qry.SQL.Add('AND JOBS.JOBID=' + IntToStr(Fnc.JobID));
+      Qry.Open;
+
+      If Not(Qry.IsEmpty) Then
+        Begin
+          //Customer Name
+          CustName  := Qry.FieldByName('CUSTOMERNAME').AsString;
+
+          //PartNumber with revision
+          CustPartWithRev := trim(Qry.FieldByName('PARTDESCRIPTION').AsString) + ' Rev ' +
+                             Qry.FieldByName('PARTREVISION').AsString;
+
+          //JobName without revision
+          JobNameWithoutRev := Qry.FieldByName('JOBNAME').AsString;
+        End;
+    Except
+      ErrFound := True;
+      ErrMsg := 'Unable to fetch details from datafiles';
+      Fnc.SysShowException(ErrMsg); 
+    End;            
+
+   //Get TopLevel Attribute Data
+    begin                   
+
+      Spec1      := Fnc.SysGetAttrValueTopLevel('MfgSpec');
+      Spec2      := Fnc.SysGetAttrValueTopLevel('AuxSpec');
+      Spec3      := Fnc.SysGetAttrValueTopLevel('AuxSpec2');
+      LayerCount := Fnc.SysGetAttrValueTopLevel('MfgPartLayers');
+      PanelSize  := Fnc.SysGetAttrValueTopLevel('PanelSize');
+      PartsPerPanel := Fnc.SysGetAttrValueTopLevel('BdsPerPanel');
+      FinishedThickness := Fnc.SysGetAttrValueTopLevel('FinBoardThk');
+      if Fnc.SysGetAttrValueTopLevel('BoardsPerArray') = '0' then
+        ArraySingle  := 'Single'
+      else
+        ArraySingle  := 'Array';
+//          DueDate        := 'Couldnt find Attribute';
+      TestType       := Fnc.SysGetAttrValueTopLevel('ETType');
+      FixtureDueDate := Fnc.SysGetAttrValueTopLevel('FixDueDate');
+      DCLoc          := Fnc.SysGetAttrValueTopLevel('DCLocation');
+      DCFormat       := Fnc.SysGetAttrValueTopLevel('DCFormat');
+      XPanelBorder   := Fnc.SysGetAttrValueTopLevel('XPanelBorder');
+      YPanelBorder   := Fnc.SysGetAttrValueTopLevel('YPanelBorder');
+      //SurfaceFinish  := Fnc.SysGetAttrValueTopLevel('SurfaceFinish');  1.36 Rules 3EPCB
+      SurfaceFinish  := Fnc.SysGetAttrValueTopLevel('PriSurfaceFinish');
+      GoldFingerCount := Fnc.SysGetAttrValueTopLevel('GoldTabCount');
+
+      // Set SubcontractHardGold with STRING True or False based on string value of attribute 'SubHardGold'.
+      //if  Fnc.SysGetAttrValueTopLevel('SubHardGold') = 'N/A' then 1.36 Rules 3EPCB
+      {if ( NOT BussedorNonBussedHG ) then
+          SubcontractHardGold := 'False'
+      else
+        SubcontractHardGold := 'True';} //Removed per mikes request 1.36 Rules 3EPCB
+
+      if ((SurfaceFinish = 'Electroless Gold') or
+          (SurfaceFinish = 'Electroless Nickel') or
+          (SurfaceFinish = 'Electrolytic Nickel') or
+          (SurfaceFinish = 'Full Body Gold') or
+          (SurfaceFinish = 'ENIG') or
+          (SurfaceFinish = 'ENIG pre-soldermask') or
+          (GoldFingerCount > 0) or
+          (SurfaceFinish = 'Palladium/Nickel/Gold') or
+          (SurfaceFinish = 'ENEPIG') or// 1.36 Rules 3EPCB
+          (SurfaceFinish = 'ENEPIG pre-soldermask') or
+          (SubcontractHardGold = 'True')) then
+        NickelThickness := Fnc.SysGetAttrValueTopLevel('NickelThk')
+      else
+        NickelThickness := 0;
+        //Divide by 0.01 because otherwise Excel lists the value in scientific notation
+        //When it is displayed on the Outside Service Page in Excel is it multiplied by 0.01
+        NickelThickness := FloatToStr(StrToFloat(NickelThickness)/0.01);
+
+
+      if (SurfaceFinish='Electroless Gold') or
+         (SurfaceFinish='ENIG') or
+         (SurfaceFinish='ENIG pre-soldermask') or
+         (SurfaceFinish='Palladium/Nickel/Gold') or
+         (SurfaceFinish = 'ENEPIG pre-soldermask') or
+         (SurfaceFinish = 'ENEPIG') then // 1.36 Rules 3EPCB
+        ImmGoldThickness := 0.000002
+//        ImmGoldThickness := Fnc.SysGetAttrValueTopLevel('GoldThkImm')
+      else
+        ImmGoldThickness := 0;
+      ImmGoldThickness := FloatToStr(StrToFloat(ImmGoldThickness)/0.01);
+
+
+      //if (SurfaceFinish='Palladium/Nickel/Gold') then
+      if ( SurfaceFinish = 'ENEPIG' ) or ( SurfaceFinish = 'ENEPIG pre-soldermask' )  then // 1.36 Rules 3EPCB
+        PalladiumThickness := Fnc.SysGetAttrValueTopLevel('PalladiumThickness')
+      else
+        PalladiumThickness := 0;
+      PalladiumThickness := FloatToStr(StrToFloat(PalladiumThickness)/0.01);
+
+      // Function update by Miten for GoldFingerCount
+      if ( (SurfaceFinish='Full Body Gold') or
+           (GoldFingerCount > 0) or
+           (SubcontractHardGold = 'True')) then
+        HardGoldThickness := Fnc.SysGetAttrValueTopLevel('GoldThkHard')
+      else
+        HardGoldThickness := 0;
+      HardGoldThickness := FloatToStr(StrToFloat(HardGoldThickness)/0.01);
+
+
+      ScoringRequired := Fnc.SysGetAttrValueTopLevel('ScoreReq');
+      JobHasImpedance := Fnc.SysGetAttrValueTopLevel('HasImpedance');
+      OutsideServiceRequired := Fnc.SysGetAttrValueTopLevel('OutsideServiceReq');
+                                                      
+      // Following statement is rewritten.
+      //      GoldFingers := StrtoInt(Fnc.SysGetAttrValue('GoldTabCount')) > 0;
+                                      
+      if (GoldFingerCount > 0) then
+         GoldFingers := 'True';                                    
+
+     if (Fnc.SysGetAttrValueTopLevel('ArtworkSerialization') <> 'N/A') then
+         ArtworkSerialization := Fnc.SysGetAttrValueTopLevel('ArtworkSerialization');
+
+    end;
+
+
+    {Update the JobInfo file only when the file is copied as during the current process.
+     If the file was already there, then do not update JobInfo}
+    Try
+      If JobInfoFileExists Then
+        Begin
+          //showmessage( JobInfoFileExists);
+          {Establish the connection for the JobInfo file}
+          Try
+            ExcelConnection.Connected := False;
+            ExcelConnection.ConnectionString := 'Provider=Microsoft.Jet.OLEDB.4.0;' +
+                                                 'Data Source=' + JobFolder+JobInfoFile + ';' +
+                                                 'Extended Properties=Excel 8.0;';  
+                                                // ShowMessage(ExcelConnection.ConnectionString);
+            ExcelConnection.Connected := True;
+          Except
+            ErrFound := True;
+            ErrMsg   := 'Unable to open ' + JobFolder+JobInfoFile;
+            Fnc.SysShowException(ErrMsg); 
+          End;
+
+          {Fetch the data form the Info Sheet}
+          Try        
+            ExcelQry.Close;
+            ExcelQry.SQL.Text := 'Select * from [' + JobInfoSheet + '$]';
+            ExcelQry.Open;
+            //Fnc.OpenDataGrid(ExcelQry, nil, nil, true);
+          Except
+            ErrFound := True;  
+            ErrMsg   := 'Unable to read data from ' + JobFolder+JobInfoFile;
+            Fnc.SysShowException(ErrMsg); 
+          End;
+
+         Try
+            {F4 indicates Field 4 since the headings customer, part etc starts from the 4th colum D6, D7 etc.
+             F5 indicates Field 5 since the values for Customer, part ets are in E6, E7 etc.
+            }
+
+            {Locate for Customer in the column 4}
+            If (ExcelQry.Locate('F4','Customer',SetOf([loCaseInsensitive]))) Then
+              Begin
+                ExcelQry.Edit;
+                ExcelQry.FieldByName('F5').AsString := '_'; //CustName;
+                ExcelQry.Post;
+              End;
+
+            //Locate for Customer Part in the column 4
+            If (ExcelQry.Locate('F4','Part Number',SetOf([loCaseInsensitive]))) Then
+              Begin    
+                ExcelQry.Edit;
+                ExcelQry.FieldByName('F5').AsString := '_'; //CustPartWithRev;
+                ExcelQry.Post;
+              End;
+
+            {Locate for MCI Number in the column 4}
+            If (ExcelQry.Locate('F4','MCI Number',SetOf([loCaseInsensitive]))) Then
+              Begin
+                {Edit and update Value for JobName in Column 5}
+                ExcelQry.Edit;
+                ExcelQry.FieldByName('F5').AsString := JobNameWithoutRev;
+                ExcelQry.Post;
+              End;
+            {Locate for Panel Size in the column 4}
+            If (ExcelQry.Locate('F4','Panel Size',SetOf([loCaseInsensitive]))) Then
+              Begin
+                {Edit and update Value for JobName in Column 5}
+                ExcelQry.Edit;
+                ExcelQry.FieldByName('F5').AsString := PanelSize;
+                ExcelQry.Post;
+              End;
+            {Locate for Fin Thk in the column 4}
+            If (ExcelQry.Locate('F4','Finished Thickness',SetOf([loCaseInsensitive]))) Then
+              Begin
+                {Edit and update Value for JobName in Column 5}
+                ExcelQry.Edit;
+                ExcelQry.FieldByName('F5').AsString := FinishedThickness;
+                ExcelQry.Post;
+              End;
+            {Locate for Layer Count in the column 4}
+            If (ExcelQry.Locate('F4','Layer Count',SetOf([loCaseInsensitive]))) Then
+              Begin
+                {Edit and update Value for JobName in Column 5}
+                ExcelQry.Edit;
+                ExcelQry.FieldByName('F5').AsInteger := LayerCount;
+                ExcelQry.Post;
+              End;
+            {Locate for Parts/Panel in the column 4}
+            If (ExcelQry.Locate('F4','Parts/Panel',SetOf([loCaseInsensitive]))) Then
+              Begin
+                {Edit and update Value for JobName in Column 5}
+                ExcelQry.Edit;
+                ExcelQry.FieldByName('F5').AsInteger := PartsPerPanel;
+                ExcelQry.Post;
+              End;
+            {Locate for Array Single in the column 4}
+            If (ExcelQry.Locate('F4','Array/Single',SetOf([loCaseInsensitive]))) Then
+              Begin
+                ExcelQry.Edit;
+                ExcelQry.FieldByName('F5').AsString := ArraySingle;
+                ExcelQry.Post;
+              End;
+            {Locate for Due Date in the column 4}
+{            If (ExcelQry.Locate('F4','Due Date',SetOf([loCaseInsensitive]))) Then
+              Begin
+                {Edit and update Value for JobName in Column 5}
+{                ExcelQry.Edit;
+                ExcelQry.FieldByName('F5').AsString := DueDate;
+                ExcelQry.Post;
+              End;
+}            {Locate for Test Type in the column 4}
+            If (ExcelQry.Locate('F4','Test Type',SetOf([loCaseInsensitive]))) Then
+              Begin
+                {Edit and update Value for JobName in Column 5}
+                ExcelQry.Edit;
+                ExcelQry.FieldByName('F5').AsString := TestType;
+                ExcelQry.Post;
+              End;
+            {Locate for Fixture Due Date in the column 4}
+            If (ExcelQry.Locate('F4','Fixture Due Date',SetOf([loCaseInsensitive]))) Then
+              Begin
+                {Edit and update Value for JobName in Column 5}
+                ExcelQry.Edit;
+                ExcelQry.FieldByName('F5').AsString := FixtureDueDate;
+                ExcelQry.Post;
+              End;
+            {Locate for Datecode Location in the column 4}
+            If (ExcelQry.Locate('F4','Datecode location',SetOf([loCaseInsensitive]))) Then
+              Begin
+                {Edit and update Value for JobName in Column 5}
+                ExcelQry.Edit;
+                ExcelQry.FieldByName('F5').AsString := DCLoc;
+                ExcelQry.Post;
+              End ;
+            {Locate for Datecode Format in the column 4}
+            If (ExcelQry.Locate('F4','Datecode format',SetOf([loCaseInsensitive]))) Then
+              Begin
+                {Edit and update Value for JobName in Column 5}
+                ExcelQry.Edit;
+                ExcelQry.FieldByName('F5').AsString := DCFormat;
+                ExcelQry.Post;
+              End;
+            {Locate for X Panel Border in the column 4}
+            If (ExcelQry.Locate('F4','X Panel Border',SetOf([loCaseInsensitive]))) Then
+              Begin
+                {Edit and update Value for JobName in Column 5}
+                ExcelQry.Edit;
+                ExcelQry.FieldByName('F5').AsString := XPanelBorder;
+                ExcelQry.Post;
+              End;
+            {Locate for Y Panel Border in the column 4}
+            If (ExcelQry.Locate('F4','Y Panel Border',SetOf([loCaseInsensitive]))) Then
+              Begin
+                {Edit and update Value for JobName in Column 5}
+                ExcelQry.Edit;
+                ExcelQry.FieldByName('F5').AsString := YPanelBorder;
+                ExcelQry.Post;
+              End;
+            {Locate for Surface Finish in the column 4}
+            //Only need to write if outside service
+            If (ExcelQry.Locate('F4','Surface Finish',SetOf([loCaseInsensitive]))) Then
+              Begin
+                if GoldFingers = true then
+                  GoldFingersText := ' with Hard Gold Tabs'
+                else
+                  GoldFingersText := '';
+
+                if ((SurfaceFinish = 'Immersion Silver') or
+                   (SurfaceFinish = 'OSP') or
+                   (SurfaceFinish = 'Solder')) and
+                   (SubcontractHardGold = 'True') then
+                  SurfaceFinish := 'Selective Hard Gold'
+                else begin
+                  if (SurfaceFinish = 'Immersion Silver') or
+                     (SurfaceFinish = 'OSP') or
+                     (SurfaceFinish = 'Solder') then
+                    SurfaceFinish := ''
+                  else
+                    SurfaceFinish := SurfaceFinish;
+                end;
+
+                {Edit and update Value for JobName in Column 5}
+                ExcelQry.Edit;
+                ExcelQry.FieldByName('F5').AsString := SurfaceFinish+GoldFingersText;
+                ExcelQry.Post;
+              End;
+            {Locate for Nickel Thickness in the column 4}
+            If (ExcelQry.Locate('F4','Nickel Thickness',SetOf([loCaseInsensitive]))) Then
+              Begin
+                {Edit and update Value for JobName in Column 5}
+                ExcelQry.Edit;
+                ExcelQry.FieldByName('F5').AsString := NickelThickness;
+                ExcelQry.Post;
+              End;                                                      
+            {Locate for Imm Gold Thickness in the column 4}
+            If (ExcelQry.Locate('F4','Imm. Gold Thickness',SetOf([loCaseInsensitive]))) Then
+              Begin
+                {Edit and update Value for JobName in Column 5}
+                ExcelQry.Edit;
+                ExcelQry.FieldByName('F5').AsString := ImmGoldThickness;
+                ExcelQry.Post;
+              End;
+            {Locate for Palladium Thickness in the column 4}
+            If (ExcelQry.Locate('F4','Palladium Thickness',SetOf([loCaseInsensitive]))) Then
+              Begin
+                {Edit and update Value for JobName in Column 5}
+                ExcelQry.Edit;
+                ExcelQry.FieldByName('F5').AsString := PalladiumThickness;
+                ExcelQry.Post;
+              End;
+            {Locate for Nickel Thickness in the column 4}
+            If (ExcelQry.Locate('F4','Hard Gold Thickness',SetOf([loCaseInsensitive]))) Then
+              Begin
+                {Edit and update Value for JobName in Column 5}
+                ExcelQry.Edit;
+                ExcelQry.FieldByName('F5').AsString := HardGoldThickness;
+                ExcelQry.Post;  
+{                ExcelQry.Next; 
+                ExcelQry.Edit;
+                ExcelQry.FieldByName('F5').AsString := ' ';
+                ExcelQry.Post;  
+                ExcelQry.Next; 
+                ExcelQry.Edit;
+                ExcelQry.FieldByName('F5').AsString := ' ';
+                ExcelQry.Post; }                
+              End;   
+            {Locate for Artwork Serialization in the column 4}
+            If (ExcelQry.Locate('F4','Artwork Serialization',SetOf([loCaseInsensitive]))) Then
+              Begin
+                {Edit and update Value for JobName in Column 5}
+                ExcelQry.Edit;
+                if ArtworkSerialization <> '' then
+                  ExcelQry.FieldByName('F5').AsString := ArtworkSerialization
+                else
+                  ExcelQry.FieldByName('F5').AsString := '';
+                ExcelQry.Post;
+              End;
+
+            {Remove the Artwork Inspection sheet from printing and move up the standard printed sheets in the list}
+            If (ExcelQry.Locate('F7','Pages to Print on Traveler',SetOf([loCaseInsensitive]))) Then begin
+              ExcelQry.Next; 
+              ExcelQry.Edit;
+              ExcelQry.FieldByName('F7').AsString := 'Tool Info';
+              ExcelQry.Post;  
+              ExcelQry.Next;
+              ExcelQry.Edit;
+//              ExcelQry.FieldByName('F7').AsString := 'Outline and Secondary Hole Dim.';
+              ExcelQry.FieldByName('F7').AsString := '';
+              ExcelQry.Post;  
+              ExcelQry.Next;
+              ExcelQry.Edit;
+              ExcelQry.FieldByName('F7').AsString := ' ';
+              ExcelQry.Post;
+            end;
+
+            {If impedance required, then set the page to print otherwise not}
+            If (ExcelQry.Locate('F7','Impedance',SetOf([loCaseInsensitive]))) Then begin
+              if (( JobHasImpedance = 'None' ) or ( not Fnc.HasImpedance )) then begin   // 1.36 Rules 3EPCB
+                {Edit and update Value for JobName in Column 5}
+                ExcelQry.Edit;
+                ExcelQry.FieldByName('F7').AsString := ' ';
+                ExcelQry.Post;
+              end;
+              End
+            else begin
+              if (( JobHasImpedance <> 'None' ) or ( Fnc.HasImpedance )) then begin  // 1.36 Rules 3EPCB
+                ExcelQry.First;
+                for I := 1 to 16 do  //Bottom of column - 2
+                  ExcelQry.Next;
+
+                ExcelQry.Edit;
+                //ExcelQry.FieldByName('F7').AsString := 'Impedance';
+                ExcelQry.FieldByName('F7').AsString := ' ';
+                ExcelQry.Post;
+              end;
+            end;
+              
+             //Fnc.OpenDataGrid(ExcelQry, nil, nil, true);    
+             
+            {Don't need score sheet anymore}
+            If (ExcelQry.Locate('F7','Scoring Dimensions',SetOf([loCaseInsensitive]))) Then begin
+                //Edit and update Value for JobName in Column 5
+                ExcelQry.Edit;
+                ExcelQry.FieldByName('F7').AsString := ' '; 
+                ExcelQry.Post;                            
+            end;             
+
+            {Don't need outside service sheet anymore}
+            If (ExcelQry.Locate('F7','Outside Service Finish Spec',SetOf([loCaseInsensitive]))) Then begin
+                {Edit and update Value for JobName in Column 5}
+                ExcelQry.Edit;
+                ExcelQry.FieldByName('F7').AsString := ' ';     
+                ExcelQry.Post;
+            End;               
+              
+            {Locate for Layers in the column 4}
+              begin
+                  LayerList := GetListOfAllLayers;
+                  for I := 0 to LayerList.Count - 1 do
+                  begin
+                  // try
+                    ExcelQry.Locate('F4','Layers' + inttostr(I),SetOf([loCaseInsensitive]));
+                    ExcelQry.Edit;
+                    ExcelQry.FieldByName('F5').AsString := LayerList.Strings[i];
+                    ExcelQry.Post;
+                  end;
+                  LayerList.Free;
+               end;
+
+          Except
+            ErrFound := True;
+            ErrMsg   := 'Unable to locate specified data in ' + JobFolder+JobInfoFile;
+            Fnc.SysShowException(ErrMsg);        
+          End;
+
+          {Close the query which will close the excel sheet and make the connection = false which will close the workbook}
+          Try
+            ExcelQry.Close;
+            ExcelConnection.Connected := False;
+          Except
+            ErrFound := True;          
+            ErrMsg   := 'Unable to update data in ' + JobFolder+JobInfoFile;
+            //Raise;
+          End;                                                                                                                       
+        End;
+    Except
+      Fnc.SysShowException(ErrMsg); 
+    End;
+
+
+    {Update the Form File}
+
+    {Try
+      //Establish the connection for the JobInfo file
+      Try
+        ExcelConnection.Connected := False;
+        ExcelConnection.ConnectionString := 'Provider=Microsoft.Jet.OLEDB.4.0;' +
+                                             'Data Source=' + JobFolder+FormFile + ';' +
+                                             'Extended Properties=Excel 8.0;';//HDR=No;
+                                            // ShowMessage(ExcelConnection.ConnectionString);
+        ExcelConnection.Connected := True;
+      Except
+        ErrFound := True;
+        ErrMsg   := 'Unable to open ' + JobFolder+FormFile;
+       Fnc.SysShowException(ErrMsg);
+      End;
+
+      //Fetch the data form the Info Sheet
+      Try
+        ExcelQry.Close;
+        ExcelQry.SQL.Text := 'Select * from [' + FormInfoSheet + '$]';
+        ExcelQry.Open;
+        //Fnc.OpenDataGrid(ExcelQry, nil, nil, true);    
+      Except
+        ErrFound := True;
+        ErrMsg   := 'Unable read data from ' + JobFolder+FormFile;
+        Fnc.SysShowException(ErrMsg);
+      End;
+
+      Try
+        //F4 indicates Field 4 since the headings customer, part etc starts from the 4th colum D6, D7 etc.
+        // F5 indicates Field 5 since the values for Customer, part ets are in E6, E7 etc.
+
+        //Locate for Customer in the column 4
+        If (ExcelQry.Locate('F4','Customer',SetOf([loCaseInsensitive]))) Then
+          Begin
+            //Edit and update Value for CustomerName in Column 5
+            ExcelQry.Edit;
+            ExcelQry.FieldByName('F5').AsString := CustName;
+            ExcelQry.Post;
+          End;
+
+        //Locate for Customer Part in the column 4
+        If (ExcelQry.Locate('F4','Part Number',SetOf([loCaseInsensitive]))) Then
+          Begin
+            //Edit and update Value for Part number in Column 5
+            ExcelQry.Edit;
+            ExcelQry.FieldByName('F5').AsString := CustPartWithRev;
+            ExcelQry.Post;
+          End;
+
+        //Locate for MCI Number in the column 4
+        If (ExcelQry.Locate('F4','MCI Number',SetOf([loCaseInsensitive]))) Then
+          Begin
+            //Edit and update Value for JobName in Column 5
+            ExcelQry.Edit;
+            ExcelQry.FieldByName('F5').AsString := JobNameWithoutRev;
+            ExcelQry.Post;
+          End;
+
+        //Locate for Spec #1 in the column 4
+        If (ExcelQry.Locate('F4','Spec #1',SetOf([loCaseInsensitive]))) Then
+          Begin
+            //Edit and update Value for JobName in Column 5
+            ExcelQry.Edit;
+            ExcelQry.FieldByName('F5').AsString := Spec1;
+            ExcelQry.Post;
+          End;
+
+        //Locate for Spec #2 in the column 4
+        If (ExcelQry.Locate('F4','Spec #2',SetOf([loCaseInsensitive]))) Then
+          Begin
+            //Edit and update Value for JobName in Column 5
+            ExcelQry.Edit;
+            ExcelQry.FieldByName('F5').AsString := Spec2;
+            ExcelQry.Post;
+          End;
+
+        //Locate for Spec #3 in the column 4
+        If (ExcelQry.Locate('F4','Spec #3',SetOf([loCaseInsensitive]))) Then
+          Begin
+            //Edit and update Value for JobName in Column 5
+            ExcelQry.Edit;
+            ExcelQry.FieldByName('F5').AsString := Spec3;
+            ExcelQry.Post;
+          End;
+
+        //Locate for Layer count in the column 4
+        If (ExcelQry.Locate('F4','Layer Count',SetOf([loCaseInsensitive]))) Then
+          Begin
+            //Edit and update Value for JobName in Column 5
+            ExcelQry.Edit;
+            ExcelQry.FieldByName('F5').AsInteger := LayerCount;
+            ExcelQry.Post;
+          End;
+
+      Except
+        ErrFound := True;
+        ErrMsg   := 'Unable to locate specified data in ' + JobFolder+FormFile;
+        Fnc.SysShowException(ErrMsg);
+      End;
+
+      //Close the query which will close the excel sheet and make the connection = false which will close the workbook
+      Try
+        ExcelQry.Close;
+        ExcelConnection.Connected := False;
+      Except
+        ErrFound := True;
+        ErrMsg   := 'Unable to update data in ' + JobFolder+FormFile;
+        Fnc.SysShowException(ErrMsg);
+      End;
+    Except
+     Fnc.SysShowException(ErrMsg);
+    End;}
+  Except
+    If (Assigned(ExcelQry)) Then
+      Begin
+        ExcelQry.Close;
+        ExcelQry.Free;
+      End;
+    If (Assigned(ExcelConnection)) Then
+      Begin
+        ExcelConnection.Connected := False;
+        ExcelConnection.Free;
+      End;
+    If (Assigned(Qry)) Then
+      Begin
+        Qry.Close;
+        Qry.Free;
+      End;
+  End;
+End;
+
+{Procedure to process the excel files }
+procedure ProcessFiles;
+var
+  Qry : TADOQuery;
+begin
+
+  try
+    Fnc.MouseBusy;
+    ErrFound := False;
+    JobFolder := JobFilesDir;
+    JobInfoFileExists := true;
+    FormFileExists := False;
+
+    {Check whether the template folder and template files exists}
+    CheckTemplatesExists;
+
+    if not(ErrFound) then begin
+      try
+        Qry := TAdoQuery.Create(nil);
+        Qry.Connection := Fnc.DbConnection;
+        Qry.SQL.Add('Select * from Jobs where Jobs.JobID=' + IntToStr(Fnc.JobId));
+        Qry.Open;
+        if not(Qry.IsEmpty) then begin
+          JobFolder := JobFolder + Qry.FieldByName('JOBNAME').AsString + '\';
+        end;
+        Qry.Close;
+        Qry.Free;
+      except
+         ErrFound := True;
+         ErrMsg := 'Unable to retrieve job details';
+         Qry.Close;
+         Qry.Free;
+      end;
+
+      if not(ErrFound) then
+        CheckFileExists;
+
+      if not(ErrFound) then begin
+        UpdateFiles;
+      end;
+    end;
+  finally
+    Fnc.MouseNormal;
+
+    if not(ErrFound) then
+    begin
+      ShowMessage('Processing files completed successfully.');
+      end
+    else
+    begin
+      ShowMessage('Unable to process the files.' + #13 + ErrMsg);
+    end;
+  end;
+
+end;
+
+procedure AddJobFileLinks;
+var
+  Qry : TADOQuery;
+  JobInfoPath, FormsPath : string;
+begin
+  JobInfoPath := JobFolder + JobInfofile;
+  FormsPath := JobFolder + FormFile;
+  //ShowMessage(JobInfoPath);
+  if  JobInfoPath <> '' then begin
+    Qry := TAdoQuery.Create(nil);
+    Qry.Connection := Fnc.DbConnection;
+    Qry.SQL.Add('IF NOT EXISTS (Select * From FileAttachments Where FileName like '''+ JobInfoPath +''') ');
+    Qry.SQL.Add('INSERT INTO FileAttachments');
+    Qry.SQL.Add('([FileName], [FileDescription], [LinkID], [LinkType], [SaveERP], [PrintERP], [AutoGenerated])');  //IntToStr(Fnc.JobId));
+    Qry.SQL.Add('VALUES(''' + JobInfoPath + ''', '+ '''JobInfo '''+', ' + IntToStr(Fnc.JobId) + ', 1, 1, 1, 0)' );
+    //ShowMessage(Qry.SQL.Text);
+    Qry.ExecSQL;
+    {Qry.SQL.Text := '';
+    Qry.SQL.Add('IF NOT EXISTS (Select * From FileAttachments Where FileName like '''+ FormsPath +''') ');
+    Qry.SQL.Add('INSERT INTO FileAttachments');
+    Qry.SQL.Add('([FileName], [FileDescription], [LinkID], [LinkType], [SaveERP], [PrintERP], [AutoGenerated])');  //IntToStr(Fnc.JobId));
+    Qry.SQL.Add('VALUES(''' + FormsPath + ''', '+ '''Forms '''+', ' + IntToStr(Fnc.JobId) + ', 1, 1, 1, 0)' );
+    //ShowMessage(Qry.SQL.Text);
+    Qry.ExecSQL;}
+    Qry.Close;
+    Qry.Free;
+    end
+  else
+    ShowMessage('JobInfo File does not exist')
+end;
+
+{function GetJobDirectory(UseUNCPath:Boolean): String;
+var
+  JobPathsCT : TSystable;
+  PathPrefix : String;
+begin
+  JobPathsCT := Fnc.CustomTableGet('JobPaths');
+                                                                        
+  if (UseUNCPath = True) then
+    PathPrefix := '\\oshfps02\ucam\'
+//   PathPrefix := 'C:\Engenix\Jobs\'     // Miten
+  else                                        
+    PathPrefix := 'P:\';
+                                       
+  With JobPathsCT do begin
+    first;
+    while not Eof do begin
+      if (StrToInt(Eng_JobName) >= FieldByName('LowValue').AsInteger) and (StrToInt(Eng_JobName) <= FieldByName('HighValue').AsInteger) then begin
+        Result := PathPrefix + FieldByName('LowValue').AsString + '-' + FieldByName('HighValue').AsString + '\';
+      end;
+      next; // go to the next row to search
+    end; // end While
+  end; // end With
+end;
+}
+procedure CopyExcelFiles;
+begin
+  //Call the Procedure to process the files
+  //JobFilesDir := GetJobDirectory(True);
+  ProcessFiles;
+  AddJobFileLinks;
+end;
+
+procedure StackupUserEvent2(ParamList: TStringList);
+begin
+  ErrMsg := '';
+  CopyExcelFiles;
+end;

@@ -1,0 +1,275 @@
+//HeaderImportExport-->
+//SiteId=0
+//Enterprise=True
+//ScriptType=0
+//ScriptGroup=
+//HeaderImportExport<--
+const
+  ExcelFile = 'EngenixJobAttributes.xlsx';
+  FileTemplateDir = 'C:\Engenix\Report\Template\';
+  WorkingDir = 'C:\Engenix\Report\';
+
+var
+  ErrFound : boolean;
+  ErrMsg : string;
+  Excelquery : TADOQuery;
+
+procedure CheckTemplatesExists;
+begin
+  if (DirectoryExists(FileTemplateDir)) then
+  begin
+    if not (FileExists(FileTemplateDir + ExcelFile)) then
+    begin
+      ErrFound := True;
+      ErrMsg := 'Template file ' + FileTemplateDir + ExcelFile + ' not found';
+    end;
+  end
+  else                                       
+  begin
+    ErrFound := True;
+    ErrMsg := 'Template directory ' + FileTemplateDir + ' not found.';
+  end;
+end;
+
+function FileCopy(Source,Dest : String): Boolean;
+var
+  SourceStream,DestStream : TFileStream;
+begin
+  try
+    SourceStream:=TFileStream.Create(Source,fmOpenRead);
+    DestStream:=TFileStream.Create(Dest,fmCreate);
+    DestStream.CopyFrom(SourceStream,SourceStream.Size);
+    SourceStream.Free;
+    DestStream.Free;
+    Result := True;
+  except
+    Result := False;
+  end;
+end;
+
+procedure CopyTemplateToWorkingDir;
+begin
+  try
+  begin
+    if not(FileCopy(FileTemplateDir+ExcelFile,WorkingDir+ExcelFile)) then
+    begin
+      ErrFound := True;
+      ErrMsg := 'Unable to copy Excel file from the template directory';
+    end;
+  end 
+  except
+    ErrFound := True;
+    ErrMsg := 'Exception error copying Excel file from the template directory';
+  end;
+end;
+
+
+function ExcelColumnMap(jobAttributeID : integer) : string
+begin
+  result := '';
+  case jobAttributeID of
+      1     : result := 'Rules Version';
+      2     : result := 'Layer Count';
+      19    : result := 'Thick Board';
+      3     : result := 'Sequential Build';
+      26    : result := 'Build-Up';
+      4     : result := 'Core Capping';
+      5     : result := 'Hybrid Construction';
+      6     : result := 'Epoxy Plug';
+      10004 : result := 'Cu Filled Via';
+      8     : result := 'Skip BVH';
+      9     : result := 'Surface BVH';
+      7     : result := 'Mech Blind Via';
+      10005 : result := '2-mil Core';
+      10006 : result := '1-mil or less Core';
+      14    : result := 'Back Drill';
+      11    : result := 'Back Drill VIP';
+      10    : result := 'Dual Drilling';
+      15    : result := 'Surface Finish';
+      24    : result := 'Selective Gold';
+      25    : result := 'Gold Finger';
+      10002 : result := 'Stacked BVH over BVH';
+      10003 : result := 'Stacked BVH over Buried Hole';
+      21    : result := 'PTH AR 1-15';
+      22    : result := 'BVH AR 1-075';
+      23    : result := 'New Customer';
+      16    : result := 'Application';
+      18    : result := 'Cavity Milling';
+      10009 : result := 'Material Type';
+      10007 : result := '065mm Drill Pitch';
+      10008 : result := 'Nano Connector';
+  end;
+  //showmessage(result);
+end;
+
+procedure ExcelHandler(currentJob : integer; jobAttributes : TSysTable; ExcelQuery : TadoQuery);
+var
+  ExcelColumn : string;
+  i : integer;
+  ExceptionMessage : string;
+begin
+  // Query declaration moved to initializing procedure so it is only accessed one time
+
+  Excelquery.Append; // Add a new row for the next Job
+  ExcelColumn := '';
+
+  //if currentJob = 517 then
+  //  Fnc.OpenDataGrid(jobAttributes);
+  jobAttributes.First;
+
+  // Add Job Values
+  Excelquery.FieldByName('JobID').AsString := jobAttributes.FieldByName('JobID').AsString;
+
+  // Add Attribute Values
+  while not jobAttributes.EOF do
+  begin
+    ExcelColumn := ExcelColumnMap(jobAttributes.FieldByName('JobAttributeID').AsInteger);
+    try
+      Excelquery.FieldByName(ExcelColumn).AsString := jobAttributes.FieldByName('EntryValue').AsString;
+    except
+      //Fnc.SysShowException('Failed updating Excel sheet for Job ' + IntToStr(currentJob));
+      //Fnc.SysShowException(ExceptionMessage);
+    end;
+
+    jobAttributes.Next;
+  end;
+  //Fnc.OpenDataGrid(Excelquery);
+  Excelquery.Post;
+end;
+
+
+procedure GenReport(Excelquery : TadoQuery) ;
+var
+  Qry : TADOQuery;
+  tbl : TSysTable;
+
+  lastJob : integer;
+  currentJob : integer;
+
+  jobAttributes : TSysTable;
+
+begin
+
+  Qry := TAdoQuery.Create(nil);
+  Qry.Connection := Fnc.DbConnection;
+
+  Qry.SQL.Add('SELECT JobAnswers.JobAnswerID, JobAnswers.JobID,
+     JobAnswers.JobAttributeID,
+     JobAttributes.AttributeName,
+     JobAttributes.Seq, JobAnswers.EntryValue ');
+
+  Qry.SQL.Add('FROM dbo.JobAnswers JobAnswers
+   , dbo.JobAttributes JobAttributes');
+
+  Qry.SQL.Add('WHERE (JobAttributes.JobAttributeID = JobAnswers.JobAttributeID)');
+
+  Qry.SQL.Add('ORDER BY JobAnswers.JobID, JobAttributes.Seq');
+
+  Qry.Open;
+
+  if not(Qry.IsEmpty) then
+  begin
+    tbl := Qry;
+    //Fnc.OpenDataGrid(tbl);
+    tbl.first;
+    lastJob := tbl.FieldByName('JobID').AsInteger;
+    currentJob := lastJob;
+
+    // We will pass a sub table of all Attribute records for each job to reduce CPU load
+    jobAttributes := Fnc.SysTableCreate('MyTable');
+    Fnc.SysTableAddField(jobAttributes, 'JobAnswerID', 0, FtInteger, False);
+    Fnc.SysTableAddField(jobAttributes, 'JobID', 0, FtInteger, False);
+    Fnc.SysTableAddField(jobAttributes, 'JobAttributeID', 0, FtInteger, False);
+    Fnc.SysTableAddField(jobAttributes, 'AttributeName', 50, FtString, False);
+    Fnc.SysTableAddField(jobAttributes, 'Seq', 0, FtInteger, False);
+    Fnc.SysTableAddField(jobAttributes, 'EntryValue', 50, FtString, False);
+
+    jobAttributes.Open;
+
+    while not tbl.EOF do
+    begin
+      if currentJob <> lastJob then // Now we have a complete dataset for last job
+      begin
+        ExcelHandler(currentJob -1, jobAttributes, ExcelQuery);
+        jobAttributes.EmptyTable;
+
+        // PREVENT Going through entire table.
+        //if currentJob > 20 then
+        //  break;
+      end;
+
+      jobAttributes.Append;
+      jobAttributes.FieldByName('JobAnswerID').AsInteger := tbl.FieldByName('JobAnswerID').AsInteger;
+      jobAttributes.FieldByName('JobID').AsInteger := tbl.FieldByName('JobID').AsInteger;
+      jobAttributes.FieldByName('JobAttributeID').AsInteger := tbl.FieldByName('JobAttributeID').AsInteger;
+      jobAttributes.FieldByName('AttributeName').AsString := tbl.FieldByName('AttributeName').AsString;
+      jobAttributes.FieldByName('Seq').AsInteger := tbl.FieldByName('Seq').AsInteger;
+      jobAttributes.FieldByName('EntryValue').AsString := tbl.FieldByName('EntryValue').AsString;
+      jobAttributes.Post;
+
+      lastJob := tbl.FieldByName('JobID').AsInteger;
+      tbl.next;
+      currentJob := tbl.FieldByName('JobID').AsInteger;
+    end;
+
+    if not (tbl = nil) then
+    begin
+       tbl.Close;
+       Fnc.SysTableDestroy(tbl);
+    end;
+
+    if not (jobAttributes = nil) then
+    begin
+       jobAttributes.Close;
+       Fnc.SysTableDestroy(jobAttributes);
+    end;
+  end;
+end;
+
+
+begin
+  ErrMsg := '';
+  ErrFound := false;
+
+  CheckTemplatesExists;
+  if ErrFound then
+  begin
+    MessageDlg(ErrMsg, mtError, Setof([mbOK]), 0);
+    exit;
+  end
+  else
+    CopyTemplateToWorkingDir;
+  if ErrFound then
+    MessageDlg(ErrMsg, mtError, Setof([mbOK]), 0);
+
+  if not ErrFound then
+  begin
+    // Create the Excel Connection one time - Saves tons of time!!! (4.5 Seconds versus 2.2 mins)
+    Excelquery := TadoQuery.Create(nil);
+    Excelquery.ConnectionString := Fnc.ExcelConnect(WorkingDir + ExcelFile, true, 0);
+    Excelquery.Close;
+    Excelquery.Sql.Clear;
+    Excelquery.Sql.Add('SELECT * FROM [Report$]');
+    try
+    Excelquery.Open;
+    except
+      MessageDlg('Error on Excel query', mtError, Setof([mbOK]), 0);
+      Excelquery.Close;
+      Excelquery.Free;
+      exit;
+    end;
+    Fnc.MouseBusy;
+
+    try
+      GenReport(Excelquery);
+      Fnc.MouseNormal;
+      MessageDlg('The report generated successfully', mtInformation, Setof([mbOK]), 0);
+    except
+      MessageDlg('Error generating report', mtError, Setof([mbOK]), 0);
+    end;
+
+    Excelquery.Close;
+    Excelquery.Free;
+
+  end;
+end;

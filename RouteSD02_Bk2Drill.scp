@@ -34,16 +34,19 @@ begin
     SysRouteInsInstruction('Erp', 'PEPOL010', ''); // “Check OPE location off-set”
 
   AddSubsAndInnersAtStep; // 1229 PEP Flow option for Sub-assembly build.
+  
+  if Fnc.SysRouteInsGetStepNum = 1 then  // 1471 QR Code information info update    
+    InsertQRInfoAtStep1;   
 
 end;
-
+           
 procedure Pre_Oxide_Baking_SD;
 begin
   SysRouteInsDepartment('Erp', 'OXBAK-A', '');
   SysRouteInsWorkCenter('Erp', 'OXBAK-A', '');
 
   if (( HasMultipleSubAssemblies ) and ( MatPreOxide24HrBake )) then
-    SysRouteInsAddlParameter('Erp', 'Remarks', '24 Hrs Baking','', '', false, '', '', '');
+    SysRouteInsAddlParameter('Erp', 'Remarks', '24 Hrs Baking','', '', false, '', '', ''); 
 
   SysRouteInsAddlParameter('Erp', 'Bake Reason', 'SP Material','', '', false, '', '', '');
 end;
@@ -52,6 +55,9 @@ procedure Shearing_SD;
 begin
   SysRouteInsDepartment('Erp', 'SHEAR=C', '');
   SysRouteInsWorkCenter('Erp', 'SHEAR=C', '');
+  
+  if Fnc.SysRouteInsGetStepNum = 1 then  // 1471 QR Code information info update    
+    InsertQRInfoAtStep1; 
 end;
 
 procedure Shearing_Laser_SD;
@@ -163,6 +169,9 @@ begin
 
   if OxideLineName = 'L4' then
     SysRouteInsWorkCenter('Erp', 'OXDOL-E0', '');
+    
+  if Fnc.SysRouteInsGetStepNum = 1 then  // 1471 QR Code information info update    
+    InsertQRInfoAtStep1;  
 
 end;
 
@@ -2817,14 +2826,17 @@ begin
                  
   Fnc.SysSetAttrValue('KK_Distance', Fnc.SysGetAttrValue('Panel_Length') - 8);
   SysRouteInsAddlParameter('Erp', 'KK Distance', Fnc.SysGetAttrValue('KK_Distance'), '', '', false, '', '', '');
+  
+  if Fnc.SysRouteInsGetStepNum = 1 then  // 1471 QR Code information info update    
+    InsertQRInfoAtStep1; 
                   
 end;         
 
-procedure MechBlindVia_Common;
+procedure MechBlindVia_Common;    
 begin
   SysRouteInsDepartment('Erp', 'BACKD-A', '');
   SysRouteInsWorkCenter('Erp', 'BACKD-A', '');
-  SysRouteInsAddlParameter('Erp', 'Entry Sheet', GetDrillEntrySheet,'','', false, '','', ''); // 912 Mech Blind Via Entry Material
+  SysRouteInsAddlParameter('Erp', 'Entry Sheet', GetDrillEntrySheet,'','', false, '','', ''); // 912 Mech Blind Via Entry Material 
 end;
 
 procedure MechBlindVia1_SD;
