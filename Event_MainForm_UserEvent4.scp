@@ -1,0 +1,10 @@
+//HeaderImportExport-->
+//SiteId=0
+//Enterprise=True
+//ScriptType=1
+//ScriptGroup=Job List Screen
+//HeaderImportExport<--
+procedure MainFormUserEvent4(ParamList: TStringList);
+begin
+  //
+end;

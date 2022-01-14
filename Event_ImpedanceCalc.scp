@@ -1,0 +1,98 @@
+//HeaderImportExport-->
+//SiteId=0
+//Enterprise=True
+//ScriptType=1
+//ScriptGroup=Impedance
+//HeaderImportExport<--
+{
+ Script to calculate the Measured impedance in the impedence
+ model grid given a simulated impedance.
+
+ Data is passed from the Layup Module to the script using the
+ Fnc.SysLayupParamTable and Fnc.SysImpedanceModels. They have all information
+ needed to calculate the final measured impedance.
+
+ Fnc.SysImpedanceModels will only have the single record that needs the line width
+   calculated.
+
+ The script should calculate/update the following fields in Fnc.SysImpedanceModels:
+
+ - 'PredictedImpedance' (float)
+       Predicted impedance of the model given the input values for the model and layup.
+}
+
+var
+  ImpModelType : string;
+  PolarModelName : string;
+  ImpCompFactor : float;
+  LineWidthUM : float;
+  ImpCompTable : TSystable;
+begin
+                                                   
+  with Fnc.SysImpedanceModels do
+  begin
+    //Fnc.OpenDataGrid(Fnc.SysImpedanceModels);
+    ImpModelType := '';
+    PolarModelName := '';
+    ImpCompFactor := 0.0;
+    LineWidthUM := 0.0;
+
+    ImpCompTable := Fnc.CustomTableGet('ImpCompFactor');
+    LineWidthUM :=  FieldByName('LineWidth1').AsFloat * 1000;
+    PolarModelName := FieldByName('ModelName').AsString;
+
+    //ShowMEssage(PolarModelName);
+
+    // Consolodate Polar Names to match spreadhseet
+    if pos('SurfaceMicrostrip', PolarModelName) > 0 then
+      ImpModelType := 'Surface Microstrip';
+
+    if pos('CoatedMicrostrip', PolarModelName) > 0 then
+      ImpModelType := 'Surface Microstrip';
+
+    if pos('EdgeCoupledSurfaceMicrostrip', PolarModelName) > 0 then
+      ImpModelType := 'Edge-Coupled Surface Microstrip';
+
+    if pos('EdgeCoupledCoatedMicrostrip', PolarModelName) > 0 then
+      ImpModelType := 'Edge-Coupled Surface Microstrip';
+
+    if pos('OffsetStripline', PolarModelName) > 0 then
+      ImpModelType := 'Offset Stripline /Embedded Microstrip';
+
+    if pos('EmbeddedMicrostrip', PolarModelName) > 0 then
+      ImpModelType := 'Offset Stripline /Embedded Microstrip';
+
+    if pos('EdgeCoupledOffsetStripline', PolarModelName) > 0 then
+      ImpModelType := 'Edge-Coupled Offset Stripline /Edge-Coupled Embedded Microstrip';
+
+    if pos('EdgeCoupledEmbeddedMicrostrip', PolarModelName) > 0 then
+      ImpModelType := 'Edge-Coupled Offset Stripline /Edge-Coupled Embedded Microstrip';
+
+    ImpCompTable.First;
+    ImpCompTable.Next;
+    ImpCompTable.Next;
+    ImpCompTable.Next;
+    While not ImpCompTable.EOF do
+    begin
+      if ((LineWidthUM >= ImpCompTable.FieldByName('F2').AsFloat) and (LineWidthUM <= ImpCompTable.FieldByName('F3').AsFloat)) then
+      begin
+        Case ImpModelType of
+          'Surface Microstrip' :                                                ImpCompFactor := ImpCompTable.FieldByName('F7').AsFloat;
+          'Edge-Coupled Surface Microstrip' :                                   ImpCompFactor := ImpCompTable.FieldByName('F9').AsFloat;
+          'Offset Stripline /Embedded Microstrip' :                             ImpCompFactor := ImpCompTable.FieldByName('F11').AsFloat;
+          'Edge-Coupled Offset Stripline /Edge-Coupled Embedded Microstrip' :   ImpCompFactor := ImpCompTable.FieldByName('F13').AsFloat;
+        end;
+      end;
+      ImpCompTable.Next;
+    end;
+
+    Edit;
+    //FieldByName('PredictedImpedance').AsFloat := FieldByName('SimulatedImpedance').AsFloat + ImpCompFactor;
+    FieldByName('PredictedImpedanceCompensation').AsFloat := ImpCompFactor;
+    Post;
+    //ShowMessage(FieldByName('PredictedImpedanceCompensation').AsFloat);
+    if ImpCompFactor = 0.0 then
+      ShowMessage('Warning - Impedance Compensation Factor Not Found');
+
+  end;
+end;

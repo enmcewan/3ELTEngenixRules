@@ -1,0 +1,366 @@
+//HeaderImportExport-->
+//SiteId=0
+//Enterprise=True
+//ScriptType=1
+//ScriptGroup=Impedance
+//HeaderImportExport<--
+{
+ Script to calculate the Top width of a trace conductor given the bottom width
+ of the trace conductor, the layer type, and the height of the conductor.
+
+ This is what the traces look like:
+
+ Fnc.SysImpedanceModels                 Fnc.SysImpedanceModels
+ FieldNames (+ Trace1 or Trace2)        FieldNames (+ Trace1 or Trace2)
+ ----------------------                 ----------------------
+                        +-----------+   TopGoldWidth
+                        |   Gold    |
+                        +-----------+   BottomGoldWidth
+       TopNickelWidth   +-----------+
+                        |   Nickel  |
+    BottomNickelWidth   +-----------+
+       TopSilverWidth   +-----------+
+                        |   Silver  |
+    BottomSilverWidth   +-----------+
+                        +-----------+   TopPlating2Width
+       Second Plating   |Second Plt.|
+                        +-----------+    BottomPlating2Width
+                        +-----------+   TopPlatingWidth
+                         \ Plating /
+                          +-------+     BottomPlatingWidth
+       TopCopperWidth     +-------+
+                         /         \  Base Cu
+    BottomCopperWidth   +-----------+                    
+                                                 
+ And it can be reversed (note that we still call top and bottom the same as above)
+  depending upon the location of the trace:
+                                                                                                               
+ Fnc.SysImpedanceModels                 Fnc.SysImpedanceModels
+ FieldNames (+ Trace1 or Trace2)        FieldNames (+ Trace1 or Trace2)
+ ----------------------                 ----------------------
+    BottomCopperWidth   +-----------+
+                         \         /     Base Cu
+       TopCopperWidth     +-------+
+                          +-------+     BottomPlatingWidth
+                         / Plating \
+                        +-----------+   TopPlatingWidth
+                        +-----------+   BottomPlating2Width
+       Second Plating   |Second Plt.|
+                        +-----------+   TopPlating2Width
+    BottomSilverWidth   +-----------+
+                        |   Silver  |
+       TopSilverWidth   +-----------+
+    BottomNickelWidth   +-----------+
+                        |   Nickel  |
+       TopNickelWidth   +-----------+
+                        +-----------+   BottomGoldWidth
+                        |   Gold    |
+                        +-----------+   TopGoldWidth
+
+
+ Data is passed from the Layup Module to the script using the
+ Fnc.SysLayupParamTable, Fnc.SysImpedanceModels
+
+ In addition, the following data is available in the Fnc.SysImpedanceModels table:
+
+  BaseCopperHeight : float   (Base copper height for the affected layer)
+  PlatingHeight    : float   (Plating height for the affected layer)
+  Plating2Height   : float   (Second Plating height for the affected layer)
+  SilverHeight     : float   (Silver height for the affected layer)
+  NickelHeight     : float   (Nickel height for the affected layer)
+  GoldHeight       : float   (Gold height for the affected layer)
+  IsOuterLayer     : boolean (affected layer is considered an 'outer' layer)
+
+
+ This data provides all information needed to calculate the final top width of the
+ conductor layer. If any other data needs to be passed, contact Cimnet.
+
+ Fnc.SysImpedanceModels will only have the single record that contains the model that the
+   trace width calculation is for.
+
+ The script should calculate/update the following Fnc.SysImpedanceModels table values:
+
+  BottomCopperWidthTrace1  : float
+  TopCopperWidthTrace1     : float
+  BottomCopperWidthTrace2  : float
+  TopCopperWidthTrace2     : float
+  BottomPlatingWidthTrace1 : float
+  TopPlatingWidthTrace1    : float
+  BottomPlatingWidthTrace2 : float
+  TopPlatingWidthTrace2    : float
+  BottomPlating2WidthTrace1 : float
+  TopPlating2WidthTrace1    : float
+  BottomPlating2WidthTrace2 : float
+  TopPlating2WidthTrace2    : float
+  BottomSilverWidthTrace1  : float
+  TopSilverWidthTrace1     : float
+  BottomSilverWidthTrace2  : float
+  TopSilverWidthTrace2     : float
+  BottomNickelWidthTrace1  : float
+  TopNickelWidthTrace1     : float
+  BottomNickelWidthTrace2  : float
+  TopNickelWidthTrace2     : float
+  BottomGoldWidthTrace1    : float
+  TopGoldWidthTrace1       : float
+  BottomGoldWidthTrace2    : float
+  TopGoldWidthTrace2       : float
+}
+
+var
+  Delta : double;  // delta value from the ConductorBottomWidth given the inputs...
+  ConductorHeight : double;
+begin
+ // Fnc.OpenDataGrid(Fnc.SysImpedanceModels);
+{  if Fnc.SysImpedanceModels.FieldByName('IsOuterLayer').AsBoolean then
+    ShowMessage('Inner Layer trace')
+  else
+    ShowMessage('OuterLayerTrace'); }
+
+  ConductorHeight := Fnc.SysImpedanceModels.FieldByName('BaseCopperHeight').AsFloat +
+                     Fnc.SysImpedanceModels.FieldByName('PlatingHeight').AsFloat +
+                     Fnc.SysImpedanceModels.FieldByName('Plating2Height').AsFloat;
+
+  Fnc.SysImpedanceModels.Edit;
+
+  Fnc.SysImpedanceModels.FieldByName('BottomCopperWidthTrace1').AsFloat := Fnc.SysImpedanceModels.FieldByName('LineWidth1').AsFloat;
+  Fnc.SysImpedanceModels.FieldByName('BottomCopperWidthTrace2').AsFloat := Fnc.SysImpedanceModels.FieldByName('LineWidth2').AsFloat;
+
+  // by default, just set the ConductorTopWidth = ConductorBottomWidth
+  Delta := 0.0;
+                                                                                
+
+
+  /////////////////////////////////////////////////////////////
+  // Base copper layer
+  /////////////////////////////////////////////////////////////
+  // deltas should be negative for this layer...
+  if Fnc.SysImpedanceModels.FieldByName('IsOuterLayer').AsBoolean then
+  begin        
+    if ConductorHeight = 0.00 then
+      Delta := 0.0
+    else if ConductorHeight < 0.020 then
+      Delta := -0.020
+    else if ConductorHeight < 0.030 then
+      Delta := -0.025
+    else if ConductorHeight < 0.040 then
+      Delta := -0.025
+    else if ConductorHeight < 0.050 then
+      Delta := -0.030
+    else if ConductorHeight < 0.060 then
+      Delta := -0.030
+    else if ConductorHeight < 0.070 then
+      Delta := -0.035
+    else if ConductorHeight < 0.080 then
+      Delta := -0.035
+    else if ConductorHeight >= 0.080 then  // Fall through
+      Delta := -0.035;
+  end
+  else
+  begin
+     if ConductorHeight = 0.00 then
+      Delta := 0.0
+    else if ConductorHeight < 0.020 then
+      Delta := -0.010
+    else if ConductorHeight < 0.030 then
+      Delta := -0.015
+    else if ConductorHeight < 0.040 then
+      Delta := -0.015
+    else if ConductorHeight < 0.050 then
+      Delta := -0.020
+    else if ConductorHeight < 0.060 then
+      Delta := -0.020
+    else if ConductorHeight < 0.070 then
+      Delta := -0.025
+    else if ConductorHeight < 0.080 then
+      Delta := -0.025
+    else if ConductorHeight >= 0.080 then  // Fall through
+      Delta := -0.025;
+  end;
+
+  Fnc.SysImpedanceModels.FieldByName('TopCopperWidthTrace1').AsFloat := Fnc.SysImpedanceModels.FieldByName('BottomCopperWidthTrace1').AsFloat + Delta;
+  if (Fnc.SysImpedanceModels.FieldByName('BottomCopperWidthTrace2').AsFloat > 0.0) then
+    Fnc.SysImpedanceModels.FieldByName('TopCopperWidthTrace2').AsFloat := Fnc.SysImpedanceModels.FieldByName('BottomCopperWidthTrace2').AsFloat + Delta;
+
+  /////////////////////////////////////////////////////////////
+  // Plating layer
+  /////////////////////////////////////////////////////////////
+
+  // deltas should be positive for this layer...
+  // plating bottom layers equal the top copperwidth trace width.
+  Fnc.SysImpedanceModels.FieldByName('BottomPlatingWidthTrace1').AsFloat := Fnc.SysImpedanceModels.FieldByName('TopCopperWidthTrace1').AsFloat;
+  Fnc.SysImpedanceModels.FieldByName('BottomPlatingWidthTrace2').AsFloat := Fnc.SysImpedanceModels.FieldByName('TopCopperWidthTrace2').AsFloat;
+
+  {Delta := 0.0;
+  if Fnc.SysImpedanceModels.FieldByName('IsOuterLayer').AsBoolean then
+  begin
+    Delta := 0.0007; // all heights are .0007 for outer layers...
+  end
+  else
+  begin
+    ConductorHeight := Fnc.SysImpedanceModels.FieldByName('PlatingHeight').AsFloat;
+
+    if ConductorHeight = 0.00 then
+      Delta := 0.0
+    else if ConductorHeight < 0.000198 then // 5micron
+      Delta := 0.0003
+    else if ConductorHeight < 0.000301 then // 1/4oz
+      Delta := 0.0003
+    else if ConductorHeight < 0.000526 then  // 3/8oz
+      Delta := 0.0004
+    else if ConductorHeight < 0.000601 then  // 1/2oz
+      Delta := 0.0005
+    else if ConductorHeight < 0.000751 then  // 5/8oz
+      Delta := 0.0005
+    else if ConductorHeight < 0.001051 then  // 3/4oz
+      Delta := 0.0007
+    else if ConductorHeight < 0.001201 then  // 1oz
+      Delta := 0.001
+    else if ConductorHeight < 0.001501 then  // 1.125oz
+      Delta := 0.001
+    else if ConductorHeight < 0.002701 then  // 2oz
+      Delta := 0.0015
+    else if ConductorHeight < 0.004201 then  // 3oz
+      Delta := 0.002
+    else if ConductorHeight < 0.005601 then  // 4oz
+      Delta := 0.003
+    else if ConductorHeight < 0.007001 then  // 5oz
+      Delta := 0.003
+    else if ConductorHeight < 0.008401 then  // 6oz
+      Delta := 0.003
+    else Delta := 0.003;
+  end;
+}
+  Fnc.SysImpedanceModels.FieldByName('TopPlatingWidthTrace1').AsFloat := Fnc.SysImpedanceModels.FieldByName('BottomPlatingWidthTrace1').AsFloat ;
+  if (Fnc.SysImpedanceModels.FieldByName('BottomPlatingWidthTrace2').AsFloat > 0.0) then
+    Fnc.SysImpedanceModels.FieldByName('TopPlatingWidthTrace2').AsFloat := Fnc.SysImpedanceModels.FieldByName('BottomPlatingWidthTrace2').AsFloat ;
+
+
+  /////////////////////////////////////////////////////////////
+  // Second Plating layer
+  /////////////////////////////////////////////////////////////
+
+  // deltas should be positive for this layer...
+  // plating bottom layers equal the top plating width trace width.
+  Fnc.SysImpedanceModels.FieldByName('BottomPlating2WidthTrace1').AsFloat := Fnc.SysImpedanceModels.FieldByName('TopPlatingWidthTrace1').AsFloat;
+  Fnc.SysImpedanceModels.FieldByName('BottomPlating2WidthTrace2').AsFloat := Fnc.SysImpedanceModels.FieldByName('TopPlatingWidthTrace2').AsFloat;
+  {
+  Delta := 0.0;
+  if Fnc.SysImpedanceModels.FieldByName('IsOuterLayer').AsBoolean then
+  begin
+    Delta := 0.0007; // all heights are .0007 for outer layers...
+  end
+  else
+  begin
+    ConductorHeight := Fnc.SysImpedanceModels.FieldByName('Plating2Height').AsFloat;
+
+    if ConductorHeight = 0.00 then
+      Delta := 0.0
+    else if ConductorHeight < 0.000198 then // 5micron
+      Delta := 0.0003
+    else if ConductorHeight < 0.000301 then // 1/4oz
+      Delta := 0.0003
+    else if ConductorHeight < 0.000526 then  // 3/8oz
+      Delta := 0.0004
+    else if ConductorHeight < 0.000601 then  // 1/2oz
+      Delta := 0.0005
+    else if ConductorHeight < 0.000751 then  // 5/8oz
+      Delta := 0.0005
+    else if ConductorHeight < 0.001051 then  // 3/4oz
+      Delta := 0.0007
+    else if ConductorHeight < 0.001201 then  // 1oz
+      Delta := 0.001
+    else if ConductorHeight < 0.001501 then  // 1.125oz
+      Delta := 0.001
+    else if ConductorHeight < 0.002701 then  // 2oz
+      Delta := 0.0015
+    else if ConductorHeight < 0.004201 then  // 3oz
+      Delta := 0.002
+    else if ConductorHeight < 0.005601 then  // 4oz
+      Delta := 0.003
+    else if ConductorHeight < 0.007001 then  // 5oz
+      Delta := 0.003
+    else if ConductorHeight < 0.008401 then  // 6oz
+      Delta := 0.003
+    else Delta := 0.003;
+  end;
+  }
+  Fnc.SysImpedanceModels.FieldByName('TopPlating2WidthTrace1').AsFloat := Fnc.SysImpedanceModels.FieldByName('BottomPlating2WidthTrace1').AsFloat ;
+  if (Fnc.SysImpedanceModels.FieldByName('BottomPlating2WidthTrace2').AsFloat > 0.0) then
+    Fnc.SysImpedanceModels.FieldByName('TopPlating2WidthTrace2').AsFloat := Fnc.SysImpedanceModels.FieldByName('BottomPlating2WidthTrace2').AsFloat ;
+
+  /////////////////////////////////////////////////////////////
+  // silver layer
+  /////////////////////////////////////////////////////////////
+  //Fnc.CS.Send('Conductor type: Silver');
+  ConductorHeight := Fnc.SysImpedanceModels.FieldByName('SilverHeight').AsFloat;
+  if (ConductorHeight > 0.00) then
+  begin
+    // plating bottom layer is larger by nnn% (fill in the nnn)
+    // sample is 10% larger...
+    Fnc.SysImpedanceModels.FieldByName('BottomSilverWidthTrace1').AsFloat := Fnc.SysImpedanceModels.FieldByName('TopPlating2WidthTrace1').AsFloat +
+                                                                           (Fnc.SysImpedanceModels.FieldByName('TopPlating2WidthTrace1').AsFloat * 0.01);
+    Fnc.SysImpedanceModels.FieldByName('BottomSilverWidthTrace2').AsFloat := Fnc.SysImpedanceModels.FieldByName('TopPlating2WidthTrace2').AsFloat +
+                                                                           (Fnc.SysImpedanceModels.FieldByName('TopPlating2WidthTrace2').AsFloat * 0.01);
+  end
+  else
+  begin  // if there is no nickel, then just propagate the width...
+    Fnc.SysImpedanceModels.FieldByName('BottomSilverWidthTrace1').AsFloat := Fnc.SysImpedanceModels.FieldByName('TopPlating2WidthTrace1').AsFloat;
+    Fnc.SysImpedanceModels.FieldByName('BottomSilverWidthTrace2').AsFloat := Fnc.SysImpedanceModels.FieldByName('TopPlating2WidthTrace2').AsFloat;
+  end;
+  Delta := 0.0;  // same top and bottom for nickel layer
+  Fnc.SysImpedanceModels.FieldByName('TopSilverWidthTrace1').AsFloat := Fnc.SysImpedanceModels.FieldByName('BottomSilverWidthTrace1').AsFloat + Delta;
+  if (Fnc.SysImpedanceModels.FieldByName('BottomSilverWidthTrace2').AsFloat > 0.0) then
+    Fnc.SysImpedanceModels.FieldByName('TopSilverWidthTrace2').AsFloat := Fnc.SysImpedanceModels.FieldByName('BottomSilverWidthTrace2').AsFloat + Delta;
+
+  /////////////////////////////////////////////////////////////
+  // nickel layer
+  /////////////////////////////////////////////////////////////
+  //Fnc.CS.Send('Conductor type: nickel');
+  ConductorHeight := Fnc.SysImpedanceModels.FieldByName('NickelHeight').AsFloat;
+  if (ConductorHeight > 0.00) then
+  begin
+    // Silver bottom layer is larger by nnn% (fill in the nnn)
+    // sample is 10% larger...
+    Fnc.SysImpedanceModels.FieldByName('BottomNickelWidthTrace1').AsFloat := Fnc.SysImpedanceModels.FieldByName('TopSilverWidthTrace1').AsFloat +
+                                                                           (Fnc.SysImpedanceModels.FieldByName('TopSilverWidthTrace1').AsFloat * 0.01);
+    Fnc.SysImpedanceModels.FieldByName('BottomNickelWidthTrace2').AsFloat := Fnc.SysImpedanceModels.FieldByName('TopSilverWidthTrace2').AsFloat +
+                                                                           (Fnc.SysImpedanceModels.FieldByName('TopSilverWidthTrace2').AsFloat * 0.01);
+  end
+  else
+  begin  // if there is no nickel, then just propagate the width...
+    Fnc.SysImpedanceModels.FieldByName('BottomNickelWidthTrace1').AsFloat := Fnc.SysImpedanceModels.FieldByName('TopSilverWidthTrace1').AsFloat;
+    Fnc.SysImpedanceModels.FieldByName('BottomNickelWidthTrace2').AsFloat := Fnc.SysImpedanceModels.FieldByName('TopSilverWidthTrace2').AsFloat;
+  end;
+  Delta := 0.0;  // same top and bottom for nickel layer
+  Fnc.SysImpedanceModels.FieldByName('TopNickelWidthTrace1').AsFloat := Fnc.SysImpedanceModels.FieldByName('BottomNickelWidthTrace1').AsFloat + Delta;
+  if (Fnc.SysImpedanceModels.FieldByName('BottomNickelWidthTrace2').AsFloat > 0.0) then
+    Fnc.SysImpedanceModels.FieldByName('TopNickelWidthTrace2').AsFloat := Fnc.SysImpedanceModels.FieldByName('BottomNickelWidthTrace2').AsFloat + Delta;
+
+  /////////////////////////////////////////////////////////////
+  // gold layer
+  /////////////////////////////////////////////////////////////
+  if (Fnc.SysImpedanceModels.FieldByName('NickelHeight').AsFloat = 0.00) then
+  begin
+    // plating bottom layer is larger by nnn% (fill in the nnn)
+    // sample is 10% larger... if there is no nickel!!!!
+    Fnc.SysImpedanceModels.FieldByName('BottomGoldWidthTrace1').AsFloat := Fnc.SysImpedanceModels.FieldByName('TopNickelWidthTrace1').AsFloat +
+                                                                           (Fnc.SysImpedanceModels.FieldByName('TopNickelWidthTrace1').AsFloat * 0.01);
+    Fnc.SysImpedanceModels.FieldByName('BottomGoldWidthTrace2').AsFloat := Fnc.SysImpedanceModels.FieldByName('TopNickelWidthTrace2').AsFloat +
+                                                                           (Fnc.SysImpedanceModels.FieldByName('TopNickelWidthTrace2').AsFloat * 0.01);
+  end
+  else
+  begin  // if there is no nickel, then just propagate the width...
+    Fnc.SysImpedanceModels.FieldByName('BottomGoldWidthTrace1').AsFloat := Fnc.SysImpedanceModels.FieldByName('TopNickelWidthTrace1').AsFloat;
+    Fnc.SysImpedanceModels.FieldByName('BottomGoldWidthTrace2').AsFloat := Fnc.SysImpedanceModels.FieldByName('TopNickelWidthTrace2').AsFloat;
+  end;
+  Delta := 0.0;
+  ConductorHeight := Fnc.SysImpedanceModels.FieldByName('GoldHeight').AsFloat;
+  Delta := 0.0;  // same top and bottom for gold layer
+  Fnc.SysImpedanceModels.FieldByName('TopGoldWidthTrace1').AsFloat := Fnc.SysImpedanceModels.FieldByName('BottomGoldWidthTrace1').AsFloat + Delta;
+  if (Fnc.SysImpedanceModels.FieldByName('BottomGoldWidthTrace2').AsFloat > 0.0) then
+    Fnc.SysImpedanceModels.FieldByName('TopGoldWidthTrace2').AsFloat := Fnc.SysImpedanceModels.FieldByName('BottomGoldWidthTrace2').AsFloat + Delta;
+
+  Fnc.SysImpedanceModels.Post;
+
+end;
+

@@ -1,0 +1,123 @@
+//HeaderImportExport-->
+//SiteId=0
+//Enterprise=True
+//ScriptType=1
+//ScriptGroup=Route Gen/Regen
+//HeaderImportExport<--
+function SysRouteCountProgress(ProcName: string): integer;
+begin
+  Result := Fnc.SysRouteGenCountProgress(Fnc.SysRouteInsGetStepNum, ProcName);
+end;
+
+function SysRouteGetStepDetails(StepNum: integer; ParamName: string; var ParamValue: string): boolean;
+begin
+  if StepNum < 1 then
+    StepNum := Fnc.SysRouteInsGetStepNum;
+
+  Result := Fnc.SysRouteGenGetStepDetails(StepNum, ParamName, ParamValue);
+end;
+
+procedure SysRouteInsDepartment(Source: string; DeptCode: string; ReportFlag: string);
+begin                                                               
+  Fnc.SysRouteGenInsDepartment(Fnc.SysRouteInsGetStepNum, Source, DeptCode, ReportFlag);
+end;
+
+procedure SysRouteInsWorkCenter(Source: string; WCCode: string; ReportFlag: string);
+begin                                                                            
+  Fnc.SysRouteGenInsWorkCenter(Fnc.SysRouteInsGetStepNum, Source, WCCode, ReportFlag);
+end;
+                                                     
+procedure SysRouteInsCrpParameter(Source: string; CrpQueueTime: integer; CrpSetUpTime: integer; CrpProcessUnits: real; ReportFlag: string);
+begin                      
+  Fnc.SysRouteGenInsCrp(Fnc.SysRouteInsGetStepNum, Source, CrpQueueTime, CrpSetUpTime, CrpProcessUnits, ReportFlag);
+end;
+
+procedure SysRouteInsCosting(Source: string; CostType: integer; CostName: string; CostValue: double; ReportFlag: string);
+begin
+  Fnc.SysRouteGenInsCosting(Fnc.SysRouteInsGetStepNum, Source, CostType, CostName, CostValue, ReportFlag);
+end;
+
+procedure SysRouteInsAllCosting(Source: string; cstSetup: double; cstDirMatrl: double; cstInDirMatrl1: double; cstInDirMatrl2: double; cstProcess: double; cstOverHead: double);
+begin
+  Fnc.SysRouteGenInsCosting(Fnc.SysRouteInsGetStepNum, Source, 1, '', cstSetup, '');
+  Fnc.SysRouteGenInsCosting(Fnc.SysRouteInsGetStepNum, Source, 2, '', cstDirMatrl, '');
+  Fnc.SysRouteGenInsCosting(Fnc.SysRouteInsGetStepNum, Source, 3, '', cstInDirMatrl1, '');
+  Fnc.SysRouteGenInsCosting(Fnc.SysRouteInsGetStepNum, Source, 4, '', cstInDirMatrl2, '');
+  Fnc.SysRouteGenInsCosting(Fnc.SysRouteInsGetStepNum, Source, 5, '', cstProcess, '');
+  Fnc.SysRouteGenInsCosting(Fnc.SysRouteInsGetStepNum, Source, 6, '', cstOverHead, '');
+end;
+
+procedure SysRouteInsInstruction(Source: string; InstrCode: string; ReportFlag: string);
+begin
+  Fnc.SysRouteGenInsInstruction(Fnc.SysRouteInsGetStepNum, Source, InstrCode, ReportFlag);
+end;                         
+
+procedure SysRouteInsSpcParameter(Source: string; SpcParamName: string; SpcWarning: boolean; SpcActive: boolean; SpcLowerLimit: string; SpcUpperLimit: string; SpcMinMeas: real; SpcRecomMeas: real; ReportFlag: string);
+begin
+  Fnc.SysRouteGenInsSpc(Fnc.SysRouteInsGetStepNum, Source, SpcParamName, SpcWarning, SpcActive, SpcLowerLimit, SpcUpperLimit, SpcMinMeas, SpcRecomMeas, ReportFlag);
+end;
+
+procedure SysRouteInsAddlParameter(Source: string; ParamCode: string; ParamValue: string; ParamACode_1: string; ParamACode_2: string; ParamAFlag: boolean; ParamMemo: string; ParamDocs: string; ReportFlag: string);
+begin
+  Fnc.SysRouteGenInsAddlParam(Fnc.SysRouteInsGetStepNum, Source, ParamCode, ParamValue, ParamACode_1, ParamACode_2, ParamAFlag, ParamMemo, ParamDocs, ReportFlag);
+end;
+
+procedure SysRouteInsAddlDoc(Source: string; ParamCode: string; DocDesc: string; DocPath: string; DocPrintOnTraveller: boolean);
+begin
+  Fnc.SysRouteGenInsAddlParamDoc(Fnc.SysRouteInsGetStepNum, Source, ParamCode, DocDesc, DocPath, DocPrintOnTraveller);
+end;
+
+procedure SysRouteInsAttribute(Source: string; AttrName: string; AttrValue: string; ReportFlag: string);
+begin
+  // in case there is no valid value, then we grab the value in here
+  if VarIsNull(AttrValue) then
+    AttrValue := Fnc.SysGetAttrValue(AttrName);
+
+  Fnc.SysRouteGenInsAttribute(Fnc.SysRouteInsGetStepNum, Source, AttrName, AttrValue, ReportFlag);
+end;          
+
+procedure SysRouteInsMaterials(Source: string; MaterialTypeList: TStringList; MaterialQty: double; ReportFlag: string);
+begin
+  Fnc.SysRouteGenInsMaterials(Fnc.SysRouteInsGetStepNum, Source, MaterialTypeList, MaterialQty, ReportFlag);
+end;                     
+
+procedure SysRouteInsStepInformation(RouteStepInfo: string);
+begin
+  Fnc.SysRouteGenInsRouteStepInformation(Fnc.SysRouteInsGetStepNum, RouteStepInfo);
+end;
+
+procedure SysRouteInsStepCopper(CopperThicknessTop: double; CopperThicknessDifferenceTop: double; CopperThicknessBottom: double; CopperThicknessDifferenceBottom: double);
+begin
+  Fnc.SysRouteGenInsCopperThickness(Fnc.SysRouteInsGetStepNum, CopperThicknessTop, CopperThicknessDifferenceTop, CopperThicknessBottom, CopperThicknessDifferenceBottom);
+end;
+
+procedure SysRouteSetHoldFlag(OnHold: boolean);
+begin
+  Fnc.SysRouteGenSetOnHoldFlag(Fnc.SysRouteInsGetStepNum, OnHold);
+end;
+                                                          
+procedure SysRouteLinkLayer(DrillRoutLayerName: string; StepNum: integer);
+begin
+  if StepNum < 1 then
+    StepNum := Fnc.SysRouteInsGetStepNum;
+
+  Fnc.SysRouteGenLinkLayer(StepNum, DrillRoutLayerName);
+end;
+
+procedure SysRouteLinkMfgPart(MfgPartName: string; StepNum: integer);
+begin
+  if StepNum < 1 then
+    StepNum := Fnc.SysRouteInsGetStepNum;                        
+
+  Fnc.SysRouteGenLinkMfgPart(StepNum, MfgPartName);
+end;
+
+procedure SysRouteInsertStepExt(StepProcName: string; UniqueId: string);
+begin
+  Fnc.SysRouteGenInsStep(StepProcName, UniqueId);
+end;
+
+procedure SysRouteInsertStep(StepProcName: string);
+begin
+  Fnc.SysRouteGenInsStep(StepProcName, '');
+end;

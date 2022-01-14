@@ -1,0 +1,185 @@
+//HeaderImportExport-->
+//SiteId=0
+//Enterprise=True
+//ScriptType=1
+//ScriptGroup=Impedance
+//HeaderImportExport<--
+{
+ Script to calculate the Plotted width of a line trace in the impedence
+ model grid given an entered Line Width.
+
+ Data is passed from the Layup Module to the script using the
+ Fnc.SysLayupParamTable, Fnc.SysLayertables and Fnc.SysImpedanceModels.
+
+ This example get the Copper Weight of the Affect Layer and adds a specfied
+ value depending on whether the layer is Inner or Outer
+
+ Fnc.SysImpedanceModels will only have the single record that needs the line width
+   calculated.
+
+ The script should calculate/update the following fields in Fnc.SysImpedanceModels:
+
+ - 'PlottedWidth1' (float)
+       Plotted line width of line 1.
+
+ - 'PlottedWidth2' (float)
+       Plotted line width of line 2. Do not fill in if LineWidth2 is null.
+}
+
+var
+  AffectedLayerCount : integer;
+
+function GetPlottedWidthDelta(AffectedLayerName : string):float;
+var
+  CuCode: string;
+  IsInner: boolean;
+
+begin                          
+  result:=0.0;
+  CuCode := '';
+  IsInner:= false;
+  //ShowMessage(AffectedLayerName);
+
+  if Fnc.SysLayerTable.Locate('LayerName',AffectedLayerName, SetOf([])) then
+    Begin
+      // Fnc.OpenDataGrid(Fnc.SysLayerTable, nil, nil, true);
+      CuCode := Fnc.SysLayerTable.FieldByName('LayupCodeThckCu').AsString;
+      //ShowMessage(CuCode);
+      if Fnc.SysLayupParamTable.Locate('ItemLayerName',AffectedLayerName, SetOf([])) then
+        Begin
+         // Fnc.OpenDataGrid(Fnc.SysLayupParamTable, nil, nil, true);
+         IsInner := Fnc.SysLayupParamTable.FieldByName('ItemLevel').AsInteger > 1;
+
+         if IsInner then
+         begin
+           //ShowMessage('Doing Rule for Inner');                      
+           if CuCode = '5micron' then result := 0.000197
+           else if CuCode = '1/4oz' then result := 0.00025
+           else if CuCode = '3/8oz' then result := 0.000375
+           else if CuCode = '1/2oz' then result := 0.0005
+           else if CuCode = '5/8oz' then result := 0.000625
+           else if CuCode = '3/4oz' then result := 0.00075
+           else if CuCode = '1oz' then result := 0.001
+           else if CuCode = '1.125oz' then result := 0.001125
+           else if CuCode = '2oz' then result := 0.002
+           else if CuCode = '3oz' then result := 0.003
+           else if CuCode = '4oz' then result := 0.004
+           else if CuCode = '5oz' then result := 0.005
+           else if CuCode = '6oz' then result := 0.006
+          end
+         else
+         begin
+           //ShowMessage('Doing Rule for Outer');
+           if CuCode = '5micron' then result := 0.00025
+           else if CuCode = '1/4oz' then result := 0.0005
+           else if CuCode = '3/8oz' then result := 0.00075
+           else if CuCode = '1/2oz' then result := 0.001
+           else if CuCode = '5/8oz' then result := 0.0012
+           else if CuCode = '3/4oz' then result := 0.0014
+           else if CuCode = '1oz' then result := 0.00175
+           else if CuCode = '1.125oz' then result := 0.002
+           else if CuCode = '2oz' then result := 0.0035
+           else if CuCode = '3oz' then result := 0.005
+           else if CuCode = '4oz' then result := 0.0065
+           else if CuCode = '5oz' then result := 0.008
+           else if CuCode = '6oz' then result := 0.0095
+         end;
+        end;
+    end;
+end; //End Function
+
+
+procedure SetLineWidth(LineWidthColumnName : string; PlottedLineWidthColumnName : string; AffectedLayerName : string);
+begin
+  with Fnc.SysImpedanceModels do
+  begin
+    FieldByName(PlottedLineWidthColumnName).AsFloat := FieldByName(LineWidthColumnName).AsFloat +
+                                                       GetPlottedWidthDelta(AffectedLayerName);
+  end;
+end;
+
+
+begin
+  with Fnc.SysImpedanceModels do
+  begin
+    Edit;
+
+    // Polar needs to calculate lines differently than RLGC.  We can
+    // detect which impedance modeler is being used by the presence of
+    // Fnc.SysImpedanceModels.AffectedLayer3/4 fields.
+
+    // ShowMessage('LineWidth Calc');
+    if Fnc.SysImpedanceModels.FindField('AffectedLayer3') <> nil then
+    begin
+      // ShowMessage('Polar LineWidth Calc');
+      // Polar Line width calculation
+      AffectedLayerCount := 0;
+      if FieldByName('AffectedLayer1').AsString <> 'None' then Inc(AffectedLayerCount);
+      if FieldByName('AffectedLayer2').AsString <> 'None' then Inc(AffectedLayerCount);
+      if FieldByName('AffectedLayer3').AsString <> 'None' then Inc(AffectedLayerCount);
+      if FieldByName('AffectedLayer4').AsString <> 'None' then Inc(AffectedLayerCount);
+
+      //ShowMessage('AffectedLayerCount: ' + IntToStr(AffectedLayerCount));
+
+      case AffectedLayercount of
+        2: begin
+             if FieldByName('LineWidth1').AsString <> '' then
+               SetLineWidth('LineWidth1', 'PlottedWidth1', FieldByName('AffectedLayer1').AsString);
+
+             if FieldByName('LineWidth2').AsString <> '' then
+               SetLineWidth('LineWidth2', 'PlottedWidth2', FieldByName('AffectedLayer1').AsString);
+           end;
+
+        3: begin
+             if FieldByName('LineWidth1').AsString <> '' then
+               SetLineWidth('LineWidth1', 'PlottedWidth1', FieldByName('AffectedLayer2').AsString);
+
+             if FieldByName('LineWidth2').AsString <> '' then
+               SetLineWidth('LineWidth2', 'PlottedWidth2', FieldByName('AffectedLayer2').AsString);
+           end;
+
+        4: begin
+             // 2/3 are identical in these models...
+             if FieldByName('LineWidth1').AsString <> '' then
+               SetLineWidth('LineWidth1', 'PlottedWidth1', FieldByName('AffectedLayer2').AsString);
+
+             if FieldByName('LineWidth2').AsString <> '' then
+               SetLineWidth('LineWidth2', 'PlottedWidth2', FieldByName('AffectedLayer2').AsString);
+           end;
+      end;
+                                                                                                        
+      // Set Linewidth Tol+ and Tol- here - only calculate if not already set
+      if Trim(FieldByName('LineWidthToleranceDelta_High').AsString) = '' then
+        FieldByName('LineWidthToleranceDelta_High').AsFloat := FieldByName('LineWidth1').AsFloat * 0.1;
+      if Trim(FieldByName('LineWidthToleranceDelta_Low').AsString) = '' then
+        FieldByName('LineWidthToleranceDelta_Low').AsFloat := FieldByName('LineWidth1').AsFloat * 0.1;
+        
+    end
+    else
+    begin
+      //ShowMessage('RLGC LineWidth Calc');
+
+      // RLGC Line width calculation
+      if FieldByName('LineWidth1').AsString <> '' then
+        SetLineWidth('LineWidth1', 'PlottedWidth1', FieldByName('AffectedLayer1').AsString);
+                               
+      if FieldByName('LineWidth2').AsString <> '' then
+      begin
+        // need to see if there is more than 1 affected layer
+        if FieldByName('AffectedLayer2').AsString <> 'None' then
+        begin
+          // if AffectedLayer2 is set, then it is a differential model.  We need to pass in
+          // affected layer 2 as the layername.
+          SetLineWidth('LineWidth2', 'PlottedWidth2', FieldByName('AffectedLayer2').AsString);
+        end
+        else
+        begin
+          // if AffectedLayer2 is not set, then it is not a differential model.
+          // We need to pass in affected layer 1 as the layername.
+          SetLineWidth('LineWidth2', 'PlottedWidth2', FieldByName('AffectedLayer1').AsString);
+        end;
+      end;
+    end;
+    Post;
+  end;
+end;

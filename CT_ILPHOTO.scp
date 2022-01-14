@@ -1,0 +1,275 @@
+//HeaderImportExport-->
+//SiteId=0
+//Enterprise=True
+//ScriptType=0
+//ScriptGroup=HCS
+//HeaderImportExport<--
+uses                                                                                                                              
+  CT_SearchLibrary,
+  RouteFunctions;
+
+const
+  cILPhoto_TypeHeader = '1-Header';
+  cILPhoto_TypeCondition = '3-Condition';
+  cILPhoto_LineFieldPreFix = 'Line';
+
+function CheckInnerPhoto2ATable(InnerPhoto1A : TSysTable; FieldNameList: TStringList; var errMsg: string): boolean;
+var
+  i: integer;
+  FieldName: string;
+
+  InnerPhoto2A : TSysTable;
+  TableFilter: string;
+                              
+  CoreThk : float;
+  CuTop : string;
+  CuBot : string;
+  LayerTypeTop : string;
+  LayerTypeBot : string;            
+begin
+  Result := False;                     
+                                                           
+  CoreThk := Engx_CoreThickness;                   
+  CuTop := StrToInt(GetBaseCuInMicrons('True', 'False'));
+  CuBot := StrToInt(GetBaseCuInMicrons('False', 'False')); 
+
+  //LayerTypeTop := copy(Dummy_SysGetAttrValue('LAYER_DESC'), 1, 1);
+ // LayerTypeBot := copy(Dummy_SysGetAttrValue('LAYER_DESC'), 2, 1);
+                         
+  if Fnc.SysGetAttrValue('TopLayer') <> '' then
+  begin
+    LayerTypeTop := Fnc.SysGetItemAttrValue('TYPE', True, cStackupLayer, 1);
+    LayerTypeTop := GetLayerTypeAbbr(LayerTypeTop);
+  end                           
+  else
+    LayerTypeTop := 'G';
+
+  if Fnc.SysGetAttrValue('BotLayer') <> '' then
+  begin
+    LayerTypeBot := Fnc.SysGetItemAttrValue('TYPE', False, cStackupLayer, 1);
+    LayerTypeBot := GetLayerTypeAbbr(LayerTypeBot);
+  end
+  else
+    LayerTypeBot := 'G'; 
+   
+
+  TableFilter := Format('     ([CoreThickMin] <= %s)', [FloatToStr(CoreThk)])
+               + Format(' and ([CoreThickMax] >= %s)', [FloatToStr(CoreThk)])
+               + Format(' and ([CUWeightTop] = %d)', [CuTop])
+               + Format(' and ([CUWeightBot] = %d)', [CuBot])
+               + Format(' and ([LayerTop] = %s)', [QuotedStr(LayerTypeTop)])
+               + Format(' and ([LayerBot] = %s)', [QuotedStr(LayerTypeBot)])
+               +        ' and (([G1]=True) or ([G2]=True) or ([G3]=True) or ([G4]=True))';
+
+  InnerPhoto2A := Fnc.CustomTableGet('ILPHOTO_2A');
+
+  InnerPhoto2A.Filtered := False;
+  InnerPhoto2A.Filter := TableFilter;
+  InnerPhoto2A.Filtered := True;
+
+  //ShowMessage(TableFilter);
+  //Fnc.OpenDataGrid(InnerPhoto2A);
+  
+  if InnerPhoto2A.isEmpty then
+    FieldNameList.Clear
+  else
+  begin
+    if InnerPhoto1A.Locate('Type;Condition', [cILPhoto_TypeHeader, 'Group'], SetOf([loCaseInsensitive])) then
+    begin
+      //if InnerPhoto2A.RecordCount = 1 then
+        InnerPhoto2A.First; 
+      
+      {if InnerPhoto2A.RecordCount = 2 then
+      begin
+        InnerPhoto2A.First;
+        InnerPhoto2A.Next;
+      end;}  
+      //Commented out lines= work around for when 2 records appear from the table search.
+        
+
+      for i :=  FieldNameList.Count - 1 downto 0 do
+      begin
+        FieldName := InnerPhoto1A.FieldByName(FieldNameList.Strings[i]).AsString; // G1, G2, ....
+
+        if not InnerPhoto2A.FieldByName(FieldName).AsBoolean then
+          FieldNameList.Delete(i);
+      end
+    end;
+  end;
+
+  InnerPhoto2A.Filtered := False;
+  InnerPhoto2A.Filter := '';
+
+  Result := FieldNameList.Count > 0;
+
+  if not Result then
+  begin
+    if errMsg <> '' then
+      errMsg := errMsg + #13#13;
+    errMsg := errMsg + 'No Matching Data Found In Table ILPHOTO_2A' + #13 +
+                'Core Thickness: ' + FloatToStr(CoreThk) + #13 +
+                'Cu Wt: ' + IntToStr(CuTop) + ' - ' + IntToStr(CuBot) + #13 +
+                'Layer Type: ' + LayerTypeTop + ' - ' + LayerTypeBot;
+  end;
+end;
+
+procedure GetRes(var Group_Erp: string; var DesLine: string; var AltLine: string);
+var
+  bCont: boolean;
+
+  i: integer;
+  FieldNameList: TStringList;
+  FieldName: string;
+  G3_isValid: boolean;
+  errMsg: string;
+  InnerPhoto1A: TSysTable;
+
+  CurrGroup: string;
+begin
+  AltLine := '';
+  Group_Erp := '';
+  DesLine := '';
+  bCont := True;
+  errMsg := '';
+
+  InnerPhoto1A := Fnc.CustomTableGet('ILPHOTO_1A');
+
+  InnerPhoto1A.Filtered := False;
+  InnerPhoto1A.Filter := '';
+
+  FieldNameList := TStringList.Create;
+
+  if bCont then
+  begin
+    bCont := InnerPhoto1A.Locate('Type;Condition', ([cILPhoto_TypeHeader, 'Seq_No']), SetOf([loCaseInsensitive]));
+    if bCont then
+      GetFieldNameBySequence(InnerPhoto1A, FieldNameList, cILPhoto_LineFieldPreFix);
+  end;
+
+  // check the InnerPhoto1A table
+  if bCont then
+  begin
+
+    InnerPhoto1A.Filter := 'Type=' + QuotedStr(cILPhoto_TypeCondition)
+    InnerPhoto1A.Filtered := True;
+
+    for i := FieldNameList.Count - 1 downto 0 do
+    begin
+      FieldName := FieldNameList.Strings[i];
+
+      InnerPhoto1A.First;
+      while not InnerPhoto1A.Eof do
+      begin
+
+        if not CheckCondition(InnerPhoto1A.FieldByName(FieldName).AsString, InnerPhoto1A.FieldByName('Condition').AsString) then
+        begin
+          FieldNameList.Delete(i);
+
+          errMsg := errMsg + #13 + 'Condition Failed'
+                        + Format(', Line: "%s"', [FieldName])
+                        + Format(', Field: "%s"', [InnerPhoto1A.FieldByName('Condition').AsString])
+                        + Format(', Condition: "%s"', [InnerPhoto1A.FieldByName(FieldName).AsString]);
+          break;
+        end;
+                                               
+        InnerPhoto1A.Next;
+      end;
+    end;
+                                                                          
+    InnerPhoto1A.Filtered := False;
+    InnerPhoto1A.Filter := '';
+                                                                                                                                        
+    bCont := FieldNameList.Count > 0;
+  end;
+
+  if bCont then
+    bCont := CheckInnerPhoto2ATable(InnerPhoto1A, FieldNameList, errMsg);
+
+  if bCont then
+  begin
+    G3_isValid := False;
+    if InnerPhoto1A.Locate('Type;Condition', [cILPhoto_TypeHeader, 'Group'], SetOf([loCaseInsensitive])) then
+    begin
+      for i := 0 to FieldNameList.Count - 1 do
+      begin
+        G3_isValid := InnerPhoto1A.FieldByName(FieldNameList.Strings[i]).AsString = 'G3';
+        if G3_isValid then
+          break
+      end;
+    end;
+
+    for i := 0 to FieldNameList.Count - 1 do
+    begin
+      CurrGroup := '';
+      FieldName := FieldNameList.Strings[i];
+
+      if InnerPhoto1A.Locate('Type;Condition', [cILPhoto_TypeHeader, 'Group'], SetOf([loCaseInsensitive])) then
+      begin
+        CurrGroup := InnerPhoto1A.FieldByName(FieldName).AsString;
+
+        if AltLine = '' then
+          AltLine := CurrGroup
+        else
+          AltLine := AltLine + '/' + CurrGroup;
+      end;
+
+      if Group_Erp = '' then                      
+      begin
+        if InnerPhoto1A.Locate('Type;Condition', [cILPhoto_TypeHeader, 'Des_Line'], SetOf([loCaseInsensitive])) then
+        begin
+          DesLine := InnerPhoto1A.FieldByName(FieldName).AsString;
+
+          if (CurrGroup = 'G2') and G3_isValid then
+          begin
+            if InnerPhoto1A.Locate('Type;Condition', [cILPhoto_TypeHeader, 'Dept_N'], SetOf([loCaseInsensitive])) then
+              Group_Erp := InnerPhoto1A.FieldByName(FieldName).AsString;  
+          end
+          else
+          begin
+            if InnerPhoto1A.Locate('Type;Condition', [cILPhoto_TypeHeader, 'Group_N'], SetOf([loCaseInsensitive])) then
+              Group_Erp := InnerPhoto1A.FieldByName(FieldName).AsString;
+          end;
+        end;
+      end;
+    end;
+  end;
+
+  case DesLine of
+    'DES1':
+       begin
+         DesLine := 'DESIL-A0';
+       end;
+    'DES3/4/5', 'DES4/3/5':
+       begin
+         DesLine := 'DESIL-E';       
+       end;
+    'DES5/4/3':
+       begin
+         if Fnc.SysGetAttrValue('LayupThickness') < 0.05 then
+           DesLine := 'DESIL-E'
+         else
+           DesLine := 'DESIL-G0';
+       end;
+  end; 
+
+  FieldNameList.Free;      
+
+  if not bCont then           
+    MessageDlg(errMsg, mtWarning, SetOf([mbCancel]), 0);
+end;
+
+procedure GetILPHOTORES;                                              
+var
+  Group_Erp: string;
+  DesLine: string;
+  AltLine: string;  
+begin
+  InitGlobalVariables;
+
+  GetRes(Group_Erp, DesLine, AltLine);
+
+  showmessage('Group_ERrp: ' + Group_Erp + #13 +
+              'DesLine: ' + DesLine + #13 +
+              'AltLine: ' + AltLine);
+end;
+

@@ -1,0 +1,16 @@
+//HeaderImportExport-->
+//SiteId=0
+//Enterprise=True
+//ScriptType=0
+//ScriptGroup=HCS
+//HeaderImportExport<--
+var
+  ParamList: TStringList;
+begin
+  ParamList := TStringList.Create;
+  ParamList.Add('ShowExportToCSV=True');
+
+  Fnc.OpenDataGrid(Fnc.SysMaterialsFamilyTable, ParamList);
+
+  ParamList.Free;
+end;

@@ -1,0 +1,80 @@
+//HeaderImportExport-->
+//SiteId=0
+//Enterprise=True
+//ScriptType=0
+//ScriptGroup=Panelizer1
+//HeaderImportExport<--
+{
+  Script runs after the Panelizer1 is closed
+}  
+
+procedure PanelizerDataToAttribute(RecIdConstr: integer; MfgPartName: string; AttrName: string; AttrValue: string);
+begin
+  if Fnc.TabAttribEditIsActive then
+    Fnc.SysAttrEditSetMfgPartAttrValue(MfgPartName, AttrName, AttrValue, False, True)
+  else
+    Fnc.SysSetAttrValueForMfgPart(RecIdConstr, AttrName, AttrValue);
+end;
+
+procedure Panelizer1_PostProcess(ParamList: TStringList; PanelizerResults: TSysTable);
+var
+  ExitCode: string;                            
+
+  RecIdConstr: integer;
+  MfgPartName: string;
+
+  PanelSize: string;
+begin                                                                 
+  ExitCode := LowerCase(ParamList.Values['ExitCode']);
+
+  if ExitCode = 'save' then
+  begin
+
+//    showmessage(ParamList.Text);
+//    Fnc.OpenDataGrid(PanelizerResults);
+
+    PanelizerResults.First;
+
+    while not PanelizerResults.Eof do
+    begin
+      RecIdConstr := PanelizerResults.FieldByName('RecIdConstr').AsInteger;
+      MfgPartName := PanelizerResults.FieldByName('MfgPartName').AsString;
+
+      PanelizerDataToAttribute(RecIdConstr, MfgPartName, 'PCB_Length', ParamList.Values['PartLength']);
+      PanelizerDataToAttribute(RecIdConstr, MfgPartName, 'PCB_Width', ParamList.Values['PartWidth']);
+      PanelizerDataToAttribute(RecIdConstr, MfgPartName, 'Panel_Cavity', ParamList.Values['PartPerPanel']);
+
+      PanelizerDataToAttribute(RecIdConstr, MfgPartName, 'Panel_Length', PanelizerResults.FieldByName('PanelLength').AsString);
+      PanelizerDataToAttribute(RecIdConstr, MfgPartName, 'Panel_Width', PanelizerResults.FieldByName('PanelWidth').AsString);
+
+      PanelSize := Format('%d X %d', [PanelizerResults.FieldByName('PanelLength').AsInteger, PanelizerResults.FieldByName('PanelWidth').AsInteger]);
+      PanelizerDataToAttribute(RecIdConstr, MfgPartName, 'Panel_Size', PanelSize);
+
+      if PanelizerResults.FieldByName('PanelWidthCmk').AsInteger = 0 then
+      begin
+        PanelizerDataToAttribute(RecIdConstr, MfgPartName, 'Shear_Length', '0');
+        PanelizerDataToAttribute(RecIdConstr, MfgPartName, 'Shear_Width', '0');
+      end
+      else
+      begin
+        PanelizerDataToAttribute(RecIdConstr, MfgPartName, 'Shear_Length', PanelizerResults.FieldByName('PanelLength').AsString);
+        PanelizerDataToAttribute(RecIdConstr, MfgPartName, 'Shear_Width', PanelizerResults.FieldByName('PanelWidthCmk').AsString);
+      end;
+
+      if (PanelizerResults.FieldByName('ItemType').AsString = cStackupMfgTopLevel) or
+         (PanelizerResults.FieldByName('ItemType').AsString = cStackupMfgSubAssy) then
+      begin
+        PanelizerDataToAttribute(RecIdConstr, MfgPartName, 'Panel_Length_Press', PanelizerResults.FieldByName('PanelLengthBeforePressing').AsString);
+        PanelizerDataToAttribute(RecIdConstr, MfgPartName, 'Panel_Width_Press', PanelizerResults.FieldByName('PanelWidthBeforePressing').AsString);
+      end;
+
+      PanelizerResults.Next;
+    end;
+  end;
+
+  if ExitCode = 'cancel' then
+  begin
+    // User pushed the 'exit' button
+  end;
+end;
+

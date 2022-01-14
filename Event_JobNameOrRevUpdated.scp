@@ -1,0 +1,22 @@
+//HeaderImportExport-->
+//SiteId=0
+//Enterprise=True
+//ScriptType=1
+//ScriptGroup=Meta-Data
+//HeaderImportExport<--
+{
+- Input:
+
+  ParamList.Values['OldJobName'] = Old JobName
+  ParamList.Values['OldJobRev']  = Old JobRevision
+  ParamList.Values['NewJobName'] = New JobName;
+  ParamList.Values['NewJobRev']  = New JobRevision;
+
+- Output (Optional)
+
+  ParamList.Values['UpdateDL'] := 'True';
+}
+
+procedure JobNameOrRevUpdated(ParamList: TStringList);
+begin
+end;

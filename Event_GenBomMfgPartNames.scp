@@ -1,0 +1,87 @@
+//HeaderImportExport-->
+//SiteId=0
+//Enterprise=True
+//ScriptType=1
+//ScriptGroup=Stackup
+//HeaderImportExport<--
+{ Script if called as the stackup if modified, materials dragged in etc, etc.
+  Also MfgParts are created to see how the build will be pressed, required
+  for an acurate thickness calculation.
+
+  - Input ParamList
+      ParamList[0] : BomLevel
+      ParamList[1] : Type: TopLevel, Inner, SubAssy, TopAssembly
+      ParamList[2] : TopLayer
+      ParamList[3] : BottomLayer
+      ParamList[4] : First Layer of child MfgPart (for SubAssy's)
+      ParamList[5] : Last Layer of child MfgPart (for SubAssy's)
+      ParamList[6] : First Layer of Parent MfgPart (for SubAssy's)
+      ParamList[7] : Last Layer of Parent MfgPart (for SubAssy's)
+      ParamList[8] : Obsolete, not used anymore
+      ParamList[9] : 'Tooling' when Tooling MfgPart
+
+  - Input MfgPartList
+      MfgPartList[x].Strings existing MfgPart names already generated
+
+  - Result
+      Ouptut, name for the MfgPart
+}
+
+function EngenixMfgPartName(ParamList: TStringList; MfgPartList: TStringList): string;
+var
+  NameSeq: integer;
+begin
+{
+  MessageDlg('Script: Event_GenBomMfgPartNames' + #13 +
+             'function: EngenixMfgPartName' + #13#13 +
+             'This is a Cimnet template script to create names for' + #13 +
+             'Manufactured parts. In your pre V2.0.1 Engenix versions' + #13 +
+             'you might have your custom code for this' + #13#13 +
+             'Please check with the (obsolete) function:' + #13#13 +
+             'Script: UserLibrary, function: EngenixMfgPartName',
+              mtWarning, SetOf(mbOk), 0);
+}
+  NameSeq := 0;
+  Result := '';
+
+  repeat
+    // Check for tooling
+    if Trim(ParamList[9]) = '' then
+      Result := ParamList[1]
+    else
+      Result := ParamList[9];
+
+    if (LowerCase(Result) <> 'toplevel') and
+       (LowerCase(Result) <> 'topassembly') then
+    begin                  
+
+      if (ParamList[2] = '') and  (ParamList[3] = '') then
+      begin
+        Result := Result + ' L0 / L' + IntToStr(NameSeq);
+      end
+      else
+      begin
+        if NameSeq > 0 then
+          Result := Result + ' -' + IntToStr(NameSeq);
+
+        Result := Result + ' ';
+
+        if ParamList[2] > '' then
+          Result := Result + ParamList[2] + ' / '
+        else
+          Result := Result + 'x / ';
+
+        if ParamList[3] > '' then
+          Result := Result + ParamList[3]
+        else
+          Result := Result + 'x';
+      end;
+
+      Inc(NameSeq);
+    end;
+
+  until MfgPartList.IndexOf(Result) < 0;
+
+//  showmessage('MfgPart Name' + #13#13 + Result);
+end;
+

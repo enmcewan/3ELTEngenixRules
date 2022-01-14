@@ -1,0 +1,40 @@
+//HeaderImportExport-->
+//SiteId=0
+//Enterprise=True
+//ScriptType=0
+//ScriptGroup=HCS
+//HeaderImportExport<--
+Uses
+  RouteFunctions;
+
+function GetCuPlat_GM: string;
+var
+  TestId: string;
+  ProdCode: string;
+  CuPlating_GM: TSysTable;
+begin
+  Result := '';
+
+  TestId := Fnc.SysGetAttrValue('Test_ID');
+
+  CuPlating_GM := Fnc.CustomTableGet('CuPlating_GM');
+
+  if CuPlating_Gm.Locate('TestId', TestId, SetOf([loCaseInsensitive])) then
+    Result := CuPlating_Gm.FieldByName('PlatingLine').AsString;
+    
+  ProdCode := ProdCodeLTC;
+                                  
+  if UpperCase(TestId) = 'Q30252 (CLASS C)' then
+  begin
+    if LowerCase(ProdCode) = 'ls' then
+      Result := 'PAL3';
+  end;                                
+
+  if Result = '' then
+  begin
+    Result := 'NO_PLATING_LINE';
+    MessageDlg('There is no Cu_Plating Line selected for the GM Test Id', mtWarning, SetOf([mbCancel]), 0);
+  end; 
+  
+end;
+

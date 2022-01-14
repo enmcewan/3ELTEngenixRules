@@ -1,0 +1,10 @@
+//HeaderImportExport-->
+//SiteId=0
+//Enterprise=True
+//ScriptType=1
+//ScriptGroup=Stackup Image
+//HeaderImportExport<--
+procedure BitMapUserEvent5(ParamList: TStringList);
+begin
+  //
+end;

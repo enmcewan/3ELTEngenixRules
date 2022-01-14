@@ -1,0 +1,973 @@
+//HeaderImportExport-->
+//SiteId=0
+//Enterprise=True
+//ScriptType=0
+//ScriptGroup=HCS
+//HeaderImportExport<--
+uses
+  Eng_RouteFunctions,
+  RouteFunctions;
+//===== Proc/Func below are dummies
+var
+  GLB_2SIDE_CU_THICK: string;
+  GLB_ASPECT_VAL: double;
+  GLB_B4_CUPLATING_THICKNESS: double;
+  GLB_CUR_CU_RATIO: double;
+  GLB_CUR_LAYERS: integer;
+  GLB_CustCodeBOM: string;
+  GLB_CORES: integer;
+  GLB_INPUT_THICKNESS: double;
+  GLB_MLB_1STLAYER_IS_CORE: boolean;
+  GLB_NC_MIN_DRILL: double;
+  GLB_NC_RUN: integer;
+  GLB_RCC: boolean;
+  GLB_TOTAL_PPG_TYPES: integer;
+  GLB_PREPREG_TYPE: string;
+  GLB_PRESENT_PLATING_LINE_SELECTED: string;
+  GLB_ProdCode_Tail2: string;
+  GLB_THINCORE_TYPE: string;
+  GLB_THINEST_CORE: double;
+
+procedure InitGlobalVariables;
+begin
+  GLB_2SIDE_CU_THICK := '3535' // top & bottom copper
+  GLB_ASPECT_VAL := 4.2
+  GLB_B4_CUPLATING_THICKNESS := 12;
+  GLB_CUR_CU_RATIO := -5;
+  GLB_CUR_LAYERS := 4;
+  GLB_CORES := 3;
+  GLB_INPUT_THICKNESS := 1.2;
+  GLB_MLB_1STLAYER_IS_CORE := False;
+  GLB_CustCodeBOM := '???'; //'rb';
+  GLB_NC_MIN_DRILL := 0.40;
+  GLB_NC_RUN := 2;
+  GLB_RCC := False;
+  GLB_TOTAL_PPG_TYPES := 3;
+  GLB_PREPREG_TYPE := '';
+  GLB_PRESENT_PLATING_LINE_SELECTED := '';
+  GLB_ProdCode_Tail2 := 'Ic' //'AAA;'
+  GLB_THINCORE_TYPE := '';
+  GLB_THINEST_CORE := 0.06;
+end;
+
+function Dummy_SysGetAttrValue(AttrName: string): variant;
+begin
+  case (LowerCase(AttrName)) of
+    'abs_min_th':     Result := 10.0;
+    'abs_min2th':     Result := 10.0;
+    'air_gap':        Result := 0.07;
+    'alw_pnlen':      Result := 12.0;
+    'alw_pnlwid':     Result := 12.0;
+    'ave_min_th':     Result := 10.0;
+    'ave_min2th':     Result := 10.0;
+    'blown_wid':      Result := 0.0;
+    'blown_gap':      Result := 0.0;
+    'conformal_':     Result := 100;
+    'depth_bl':       Result := 0.01;
+    'design_':        Result := 1.05;
+    'design_typ':     Result := 'Yes';
+    'dynamic_':       Result := True;
+    'fill_via':       Result := False; //True;
+    'impedance_':     Result := 'No'; //'Yes';
+    'k_distance':     Result := 40;
+    'land_':          Result := 0.15;
+    'layer_desc':     Result := 'SS';
+    'line_width':     Result := 0.06;
+    'max_p_hole':     Result := 5.0;
+    'min_res_cl':     Result := 0.077;
+    'no001':          Result := 1;
+    'no002':          Result := 2;
+    'ope_dist':       Result := 25.4;
+    'pnlen_':         Result := 600; //450;
+    'pnlwid_':        Result := 350; //290;
+    'registratn':     Result := 120;
+    'slotwid_':       Result := 0.0;
+    'slotlen_':       Result := 0.0;
+    'thk_b4_plt':     Result := 1.1;
+    'value_bl':       Result := 0.7;
+    'x_press':        Result := 10;
+    'y_pnlen_':       Result := 600;
+    'y_pnlwid_':       Result := 350;
+
+    else
+      showmessage('Missing Attribute: Dummy_SysGetAttrValue -> ' + AttrName);
+  end;
+end;
+//===== Proc/Func above are dummies
+
+
+procedure GetFieldNameBySequence(aTable: TSysTable; FieldNameList: TStringList; FieldNamePrefix: string);
+var
+  i: integer;
+  FieldSeq: string
+  FieldName: string;
+  aList: TStringList;
+begin
+  FieldNameList.Clear;
+
+  // table has to be positioned at the proper row (Seq_no)
+  aList := TStringList.Create;
+
+  for i := 0 to aTable.FieldCount - 1 do
+  begin
+    FieldName := aTable.Fields.Fields[i].FieldName;
+
+    if pos(FieldNamePrefix, FieldName) > 0 then
+    begin
+      //create entries like 01=fieldname1, 02=fieldanme2, etc
+      FieldSeq := Format('%.2d', [StrToIntDef(aTable.FieldByName(FieldName).AsString, 0)]);
+      aList.Values[FieldSeq] := FieldName;
+    end;
+  end;
+
+  aList.Sort
+
+  for i := 0 to aList.Count - 1 do
+  begin
+    FieldSeq := aList.Names[i];
+    FieldNameList.Add(aList.Values[FieldSeq]);
+  end;
+
+  aList.Free;
+end;
+
+function CheckConditionNumericLowHigh(Condition: string; aValue: string; isLower: boolean; isSingleValue: boolean): boolean;
+var
+  ValueNum: double;
+  CondNum: double;
+  inclEqual: boolean;
+begin
+  Result := True;
+
+  // any value
+  if Condition = '*' then
+    exit;
+
+  // no limit
+  if LowerCase(Condition) = 'z' then
+    exit;
+
+  inclEqual := pos('=', Condition) > 0
+  Condition := StringReplace(Condition, '=', '', SetOf([]));
+
+  try
+    ValueNum := StrToFloat(aValue);
+    CondNum := StrToFloat(Condition)
+  except
+    Result := False;
+  end;
+
+  if Result and isLower then
+  begin
+    if inclEqual then
+      Result := ValueNum >= CondNum
+    else
+    begin
+      if isSingleValue then
+        Result := ValueNum = CondNum
+      else
+        Result := ValueNum > CondNum;
+    end;
+  end;
+
+  if Result and (not isLower) then
+  begin
+    if inclEqual then
+      Result := ValueNum <= CondNum
+    else
+      Result := ValueNum < CondNum;
+  end;
+end;
+
+function CheckConditionBoolean(Condition: string; aValue: string): boolean;
+begin
+  // any value
+  Result := Condition = '*';
+
+  if Result then
+    exit;
+
+  Condition := LowerCase(Condition);
+  aValue := LowerCase(aValue);
+
+  if (Condition = 'n') or (Condition = 'no') or (Condition = 'false') then
+    Result := (aValue = 'n') or (aValue = 'no') or (aValue = 'false');
+
+  if (Condition = 'y') or (Condition = 'yes') or (Condition = 'true') then
+    Result := (aValue = 'y') or (aValue = 'yes') or (aValue = 'true');
+end;
+
+function CheckConditionString(Condition: string; aValue: string): boolean;
+var
+  isNotEqual: boolean;
+begin
+  // any value
+  Result := Condition = '*';
+
+  if Result then
+    exit;
+
+  isNotEqual := pos('!', Condition) > 0;
+  Condition := StringReplace(Condition, '!=', '', SetOf([]));
+  Condition := StringReplace(Condition, '!', '', SetOf([]));
+
+  Condition := LowerCase(Condition);
+  aValue := LowerCase(aValue);
+
+  if isNotEqual then
+    Result := Condition <> aValue
+  else
+    Result := Condition = aValue;
+end;
+
+function CheckConditionOneCondOneValue(VarType: string; Condition: string; Value: string): boolean;
+var
+  i: integer;
+  errMsg: string;
+  CondList: TStringList;
+begin
+  // sample condition: 0~=20
+  Result := False;
+
+  CondList := TStringList.Create;
+  CondList.Text := StringReplace(Condition, '~', #10, SetOf([rfReplaceAll]));
+
+  Result := CondList.Count < 1;
+
+  if VarType = '' then
+    VarType := 'N';
+  VarType := UpperCase(VarType);
+
+  if not Result then
+  begin
+    case VarType of
+      'N': begin // numeric
+             Result := CheckConditionNumericLowHigh(CondList.Strings[0], Value, True, CondList.Count = 1);
+             if Result and (CondList.Count > 1) then
+               Result := CheckConditionNumericLowHigh(CondList.Strings[1], Value, False, False);
+           end;
+
+      'B': begin // boolean
+             Result := CheckConditionBoolean(CondList.Strings[0], Value);
+           end;
+
+      'S': begin // string
+             Result := CheckConditionString(CondList.Strings[0], Value);
+           end;
+
+      else begin
+             errMsg := 'SearchLib, CheckConditionOneCondOneValue'
+            + #13#13 + Format('Invalid Variable/Compare Type defined: "%s"', [VarType])
+            + #13#13 + Format('Condition: "%s"', [CondList.Text])
+               + #13 + Format('Value: "%s"', [Value]);
+             MessageDlg(errMsg, mtWarning, SetOf([mbCancel]), 0);
+           end;
+    end;
+  end;
+
+  CondList.Free;
+end;
+
+function CheckConditionOneCondition(VarType: string; Condition: string; ValueList: TStringList): boolean;
+var
+  i: integer;
+  CondList: TStringList;
+  VarTypeList: TStringList;
+begin
+  // sample conditions: 0~=20&0~6.4
+  Result := False;
+
+  CondList := TStringList.Create;
+  CondList.Text := StringReplace(Condition, '&', #10, SetOf([rfReplaceAll]));
+
+  VarTypeList := TStringList.Create;
+  VarTypeList.Text := StringReplace(VarType, ';', #10, SetOf([rfReplaceAll]));
+
+  // we can get into here with something like PROD_CODE (value) and condition '!IC&!ic'
+  // have to take care that we have the same number of values as conditions to check
+  while ValueList.Count < CondList.Count do
+    ValueList.Add(ValueList.Strings[ValueList.Count - 1]);
+
+  while VarTypeList.Count < CondList.Count do
+    VarTypeList.Add(VarTypeList.Strings[VarTypeList.Count - 1]);
+
+  for i := 0 to CondList.Count - 1 do
+  begin
+    Result := CheckConditionOneCondOneValue(VarTypeList.Strings[i], CondList.Strings[i], ValueList.Strings[i]);
+    if not Result then
+      break;
+  end;
+
+  VarTypeList.Free;
+  CondList.Free;
+end;
+
+function CheckConditionsAndValues(VarType: string; Condition: string; ValueList: TStringList): boolean;
+var
+  i: integer;
+  CondList: TStringList;
+begin
+  // sample conditions: 0~=20&0~6.4;20~Z&*
+  Result := False;
+
+  CondList := TStringList.Create;
+  CondList.Text := StringReplace(Condition, ';', #10, SetOf([rfReplaceAll]));
+
+  for i := 0 to CondList.Count - 1 do
+  begin
+    Result := CheckConditionOneCondition(VarType, CondList.Strings[i], ValueList);
+
+    // ';' means 'or' so stop as we have one valid condition
+    if Result then
+      break;
+  end;
+
+  CondList.Free;
+end;
+
+function CheckConditionsAndValuesSimple(VarType: string; Condition: string; aValue: string): boolean;
+var
+  ValueList: TStringList;
+begin
+  ValueList := TStringList.Create;
+  ValueList.Add(aValue);
+
+  Result := CheckConditionsAndValues(VarType, Condition, ValueList);
+
+  ValueList.Free;
+end;
+
+function CheckCondition(Condition: string; VarNames: string): boolean;
+var
+  bDone: boolean;
+  errMsg: string;
+  tmpVar: variant;
+  VarValueList: TStringList;
+
+  BaseCopper: string;
+  FirstPlating: string;
+  SecondPlating: string;
+  BaseCuValue : string;
+begin
+  Result := False;
+
+  bDone := False;
+  errMsg := '';
+
+  VarValueList := TStringList.Create;
+
+  Condition := Trim(Condition);
+  VarNames := UpperCase(Trim(VarNames));
+
+    //-----
+  if VarNames = 'THICKBOARD' then
+  begin
+    VarValueList.Add('True');
+
+    Result := CheckConditionsAndValues('N', Condition, VarValueList);
+    bDone := True;
+  end;
+
+  if VarNames = 'NUMLAYERS' then
+  begin
+    VarValueList.Add(IntToStr(Fnc.SysGetAttrValue('LayerCount')));
+
+    Result := CheckConditionsAndValues('N', Condition, VarValueList);
+    bDone := True;
+  end;
+
+  if VarNames = 'BASECOPPER' then
+  begin
+    BaseCuValue := 0.0;
+
+    Fnc.SysGetCopperValues(true, false, BaseCopper, FirstPlating, SecondPlating);
+
+    Case BaseCopper of
+      '1/4oz' : BaseCuValue := '0.25';
+      '1/3oz' : BaseCuValue := '0.333';
+      '1/2oz' : BaseCuValue := '0.5';
+      '1oz' : BaseCuValue := '1';
+      '2oz' : BaseCuValue := '2';
+      '3oz' : BaseCuValue := '3';
+    end;
+
+    VarValueList.Add(BaseCuValue);
+
+    Result := CheckConditionsAndValues('N', Condition, VarValueList);
+    bDone := True;
+  end;
+
+  if VarNames = 'NAILHEADSPEC' then
+  begin
+    Case Fnc.SysGetAttrValueTopLevel('Cust_Spec') of
+      '192192' : VarValueList.Add('100');
+      '' : VarValueList.Add('50'); // For testing only, needs to be removed. Handled in calling script.
+
+    end;
+
+
+    Result := CheckConditionsAndValues('N', Condition, VarValueList);
+    bDone := True;
+  end;
+
+  if VarNames = 'WICKING' then
+  begin
+    Case Fnc.SysGetAttrValueTopLevel('Wicking_Max') of
+      '38' : VarValueList.Add('38');
+      '60' : VarValueList.Add('60');
+      //'None' : VarValueList.Add('38'); // For testing only, needs to be removed. Handled in calling script.
+    end;
+
+    if Fnc.SysGetAttrValueTopLevel('Wicking_Max') <> 'None' then
+      Result := CheckConditionsAndValues('N', Condition, VarValueList)
+    else
+      Result := true;
+    bDone := True;
+  end;
+
+  //-----
+  if VarNames = 'AIR_GAP' then
+  begin
+    VarValueList.Add(FloatToStr(Fnc.SysGetAttrValue('Air_Gap')));
+
+    Result := CheckConditionsAndValues('N', Condition, VarValueList);
+    bDone := True;
+  end;
+
+  //-----
+  if VarNames = 'ALW_PNLWID' then
+  begin
+    VarValueList.Add(FloatToStr(Fnc.SysGetAttrValueTopLevel('Panel_WidthEA')));
+
+    Result := CheckConditionsAndValues('N', Condition, VarValueList);
+    bDone := True;
+  end;
+
+  //---
+  if VarNames = 'ASPECT_' then
+  begin
+    VarValueList.Add(FloatToStr(Fnc.SysGetAttrValue('Aspect_Ratio_Val')));
+
+    Result := CheckConditionsAndValues('N', Condition, VarValueList);
+    bDone := True;
+  end;
+
+  //-----
+  if VarNames = 'BLIND_ASPECT' then
+  begin
+    if (Fnc.SysGetAttrValue('ConfMask_Size') > 0) and (Fnc.SysGetAttrValue('Blind_Via_Depth') > 0) then
+      VarValueList.Add(FloatToStr(Fnc.SysGetAttrValue('Blind_AspectRatio')))
+    else
+      VarValueList.Add('0.0');
+
+    Result := CheckConditionsAndValues('N', Condition, VarValueList);
+    bDone := True;
+  end;
+
+  //-----
+  if VarNames = 'BLOWN_GAP' then
+  begin
+    VarValueList.Add(FloatToStr(Fnc.SysGetAttrValue('Air_Gap_Blown')))
+
+    Result := CheckConditionsAndValues('N', Condition, VarValueList);
+    bDone := True;
+  end;
+
+  //-----
+  if VarNames = 'BLOWN_WID' then
+  begin
+    VarValueList.Add(FloatToStr(Fnc.SysGetAttrValue('Line_Width_Blown')))
+
+    Result := CheckConditionsAndValues('N', Condition, VarValueList);
+    bDone := True;
+  end;
+
+  //-----
+  // CONFORMAL_ is not laser hole size, after Etching size, is laser size
+  // or LASCHKHOLE = Laser size, and usually, LASCHKHOLE > CONFORMAL_
+  if VarNames = 'CONFORMAL_' then
+  begin
+    if Fnc.SysGetAttrValue('Conf_Mask') = false then
+      VarValueList.Add('0.0')
+    else
+      VarValueList.Add(FloatToStr(Fnc.SysGetAttrValue('ConfMask_Size')));
+
+    Result := CheckConditionsAndValues('N', Condition, VarValueList);
+    bDone := True;
+  end;
+
+  //-----
+  if VarNames = 'CONFORMAL_&X_PRESS' then
+  begin
+    VarValueList.Add(FloatToStr(Fnc.SysGetAttrValue('ConfMask_Size')));
+
+    VarValueList.Add(IntToStr(NumTimesPress));
+
+    Result := CheckConditionsAndValues('N', Condition, VarValueList);
+    bDone := True;
+  end;
+
+  //-----
+  if VarNames = 'CORE_THICK' then
+  begin
+    VarValueList.Add(FloatToStr(Engx_CoreThickness));
+
+    Result := CheckConditionsAndValues('N', Condition, VarValueList);
+    bDone := True;
+  end;
+
+  //-----
+  if VarNames = 'CORES' then
+  begin
+    VarValueList.Add(IntToStr(Fnc.SysRouteGenGetMaterialCount('Core',true,false)));
+    //ShowMessage(Fnc.SysRouteGenGetMaterialCount('Core',true,false));
+    Result := CheckConditionsAndValues('N', Condition, VarValueList);
+    bDone := True;
+  end;
+
+  //-----
+  if VarNames = 'CU_RATIO' then
+  begin
+    VarValueList.Add(FloatToStr(Set_CU_Ratio))
+    Result := CheckConditionsAndValues('N', Condition, VarValueList);
+    bDone := True;
+  end;
+
+  //-----
+  if VarNames = 'CUSTOMER_' then
+  begin
+    VarValueList.Add(CustCode_Rule('Customer'));
+
+    Result := CheckConditionsAndValues('S', Condition, VarValueList);
+    bDone := True;
+  end;
+
+  //-----
+  if VarNames = 'CUSTOMER_&LAYER' then
+  begin
+    VarValueList.Add(CustCode_Rule('Customer'));
+    VarValueList.Add(IntToStr(Fnc.SysGetAttrValue('LayerCount')));
+    //ShowMessage(CustCode_Rule('Customer'));
+    Result := CheckConditionsAndValues('S;N', Condition, VarValueList);
+    bDone := True;
+  end;
+
+  //-----
+  if VarNames = 'DEPTH_BL' then
+  begin
+    VarValueList.Add(FloatToStr(Fnc.SysGetAttrValue('Blind_Via_Depth')));
+
+    Result := CheckConditionsAndValues('N', Condition, VarValueList);
+    bDone := True;
+  end;
+
+  //-----
+  if VarNames = 'DESIGN_' then
+  begin
+    VarValueList.Add(FloatToStr(Fnc.SysGetAttrValue('LayupThickness')));
+
+    Result := CheckConditionsAndValues('N', Condition, VarValueList);
+    bDone := True;
+  end;
+
+  //-----
+  if VarNames = 'DYNAMIC_' then
+  begin
+    if Fnc.SysGetAttrValue('DynamicEtch') then
+      VarValueList.Add('Y')
+    else
+      VarValueList.Add('N');
+
+    Result := CheckConditionsAndValues('B', Condition, VarValueList);
+    bDone := True;
+  end;
+
+  //-----
+  if VarNames = 'FILL_VIA' then
+  begin
+    if Fnc.SysGetAttrValue('CuFilledVias') then
+      VarValueList.Add('Y')
+    else
+      VarValueList.Add('N');
+
+    Result := CheckConditionsAndValues('B', Condition, VarValueList);
+    bDone := True;
+  end;
+
+  //-----
+  if VarNames = 'FLIP CHIP' then
+  begin
+    if Fnc.SysGetAttrValueTopLevel('Design_Type') = 'Flip Chip' then
+    begin
+      VarValueList.Add('YES');
+      Result := CheckConditionsAndValues('B', Condition, VarValueList);
+    end
+    else
+      Result := true;
+
+
+    bDone := True;
+  end;
+
+  //-----
+  if VarNames = 'GLB_KK_EDGE' then
+  begin
+    if Fnc.SysGetAttrValue('LayerCount') = 2 then
+      tmpVar := 4
+    else
+      tmpVar := (Fnc.SysGetAttrValue('Panel_Length') - Fnc.SysGetAttrValue('KK_Distance'))/2;
+
+    VarValueList.Add(IntToStr(tmpVar));
+    Result := CheckConditionsAndValues('N', Condition, VarValueList);
+    bDone := True;
+  end;
+
+  //-----
+  if VarNames = 'IMPEDANCE_' then
+  begin
+    if Fnc.SysGetAttrValueTopLevel('Has_Impedance') = true then
+    begin
+      VarValueList.Add('YES');
+      Result := CheckConditionsAndValues('B', Condition, VarValueList);
+    end
+    else
+      Result := true;
+
+
+    bDone := True;
+  end;
+
+  //-----
+  if VarNames = 'LAND_' then
+  begin
+    VarValueList.Add(FloatToStr(Fnc.SysGetAttrValue('Land_Area')));
+
+    Result := CheckConditionsAndValues('N', Condition, VarValueList);
+    bDone := True;
+  end;
+
+  //-----
+  if VarNames = 'LINE_WIDTH' then
+  begin
+    VarValueList.Add(FloatToStr(Fnc.SysGetAttrValue('Line_Width')));
+
+    Result := CheckConditionsAndValues('N', Condition, VarValueList);
+    bDone := True;
+  end;
+
+  //-----
+  if VarNames = 'MAT_TYPE' then       // MAT_TYPE IS NOT REQUIRED SINCE THERE ARE NO RESTRICTIONS IN THE TABLE
+  begin
+    if GLB_THINCORE_TYPE = '' then
+      VarValueList.Add(copy(GLB_PREPREG_TYPE, 2, 1))
+    else
+      VarValueList.Add(copy(GLB_THINCORE_TYPE, 2, 1));
+
+    Result := CheckConditionsAndValues('S', Condition, VarValueList);
+    bDone := True;
+  end;
+
+  //-----
+  if VarNames = 'MAT_TYPE2' then       // MAT_TYPE IS Also used in the Drill Entry Sheet Table. Different format so new variable created.
+  begin
+    if Fnc.SysGetAttrValue('CoreMat') = '' then
+      VarValueList.Add(Fnc.SysGetAttrValue('PPGMat'))
+    else
+      VarValueList.Add(Fnc.SysGetAttrValue('CoreMat'));
+
+    Result := CheckConditionsAndValues('S', Condition, VarValueList);
+    bDone := True;
+  end;
+
+  //-----
+  if VarNames = 'MAX_P_HOLE' then
+  begin
+    VarValueList.Add(FloatToStr(Fnc.SysGetAttrValue('Max_PHole_Size')));
+
+    Result := CheckConditionsAndValues('N', Condition, VarValueList);
+    bDone := True;
+  end;
+
+  //-----
+  if VarNames = 'MIN_DRILL_' then
+  begin
+    if NCRun = 2 then
+      VarValueList.Add(FloatToStr(Fnc.SysGetAttrValue('Min_Drill_Size_2')))
+    else
+      VarValueList.Add(FloatToStr(Fnc.SysGetAttrValue('Min_Drill_Size')));
+
+    Result := CheckConditionsAndValues('N', Condition, VarValueList);
+    bDone := True;
+  end;
+
+  if VarNames = 'MIN_RES_CL' then
+  begin
+    VarValueList.Add(FloatToStr(Fnc.SysGetAttrValue('Min_Res_Cl')));
+
+    Result := CheckConditionsAndValues('N', Condition, VarValueList);
+    bDone := True;
+  end;
+
+  //-----
+  if VarNames = 'PLT_SP_MIN' then
+  begin
+    if  NCRun = 2 then
+      tmpVar := Max(Fnc.SysGetAttrValue('Abs_Min_Th_2'), Fnc.SysGetAttrValue('Ave_Min_Th_2'))
+    else
+      tmpVar := Max(Fnc.SysGetAttrValue('Abs_Min_Th'), Fnc.SysGetAttrValue('Ave_Min_Th'));
+
+    VarValueList.Add(FloatToStr(tmpVar));
+    //VarValueList.Add(FloatToStr(GLB_ASPECT_VAL));
+
+    Result := CheckConditionsAndValues('N', Condition, VarValueList);
+    bDone := True;
+  end;
+
+  //-----
+  if VarNames = 'PLT_SP_MIN&ASPECT' then
+  begin
+    if  NCRun = 2 THEN
+      tmpVar := Max(Fnc.SysGetAttrValue('Abs_Min_Th_2'), Fnc.SysGetAttrValue('Ave_Min_Th_2'))
+    else
+      tmpVar := Max(Fnc.SysGetAttrValue('Abs_Min_Th'), Fnc.SysGetAttrValue('Ave_Min_Th'));
+
+    VarValueList.Add(FloatToStr(tmpVar));
+    VarValueList.Add(FloatToStr(Fnc.SysGetAttrValue('Aspect_Ratio_Val')));
+
+    Result := CheckConditionsAndValues('N', Condition, VarValueList);
+    bDone := True;
+  end;
+
+  //-----
+  if VarNames = 'PNLEN_' then
+  begin
+    VarValueList.Add(IntToStr(Fnc.SysGetAttrValue('Panel_Length')));
+
+    Result := CheckConditionsAndValues('N', Condition, VarValueList);
+    bDone := True;
+  end;
+
+  //-----
+  if VarNames = 'PNLWID_' then
+  begin
+    VarValueList.Add(IntToStr(Fnc.SysGetAttrValue('Panel_Width')));
+
+    Result := CheckConditionsAndValues('N', Condition, VarValueList);
+    bDone := True;
+  end;
+
+  //-----
+  if VarNames = 'POST_DIST' then
+  begin
+    if Fnc.SysGetAttrValue('OPE_DIST') = 0.0 then
+      VarValueList.Add('19.05')
+    else
+      VarValueList.Add(FloatToStr(Fnc.SysGetAttrValue('OPE_DIST')));
+
+    Result := CheckConditionsAndValues('N', Condition, VarValueList);
+    bDone := True;
+  end;
+
+  //-----
+  if VarNames = 'PPG_TYPES' then
+  begin
+    VarValueList.Add(IntToStr(PPG_Types));
+
+    Result := CheckConditionsAndValues('N', Condition, VarValueList);
+    bDone := True;
+  end;
+
+  //-----
+  if VarNames = 'PRESS_EDGE_LEN' then
+  begin
+    try
+      //TmpVar := Fnc.SysGetAttrValue('Panel_Length_Yield') - (Fnc.SysGetAttrValue('Panel_Length') / 2) + Fnc.SysGetAttrValueTopLevel('Panel_LengthEA');
+      TmpVar := Fnc.SysGetAttrValue('Panel_Length_Press') - (Fnc.SysGetAttrValue('Panel_Length') / 2) + Fnc.SysGetAttrValueTopLevel('Panel_LengthEA');
+    except
+      TmpVar := 0.0;
+      Fnc.SysShowException('', mtWarning); // will show the Delphi exception message
+    end;
+
+    VarValueList.Add(FloatToStr(TmpVar));
+
+    Result := CheckConditionsAndValues('N', Condition, VarValueList);
+    bDone := True;
+  end;
+
+  //-----
+  if VarNames = 'PRESS_EDGE_WID' then
+  begin
+    try
+      //TmpVar := Fnc.SysGetAttrValue('Panel_Width_Yield') - (Fnc.SysGetAttrValue('Panel_Width') / 2) + Fnc.SysGetAttrValueTopLevel('Panel_WidthEA');
+      // Replaced Panel_Width_Yield with Panel_Width_Press per request from Alison 10/30/14
+      TmpVar := Fnc.SysGetAttrValue('Panel_Width_Press') - (Fnc.SysGetAttrValue('Panel_Width') / 2) + Fnc.SysGetAttrValueTopLevel('Panel_WidthEA');
+    except
+      TmpVar := 0.0;
+      Fnc.SysShowException('', mtWarning); // will show the Delphi exception message
+    end;
+
+    VarValueList.Add(FloatToStr(TmpVar));
+
+    Result := CheckConditionsAndValues('N', Condition, VarValueList);
+    bDone := True;
+  end;
+
+  //-----
+  if VarNames = 'PRESS_TOP_AS_CORE' then
+  begin
+    if ( CoreBuild or SubAssemblyCoreBuild )then
+      VarValueList.Add('Y');
+    else
+      VarValueList.Add('N');
+
+    Result := CheckConditionsAndValues('B', Condition, VarValueList);
+    bDone := True;
+  end;
+
+  //-----
+  if VarNames = 'PROD_CODE' then
+  begin
+    if ((Fnc.SysGetAttrValue('MfgPartType') = 'Sub') and (HasSubAssembliesFormingOuterOL)) then
+      VarValueList.Add('IC')
+    else
+      VarValueList.Add(ProdCodeLTC);
+
+    Result := CheckConditionsAndValues('S', Condition, VarValueList);
+    bDone := True;
+  end;
+
+  //-----
+  if VarNames = 'RCC&CORES' then
+  begin
+ //   if GLB_RCC then             //RCC NOT USED ANYMORE, IGNORING THIS
+ //     VarValueList.Add('R')
+ //   else
+      VarValueList.Add('NR')
+
+    VarValueList.Add(IntToStr(Fnc.SysRouteGenGetMaterialCount('Core',true,false)));
+
+    Result := CheckConditionsAndValues('S;N', Condition, VarValueList);
+    bDone := True;
+  end;
+
+  //-----
+  if VarNames = 'REGISTRATION' then
+  begin
+    VarValueList.Add(FloatToStr(Fnc.SysGetAttrValueTopLevel('Registration')));
+
+    Result := CheckConditionsAndValues('N', Condition, VarValueList);
+    bDone := True;
+  end;
+
+  //-----
+  if VarNames = 'SLOTLEN_' then
+  begin
+    VarValueList.Add(FloatToStr(Fnc.SysGetAttrValue('Slot_Length_PTH')));
+
+    Result := CheckConditionsAndValues('N', Condition, VarValueList);
+    bDone := True;
+  end;
+
+  //-----
+  if VarNames = 'SLOTWID_' then
+  begin
+    VarValueList.Add(FloatToStr(Fnc.SysGetAttrValue('Slot_Width_PTH')));
+
+    Result := CheckConditionsAndValues('N', Condition, VarValueList);
+    bDone := True;
+  end;
+
+  //-----
+  if VarNames = 'TG_CLASS' then
+  begin
+    VarValueList.Add(Fnc.SysGetAttrValue('TG_Class'));
+
+    Result := CheckConditionsAndValues('S', Condition, VarValueList);
+    bDone := True;
+  end;
+
+  //-----
+  // many case, use THK_B4_PLT not DESIGN_ to decide process, such as prebook
+  if VarNames = 'THK_B4_PLT' then
+  begin
+    if Fnc.SysGetAttrValue('LayerCount') > 2 then // 2 Layer Fixes
+      VarValueList.Add(FloatToStr(Fnc.SysGetAttrValue('Press_Thickness')));
+    else
+      VarValueList.Add(FloatToStr(DSThicknessB4Plating));
+
+    Result := CheckConditionsAndValues('N', Condition, VarValueList);
+    bDone := True;
+  end;
+
+  //-----
+  if VarNames = 'Y_PNLEN_' then
+  begin
+    //VarValueList.Add(FloatToStr(Fnc.SysGetAttrValue('Panel_Length_Yield')));
+    VarValueList.Add(FloatToStr(Fnc.SysGetAttrValue('Panel_Length_Press')));
+
+    Result := CheckConditionsAndValues('N', Condition, VarValueList);
+    bDone := True;
+  end;
+
+  //-----
+  if VarNames = 'Y_PNLWID_' then
+  begin
+    //VarValueList.Add(FloatToStr(Fnc.SysGetAttrValue('Panel_Width_Yield')));
+    VarValueList.Add(FloatToStr(Fnc.SysGetAttrValue('Panel_Width_Press')));
+
+    Result := CheckConditionsAndValues('N', Condition, VarValueList);
+    bDone := True;
+  end;
+
+  //-----
+  if VarNames = 'Y_PNLEN_Y_PNLWID' then
+  begin
+    //if Fnc.SysGetAttrValue('Panel_Length_Yield') = 616 then
+    if Fnc.SysGetAttrValue('Panel_Length_Press') = 616 then
+      VarValueList.Add('617')
+    else
+      //VarValueList.Add(IntToStr(Fnc.SysGetAttrValue('Panel_Length_Yield')));
+      VarValueList.Add(IntToStr(Fnc.SysGetAttrValue('Panel_Length_Press')));
+
+    VarValueList.Add(IntToStr(Fnc.SysGetAttrValue('Panel_Width_Press')));
+
+    Result := CheckConditionsAndValues('N', Condition, VarValueList);
+    bDone := True;
+  end;
+
+  //-----
+
+  VarValueList.Free;
+
+  if not bDone then
+  begin
+    errMsg :=   'function CheckCondition'
+      + #13#13 + 'Condition: ' + Condition
+         + #13 + 'Variables: ' + VarNames
+      + #13#13 + 'Not implemented';
+
+    MessageDlg(errMsg, mtWarning, SetOf([mbCancel]), 0);
+  end;
+
+end;
+
+function CheckCondition_GetLineName(aTable: TSysTable; FieldName: string; LocateFieldNames: string; LocateFieldValues: string): string;
+var
+  SaveId: integer;
+  SaveFiltered: boolean;
+begin
+  Result := FieldName;
+  SaveId := aTable.FieldByName('Id').AsInteger;
+
+  SaveFiltered := aTable.Filtered;
+  if SaveFiltered then
+    aTable.Filtered := False;
+
+  if aTable.Locate(LocateFieldNames, LocateFieldValues, SetOf([loCaseInsensitive])) then
+    Result := aTable.FieldByName(FieldName).AsString;
+
+  if SaveFiltered then
+    aTable.Filtered := True;
+
+  aTable.Locate('ID', SaveId, SetOf([]));
+end;

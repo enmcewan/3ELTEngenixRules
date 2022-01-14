@@ -1,0 +1,29 @@
+//HeaderImportExport-->
+//SiteId=0
+//Enterprise=True
+//ScriptType=1
+//ScriptGroup=Embedded Component
+//HeaderImportExport<--
+{                  
+tblEmbeddedComp:
+    Table with all the embedded components assigned to layers. If you add components
+    in this script, the minimum fields to fill are:
+    
+    - RecIdLayer:  pointer to the layers table
+    - MaterialsId: pointer to the Materials/Components table
+    - Qty:         number of components to be positioned
+    
+tblLayers:
+    Table with all the (copper) layers available in this job
+    
+tblComponents:
+    Table with all the components defined in the Engenix database
+    
+ParamList:
+    reserved for future use                           
+}
+
+procedure EmbeddedComp_UserEvent3(tblEmbeddedComp: TSysTable; tblLayers: TSysTable; tblComponents: TSysTable; ParamList: TStringList);
+begin
+  // your code here
+end;

@@ -1,0 +1,120 @@
+//HeaderImportExport-->
+//SiteId=0
+//Enterprise=True
+//ScriptType=1
+//ScriptGroup=Attribute Grid
+//HeaderImportExport<--
+{                                                                        
+AttrValueList has the following items
+0. 'AttrID='   -> This field gives the unique ID of the attribute as it is stored in the DB
+1. 'AttrName=' -> This field gives the Attribute Name
+2. 'ItemType=' -> This field gives the Top level / sub level / sub assembly / tooling
+   Values will be
+                 'MATSP' - Specific Material
+                 'MATGN' - Generic Material
+                 'MFGTP' - Manufactured Part Top Level
+                 'MFGSB' - Manufactured Part Sub Level
+                 'MFGBV' - Manufactured Part Sub Assembly
+                 'MFGTL' - Manufactured Part Tooling
+                 'LYR'   - Stackup Layer
+                 'SMK'   - Solder Mask
+                 'SPT'   - Solder Mask Paste
+                 'LEG'   - Legend
+                 'DRL'   - Drill
+                 'RTE'   - Route
+                 'GOLD'  - Gold Mask
+                 'MISC'  - User Defined
+                 'DRLTOOL' - Drill Tool                                 
+                 'LYRDUMMY' - Dummy Layer
+3. 'ItemTypeSub='; -> Used only for stackup Layer (ItemType - 'LYR').
+   For stackup layer ItemTypeSub has the type of Layer like 'POWER_GROUND', 'MIXED' etc.
+   whatever there is defined in the Layers table.
+4. 'OldValue='; -> Value of the attribute before Edit
+5. 'NewValue='; -> Value of the attribute after Edit
+
+Call the "SetAttributeReadOnly" procedure to set the Attribute as Read Only / ReadWrite (Editable) in the attribute grid
+passing the following Parameters
+1. TableName - ItemTypeAttrTable
+2. Attribute Name for which the display flag need to be changed &
+3. True - to set the attribute as ReadOnly OR
+   False - to set the attribute as ReadWrite (Editable)
+Eg: SetAttributeReadOnly(ItemTypeAttrTable, 'ATTR1', True)
+
+Call the HideAttribute procedure to set the Attribute as Invisible / Visible in the attribute Grid
+passing the following Parameters
+1. TableName - ItemTypeAttrTable
+2. Attribute Name for which the display flag need to be changed &
+3. True - to make the attribute Invisble in attribute grid OR
+   False - to make the attribute visible in attribute grid
+Eg: HideAttribute(ItemTypeAttrTable, 'ATTR1', True)
+
+Note: Please do not use ShowMessage since that may cause the display flag
+to be set to random columns and the result might not be proper.
+}
+
+Procedure SetAttributeReadOnly(ItemTypeAttrTable : TSysTable; AttrName : String;  AttrValue : Boolean);
+Begin
+  //Locate in ItemTypeAttrTable for the attribute name
+  If (ItemtypeAttrTable.Locate('AttrName',AttrName, SetOf(loCaseInsensitive))) Then
+  Begin
+    ItemTypeAttrTable.Edit;
+    ItemTypeAttrTable.FieldByName('ROInAttrGrid').AsBoolean := AttrValue;
+    ItemTypeAttrTable.FieldByName('UpdateAttrGrid').AsBoolean := True;
+    ItemTypeAttrTable.Post;
+  End;
+End;
+
+Procedure HideAttribute(ItemTypeAttrTable : TSysTable; AttrName : String;  AttrValue : Boolean);
+Begin
+  //Locate in ItemTypeAttrTable for the attribute name
+  If (ItemtypeAttrTable.Locate('AttrName',AttrName, SetOf(loCaseInsensitive))) Then
+  Begin
+    ItemTypeAttrTable.Edit;
+    ItemTypeAttrTable.FieldByName('VisibleInAttrGrid').AsBoolean := NOT(AttrValue);
+    ItemTypeAttrTable.FieldByName('UpdateAttrGrid').AsBoolean := True;
+    ItemTypeAttrTable.Post;
+  End;
+End;
+
+
+Procedure SetDisplayFlag(ItemTypeAttrTable : TSysTable; AttrValueList : TStrings);
+Var
+  AttrID : Integer;
+  AttrName : String;                                 
+  AttrNewVal : String;
+  AttrOldVal : string;
+  ItemType : String;
+Begin
+  AttrID     := AttrValueList.Values['AttrID'];
+  AttrName   := AttrValueList.Values['AttrName'];
+  AttrNewVal := AttrValueList.Values['NewValue'];
+  AttrOldVal := AttrValueList.Values['OldValue'];
+  ItemType   := AttrValueList.Values['ItemType'];             
+  
+                                         
+  
+  {
+  If ((AttrName = 'IL_REPAIR') and (AttrNewVal = 'NO WELDS ALLOWED')) Then
+  Begin
+    //Set the attribute 'LAYERSAOI' as Read Only
+    SetAttributeReadOnly(ItemTypeAttrTable, 'LAYERSAOI',True);
+  end;
+
+  If ((AttrName = 'DATE_CODE') And (AttrNewVal = 'YY/WW')) Then
+  Begin                      
+    //Set the Attribute 'C_OF_C' as invisible
+    HideAttribute(ItemTypeAttrTable, 'C_OF_C', True);                                                       
+  end;
+
+  If ((AttrName = 'ACode5') And (AttrNewVal = 'Test-5')) Then
+  Begin
+    //Set the Attribute 'ACode4' as invisible
+    HideAttribute(ItemTypeAttrTable, 'ACode4', True);
+
+    //Set the Attribute 'ACode3' as Read Only
+    SetAttributeReadOnly(ItemTypeAttrTable, 'ACode3', True);
+
+    //Set the attribute 'ApplyInTransit' as Read Write (editable)
+    SetAttributeReadOnly(ItemTypeAttrTable, 'ApplyInTransit', False);
+  End;}
+End;

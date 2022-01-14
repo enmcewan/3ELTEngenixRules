@@ -1,0 +1,69 @@
+//HeaderImportExport-->
+//SiteId=0
+//Enterprise=True
+//ScriptType=1
+//ScriptGroup=InCam
+//HeaderImportExport<--
+uses
+  Event_InCamScriptLibrary;
+
+procedure InCam_GenerateJobDetails(ScriptList: TStringList);
+begin
+  ScriptList.Add('');
+  ScriptList.Add('# get steps list');
+  ScriptList.Add('COM info, out_file=$TMP_FILE, units=mm,args=  -t job -e $JOB -m script -d STEPS_LIST');
+  ScriptList.Add('source $TMP_FILE'); // gSTEPS_LIST = ('adb_110805' 'anlp' 'aknu' 'ap' 'coupon_b1')
+  ScriptList.Add('rm $TMP_FILE');
+
+  ScriptList.Add('');
+  ScriptList.Add('# get layer list and layer type');
+  ScriptList.Add('COM info, out_file=$TMP_FILE, units=mm,args=  -t matrix -e $JOB/matrix -m script -d ROW -p layer_type+name');
+  ScriptList.Add('source $TMP_FILE'); // will set gROWname & gROWlayer_type
+  ScriptList.Add('rm $TMP_FILE');
+
+  ScriptList.Add('');
+  ScriptList.Add('# start creating output files');
+  ScriptList.Add('  # get job attributes');
+  ScriptList.Add('  COM info, out_file=$ATTR_JOB, units=mm,args=  -t job -e $JOB -m display -d ATTR');
+  ScriptList.Add('');
+  ScriptList.Add('  # get matrix information');
+  ScriptList.Add('  COM info, out_file=$MATRIX_INFO, units=mm,args=  -t matrix -e $JOB/matrix -m display');
+
+  ScriptList.Add('');
+  ScriptList.Add('  foreach STEP ($gSTEPS_LIST)');
+
+  ScriptList.Add('');
+  ScriptList.Add('    # get step attributes');
+  ScriptList.Add('    set ATTR_STEP_PATH = $ATTR_STEP.$STEP.txt');
+  ScriptList.Add('    COM info, out_file=$ATTR_STEP_PATH, units=mm,args=  -t step -e $JOB/$STEP -m display -d ATTR');
+
+  ScriptList.Add('');            
+  ScriptList.Add('    set counter = 1');
+  ScriptList.Add('    foreach LAYER ($gROWname)');
+
+  ScriptList.Add('');
+  ScriptList.Add('      # get layer attributes');
+  ScriptList.Add('      set ATTR_LAYER_PATH = $ATTR_LAYER.$STEP.$LAYER.txt');
+  ScriptList.Add('      COM info, out_file=$ATTR_LAYER_PATH, units=mm,args=  -t layer -e $JOB/$STEP/$LAYER -m display -d ATTR');
+
+  ScriptList.Add('');
+  ScriptList.Add('      # get tool info if layer drill or rout');
+  ScriptList.Add('      if (($gROWlayer_type[$counter] == ' + QuotedStr('drill') + ') || ($gROWlayer_type[$counter] == ' + QuotedStr('rout') + ')) then');
+  ScriptList.Add('        set TOOL_LAYER_PATH = $TOOL_LAYER.$STEP.$LAYER.txt');
+  ScriptList.Add('        COM info, out_file=$TOOL_LAYER_PATH, units=mm,args=  -t layer -e $JOB/$STEP/$LAYER -m display -d TOOL');
+  ScriptList.Add('      endif');
+  ScriptList.Add('      @ counter++');
+
+  ScriptList.Add('');
+  ScriptList.Add('    end'); // foreach LAYER
+  ScriptList.Add('  end');   // foreach STEP
+end;
+
+procedure InCamGetAllJobData(ParamList: TStringList; ScriptList: TStringList);
+begin
+  AddcShellScriptHeader(ScriptList);
+
+  InCam_GenerateJobDetails(ScriptList);
+
+  AddcShellScriptTrailer(ScriptList);
+end;

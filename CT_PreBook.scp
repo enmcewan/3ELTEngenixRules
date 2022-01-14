@@ -1,0 +1,153 @@
+//HeaderImportExport-->
+//SiteId=0
+//Enterprise=True
+//ScriptType=0
+//ScriptGroup=HCS
+//HeaderImportExport<--
+uses                                                                                                           
+  CT_SearchLibrary;
+
+const
+  cPreBook_TypeHeader = '1-Header';
+  cPreBook_TypeCondition = '3-Condition';
+  cPreBook_LineFieldPreFix = 'Line';
+
+function Search_Table_PhotoLine_CheckConditions(Table_PreBook_1A: TSysTable; FieldName: string; var errMsg: string): boolean;
+var
+  ConditionValue: string;
+  LengthAndWidth: string;
+  Table_PreBook_1B: TSysTable;
+begin
+  Result := True;
+
+  Table_PreBook_1A.First;    
+
+  while (not Table_PreBook_1A.Eof) and Result do   
+  begin
+
+    if Table_PreBook_1A.FieldByName('Type').AsString = cPreBook_TypeCondition then
+    begin
+                                               
+      ConditionValue := UpperCase(Table_PreBook_1A.FieldByName(FieldName).AsString);
+
+      if ConditionValue = 'PINLAMTB01' then
+      begin
+        Table_PreBook_1B := Fnc.CustomTableGet('PreBook_1B');
+        Table_PreBook_1B.Filtered := False;
+        Table_PreBook_1B.Filter := '';
+
+        //LengthAndWidth := IntToStr(Fnc.SysGetAttrValue('Panel_Length_Yield'));
+        LengthAndWidth := IntToStr(Fnc.SysGetAttrValue('Panel_Length_Press')); 
+        if LengthAndWidth = '616' then
+          LengthAndWidth := '617';
+
+        //LengthAndWidth :=  LengthAndWidth + IntToStr(Fnc.SysGetAttrValue('Panel_Width_Yield'));             
+        LengthAndWidth :=  LengthAndWidth + IntToStr(Fnc.SysGetAttrValue('Panel_Width_Press'));
+        
+        Result := Table_PreBook_1B.Locate('XY', LengthAndWidth, SetOf([]));
+      end;
+                                                                             
+      if ConditionValue <> 'PINLAMTB01' then
+      begin                                                                        
+        Result := CheckCondition(Table_PreBook_1A.FieldByName(FieldName).AsString, Table_PreBook_1A.FieldByName('Condition').AsString);
+      end;                        
+                                                
+      if not Result then
+      begin
+        errMsg := errMsg + #13 + 'Condition Failed'
+                        + Format(', Line: "%s"', [FieldName])
+                        + Format(', Field: "%s"', [Table_PreBook_1A.FieldByName('Condition').AsString])
+                        + Format(', Condition: "%s"', [Table_PreBook_1A.FieldByName(FieldName).AsString]);
+        break;
+      end;
+    end;
+                                                                     
+    Table_PreBook_1A.Next;
+  end;
+end;
+
+procedure Search_Table_PreBook(var PBookLine: string; var AltLine: string);
+var                                                                      
+  i, j: integer;
+  bCont: boolean;
+  errMsg: string;
+
+  FieldName: string;
+  FieldNameList: TStringList;
+
+  SaveID: integer;
+  Table_PreBook_1A: TSystable;
+begin
+  PBookLine := '';
+  AltLine := '';
+
+  errMsg := '';
+  bCont := True;
+  FieldNameList :=  TStringList.Create;
+
+  Table_PreBook_1A := Fnc.CustomTableGet('PREBOOK_1A');
+
+  Table_PreBook_1A.Filtered := False;
+  Table_PreBook_1A.Filter := '';
+
+  if bCont then
+  begin
+    bCont := Table_PreBook_1A.Locate('Type;Condition', ([cPreBook_TypeHeader, 'Seq_No']), SetOf([loCaseInsensitive]));
+    if bCont then
+      GetFieldNameBySequence(Table_PreBook_1A, FieldNameList, cPreBook_LineFieldPreFix);
+  end;
+
+  if bCont then
+  begin
+    for i := FieldNameList.Count - 1 downto 0 do
+    begin
+
+      FieldName := FieldNameList.Strings[i];
+
+      if not Search_Table_PhotoLine_CheckConditions(Table_PreBook_1A, FieldName, errMsg) then
+        FieldNameList.Delete(i);
+    end;
+
+    bCont := FieldNameList.Count > 0;
+  end;
+
+  if bCont then
+  begin                                          
+    // the FieldNameList has the names of the columns that meet the restrictions, ordered from seq low to high
+    // showmessage(FieldNameList.Text);
+
+    // position at the row that holds the line names
+    Table_PreBook_1A.Locate('Type;Condition', ([cPreBook_TypeHeader, 'Line_Name']), SetOf([loCaseInsensitive]));
+
+    for i := 0 to FieldNameList.Count - 1 do
+    begin
+      // We need the one with the highest seq.no.
+      FieldName := FieldNameList.Strings[i];
+      PBookLine :=  Table_PreBook_1A.FieldByName(FieldName).AsString;
+
+       if AltLine <> '' then
+         AltLine := AltLine + '\';
+       AltLine := AltLIne + PBookLine;
+    end;
+  end;
+
+  FieldNameList.Free;
+
+  if not bCont then
+    MessageDlg(errMsg, mtWarning, SetOf([mbCancel]), 0);
+end;
+                                 
+var
+  PBookLine: string;
+  AltLine: string; 
+begin
+  InitGlobalVariables;        
+
+  Search_Table_PreBook(PBookLine, AltLine);
+                                             
+  showmessage('Pre-Book Line: ' + PBookLine + #13#13 + 'AltLine: ' + AltLine);
+end;
+
+
+
+

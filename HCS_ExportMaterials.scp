@@ -1,0 +1,24 @@
+//HeaderImportExport-->
+//SiteId=0
+//Enterprise=True
+//ScriptType=0
+//ScriptGroup=HCS
+//HeaderImportExport<--
+var
+  ParamList: TStringList;
+begin
+  ParamList := TStringList.Create;
+  ParamList.Values['ShowExportToCSV'] := 'True';
+
+  Fnc.SysMaterialsTable.Filtered := False;
+  Fnc.SysMaterialsTable.Filter := 'Type = ' + QuotedStr('PP/Filler');
+//  Fnc.SysMaterialsTable.Filter := 'Type <> ' + QuotedStr('PP/Filler');
+  Fnc.SysMaterialsTable.Filtered := True;
+
+  Fnc.OpenDataGrid(Fnc.SysMaterialsTable, ParamList);
+
+  Fnc.SysMaterialsTable.Filtered := False;
+  Fnc.SysMaterialsTable.Filter := '';
+
+  ParamList.Free;
+end;

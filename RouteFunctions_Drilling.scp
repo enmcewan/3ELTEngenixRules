@@ -1,0 +1,956 @@
+//HeaderImportExport-->
+//SiteId=0
+//Enterprise=True
+//ScriptType=0
+//ScriptGroup=HCS
+//HeaderImportExport<--
+uses                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     
+  Event_RouteGenLibrary,
+  Eng_RouteFunctions,
+  Eng_DrillFunctions,
+  RouteFunctions;
+
+function SmallestDrillOneFile(DrillFileName: string; ToolType: string): double;
+var                                                                                                                                                              
+  DrillRouteDetails: TSysTable;
+begin
+  // Init with a large value
+  result := 99.0;
+
+  // Retrieve the details for this DrillFile
+  DrillRouteDetails := Fnc.SysGetDrillRouteToolsDetails(DrillFileName);
+
+  //Fnc.OpenDataGrid(DrillRouteDetails, nil, nil, True);
+
+  // Check if valid tools found
+  if DrillRouteDetails.IsEmpty then
+    result := 99.0
+  else
+  begin                                    
+    // Loop through the table to find the smallest drillsize
+    with DrillRouteDetails do
+    begin
+      First;
+      while not Eof do
+      begin
+
+        if (lowercase(ToolType) = lowercase(FieldByName('HoleType').AsString)) or
+           (lowercase(ToolType) = lowercase ('all')) then
+        begin
+          if (FieldByName('Drill_Size').AsFloat < result) then
+          begin
+            if FieldByName('Drill_Size').AsFloat > 0.0 then
+              result := FieldByName('Drill_Size').AsFloat;
+          end;
+        end;
+
+        next;
+      end;
+    end;
+  end;
+
+  // Cleanup
+  DrillRouteDetails.Close;
+  Fnc.SysTableDestroy(DrillRouteDetails);
+
+end;
+
+procedure SetBlindViaInfo;
+var
+  ViaDrillDepth : float;
+  SmallestDrill : float;
+  AspectRatio   : float;
+  DrillName     : string;
+  DrillStartLayer : string;
+  DrillEndLayer : string;
+  LayerCount : integer;
+  LayerTop : string;
+  LayerBot : string;
+  LayerThk : float;
+  i : integer;
+  baseCuThk : float;
+  firstPltThk : float;
+  secPltThk : float;
+  drillType : integer;                       
+begin                                            
+
+  ViaDrillDepth := 0.0;
+  AspectRatio   := 0.0;
+  LayerThk      := 0.0;
+  baseCuThk     := 0.0;
+  firstPltThk   := 0.0;
+  secPltThk     := 0.0;
+  drillType     := 0;
+
+  for i := 1 to FindNumberOfDrillFiles do
+  begin          
+    drillType := Fnc.SysGetItemAttrValue('DrillDefID', true, CStackupDrill, i);
+                                 
+    if (( drillType = 2 ) or ( drillType = 8 )) and ( Fnc.SysGetAttrValue('LayerCount') > 2 ) then
+    begin
+      DrillName := Fnc.SysGetItemAttrValue('ItemLayerName', true, cStackupDrill, i);
+      DrillStartLayer := Fnc.SysGetItemAttrValue('START_NAME', true, cStackupDrill, i);
+      DrillEndLayer := Fnc.SysGetItemAttrValue('END_NAME', true, cStackupDrill, i);
+
+      Fnc.SysStackupItemTypeCount(cStackupLayer, true, LayerCount, LayerTop, LayerBot);
+      LayerTop := Trim(LayerTop);
+      LayerBot := Trim(LayerBot);
+
+      LayerTop := Fnc.SysGetAttrValue('TopLayer');
+      LayerBot := Fnc.SysGetAttrValue('BotLayer');
+                           
+      if DrillStartLayer = LayerTop then
+      begin
+        Fnc.SysGetCopperValues(True, True, baseCuThk, firstPltThk, secPltThk);
+
+        if drillType = 2 then  // Mech Blind Via
+          LayerThk := baseCuThk + firstPltThk + secPltThk
+        else
+          LayerThk := baseCuThk;
+      end
+      else if DrillStartLayer = LayerBot then
+      begin
+        Fnc.SysGetCopperValues(false, True, baseCuThk, firstPltThk, secPltThk);
+        if drillType = 2 then
+          LayerThk := baseCuThk + firstPltThk + secPltThk
+        else
+          LayerThk := baseCuThk;
+      end;
+
+      ViaDrillDepth := Fnc.SysGetItemAttrValue('DrillDepth_U', true, cStackupDrill, i);  // Get User Value
+
+      if ViaDrillDepth = 0.0 then // User didn't enter a value so do the calc
+      begin
+        if drillType = 2 then
+          ViaDrillDepth := Fnc.SysGetDrillDepth(DrillName, true) - LayerThk
+        else
+          ViaDrillDepth := Fnc.SysGetDrillDepth(DrillName, false);
+      end
+      // Trap 0 depth for division by zero error in Aspect Ratio Calc Below
+      if ViaDrillDepth <= 0 then
+      begin
+         MessageDlg('Blind Via Drill ' + DrillName + ' - Drill Depth is Invalid. Check stack-up has materials', mtWarning, Setof([mbOK]), 0);
+         ViaDrillDepth := 99.0;
+      end;
+
+      Fnc.SysSetItemAttrValue('DrillDepth', ViaDrillDepth, true, cStackupDrill, i);
+
+      //Calc Aspect Ratio & Set Attribute
+      SmallestDrill := SmallestDrillOneFile(Fnc.SysGetItemAttrValue('ItemLayerName', true, cStackupDrill, i), 'ALL');
+
+      if SmallestDrill = 99.0 then //99.0 is returned if there are no toolss for the drill layer
+        MessageDlg('No Tool Data Found For Blind Via Drill ' + DrillName + ' - Aspect Ratio Value is Invalid', mtWarning, Setof([mbOK]), 0)
+      else
+      begin
+        AspectRatio := ViaDrillDepth / SmallestDrill;
+        Fnc.SysSetItemAttrValue('AspectRatio', AspectRatio, true, cStackupDrill, i);
+      end;
+    end;
+  end;
+end;
+
+function GetBlindViaType( Start_Layer : string; End_Layer : string; side : string ) : boolean;
+var
+  LayerList : TStringList;
+  startIdx : integer;
+  endIdx : integer;
+begin
+  result := '';
+
+  LayerList := TStringlist.Create;
+  LayerList := Fnc.SysGetListOfLayerNames(cStackupLayer)
+
+  startIdx := LayerList.IndexOf(Start_Layer);
+  endIdx := LayerList.IndexOf(End_Layer);
+
+  if abs(startIdx - endIdx) = 1 then
+    result  := 'Std_Via'
+  else if abs(startIdx - endIdx) > 1 then
+    result := 'Skip_Via';
+                                      
+end;
+
+function GetDrilledMaterialandLayerInfo(DrillName : string; DrillStartLayer : string; DrillEndLayer : string; LayerTop : string; LayerBot : string) : string;
+var
+  aTable : TSysTable;
+  BlindViaType : string;
+  layerCount : integer;       
+  stopParam : string;
+  skipParam : string;                
+  stopPadThk_u : float;
+  skipPadThk_u : float;
+  stopPadThk_uStr : string;
+  skipPadThk_uStr : string;
+  tableThk : string;
+  drillStartEnd : string;
+
+begin
+  result := '';
+  layerCount := 0;
+  stopParam := '';
+  skipParam := '';
+  stopPadThk_u := 0.0;
+  skipPadThk_u := 0.0;
+  tableThk := '';
+  stopPadThk_uStr := '';
+  skipPadThk_uStr := '';
+  drillStartEnd := '';
+  
+  // 1049 Strike Plating Rule Issue
+  Fnc.SysSetAttrValue('Surface_BVH', false);
+  Fnc.SysSetAttrValue('Skip_BVH', false);              
+  Fnc.SysSetAttrValueTopLevel('Surface_BVH', false);
+  Fnc.SysSetAttrValueTopLevel('Skip_BVH', false); 
+
+  if DrillStartLayer = LayerTop then
+    BlindViaType := GetBlindViaType( DrillStartLayer, DrillEndLayer, 'Top')
+  else if DrillStartLayer = LayerBot then
+    BlindViaType := GetBlindViaType( DrillStartLayer, DrillEndLayer, 'Bot');
+
+  Fnc.SysSetLayerAttrValue(DrillName, 'BlViaType', BlindViaType);                    
+  //Fnc.SysSetAttrValueTopLevel('Surface_BVH', true);
+  
+  if BlindViaType = 'Std_Via' then // Special Process Description
+  begin
+    Fnc.SysSetAttrValue('Surface_BVH', true);
+                           
+    if (( Fnc.SysGetAttrValue('MfgPartType') = 'Sub' ) and ( SubLayersAreOnTopMfgPart )) then
+      Fnc.SysSetAttrValueTopLevel('Surface_BVH', true);
+  end                    
+  else if BlindViaType = 'Skip_Via' then
+  begin
+    Fnc.SysSetAttrValue('Skip_BVH', true);
+    
+    if (( Fnc.SysGetAttrValue('MfgPartType') = 'Sub' ) and ( SubLayersAreOnTopMfgPart )) then
+      Fnc.SysSetAttrValueTopLevel('Skip_BVH', true); 
+  end;   
+                                    
+  stopPadThk_u := fnc.SysGetLayerAttrValue(DrillName, 'StopPadThk_u');
+  skipPadThk_u := fnc.SysGetLayerAttrValue(DrillName, 'SkipPadThk_u');
+  stopPadThk_uStr := FloatToStr(stopPadThk_u);
+  skipPadThk_uStr := FloatToStr(skipPadThk_u);
+  //ShowMessage(stopPadThk_uStr + '/' + skipPadThk_uStr);
+
+  aTable := Fnc.SysGetDrillMaterials(DrillName, true, true);
+  //Fnc.OpenDataGrid(aTable);
+  aTable.First;
+
+  while not aTable.EOF do
+  begin                
+    if aTable.FieldByName('ItemType').AsString = 'MATGN' then
+    begin
+      if result <> '' then
+        result := result + '/'; //#13; 1307 (use parameters instead of instructions)
+      result := result + aTable.FieldByName('ItemFamily').AsString + ' ' + aTable.FieldByName('ItemMatrlDesc').AsString;
+      //ShowMessage(result);
+    end;
+
+    tableThk := FloatToStr( aTable.FieldByName('Thickness').AsFloat );
+    drillStartEnd := DrillStartLayer + ' - ' + DrillEndLayer + ' = ';
+
+
+
+    if skipPadThk_u > 0 then // User overrride
+      skipParam := drillStartEnd + skipPadThk_uStr
+    else
+      skipParam := drillStartEnd + tableThk;
+                                                                  
+    if BlindViaType = 'Std_Via' then
+    begin
+
+      if stopPadThk_u > 0 then // User overrride
+        stopParam := drillStartEnd + stopPadThk_uStr
+      else    
+        stopParam := drillStartEnd + tableThk;
+
+      if aTable.FieldByName('LandingLayer').AsBoolean = true then
+      begin
+
+        if DrillStartLayer = LayerTop then
+          SysRouteInsAddlParameter('Erp', 'Stop Thickness B', stopParam, '', '', false, '', '', '');
+
+        if DrillStartLayer = LayerBot then
+          SysRouteInsAddlParameter('Erp', 'Stop Thickness A', stopParam, '', '', false, '', '', '');
+      end;
+    end
+    else if BlindViaType = 'Skip_Via' then
+    begin
+      //if aTable.FieldByName('ItemType').AsString = 'LYR' then
+      //begin
+      {  layerCount := layerCount + 1;
+
+        if layerCount = 2 then  // Skip Layer
+        begin
+          if DrillStartLayer = LayerTop then
+            SysRouteInsAddlParameter('Erp', 'SKIP_THK_B', skipParam, '')
+          else if DrillStartLayer = LayerBot then
+            SysRouteInsAddlParameter('Erp', 'SKIP_THK_A', skipParam, '');
+        end;
+      }
+      if skipPadThk_u > 0 then // User overrride
+        stopParam := drillStartEnd + skipPadThk_uStr
+      else
+        stopParam := drillStartEnd + tableThk;
+
+      if aTable.FieldByName('LandingLayer').AsBoolean = true then
+      begin
+        if DrillStartLayer = LayerTop then
+          SysRouteInsAddlParameter('Erp', 'Skip Thickness B', stopParam, '', '', false, '', '', '');
+
+        if DrillStartLayer = LayerBot then
+          SysRouteInsAddlParameter('Erp', 'Skip Thickness A', stopParam, '', '', false, '', '', '');
+      end;
+      //end;
+    end;
+    aTable.Next;
+  end;
+  Fnc.SysTableDestroy(aTable);
+end;
+
+procedure InsertBlindViaInfo( Side : string ) ;
+var
+  DrillList : TStringList;
+  DrillValues : TStringList;
+  i : integer;
+  DrillStartLayer : string;
+  DrillEndLayer : string;
+  DrillDepthStr : string;
+  depthInstr : string;
+  BlindViaCount : integer;
+  LayerTop : string;                
+  LayerBot : string;
+  LayerCount : integer;
+
+  matInstr : string;                 
+  DrillName : string;
+
+begin                          
+                                
+  DrillList := TStringList.Create;
+  BlindViaCount := 0;
+            
+  DrillList := Fnc.SysGetItemAttrValueList('ItemLayerName;ForceBlindVia;START_NAME;END_NAME;DrillDepth;DrillDefID', cStackupDrill, 0);            
+ 
+ // Fnc.SysStackupItemTypeCount(cStackupLayer, true, LayerCount, LayerTop, LayerBot);
+  LayerTop := Fnc.SysGetAttrValue('TopLayer');
+  LayerBot := Fnc.SysGetAttrValue('BotLayer');
+
+  for i := 0 to DrillList.Count -1 do
+  begin                     
+    DrillValues := TStringList.Create;
+    DrillValues.Text := DrillList.Strings[i];
+    //ShowMessage(DrillValues.Text);
+
+    if (( DrillValues.Strings[1] = true ) and ( DrillValues.Strings[5] = 2 )) then
+    begin              
+      DrillName := DrillValues.Strings[0];
+      DrillStartLayer := DrillValues.Strings[2];
+      DrillEndLayer := DrillValues.Strings[3];
+      DrillDepthStr := FormatFloat('0.000', DrillValues.Strings[4]);
+      depthInstr := '';
+
+      if (( Side = 'A' ) and ( DrillStartLayer = LayerBot )) then
+      begin
+        //BlindViaCount := BlindViaCount + 1;
+        //if BlindViaCount = 1 then
+          depthInstr := DrillStartLayer + ' - ' + DrillEndLayer + ' = ' + DrillDepthStr;
+
+        {if BlindViaCount > 1 then
+          depthInstr := depthInstr + chr(13) + chr(10) +
+                    DrillStartLayer + ' - ' + DrillEndLayer + ' = ' + DrillDepthStr;}
+
+        //SysRouteInsInstruction('', depthInstr, ''); 1307
+        //SysRouteInsinstruction('', GetDrilledMaterialandLayerInfo(DrillName, DrillStartLayer, DrillEndLayer, LayerTop, LayerBot), '');
+        SysRouteInsAddlParameter('Erp', 'Laser Depth', depthInstr, '', '', false, '', '', '');
+        SysRouteInsAddlParameter('Erp', 'Laser Material', GetDrilledMaterialandLayerInfo(DrillName, DrillStartLayer, DrillEndLayer, LayerTop, LayerBot), '', '', false, '', '', '');
+      
+        if Fnc.SysGetAttrValue('Direct_Laser') then
+          SysRouteInsAddlParameter('Erp', 'Laser Size',  SmallestDrillOneFile(DrillName, 'ALL'), '', '', false, '', '', '');
+      end;
+                                  
+      if (( Side = 'B' ) and ( DrillStartLayer = LayerTop )) then
+      begin
+        //BlindViaCount := BlindViaCount + 1;
+        //if BlindViaCount = 1 then
+          depthInstr := DrillStartLayer + ' - ' + DrillEndLayer + ' = ' + DrillDepthStr;
+                                               
+        {if BlindViaCount > 1 then
+          depthInstr := depthInstr + chr(13) + chr(10) +
+                    DrillStartLayer + ' - ' + DrillEndLayer + ' = ' + DrillDepthStr;}
+
+        //SysRouteInsInstruction('', depthInstr, '');
+        //SysRouteInsinstruction('', GetDrilledMaterialandLayerInfo(DrillName, DrillStartLayer, DrillEndLayer, LayerTop, LayerBot), '');
+        SysRouteInsAddlParameter('Erp', 'Laser Depth', depthInstr, '', '', false, '', '', '');
+        SysRouteInsAddlParameter('Erp', 'Laser Material', GetDrilledMaterialandLayerInfo(DrillName, DrillStartLayer, DrillEndLayer, LayerTop, LayerBot), '', '', false, '', '', '');
+        
+        if Fnc.SysGetAttrValue('Direct_Laser') then
+          SysRouteInsAddlParameter('Erp', 'Laser Size',  SmallestDrillOneFile(DrillName, 'ALL'), '', '', false, '', '', '');
+      end;                                             
+    end;                      
+  end;
+
+  DrillList.Free;                    
+  DrillValues.Free;    
+end;
+
+procedure InsertMechBlindViaInfo( Side : string ) ;
+var
+  DrillList : TStringList;
+  DrillValues : TStringList;              
+  i : integer;
+  DrillStartLayer : string;
+  DrillEndLayer : string;
+  DrillDepthStr : string;
+  depthInstr : string;
+  BlindViaCount : integer;                      
+  LayerTop : string;
+  LayerBot : string;
+  LayerCount : integer;
+
+  matInstr : string;     
+  DrillName : string;
+
+begin
+
+  DrillList := TStringList.Create;
+  BlindViaCount := 0;
+
+  DrillList := Fnc.SysGetItemAttrValueList('ItemLayerName;ForceBlindVia;START_NAME;END_NAME;DrillDepth;DrillDefID', cStackupDrill, 0);
+
+ // Fnc.SysStackupItemTypeCount(cStackupLayer, true, LayerCount, LayerTop, LayerBot);
+  LayerTop := Fnc.SysGetAttrValue('TopLayer');
+  LayerBot := Fnc.SysGetAttrValue('BotLayer');
+
+  for i := 0 to DrillList.Count -1 do
+  begin
+    DrillValues := TStringList.Create;
+    DrillValues.Text := DrillList.Strings[i];
+
+    if (( DrillValues.Strings[1] = true ) and ( DrillValues.Strings[5] = 8 )) then
+    begin
+      DrillName := DrillValues.Strings[0];
+      DrillStartLayer := DrillValues.Strings[2];
+      DrillEndLayer := DrillValues.Strings[3];
+      DrillDepthStr := FormatFloat('0.000', DrillValues.Strings[4]);
+      depthInstr := '';
+
+      if (( Side = 'A' ) and ( DrillStartLayer = LayerBot )) then
+      begin
+        BlindViaCount := BlindViaCount + 1;
+        if BlindViaCount = 1 then
+          depthInstr := DrillStartLayer + ' - ' + DrillEndLayer + ' = ' + DrillDepthStr;
+
+        if BlindViaCount > 1 then
+          depthInstr := depthInstr + chr(13) + chr(10) +
+                    DrillStartLayer + ' - ' + DrillEndLayer + ' = ' + DrillDepthStr;
+
+        //SysRouteInsInstruction('', depthInstr, '');
+        SysRouteInsAddlParameter('Erp', 'Via Depth', depthInstr, '', '', false, '', '', '');
+        //SysRouteInsinstruction('', GetDrilledMaterialandLayerInfo(DrillName, DrillStartLayer, DrillEndLayer, LayerTop, LayerBot), '');
+      end;                   
+
+      if (( Side = 'B' ) and ( DrillStartLayer = LayerTop )) then
+      begin
+        BlindViaCount := BlindViaCount + 1;
+        if BlindViaCount = 1 then
+          depthInstr := DrillStartLayer + ' - ' + DrillEndLayer + ' = ' + DrillDepthStr;
+                     
+        if BlindViaCount > 1 then
+          depthInstr := depthInstr + chr(13) + chr(10) +
+                    DrillStartLayer + ' - ' + DrillEndLayer + ' = ' + DrillDepthStr;
+
+        //SysRouteInsInstruction('', depthInstr, '');
+        SysRouteInsAddlParameter('Erp', 'Via Depth', depthInstr, '', '', false, '', '', '');
+       // SysRouteInsinstruction('', GetDrilledMaterialandLayerInfo(DrillName, DrillStartLayer, DrillEndLayer, LayerTop, LayerBot), '');
+      end;
+    end;
+  end;
+
+  DrillList.Free;
+  DrillValues.Free;
+end;
+
+
+function BlindViaMAspect : float;
+var
+  NumDrillFiles: integer;
+  I: integer;
+  LayerTop : string;
+  LayerBot : string;
+  LayerCount : integer;
+  DrillStartLayer : string;
+  DrillEndLayer : string;
+  Aspect : float;
+  Blind_Via : boolean
+  Blind_Via_Type : string;
+begin
+  result := 0.0;
+
+  NumDrillFiles := FindNumberOfDrillFiles;
+
+  if NumDrillFiles > 0 then
+  begin                                
+    for I := 1 to NumDrillFiles do
+    begin
+      if Fnc.SysGetItemAttrValue('DrillDefID', True, cStackupDrill, I) = 2 then
+      begin
+        Aspect := Fnc.SysGetItemAttrValue('AspectRatio', True, cStackupDrill, I);
+        DrillStartLayer := Fnc.SysGetItemAttrValue('START_NAME', True, cStackupDrill, I);
+        DrillEndLayer := Fnc.SysGetItemAttrValue('END_NAME', True, cStackupDrill, I);
+        Blind_Via_Type := GetBlindViaType(DrillStartLayer, DrillEndLayer, 'ABC');
+        //ShowMessage(Blind_Via_Type);
+        if Blind_Via_Type = 'Std_Via' then
+          result := Aspect;
+      end;
+    end;
+  end;
+
+  //showmessage(FloatToStr(result));
+end;
+
+function BlindViaMDepth : float;
+var
+  NumDrillFiles: integer;
+  I: integer;
+  LayerTop : string;
+  LayerBot : string;
+  LayerCount : integer;
+  DrillStartLayer : string;          
+  DrillEndLayer : string;
+  DrillDepth : float;
+  Blind_Via : boolean
+  Blind_Via_Type : string;
+begin                                       
+  result := 0.0;
+
+  NumDrillFiles := FindNumberOfDrillFiles;
+
+  if NumDrillFiles > 0 then
+  begin
+    for I := 1 to NumDrillFiles do
+    begin                      
+      if Fnc.SysGetItemAttrValue('DrillDefID', True, cStackupDrill, I) = 2 then
+      begin
+        DrillDepth := Fnc.SysGetItemAttrValue('DrillDepth', True, cStackupDrill, I);
+        DrillStartLayer := Fnc.SysGetItemAttrValue('START_NAME', True, cStackupDrill, I);
+        DrillEndLayer := Fnc.SysGetItemAttrValue('END_NAME', True, cStackupDrill, I);
+        Blind_Via_Type := GetBlindViaType(DrillStartLayer, DrillEndLayer, 'ABC');
+        //ShowMessage(Blind_Via_Type);
+        if Blind_Via_Type = 'Std_Via' then
+          result := DrillDepth;
+      end;
+    end;
+  end;
+
+  //showmessage(FloatToStr(result));
+end;
+
+procedure InserBlindViaDepthAspect;
+var
+  NumDrillFiles: integer;
+  I: integer;
+  aspect_Blind : float;
+  aspect_Skip : float;
+  aspect_Ratio : float;
+  depth_Blind : float;
+  depth_Skip : float;
+  drill_Depth : float;
+  blVia_Type : string;
+
+begin
+  aspect_Blind := 0.0;
+  aspect_Skip := 0.0;
+  aspect_Ratio := 0.0;
+  depth_Blind := 0.0;
+  depth_Skip := 0.0;
+  drill_Depth := 0.0;
+  blVia_Type := '';
+
+  NumDrillFiles := FindNumberOfDrillFiles;
+
+  if NumDrillFiles > 0 then
+  begin
+    for I := 1 to NumDrillFiles do
+    begin
+      if Fnc.SysGetItemAttrValue('DrillDefID', True, cStackupDrill, I) = 2 then
+      begin
+                                        
+        aspect_Ratio := Fnc.SysGetItemAttrValue('AspectRatio', True, cStackupDrill, I);
+        blVia_Type := Fnc.SysGetItemAttrValue('BlViaType', True, cStackupDrill, I);
+
+        if Fnc.SysGetItemAttrValue('DrillDepth_U', True, cStackupDrill, I) > 0 then
+          drill_Depth := Fnc.SysGetItemAttrValue('DrillDepth_U', True, cStackupDrill, I)
+        else                                  
+          drill_Depth := Fnc.SysGetItemAttrValue('DrillDepth', True, cStackupDrill, I);
+
+        if blVia_Type = 'Std_Via' then
+        begin
+
+          if drill_Depth > depth_Blind then
+            depth_Blind := drill_Depth;
+
+          if aspect_Ratio > aspect_Blind then
+            aspect_Blind := aspect_Ratio;
+    
+        end
+        else if blVia_Type = 'Skip_Via' then   
+        begin
+
+          if drill_Depth > depth_Skip then
+            depth_Skip := drill_Depth;
+
+          if aspect_Ratio > aspect_Skip then
+            aspect_Skip := aspect_Ratio;
+        end;
+      end;
+    end;
+                                     
+    if aspect_Blind > 0 then
+      SysRouteInsAddlParameter('Erp','Aspect Ratio Blind', FormatFloat('0.000', aspect_Blind),'','', false, '', '', '');
+
+    if aspect_Skip > 0 then
+      SysRouteInsAddlParameter('Erp','Aspect Ratio Skip', FormatFloat('0.000',aspect_Skip),'','', false, '', '', '');
+
+    if depth_Blind > 0 then
+      SysRouteInsAddlParameter('Erp','Depth Blind', FormatFloat('0.000', depth_Blind),'','', false, '', '', '');
+
+    if depth_Skip > 0 then
+      SysRouteInsAddlParameter('Erp','Depth Skip', FormatFloat('0.000',depth_Skip),'','', false, '', '', '');
+  end;
+
+  //showmessage(FloatToStr(result));
+end;
+                                                       
+function CheckMechBlindDrill(BlindDrillLevel: Integer) : boolean;   // Mech Blind Via
+var
+  ValueList: TStringList;
+  I: integer;
+  DrillList : TStringList;
+begin
+  Result := False;
+
+  ValueList := Fnc.SysGetItemAttrValueList('DrillDefID', cStackupDrill, BlindDrillLevel);
+  //ShowMessage(valueList.Text)
+
+  for I := 0 to ValueList.Count - 1 do
+  begin
+    if LowerCase(ValueList.Strings[I]) = '8' then
+    begin
+      Result := True;
+      break; 
+    end;
+  end;
+
+  ValueList.Free;
+end;
+
+function MechBlindViaSide : string; // Mech Blind Via
+var
+  DrillList : TStringList;
+  DrillValues : TStringList;
+  i : integer;
+  DrillStartLayer : string;
+  DrillEndLayer : string;
+  LayerTop : string;
+  LayerBot : string;
+  top : boolean;
+  bot : boolean;
+
+begin
+  result := 'None';
+  top := false;
+  bot := false;
+                
+  DrillList := TStringList.Create;
+  DrillList := Fnc.SysGetItemAttrValueList('ItemLayerName;ForceBlindVia;START_NAME;END_NAME;DrillDepth;DrillDefID', cStackupDrill, 0);
+
+  LayerTop := Fnc.SysGetAttrValue('TopLayer');
+  LayerBot := Fnc.SysGetAttrValue('BotLayer');
+
+  for i := 0 to DrillList.Count -1 do
+  begin               
+    DrillValues := TStringList.Create;
+    DrillValues.Text := DrillList.Strings[i];
+
+    if (( DrillValues.Strings[1] = true ) and ( DrillValues.Strings[5] = 8 )) then
+    begin
+      DrillStartLayer := DrillValues.Strings[2];
+      DrillEndLayer := DrillValues.Strings[3];
+
+      if DrillStartLayer = LayerBot then
+        bot := true;
+                                                     
+      if DrillStartLayer = LayerTop then
+        top := true;
+    end;          
+  end;
+
+  if (( bot = true ) and ( top = false )) then
+    result := 'Bot';
+
+  if (( bot = false ) and ( top = true )) then
+    result := 'Top';
+
+  if (( bot = true ) and ( top = true )) then
+    result := 'Both';
+
+  DrillList.Free;
+  DrillValues.Free;
+end; 
+
+function MechBlindViaMinAspectRatio : float;
+var
+  NumDrillFiles: integer;
+  I: integer;
+  LayerTop : string;
+  LayerBot : string;
+  LayerCount : integer;
+  DrillStartLayer : string;
+  DrillEndLayer : string;
+  Aspect_Ratio : float;
+  Blind_Via : boolean
+begin
+  result := 99;
+
+  NumDrillFiles := FindNumberOfDrillFiles;
+
+  if NumDrillFiles > 0 then
+  begin
+    for I := 1 to NumDrillFiles do
+    begin
+      if (( Fnc.SysGetItemAttrValue('BlindVia', True, cStackupDrill, I) = true ) and
+          ( Fnc.SysGetItemAttrValue('DrillDefID', True, cStackupDrill, I) = 8 ))
+      then
+      begin
+        Aspect_Ratio := Fnc.SysGetItemAttrValue('AspectRatio', True, cStackupDrill, I);
+                            
+        if Aspect_Ratio < result then
+          result := Aspect_Ratio;
+      end;
+    end;
+  end;
+
+  //showmessage(FloatToStr(result));
+end;
+
+function MechBlindViaMaxAspectRatio : float;
+var
+  NumDrillFiles: integer;
+  I: integer;
+  LayerTop : string;
+  LayerBot : string;
+  LayerCount : integer;
+  DrillStartLayer : string;
+  DrillEndLayer : string;
+  Aspect_Ratio : float;
+  Blind_Via : boolean
+begin
+  result := 0;
+
+  NumDrillFiles := FindNumberOfDrillFiles;
+
+  if NumDrillFiles > 0 then
+  begin
+    for I := 1 to NumDrillFiles do
+    begin
+      if (( Fnc.SysGetItemAttrValue('BlindVia', True, cStackupDrill, I) = true ) and
+          ( Fnc.SysGetItemAttrValue('DrillDefID', True, cStackupDrill, I) = 8 ))
+      then
+      begin
+        Aspect_Ratio := Fnc.SysGetItemAttrValue('AspectRatio', True, cStackupDrill, I);
+
+        if Aspect_Ratio > result then
+          result := Aspect_Ratio;
+      end;
+    end;
+  end;
+
+  //showmessage(FloatToStr(result));
+end; 
+
+// MechBlindViaMaxDepth moved to RouteFunctions
+
+procedure FindStackedVias
+var
+  drillTable : TSysTable;
+  currentIdx : string;
+  lastIdx : string;
+  drillType : string;
+  blindVia : boolean;
+  RecID : integer;
+
+  idxCount : integer;
+  blindviacount : integer;
+  pthcount : integer;
+  
+  itemLevelCount : integer;
+  CurrentLevel : integer;
+  LastLevel : integer;
+
+begin
+  Fnc.SysSetAttrValue('StackedBloBl', false);
+  Fnc.SysSetAttrValue('StackedBloBur', false);
+  
+  // Top Layer
+  // Bottom Layer
+  // Drill Start
+  // if Has Drill_Start = Top and DrillStart = Bottom then ignore stacked via
+
+  drillTable := Fnc.SysGetItemAttrValueListAsTable('ItemSeq;ItemLevel;DrillDefStackedIndx;ItemLayerNAme;DrillDefID;ForceBlindVia;RecIDParent', cStackUpDrill, 99);
+
+  drillTable.SortFields := 'DrillDefStackedIndx;ItemLevel';
+  drillTable.SortDefault;
+  drillTable.Filtered := False;
+  drillTable.Filter := '(DrillDefStackedIndx <> ' + QuotedStr(' ') + ') AND (DrillDefStackedIndx IS NOT NULL) and  (DrillDefStackedIndx <> ' + QuotedStr('') + ')'; // + QuotedStr('');
+  drillTable.Filtered := True;
+  //Fnc.OpenDataGrid(drillTable);
+
+  drillTable.First;               
+  currentIdx := '';
+  lastIdx := '';
+  RecID := 0;
+  idxCount := 0;
+  blindviacount := 0;
+  pthcount := 0;
+  itemLevelCount := 0;
+  currentLevel := 0;
+  lastLevel := 0;
+  
+
+  while not drillTable.EOF do
+  begin
+    drillType := drillTable.FieldByName('DrillDefId').AsString;
+    blindVia := drillTable.FieldByName('ForceBlindVia').AsBoolean;
+    currentIdx := drillTable.FieldByName('DrillDefStackedIndx').AsString;
+    currentLevel := drillTable.FieldByName('ItemLevel').AsString;
+    ReciD := RecID + 1;
+
+    if RecID = 1 then                       
+      lastIdx := CurrentIdx;
+      
+    if RecID = 1 then                       
+      LastLevel := CurrentLevel;
+
+    if CurrentIdx <> lastIdx then // reset counters for new via stack
+    begin
+      idxCount := 1;
+      blindViaCount := 0;
+      pthCount := 0;
+      ItemLevelCount := 0;
+    end              
+    else
+    begin
+      idxCount := idxCount + 1; 
+      
+      if CurrentLevel = LastLevel then
+        ItemLevelCount := itemLevelCount + 1
+      else
+        ItemLEvelCount := 1;
+      
+    end
+      
+                
+    if blindVia then
+    begin
+      if ItemLevelCount <= 1  then // Ignore Same Level & Same Stack
+      blindviacount := blindviacount + 1;
+    end;
+    else
+      pthCount := pthCount + 1;
+
+    if idxCount > 1 then // ignore stacks of 1
+    begin
+      if blindViacount > 0 then  // pth over pth is not valid?
+      begin
+        if blindviacount > 1 then
+          Fnc.SysSetAttrValue('StackedBloBl', true);
+
+        if pthcount > 0 then
+          Fnc.SysSetAttrValue('StackedBloBur', true);
+      end;
+    end;
+
+    lastIdx := CurrentIdx;
+    lastLevel := CurrentLevel;
+    drillTable.Next;
+
+  end;
+
+  drillTable.Close;
+  Fnc.SysTableDestroy(drillTable);
+
+end;
+
+function MfgPartHasSkipBlindVias : boolean; //need to find if the the current Mfg Part has it's own Skip BVH
+var
+  DrillList : TStringList;
+  DrillValues : TStringList;
+  i : integer;
+  DrillStartLayer : string;
+  DrillEndLayer : string;
+  DrillDepthStr : string;
+  depthInstr : string;
+  BlindViaCount : integer;
+  LayerTop : string;
+  LayerBot : string;
+  LayerCount : integer;
+
+  matInstr : string;
+  DrillName : string;   
+
+begin            
+  result := false;                              
+  DrillList := TStringList.Create;
+  BlindViaCount := 0;
+            
+  DrillList := Fnc.SysGetItemAttrValueList('ItemLayerName;ForceBlindVia;START_NAME;END_NAME;DrillDepth;DrillDefID', cStackupDrill, 0);
+               
+ // Fnc.SysStackupItemTypeCount(cStackupLayer, true, LayerCount, LayerTop, LayerBot);
+  LayerTop := Fnc.SysGetAttrValue('TopLayer');
+  LayerBot := Fnc.SysGetAttrValue('BotLayer');
+                     
+  for i := 0 to DrillList.Count -1 do
+  begin        
+    DrillValues := TStringList.Create;
+    DrillValues.Text := DrillList.Strings[i];
+
+    if (( DrillValues.Strings[1] = true ) and ( DrillValues.Strings[5] = 2 )) then
+    begin                               
+      DrillName := DrillValues.Strings[0];
+      DrillStartLayer := DrillValues.Strings[2];
+      DrillEndLayer := DrillValues.Strings[3];
+      if GetBlindViaType(DrillStartLayer, DrillEndLayer, 'zzz') = 'Skip_Via' then
+        result := true;
+    end;                      
+  end;
+  
+
+  DrillList.Free;         
+  DrillValues.Free;  
+end;
+
+function LaserG30KMechOrSkipBVH : boolean;  // 978 Updated Cu Rule - Metalization 
+var         
+  laserHits : integer;
+begin                     
+  result := false;
+  
+  MfgPartHasSkipBlindVias;
+  
+  if NCRun = 1 then
+    begin          
+    laserHits := Fnc.SysGetAttrValue('LaserBTopHits') +
+                   Fnc.SysGetAttrValue('LaserABotHits') +
+                   Fnc.SysGetAttrValue('UVLaserB_Top') +
+                   Fnc.SysGetAttrValue('UVLaserA_Bot');
+  
+    if (
+        ( laserHits > 30000 ) or  
+        ( MechBlindViaSide <> 'None' ) or
+        //( Fnc.SysGetAttrValue('Skip_BVH') = true )
+        MfgPartHasSkipBlindVias
+       )
+    then 
+    result := true;
+  end;
+end;  

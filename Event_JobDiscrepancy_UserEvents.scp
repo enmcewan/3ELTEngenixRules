@@ -1,0 +1,33 @@
+//HeaderImportExport-->
+//SiteId=0
+//Enterprise=True
+//ScriptType=1
+//ScriptGroup=Job Discrepancy
+//HeaderImportExport<--
+// WARNING: The tblJobDiscrepancy dataset that is passed in is a LIVE dataset.
+//          Any inserts, deletions, or edits will take place immediately in the database.
+
+procedure JobDiscrepancyUserEvent1(tblJobDiscrepancy : TDataset);
+begin
+
+end;
+
+procedure JobDiscrepancyUserEvent2(tblJobDiscrepancy : TDataset);
+begin
+
+end;
+
+procedure JobDiscrepancyUserEvent3(tblJobDiscrepancy : TDataset);
+begin
+
+end;
+
+procedure JobDiscrepancyUserEvent4(tblJobDiscrepancy : TDataset);
+begin
+
+end;
+
+procedure JobDiscrepancyUserEvent5(tblJobDiscrepancy : TDataset);
+begin
+
+end;

@@ -1,0 +1,393 @@
+//HeaderImportExport-->
+//SiteId=0
+//Enterprise=True
+//ScriptType=1
+//ScriptGroup=Custom Table Export
+//HeaderImportExport<--
+const
+  // replace these values if you want to name your SQL tables something different...
+  // these must be valid SQL Table names.
+  T_JOBREQUIREMENTS = 'Cust_JobRequirements';
+  T_JOBREQDETAILS = 'Cust_JobReqDetails';
+  T_JOBIMPEDANCEMODELS_RLGC = 'Cust_JobImpedanceModels_RLGC';
+  T_JOBIMPEDANCEMODELS_POLAR = 'Cust_JobImpedanceModels_Polar';
+  T_JOBSTACKUP = 'Cust_JobStackup';
+  T_JOBLAYERS = 'Cust_JobLayers';
+  T_JOBDRILLTOOLS = 'Cust_JobDrillTools';
+  T_JOBPARTATTRIBUTES = 'Cust_JobPartAttributes';
+  T_JOBLAYERATTRIBUTES = 'Cust_JobLayerAttributes';
+  T_JOBSPECCAPABILITIES = 'Cust_JobSpecCapabilities';
+  T_JOBIMPEDANCECOUPONS = 'Cust_JobImpedanceCoupons';
+  T_JOBERPBOM = 'Cust_JobErpBom';
+
+function ExportStackup_CreateTable_GetFieldFormat(InpQry: TAdoQuery; aFieldName: string; aDataType: TDataType; aFieldSize: integer; var qryAddField: string): boolean;
+begin
+  qryAddField := '';
+
+  if InpQry.FieldDefs.IndexOf(aFieldName) < 0 then
+  begin
+    case aDataType of
+
+      ftString, ftUnknown:
+        qryAddField := Format('nvarchar (%d) NULL', [aFieldSize]);
+
+      ftAutoInc, ftInteger:
+        qryAddField := 'numeric (10, 0) NULL';
+
+      ftFloat:
+        qryAddField := 'numeric (20, 7) NULL';
+
+      ftBoolean:
+        qryAddField := 'bit NULL';
+
+      ftDate, ftTime, ftDateTime:
+        qryAddField := 'datetime  NULL';
+
+      ftMemo:
+        qryAddField := 'ntext NULL';
+
+    else // go the save method, make it a Memo Field
+      qryAddField := 'ntext NULL';
+    end;
+  end;
+
+  Result := qryAddField <> '';
+end;
+
+procedure ExportStackup_CreateTable_AppendJobPartAttrFields(TableName: string);
+var
+  aFieldDef: string;
+  InpQry: TAdoQuery;
+  UpdQry: TAdoQuery;
+begin
+  // Mandatorty format as Advanced Query is used
+  InpQry := TAdoQuery.Create(nil);
+  InpQry.Connection := Fnc.DBConnection;
+  // just need the structure of the table, no actual data
+  InpQry.Sql.Add('SELECT * FROM ' + TableName + ' WHERE ' + UpperCase(TableName) + 'ID=-1');
+  InpQry.Active := True;
+
+  UpdQry := TAdoQuery.Create(nil);
+  UpdQry.Connection := Fnc.DBConnection;
+  UpdQry.Sql.Clear;
+
+  if ExportStackup_CreateTable_GetFieldFormat(InpQry, 'PARTNAME', ftString, 50, aFieldDef) then
+    UpdQry.Sql.Add('ALTER TABLE dbo.' + TableName + ' ADD [PARTNAME] ' + aFieldDef);
+
+  if ExportStackup_CreateTable_GetFieldFormat(InpQry, 'PARTTYPE', ftString, 50, aFieldDef) then
+    UpdQry.Sql.Add('ALTER TABLE dbo.' + TableName + ' ADD [PARTTYPE] ' + aFieldDef);
+
+  if ExportStackup_CreateTable_GetFieldFormat(InpQry, 'ATTRIBUTEID', ftInteger, 0, aFieldDef) then
+    UpdQry.Sql.Add('ALTER TABLE dbo.' + TableName + ' ADD [ATTRIBUTEID] ' + aFieldDef);
+
+  if ExportStackup_CreateTable_GetFieldFormat(InpQry, 'ATTRIBUTENAME', ftString, 50, aFieldDef) then
+    UpdQry.Sql.Add('ALTER TABLE dbo.' + TableName + ' ADD [ATTRIBUTENAME] ' + aFieldDef);
+
+  if ExportStackup_CreateTable_GetFieldFormat(InpQry, 'DISPLAYNAME', ftString, 50, aFieldDef) then
+    UpdQry.Sql.Add('ALTER TABLE dbo.' + TableName + ' ADD [DISPLAYNAME] ' + aFieldDef);
+
+  if ExportStackup_CreateTable_GetFieldFormat(InpQry, 'ATTRIBUTEGROUP', ftString, 50, aFieldDef) then
+    UpdQry.Sql.Add('ALTER TABLE dbo.' + TableName + ' ADD [ATTRIBUTEGROUP] ' + aFieldDef);
+
+  if ExportStackup_CreateTable_GetFieldFormat(InpQry, 'VALUE', ftString, 255, aFieldDef) then
+    UpdQry.Sql.Add('ALTER TABLE dbo.' + TableName + ' ADD [VALUE] ' + aFieldDef);
+
+  if ExportStackup_CreateTable_GetFieldFormat(InpQry, 'SOURCE', ftString, 20, aFieldDef) then
+    UpdQry.Sql.Add('ALTER TABLE dbo.' + TableName + ' ADD [SOURCE] ' + aFieldDef);
+
+  if ExportStackup_CreateTable_GetFieldFormat(InpQry, 'DATATYPE', ftString, 20, aFieldDef) then
+    UpdQry.Sql.Add('ALTER TABLE dbo.' + TableName + ' ADD [DATATYPE] ' + aFieldDef);
+
+  if ExportStackup_CreateTable_GetFieldFormat(InpQry, 'SEQUENCE', ftInteger, 0, aFieldDef) then
+    UpdQry.Sql.Add('ALTER TABLE dbo.' + TableName + ' ADD [SEQUENCE] ' + aFieldDef);
+
+  if ExportStackup_CreateTable_GetFieldFormat(InpQry, 'READONLY', ftBoolean, 0, aFieldDef) then
+    UpdQry.Sql.Add('ALTER TABLE dbo.' + TableName + ' ADD [READONLY] ' + aFieldDef);
+
+  if ExportStackup_CreateTable_GetFieldFormat(InpQry, 'REQUIRED', ftBoolean, 0, aFieldDef) then
+    UpdQry.Sql.Add('ALTER TABLE dbo.' + TableName + ' ADD [REQUIRED] ' + aFieldDef);
+
+  if ExportStackup_CreateTable_GetFieldFormat(InpQry, 'VISIBLE', ftBoolean, 0, aFieldDef) then
+    UpdQry.Sql.Add('ALTER TABLE dbo.' + TableName + ' ADD [VISIBLE] ' + aFieldDef);
+
+  if ExportStackup_CreateTable_GetFieldFormat(InpQry, 'MINVALUE', ftFloat, 0, aFieldDef) then
+    UpdQry.Sql.Add('ALTER TABLE dbo.' + TableName + ' ADD [MINVALUE] ' + aFieldDef);
+
+  if ExportStackup_CreateTable_GetFieldFormat(InpQry, 'MAXVALUE', ftFloat, 0, aFieldDef) then
+    UpdQry.Sql.Add('ALTER TABLE dbo.' + TableName + ' ADD [MAXVALUE] ' + aFieldDef);
+
+  if not (UpdQry.Sql.Text = '') then
+    // if there are any problems, let it crash so we see the acutal error message
+    UpdQry.ExecSql;
+
+  UpdQry.Free;
+
+  InpQry.Active := False;
+  InpQry.Free;
+end;
+
+procedure ExportStackup_CreateTable_AppendJobLayerAttrFields(TableName: string);
+var
+  aFieldDef: string;
+  InpQry: TAdoQuery;
+  UpdQry: TAdoQuery;
+begin
+  // Mandatorty format as Advanced Query is used
+  InpQry := TAdoQuery.Create(nil);
+  InpQry.Connection := Fnc.DBConnection;
+  // just need the structure of the table, no actual data
+  InpQry.Sql.Add('SELECT * FROM ' + TableName + ' WHERE ' + UpperCase(TableName) + 'ID=-1');
+  InpQry.Active := True;
+
+  UpdQry := TAdoQuery.Create(nil);
+  UpdQry.Connection := Fnc.DBConnection;
+  UpdQry.Sql.Clear;
+
+  if ExportStackup_CreateTable_GetFieldFormat(InpQry, 'LAYERNAME', ftString, 50, aFieldDef) then
+    UpdQry.Sql.Add('ALTER TABLE dbo.' + TableName + ' ADD [LAYERNAME] ' + aFieldDef);
+
+  if ExportStackup_CreateTable_GetFieldFormat(InpQry, 'LAYERTYPE', ftString, 50, aFieldDef) then
+    UpdQry.Sql.Add('ALTER TABLE dbo.' + TableName + ' ADD [LAYERTYPE] ' + aFieldDef);
+
+  if ExportStackup_CreateTable_GetFieldFormat(InpQry, 'LAYERDESC', ftString, 50, aFieldDef) then
+    UpdQry.Sql.Add('ALTER TABLE dbo.' + TableName + ' ADD [LAYERDESC] ' + aFieldDef);
+
+  if ExportStackup_CreateTable_GetFieldFormat(InpQry, 'ATTRIBUTEID', ftInteger, 0, aFieldDef) then
+    UpdQry.Sql.Add('ALTER TABLE dbo.' + TableName + ' ADD [ATTRIBUTEID] ' + aFieldDef);
+
+  if ExportStackup_CreateTable_GetFieldFormat(InpQry, 'ATTRIBUTENAME', ftString, 50, aFieldDef) then
+    UpdQry.Sql.Add('ALTER TABLE dbo.' + TableName + ' ADD [ATTRIBUTENAME] ' + aFieldDef);
+
+  if ExportStackup_CreateTable_GetFieldFormat(InpQry, 'DISPLAYNAME', ftString, 50, aFieldDef) then
+    UpdQry.Sql.Add('ALTER TABLE dbo.' + TableName + ' ADD [DISPLAYNAME] ' + aFieldDef);
+
+  if ExportStackup_CreateTable_GetFieldFormat(InpQry, 'ATTRIBUTEGROUP', ftString, 50, aFieldDef) then
+    UpdQry.Sql.Add('ALTER TABLE dbo.' + TableName + ' ADD [ATTRIBUTEGROUP] ' + aFieldDef);
+
+  if ExportStackup_CreateTable_GetFieldFormat(InpQry, 'VALUE', ftString, 255, aFieldDef) then
+    UpdQry.Sql.Add('ALTER TABLE dbo.' + TableName + ' ADD [VALUE] ' + aFieldDef);
+
+  if ExportStackup_CreateTable_GetFieldFormat(InpQry, 'SOURCE', ftString, 20, aFieldDef) then
+    UpdQry.Sql.Add('ALTER TABLE dbo.' + TableName + ' ADD [SOURCE] ' + aFieldDef);
+
+  if ExportStackup_CreateTable_GetFieldFormat(InpQry, 'DATATYPE', ftString, 20, aFieldDef) then
+    UpdQry.Sql.Add('ALTER TABLE dbo.' + TableName + ' ADD [DATATYPE] ' + aFieldDef);
+
+  if ExportStackup_CreateTable_GetFieldFormat(InpQry, 'SEQUENCE', ftInteger, 0, aFieldDef) then
+    UpdQry.Sql.Add('ALTER TABLE dbo.' + TableName + ' ADD [SEQUENCE] ' + aFieldDef);
+
+  if ExportStackup_CreateTable_GetFieldFormat(InpQry, 'READONLY', ftBoolean, 0, aFieldDef) then
+    UpdQry.Sql.Add('ALTER TABLE dbo.' + TableName + ' ADD [READONLY] ' + aFieldDef);
+
+  if ExportStackup_CreateTable_GetFieldFormat(InpQry, 'REQUIRED', ftBoolean, 0, aFieldDef) then
+    UpdQry.Sql.Add('ALTER TABLE dbo.' + TableName + ' ADD [REQUIRED] ' + aFieldDef);
+
+  if ExportStackup_CreateTable_GetFieldFormat(InpQry, 'VISIBLE', ftBoolean, 0, aFieldDef) then
+    UpdQry.Sql.Add('ALTER TABLE dbo.' + TableName + ' ADD [VISIBLE] ' + aFieldDef);
+
+  if ExportStackup_CreateTable_GetFieldFormat(InpQry, 'MINVALUE', ftFloat, 0, aFieldDef) then
+    UpdQry.Sql.Add('ALTER TABLE dbo.' + TableName + ' ADD [MINVALUE] ' + aFieldDef);
+
+  if ExportStackup_CreateTable_GetFieldFormat(InpQry, 'MAXVALUE', ftFloat, 0, aFieldDef) then
+    UpdQry.Sql.Add('ALTER TABLE dbo.' + TableName + ' ADD [MAXVALUE] ' + aFieldDef);
+
+  if not (UpdQry.Sql.Text = '') then
+    // if there are any problems, let it crash so we see the acutal error message
+    UpdQry.ExecSql;
+
+  UpdQry.Free;
+
+  InpQry.Active := False;
+  InpQry.Free;
+end;
+
+procedure ExportStackup_CreateTable_AppendSpecCapFields(TableName: string);
+var
+  aFieldDef: string;
+  InpQry: TAdoQuery;
+  UpdQry: TAdoQuery;
+begin
+  InpQry := TAdoQuery.Create(nil);
+  InpQry.Connection := Fnc.DBConnection;
+  // just need the structure of the table, no actual data
+  InpQry.Sql.Add('SELECT * FROM ' + TableName + ' WHERE ' + UpperCase(TableName) + 'ID=-1');
+  InpQry.Active := True;
+
+  UpdQry := TAdoQuery.Create(nil);
+  UpdQry.Connection := Fnc.DBConnection;
+  UpdQry.Sql.Clear;
+
+  if ExportStackup_CreateTable_GetFieldFormat(InpQry, 'SPECSTRUCTUREID', ftInteger, 0, aFieldDef) then
+    UpdQry.Sql.Add('ALTER TABLE dbo.' + TableName + ' ADD [SPECSTRUCTUREID] ' + aFieldDef);
+
+  if ExportStackup_CreateTable_GetFieldFormat(InpQry, 'SPECNAME', ftString, 50, aFieldDef) then
+    UpdQry.Sql.Add('ALTER TABLE dbo.' + TableName + ' ADD [SPECNAME] ' + aFieldDef);
+
+  if ExportStackup_CreateTable_GetFieldFormat(InpQry, 'SPECTYPE', ftInteger, 0, aFieldDef) then
+    UpdQry.Sql.Add('ALTER TABLE dbo.' + TableName + ' ADD [SPECTYPE] ' + aFieldDef);
+
+  if ExportStackup_CreateTable_GetFieldFormat(InpQry, 'SPECITEMNAME', ftString, 50, aFieldDef) then
+    UpdQry.Sql.Add('ALTER TABLE dbo.' + TableName + ' ADD [SPECITEMNAME] ' + aFieldDef);
+
+  if ExportStackup_CreateTable_GetFieldFormat(InpQry, 'DATATYPE', ftInteger, 0, aFieldDef) then
+    UpdQry.Sql.Add('ALTER TABLE dbo.' + TableName + ' ADD [DATATYPE] ' + aFieldDef);
+
+  if ExportStackup_CreateTable_GetFieldFormat(InpQry, 'ATTRID', ftInteger, 0, aFieldDef) then
+    UpdQry.Sql.Add('ALTER TABLE dbo.' + TableName + ' ADD [ATTRID] ' + aFieldDef);
+
+  if ExportStackup_CreateTable_GetFieldFormat(InpQry, 'SPECVALUE', ftString, 255, aFieldDef) then
+    UpdQry.Sql.Add('ALTER TABLE dbo.' + TableName + ' ADD [SPECVALUE] ' + aFieldDef);
+
+  if ExportStackup_CreateTable_GetFieldFormat(InpQry, 'TOLERANCETYPE', ftBoolean, 0, aFieldDef) then
+    UpdQry.Sql.Add('ALTER TABLE dbo.' + TableName + ' ADD [TOLERANCETYPE] ' + aFieldDef);
+
+  if ExportStackup_CreateTable_GetFieldFormat(InpQry, 'TOLERANCEPLUS', ftFloat, 0, aFieldDef) then
+    UpdQry.Sql.Add('ALTER TABLE dbo.' + TableName + ' ADD [TOLERANCEPLUS] ' + aFieldDef);
+
+  if ExportStackup_CreateTable_GetFieldFormat(InpQry, 'TOLERANCEMIN', ftFloat, 0, aFieldDef) then
+    UpdQry.Sql.Add('ALTER TABLE dbo.' + TableName + ' ADD [TOLERANCEMIN] ' + aFieldDef);
+
+  if ExportStackup_CreateTable_GetFieldFormat(InpQry, 'DEFAULTFORSPEC', ftBoolean, 0, aFieldDef) then
+    UpdQry.Sql.Add('ALTER TABLE dbo.' + TableName + ' ADD [DEFAULTFORSPEC] ' + aFieldDef);
+
+  if ExportStackup_CreateTable_GetFieldFormat(InpQry, 'COMPARESPEC', ftBoolean, 0, aFieldDef) then
+    UpdQry.Sql.Add('ALTER TABLE dbo.' + TableName + ' ADD [COMPARESPEC] ' + aFieldDef);
+
+  if ExportStackup_CreateTable_GetFieldFormat(InpQry, 'LAYERDETAILS', ftMemo, 0, aFieldDef) then
+    UpdQry.Sql.Add('ALTER TABLE dbo.' + TableName + ' ADD [LAYERDETAILS] ' + aFieldDef);
+
+  if not (UpdQry.Sql.Text = '') then
+    // if there are any problems, let it crash so we see the acutal error message
+    UpdQry.ExecSql;
+
+  UpdQry.Free;
+
+  InpQry.Active := False;
+  InpQry.Free;
+end;
+
+procedure ExportStackup_CreateTable_AppendFields(TableName: string; SourceTable: TSysTable);
+var
+  i: integer;
+  aFieldName: string;
+  aFieldDef: string;
+  InpQry: TAdoQuery;
+  UpdQry: TAdoQuery;
+begin
+  InpQry := TAdoQuery.Create(nil);
+  InpQry.Connection := Fnc.DBConnection;
+  // just need the structure of the table, no actual data
+  InpQry.Sql.Add('SELECT * FROM ' + TableName + ' WHERE ' + UpperCase(TableName) + 'ID=-1');
+  InpQry.Active := True;
+
+  UpdQry := TAdoQuery.Create(nil);
+  UpdQry.Connection := Fnc.DBConnection;
+  UpdQry.Sql.Clear;
+
+  for i := 0 to SourceTable.FieldCount - 1 do
+  begin
+    aFieldName := SourceTable.FieldDefs.Items[i].Name;
+
+    if ExportStackup_CreateTable_GetFieldFormat(
+      InpQry,
+      aFieldName,
+      SourceTable.FieldDefs.Items[i].DataType,
+      SourceTable.FieldDefs.Items[i].Size,
+      aFieldDef) then
+    begin
+      UpdQry.Sql.Add('ALTER TABLE dbo.' + TableName + ' ADD [' + aFieldName + '] ' + aFieldDef);
+    end;
+  end;
+
+  if not (UpdQry.Sql.Text = '') then
+    // if there are any problems, let it crash so we see the acutal error message
+    UpdQry.ExecSql;
+
+  // --> Start: check for some mandatory fields <--
+
+  UpdQry.Sql.Clear;
+
+  InpQry.Active := False;
+  InpQry.Active := True;
+
+  // mandatory fields for DL Web Services
+  if TableName = T_JOBLAYERS then
+  begin
+    if ExportStackup_CreateTable_GetFieldFormat(InpQry, 'Dl_LayerId', ftInteger, 0, aFieldDef) then
+      UpdQry.Sql.Add('ALTER TABLE dbo.' + TableName + ' ADD [Dl_LayerId] ' + aFieldDef);
+  end;
+
+  // mandatory fields for DL Web Services
+  if TableName = T_JOBDRILLTOOLS then
+  begin
+    if ExportStackup_CreateTable_GetFieldFormat(InpQry, 'Dl_ToolId', ftInteger, 0, aFieldDef) then
+      UpdQry.Sql.Add('ALTER TABLE dbo.' + TableName + ' ADD [Dl_ToolId] ' + aFieldDef);
+  end;
+
+  if not (UpdQry.Sql.Text = '') then
+    // if there are any problems, let it crash so we see the acutal error message
+    UpdQry.ExecSql;
+
+  // --> End: check for some mandatory fields <--
+
+  UpdQry.Free;
+
+  InpQry.Active := False;
+  InpQry.Free;
+end;
+
+procedure ExportStackup_CreateTable_CreateBaseTable(TableName: string);
+var
+  aQuery: TAdoQuery;
+begin
+  aQuery := TAdoQuery.Create(nil);
+  aQuery.Connection := Fnc.DBConnection;
+
+  // these are mandatory fields that will be in each table
+  aQuery.SQL.Add('CREATE TABLE [dbo].[' + UpperCase(TableName) + ']');
+  aQuery.SQL.Add('(');
+  aQuery.SQL.Add(' [' + UpperCase(TableName) + 'ID] [numeric](10, 0) IDENTITY (1, 1) NOT NULL , ');
+  aQuery.SQL.Add(' [JOBID] [numeric](10, 0) NOT NULL');
+  aQuery.SQL.Add(')');
+
+  // if there are any problems, let it crash so we see the acutal error message
+  aQuery.ExecSql;
+
+  aQuery.Free;
+end;
+
+procedure ExportStackup_EnsureTableExists(TableName: string; SourceTable: TSysTable);
+var
+  aQuery: TADOQuery;
+begin
+  aQuery := TADOQuery.Create(nil);
+  try
+    aQuery.Connection := Fnc.DbConnection;
+    aQuery.SQL.Clear;
+
+    aQuery.SQL.Add('IF EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.TABLES  WHERE TABLE_TYPE=''BASE TABLE'' AND TABLE_NAME = N''' + TableName + ''')');
+    aQuery.SQL.Add(' SELECT 1 AS RESULT');
+    aQuery.SQL.Add('ELSE');
+    aQuery.SQL.Add(' SELECT 0 AS RESULT');
+    aQuery.Open;
+
+    // if the table does not exist, then create the base definition
+    if aQuery.FieldByName('RESULT').AsInteger = 0 then
+      ExportStackup_CreateTable_CreateBaseTable(TableName);
+
+    // check if the definition is still in sync
+    if TableName = T_JOBPARTATTRIBUTES then
+      ExportStackup_CreateTable_AppendJobPartAttrFields(TableName)
+    else if TableName = T_JOBLAYERATTRIBUTES then
+      ExportStackup_CreateTable_AppendJobLayerAttrFields(TableName)
+    else if TableName = T_JOBSPECCAPABILITIES then
+      ExportStackup_CreateTable_AppendSpecCapFields(TableName)
+    else
+      ExportStackup_CreateTable_AppendFields(TableName, SourceTable);
+
+  finally
+    aQuery.Close;
+    aQuery.Free;
+  end;
+end;
+

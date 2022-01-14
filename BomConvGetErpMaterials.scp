@@ -1,0 +1,138 @@
+//HeaderImportExport-->
+//SiteId=0
+//Enterprise=True
+//ScriptType=1
+//ScriptGroup=BOM Conversion
+//HeaderImportExport<--
+function GetErpMaterials(ErpMaterials: TSysTable);          
+var
+  SqlStr: string;
+  InvTable: TSysTable;
+  ParamTable: TSysTable;
+begin
+  //MessageDlg('You have to enhance the BomConvGetErpMaterials to the customer requirements', mtWarning, SetOf(mbCancel), 0);
+
+  // Get the basic Inventory data from Paradigm
+  SqlStr := 'SELECT' +
+            ' CAST(Data0017.RKey AS Integer) as ErpId' +
+            ' ,Data0017.Inv_Part_Number as InvPartNum' +
+            ' ,Data0017.Inv_Part_Description as InvPartDesc' +
+            ' ,Data0017.Quan_On_Hand as OnHand' +
+            ' ,Data0017.Quan_Allocated as Allocated' +
+            ' ,Data0017.Quan_On_Order as OnOrder' +
+            ' ,Data0017.Quan_In_Insp as InInspection' +
+            ' ,Data0017.Alternate_Part_Ptr as AltErpId' +
+            ' ,Data0002.Unit_Code as UOM' +
+            ' ,Data0008.Prod_Code as ProdCode' +
+            ' FROM Data0017, Data0002, Data0008' +
+            ' WHERE' +
+            ' Data0017.P_M = ' + QuotedStr('P') +
+            ' and Data0002.RKey = Data0017.Stock_Unit_Ptr' +
+            ' and Data0008.RKey = Data0017.Prod_Code_Sell_Ptr' +
+            ' and (Data0008.Prod_Code = ' +  QuotedStr('LAM') + 
+            ' or Data0008.Prod_Code = ' +  QuotedStr('PPG') + 
+            ' or Data0008.Prod_Code = ' +  QuotedStr('CFL') +  
+            ')' +  
+            ' and Data0017.Active_Flag = ' + QuotedStr('Y') +
+            ' ORDER BY Data0017.Inv_Part_Number';
+
+  InvTable  := Fnc.AstaExecuteSql(SqlStr);
+  {
+  // Get the Purchase Part Ies Parameters from Paradigm               
+  SqlStr := 'SELECT' +
+            ' CAST(Data0272.InventoryPtr AS Integer) as ErpId' +
+            ' ,Data0272.ParameterValue as ParamValue' +
+            ' ,Data0035.Production_Parameter as ParamName' +
+            ' FROM Data0272, Data0035' +
+            ' WHERE Data0035.RKey = Data0272.ProdParamterPtr' +
+            ' ORDER BY Data0272.InventoryPtr';
+  ParamTable := Fnc.AstaExecuteSql(SqlStr);
+  }
+  // Merge the two tables to 1 table
+  Fnc.SysTableAddField(ErpMaterials, 'ErpId', 25, FtString, False);     // Mandatory
+  Fnc.SysTableAddField(ErpMaterials, 'Group', 20, FtString, False);     // Mandatory
+  Fnc.SysTableAddField(ErpMaterials, 'Item', 50, FtString, False);      // Mandatory
+  Fnc.SysTableAddField(ErpMaterials, 'Value', 50, FtString, False);     // Mandatory
+  Fnc.SysTableAddField(ErpMaterials, 'UOM', 10, FtString, False);       // Mandatory
+  Fnc.SysTableAddField(ErpMaterials, 'FreeQuantity', 0, FtFloat, False);// Mandatory
+  Fnc.SysTableAddField(ErpMaterials, 'AltErpId', 25, FtString, False);  // Mandatory
+  Fnc.SysTableAddField(ErpMaterials, 'OnHand', 0, FtFloat, False);      // User defined
+  Fnc.SysTableAddField(ErpMaterials, 'Allocated', 0, FtFloat, False);   // User defined
+  Fnc.SysTableAddField(ErpMaterials, 'OnOrder', 0, FtFloat, False);     // User defined
+  Fnc.SysTableAddField(ErpMaterials, 'Inspection', 0, FtFloat, False);  // User defined
+
+  // Create the Columns for the Parameters 
+  ParamTable := nil;
+  if not (ParamTable = nil) then
+  begin
+    ParamTable.First;
+    while not ParamTable.Eof do
+    begin
+      if ErpMaterials.FindField(ParamTable.FieldByName('ParamName').AsString) = nil then
+        Fnc.SysTableAddField(ErpMaterials, ParamTable.FieldByName('ParamName').AsString, 20, FtString, False);
+      ParamTable.Next;
+    end;
+  end;
+
+  // set the visibility parameters for the columns in the grid
+  ErpMaterials.Fields.FieldByName('ErpId').Visible := False;
+  ErpMaterials.Fields.FieldByName('AltErpId').Visible := False;
+  ErpMaterials.Fields.FieldByName('Item').DisplayLabel := 'Inv.Part.Num';
+  ErpMaterials.Fields.FieldByName('Value').DisplayLabel := 'Inv.Part.Desc';
+
+  ErpMaterials.Open;
+
+  if not (InvTable = nil) then
+  begin
+    InvTable.First;
+    while not InvTable.Eof do
+    begin
+      ErpMaterials.Append;
+      ErpMaterials.FieldByName('ErpId').AsString := InvTable.FieldByName('ErpId').AsString;
+      ErpMaterials.FieldByName('Group').AsString := InvTable.FieldByName('ProdCode').AsString;
+      ErpMaterials.FieldByName('Item').AsString := InvTable.FieldByName('InvPartNum').AsString;
+      ErpMaterials.FieldByName('Value').AsString := InvTable.FieldByName('InvPartDesc').AsString;
+      ErpMaterials.FieldByName('AltErpId').AsString := InvTable.FieldByName('AltErpId').AsString;
+      ErpMaterials.FieldByName('UOM').AsString := InvTable.FieldByName('UOM').AsString;
+      ErpMaterials.FieldByName('FreeQuantity').AsFloat :=
+                       InvTable.FieldByName('OnHand').AsFloat -
+                       InvTable.FieldByName('Allocated').AsFloat;
+      ErpMaterials.FieldByName('OnHand').AsFloat := InvTable.FieldByName('OnHand').AsFloat;
+      ErpMaterials.FieldByName('Allocated').AsFloat := InvTable.FieldByName('Allocated').AsFloat;
+      ErpMaterials.FieldByName('OnOrder').AsFloat := InvTable.FieldByName('OnOrder').AsFloat;
+      ErpMaterials.FieldByName('Inspection').AsFloat := InvTable.FieldByName('InInspection').AsFloat;
+      {
+       Merge the data from IES Parameters as Columns. !!! Don't use filtering on the ParamTable,
+       way too slow !!!!! Master/Detail setup is not allowed, requires a TDataSource Component
+       on Master side
+      } 
+      {
+      if ParamTable.Locate('ErpId', InvTable.FieldByName('ErpId').AsString,  SetOf([])) then
+      begin
+        while (not ParamTable.Eof) and
+              (ParamTable.FieldByName('ErpId').AsInteger = InvTable.FieldByName('ErpId').AsInteger) do
+        begin
+          ErpMaterials.FieldByName(
+              ParamTable.FieldByName('ParamName').AsString).AsString :=
+                  ParamTable.FieldByName('ParamValue').AsString;
+          ParamTable.Next;
+        end;
+      end;
+       }
+      ErpMaterials.Post;
+      InvTable.Next;
+    end;
+  end;
+
+  if not (InvTable = nil) then
+  begin
+     InvTable.Close;
+     Fnc.SysTableDestroy(InvTable);
+  end;
+
+  if not (ParamTable = nil) then
+  begin
+     ParamTable.Close;
+     Fnc.SysTableDestroy(ParamTable);
+  end;
+end;

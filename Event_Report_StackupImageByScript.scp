@@ -1,0 +1,41 @@
+//HeaderImportExport-->
+//SiteId=0
+//Enterprise=True
+//ScriptType=1
+//ScriptGroup=Reports
+//HeaderImportExport<--
+{
+  The parameters are defaulted from the system settings. In this script you can
+  change values to generate a different graphical presentation.   
+----
+ParamList.Values['GenerateGraphic'] := 'False';
+  
+  This script will be called for all reports, as you do not need the stack-up
+  graphic do not update the default value, to generate the graphic set the value
+  to 'True'      
+----
+ParamList.Values['ShowCustomerView'] := 'False';
+
+  By default, the 'Production View' is generated, to generate the 'Customer' view
+  set this parameter to 'True'
+----
+ParamList.Values['3DReport'] := 'False';
+
+  Default the 2D graphic will be generated, to get the 3D version set the value
+  for this parameter to 'True'                
+---- 
+}                                               
+
+procedure Report_StackupImageByScript(ParamList: TStringList);
+begin
+{ --> sample code
+
+  if LowerCase(ParamList.Values['ReportName']) = 'stackup' then
+  begin
+    // showmessage(ParamList.Text);      
+
+    ParamList.Values['GenerateGraphic'] := 'True';    
+  end;
+  
+}                                    
+end;                                                                            

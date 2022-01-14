@@ -1,0 +1,11 @@
+//HeaderImportExport-->
+//SiteId=0
+//Enterprise=True
+//ScriptType=0
+//ScriptGroup=
+//HeaderImportExport<--
+begin
+
+  showmessage(Fnc.ExcelConnect('dummy', False, 1));         
+       
+end;                              

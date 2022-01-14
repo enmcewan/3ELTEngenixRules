@@ -1,0 +1,114 @@
+//HeaderImportExport-->
+//SiteId=0
+//Enterprise=True
+//ScriptType=0
+//ScriptGroup=
+//HeaderImportExport<--
+procedure ShowNCLogging;
+var
+  aSql: string;
+  aQry: TAdoQuery;
+begin
+  aSql := 'Select * From NCActivityLog Order By ActivityLogId Desc';
+  
+  aQry := Fnc.SqlRunNew(aSql);
+                                                 
+  Fnc.OpenDataGrid(aQry);                    
+                                                                     
+  aQry.Active := False; 
+  aQry.Free;
+end;                
+
+procedure ShowPartAttributes;
+var
+  aSql: string;
+  aQry: TAdoQuery;
+begin                                                       
+  aSql := 'Select * From PartAttributes Where RunPostEditScript = 1';
+  
+  aQry := Fnc.SqlRunNew(aSql);
+  
+  Fnc.OpenDataGrid(aQry);
+                                                        
+  aQry.Active := False;
+  aQry.Free;
+end;                
+
+procedure ShowCust_JobPartAttributes;
+var
+  aSql: string;
+  aQry: TAdoQuery;
+begin
+  aSql := 'Select * From Cust_JobPartAttributes Where JobId = 1885';
+  
+  aQry := Fnc.SqlRunNew(aSql);
+  
+  Fnc.OpenDataGrid(aQry);
+                                                        
+  aQry.Active := False;
+  aQry.Free;
+end;
+                         
+                         
+procedure UpdateSystemSettings;
+var
+  aSql: string;
+  aQry: TAdoQuery;
+begin                                     
+{                                                                     
+  aSql := 'Update SystemSettings Set SettingValue = 1 Where SettingName = ' + QuotedStr('NCAstaUser');
+
+  aQry := TAdoQuery.Create(nil);
+  aQry.Connection := Fnc.DBConnection;
+
+
+  Fnc.SqlExec(aQry, aSql);
+
+  Fnc.SqlRun(aQry, 'Select * From SystemSettings Where SettingCategory = 4 Order By SettingName');
+  Fnc.OpenDatagRid(aQry);
+
+  aQry.Active := False;
+  aQry.Free;                       
+}
+end;
+
+procedure ShowDBVersion;
+var
+  aQry: TAdoQuery;
+begin                                                                           
+  aQry := Fnc.SqlRunNew('Select * From DBVersion');
+  
+  Fnc.OpenDataGrid(aQry);
+  
+  aQry.Active := False;                    
+  aQry.Free;
+end;
+
+procedure ShowMRUList;
+var
+  aQry: TAdoQuery;
+begin
+//  aQry := Fnc.SqlRunNew('Select * From JobsMRU');
+//  aQry := Fnc.SqlRunNew('Select JobId, JobName, Revision  From Jobs');
+  aQry := Fnc.SqlRunNew('Select * From CUST_JOBSTACKUP Where JobId=16219');
+                                
+                     
+  Fnc.OpenDataGrid(aQry);
+  
+  aQry.Active := False;                    
+  aQry.Free;
+end;
+
+begin
+//  UpdateSystemSettings;
+
+//  ShowPartAttributes;
+
+//  ShowDBVersion;      
+
+//  ShowCust_JobPartAttributes;
+
+//  ShowNCLogging;
+
+  ShowMRUList;
+end;                                  

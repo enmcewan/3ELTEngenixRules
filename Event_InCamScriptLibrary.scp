@@ -1,0 +1,93 @@
+//HeaderImportExport-->
+//SiteId=0
+//Enterprise=True
+//ScriptType=1
+//ScriptGroup=InCam
+//HeaderImportExport<--
+procedure AddcShellScriptHeader(ScriptList: TStringList);
+begin
+  // this header is mandatory for each script
+  ScriptList.Add('#!/bin/csh');
+  ScriptList.Add('');
+  ScriptList.Add('set JOB = @@JobName');
+  ScriptList.Add('set TMP_DIR = @@TempDir');
+  ScriptList.Add('set EOJ_FILE = ${TMP_DIR}InCam_eoj.txt');
+  ScriptList.Add('set STAT_FILE = ${TMP_DIR}InCam_status.txt');
+  ScriptList.Add('set TMP_FILE = ${TMP_DIR}InCAM_Engenix_tmp.txt');
+
+  // specific InCam Import files, do NOT change physical names
+  ScriptList.Add('');
+  ScriptList.Add('set ATTR_JOB = ${TMP_DIR}attr_job.txt');
+  ScriptList.Add('set ATTR_STEP = ${TMP_DIR}attr_step');
+  ScriptList.Add('set ATTR_LAYER = ${TMP_DIR}attr_layer');
+  ScriptList.Add('set TOOL_LAYER = ${TMP_DIR}tool');
+  ScriptList.Add('set MATRIX_INFO = ${TMP_DIR}matrix_info.txt');
+
+  // set some possible exit statuses
+  ScriptList.Add('');
+  ScriptList.Add('set JobDoesNotExists = 100');
+  ScriptList.Add('set JobIsOpend = 101');
+  ScriptList.Add('set JobIsCheckedout = 102');
+
+  // check f the job exists
+  ScriptList.Add('');
+  ScriptList.Add('# check if the job exists');
+  ScriptList.Add('COM info, out_file=$TMP_FILE, units=mm,args=  -t job -e $JOB -m script -d EXISTS');
+  ScriptList.Add('source $TMP_FILE  # set gEXISTS = yes');
+  ScriptList.Add('rm $TMP_FILE');
+
+  // if the job does not exists, exit script with an error code
+  ScriptList.Add('');
+  ScriptList.Add('if ($gEXISTS == no) then');
+  ScriptList.Add('  echo $JobDoesNotExists > $STAT_FILE');
+  ScriptList.Add('  echo 0 > $EOJ_FILE');
+  ScriptList.Add('  exit(0)');
+  ScriptList.Add('endif');
+
+  // check if the job is already checked-out
+  ScriptList.Add('');
+  ScriptList.Add('# check if the job is checked out');
+  ScriptList.Add('VOF');
+  ScriptList.Add('COM check_inout,job=$JOB,mode=out,ent_type=job');
+  ScriptList.Add('if ( ($STATUS) ) then');
+  ScriptList.Add('  echo $JobIsCheckedout > $STAT_FILE');
+  ScriptList.Add('  COM check_inout,job=$JOB,mode=test,ent_type=job');
+  ScriptList.Add('  echo $COMANS >> $STAT_FILE');
+  ScriptList.Add('  echo 0 > $EOJ_FILE');
+  ScriptList.Add('  exit(0)');
+  ScriptList.Add('endif');
+  ScriptList.Add('VON');
+
+  // finally open the job
+  ScriptList.Add('');
+  ScriptList.Add('# check if the job is opend and opend the job');
+  ScriptList.Add('VOF');
+  ScriptList.Add('COM open_job,job=$JOB,open_win=yes');
+  ScriptList.Add('if ($STATUS) then');                 
+  ScriptList.Add('  echo $JobIsOpend > $STAT_FILE');
+  ScriptList.Add('  echo 0 > $EOJ_FILE');
+  ScriptList.Add('  exit(0)');
+  ScriptList.Add('endif');
+  ScriptList.Add('');
+end;
+
+procedure AddcShellScriptSaveJob(ScriptList: TStringList);
+begin
+  // have InCam to save the (updated) job
+  ScriptList.Add('');
+  ScriptList.Add('COM save_job,job=$JOB,override=no,skip_upgrade=no');
+end;
+
+procedure AddcShellScriptTrailer(ScriptList: TStringList);
+begin
+  // report successful processing back to Engenix (mandatory !!)
+  ScriptList.Add('');
+  ScriptList.Add('echo 0 > $STAT_FILE');
+  ScriptList.Add('echo 0 > $EOJ_FILE');
+
+    // Release the job in the Odb/InCam DataBase
+  ScriptList.Add('');
+  ScriptList.Add('COM check_inout,job=$JOB,mode=in,ent_type=job');
+  ScriptList.Add('COM close_job,job=$JOB');
+end;
+

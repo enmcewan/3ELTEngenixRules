@@ -1,0 +1,12 @@
+//HeaderImportExport-->
+//SiteId=0
+//Enterprise=True
+//ScriptType=1
+//ScriptGroup=Create / Edit Layers
+//HeaderImportExport<--
+procedure OdbImport_JobExtracted(ParamList: TStringList);
+begin
+  // All Fnc-dot functions will give undefined results, this script is
+  // only to copy or manipulate files in the Odb++ files system for the
+  // current job
+end;

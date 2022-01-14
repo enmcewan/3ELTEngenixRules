@@ -1,0 +1,25 @@
+//HeaderImportExport-->
+//SiteId=0
+//Enterprise=True
+//ScriptType=1
+//ScriptGroup=Quote
+//HeaderImportExport<--
+procedure Quote_MiscChargesCalcTotal(ParamList: TStringList);
+begin
+//  ShowMessage(ParamList.Text);
+
+{ Code Template
+
+  if Fnc.SysQuoteMiscChargesTable.Locate('RecId', ParamList.Values['RecId'], SetOf([])) then
+  begin
+    Fnc.SysQuoteMiscChargesTable.Edit;
+
+    Fnc.SysQuoteMiscChargesTable.FieldByName('Total').AsFloat :=
+            Fnc.SysQuoteMiscChargesTable.FieldByName('Qty').AsFloat *
+            Fnc.SysQuoteMiscChargesTable.FieldByName('Price').AsFloat;
+
+    Fnc.SysQuoteMiscChargesTable.Post;
+  end;
+
+}
+end;

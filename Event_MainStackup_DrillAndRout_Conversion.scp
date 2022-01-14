@@ -1,0 +1,117 @@
+//HeaderImportExport-->
+//SiteId=0
+//Enterprise=True
+//ScriptType=1
+//ScriptGroup=Drill / Route Conversion
+//HeaderImportExport<--
+{------------------------------------------------------------------------------
+
+Script to convert Drill & Rout file definitions for pre-V3.1 Engenix jobs.
+
+Fields that needs to be updated (tblLayers):
+
+Update this field with the 'DrillDefId' value from the tblDrillDef table
+       - tblLayers.FieldByName('DrillDefId').AsInteger
+
+Is the drill/rout file in line (stacked) with others set the value to True, else False (Default)
+       - tblLayers.FieldByName('DrillDefStacked').AsBoolean
+
+Is the drill/rout file is staggered with others set the value to True, else False (Default)
+       - tblLayers.FieldByName('DrillDefStaggered').AsBoolean
+
+If this is a stacked or staggered drill/rout file, then use lowercase characters to group the files
+        - tblLayers.FieldByName('DrillDefStackedIndx').AsString
+
+In case of Microcia's, value must be set to True, else False (Default)
+        - tblLayers.FieldByName('DrillMicroVia').AsBoolean
+
+Is the hole plated set the value to True, else False (Default)
+        - tblLayers.FieldByName('DrillPlated').AsBoolean
+
+Is the hole capped set the value to True, else False (Default)
+       - tblLayers.FieldByName('DrillCapped').AsBoolean
+
+If the hole has a filling/plugging, update this field with the 'DrillParamId' value from the tblDrillFilling table
+       - tblLayers.FieldByName('DrillFilledId').AsInteger
+
+ ------------------------------------------------------------------------------
+
+Existing fields related to drill/rout layers, still valid in V3.1
+
+- tblLayers.FieldByName('HolesPlugged').AsBoolean
+- tblLayers.FieldByName('FilledViaCond').AsBoolean
+- tblLayers.FieldByName('FilledViaNotCond').AsBoolean
+
+ ------------------------------------------------------------------------------
+
+Definitions tblDrillDef.FieldByName('DrillType').AsInteger:
+
+0: Drill defintiion
+1: Laser drilling definition
+2: Rout definition
+3: CounterSink definition
+4: CounterBore definition
+
+--------------------------------------------------------------------------------}
+
+procedure DrillAndRout_Conversion(tblLayers: TSysTable; tblDrillDef: TSysTable; tblDrillFilling: TSysTable);
+begin
+//  Fnc.OpenDataGrid(tblLayers);
+//  Fnc.OpenDataGrid(tblDrillDef);
+//  Fnc.OpenDataGrid(tblDrillFilling);
+
+{
+  // example to update all drill files with the information as defined in the Config Managaer for a default drill file
+  if tblLayers.FieldByName('ItemType').AsString = cStackupDrill then
+  begin
+    if tblDrillDef.Locate('DrillType;Default', [0, True],  SetOf([])) then
+    begin
+      tblLayers.Edit;
+      tblLayers.FieldByName('DrillDefId').AsInteger := tblDrillDef.FieldByName('DrillDefId').AsInteger;
+      tblLayers.FieldByName('DrillMicroVia').AsBoolean := tblDrillDef.FieldByName('MicroVia').AsBoolean;
+      tblLayers.FieldByName('DrillPlated').AsBoolean := tblDrillDef.FieldByName('Plated').AsBoolean;
+      tblLayers.FieldByName('DrillCapped').AsBoolean := tblDrillDef.FieldByName('Capped').AsBoolean;
+
+      if tblLayers.FieldByName('HolesPlugged').AsBoolean then
+      begin
+        // Get the Id for the filling with the description 'Plugging'
+        if tblDrillFilling.Locate('DrillParamDesc', 'Plugging', SetOf(loCaseInsensitive)) then
+          tblLayers.FieldByName('DrillFilledId').AsInteger := tblDrillFilling.FieldByName('DrillParamId').AsInteger;
+      end;
+
+      if tblLayers.FieldByName('FilledViaCond').AsBoolean then
+      begin
+        // Get the Id for the first filling as defined for Conductive filling
+        if tblDrillFilling.Locate('DrillParamType', 1,  SetOf([])) then
+          tblLayers.FieldByName('DrillFilledId').AsInteger := tblDrillFilling.FieldByName('DrillParamId').AsInteger;
+      end;
+
+      if tblLayers.FieldByName('FilledViaNotCond').AsBoolean then
+      begin
+        // Get the Id for the first filling as defined for Non-Conductive filling
+        if tblDrillFilling.Locate('DrillParamType', 2,  SetOf([])) then
+          tblLayers.FieldByName('DrillFilledId').AsInteger := tblDrillFilling.FieldByName('DrillParamId').AsInteger;
+      end;
+
+      tblLayers.Post;
+    end;
+  end;
+}
+
+{
+  // example to update all Rout files with the information as defined in the Config Manager for a default Rout file
+  if tblLayers.FieldByName('ItemType').AsString = cStackupRout then
+  begin
+    if tblDrillDef.Locate('DrillType;Default', [2, True],  SetOf([])) then
+    begin
+      tblLayers.Edit;
+      tblLayers.FieldByName('DrillDefId').AsInteger := tblDrillDef.FieldByName('DrillDefId').AsInteger;
+      tblLayers.FieldByName('DrillMicroVia').AsBoolean := tblDrillDef.FieldByName('MicroVia').AsBoolean;
+      tblLayers.FieldByName('DrillPlated').AsBoolean := tblDrillDef.FieldByName('Plated').AsBoolean;
+      tblLayers.FieldByName('DrillCapped').AsBoolean := tblDrillDef.FieldByName('Capped').AsBoolean;
+      tblLayers.FieldByName('DrillFilledId').AsInteger := tblDrillDef.FieldByName('FilledId').AsInteger;
+      tblLayers.Post;
+    end;
+  end;
+}
+end;

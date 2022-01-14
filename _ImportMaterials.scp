@@ -1,0 +1,286 @@
+//HeaderImportExport-->
+//SiteId=0
+//Enterprise=True
+//ScriptType=0
+//ScriptGroup=
+//HeaderImportExport<--
+const
+  cExcelMaterials = 'C:\Users\iain-wilson.HITACHI-B\Desktop\New Materials Files\Y2014 Material Data Base for Engenix (updated 12 jan 2015)-working-2-New Names-Fixed3-Import.xls';
+
+  cSheetCore = 'Core';             // Name Core tab in Excel File
+  cSheetPrePreg = 'Prepreg';       // Name Prepreg tab in Excel File
+  cSheetGlass = 'GlassThickness';  // Name Glass Thickness tab in Excel file
+
+  cMaterialsTypeIdCore = 1;    // MaterialsType.MaterialsTypeId, Cores
+  cMaterialsTypeIdPrepreg = 3; // MaterialsType.MaterialsTypeId, Prepreg
+
+  c1GHzId = 1;  // MaterialFrequency.FrequencyID,  1 GHz
+  c5GHzId = 2;  // MaterialFrequency.FrequencyID,  5 GHz
+  c10GHzId = 3; // MaterialFrequency.FrequencyID, 10 GHz
+
+var
+  TableFamily: TAdoTable;
+  TableMaterials: TAdoTable;
+  TableFreqDetails: TAdoTable;
+
+function GetExcelMaterials(SheetName: string): TAdoQuery;
+begin
+  Result := TAdoQuery.Create(nil);
+  //Result.ConnectionString := Fnc.ExcelConnect(cExcelMaterials, False, 1);
+  Result.ConnectionString :=
+    'Provider=Microsoft.Jet.OLEDB.4.0' +
+   ';Data Source =' + cExcelMaterials +
+   ';Extended Properties="Excel 8.0;HDR=No;IMEX=1"';
+
+  Result.Sql.Add('Select * From [' + SheetName + '$]');
+  Result.Active := True;
+
+end;
+
+{
+ aQry.ConnectionString :=
+   'Provider=Microsoft.Jet.OLEDB.4.0' +
+   ';Data Source =' + FileName +
+   ';Extended Properties="Excel 8.0;HDR=No;IMEX=1"';
+}
+
+function GetEngenixTable(TableName: string): TAdoTable;
+begin
+  Result := TAdoTable.Create(nil);
+  Result.Connection := Fnc.DBConnection;
+  Result.TableName := TableName;
+  Result.Active := True;
+
+//  Fnc.OpenDataGrid(Result);
+end;
+
+procedure DoImportFamilies(ExcelData: TAdoQuery);
+var
+  Family: string;
+begin
+  ExcelData.First;
+  ExcelData.Next;
+  ExcelData.Next;
+  while not ExcelData.Eof do
+  begin
+    Family := Trim(ExcelData.FieldByName('F2').AsString);
+    if Family <> '' then
+    begin
+      if not TableFamily.Locate('Description', Family, SetOf([loCaseInsensitive])) then
+      begin
+        TableFamily.Append;
+        TableFamily.FieldByName('Description').AsString := Family;
+        TableFamily.Post;
+      end;
+    end;
+
+    ExcelData.Next;
+  end;
+end;
+
+procedure ImportFamilies;
+var
+  ExcelData: TAdoQuery;
+begin
+  ExcelData := GetExcelMaterials(cSheetCore);
+//  Fnc.OpenDataGrid(ExcelData);
+  DoImportFamilies(ExcelData);
+  ExcelData.Active := False;
+  ExcelData.Free;
+
+  ExcelData := GetExcelMaterials(cSheetPrePreg);
+//  Fnc.OpenDataGrid(ExcelData);
+  DoImportFamilies(ExcelData);
+  ExcelData.Active := False;
+  ExcelData.Free;
+
+//  Fnc.OpenDataGrid(TableFamily);
+end;
+
+function GetFamilyId(Family: strinbg): integer;
+begin
+  Result := -1;
+
+  if TableFamily.Locate('Description', Family, SetOf([loCaseInsensitive])) then
+    Result := TableFamily.FieldByName('MaterialsFamilyId').AsInteger;
+end;
+
+procedure ImportDK(SourceType: integer; SourcePtr: integer; FrequencyId: integer; DK: string; DF: string);
+var
+  DKNum: double;
+  DFNum: double;
+begin
+  DKNum := StrToFloatDef(DK, 0.0);
+  DFNum := StrToFloatDef(DF, 0.0);
+
+  if DKNum > 0.0 then
+  begin
+    if TableFreqDetails.Locate('SourceType;SourcePtr;FrequencyId', [SourceType, SourcePtr, FrequencyId], SetOf([])) then
+      TableFreqDetails.Edit
+    else
+    begin
+      TableFreqDetails.Append;
+      TableFreqDetails.FieldByName('SourceType').AsInteger := SourceType;
+      TableFreqDetails.FieldByName('SourcePtr').AsInteger := SourcePtr;
+      TableFreqDetails.FieldByName('FrequencyId').AsInteger := FrequencyId;
+    end;
+
+    TableFreqDetails.FieldByName('DKOrig_Average').AsFloat := DKNum;
+    TableFreqDetails.FieldByName('DF').AsFloat := DFNum;
+
+    TableFreqDetails.Post;
+  end;
+end;
+
+procedure ImportCores;
+var
+  ExcelData: TAdoQuery;
+  Family: string;
+  MaterialsFamilyId: integer;
+  Description: string;
+  MaterialsId: integer;
+begin
+  MaterialsFamilyId := -1;
+
+  ExcelData := GetExcelMaterials(cSheetCore);
+
+  ExcelData.First;
+  ExcelData.Next;
+  ExcelData.Next;
+  while not ExcelData.Eof do
+  begin
+    Family := Trim(ExcelData.FieldByName('F2').AsString);
+    if Family <> '' then
+      MaterialsFamilyId := GetFamilyId(Family);
+
+    Description := Trim(ExcelData.FieldByName('F17').AsString);
+
+    if (MaterialsFamilyId > -1) and (Description <> '') then
+    begin
+      if not TableMaterials.Locate('MaterialsFamilyID;MaterialsTypeID;Description',
+                                   [MaterialsFamilyId, cMaterialsTypeIdCore, Description],
+                                   SetOf([loCaseInsensitive])) then
+      begin
+        TableMaterials.Append;
+        TableMaterials.FieldByName('MaterialsFamilyID').AsInteger := MaterialsFamilyId;
+        TableMaterials.FieldByName('MaterialsTypeID').AsInteger := cMaterialsTypeIdCore;
+        TableMaterials.FieldByName('Description').AsString := Description;
+        TableMaterials.FieldByName('Construction').AsString := Trim(ExcelData.FieldByName('F18').AsString);
+        TableMaterials.FieldByName('ThicknessAfterPressing').AsFloat := StrToFloatDef(Trim(ExcelData.FieldByName('F5').AsString), 0.0);
+        TableMaterials.FieldByName('Ply').AsInteger := StrToIntDef(Trim(ExcelData.FieldByName('F6').AsString), 0);
+        TableMaterials.Post;
+      end;
+    end;
+
+    MaterialsId := TableMaterials.FieldByName('MaterialsID').AsInteger
+
+    ImportDK(2, MaterialsId, c1GHzId, Trim(ExcelData.FieldByName('F9').AsString), Trim(ExcelData.FieldByName('F12').AsString));
+    ImportDK(2, MaterialsId, c5GHzId, Trim(ExcelData.FieldByName('F10').AsString), Trim(ExcelData.FieldByName('F13').AsString));
+    ImportDK(2, MaterialsId, c10GHzId, Trim(ExcelData.FieldByName('F11').AsString), Trim(ExcelData.FieldByName('F14').AsString));
+
+    ExcelData.Next;
+  end;
+
+  ExcelData.Active := False;
+  ExcelData.Free;
+end;
+
+procedure ImportPrepregs;
+var
+  ExcelData: TAdoQuery;
+  GlassData: TAdoQuery;
+  Family: string;
+  MaterialsFamilyId: integer;
+  Description: string;
+  MaterialsId: integer;
+  GlassThickness: double;
+begin
+  MaterialsFamilyId := -1;
+
+  GlassData := GetExcelMaterials(cSheetGlass);
+  ExcelData := GetExcelMaterials(cSheetPrepreg);
+
+  ExcelData.First;
+  ExcelData.Next;
+  ExcelData.Next;
+  while not ExcelData.Eof do
+  begin
+    Family := Trim(ExcelData.FieldByName('F2').AsString);
+    if Family <> '' then
+      MaterialsFamilyId := GetFamilyId(Family);
+
+    GlassThickness := 0.0;
+    if GlassData.Locate('F2', ExcelData.FieldByName('F4').AsString, SetOf([loCaseInsensitive])) then
+      GlassThickness := StrToFloatDef(Trim(GlassData.FieldByName('F3').AsString), 0.0);
+
+    Description := Trim(ExcelData.FieldByName('F15').AsString);
+
+    if (MaterialsFamilyId > -1) and (Description <> '') then
+    begin
+      if TableMaterials.Locate('MaterialsFamilyID;MaterialsTypeID;Description',
+                               [MaterialsFamilyId, cMaterialsTypeIdPrepreg, Description],
+                               SetOf([loCaseInsensitive])) then
+        TableMaterials.Edit
+      else
+        TableMaterials.Append;
+
+      TableMaterials.FieldByName('MaterialsFamilyID').AsInteger := MaterialsFamilyId;
+      TableMaterials.FieldByName('MaterialsTypeID').AsInteger := cMaterialsTypeIdPrepreg;
+      TableMaterials.FieldByName('Description').AsString := Description;
+      TableMaterials.FieldByName('ResinPercent').AsFloat := StrToFloatDef(Trim(ExcelData.FieldByName('F5').AsString), 0.0);
+      TableMaterials.FieldByName('ThicknessAfterPressing').AsFloat := StrToFloatDef(Trim(ExcelData.FieldByName('F7').AsString), 0.0);
+      TableMaterials.FieldByName('GlassThickness').AsFloat := GlassThickness;
+
+      TableMaterials.Post;
+    end;
+
+    MaterialsId := TableMaterials.FieldByName('MaterialsID').AsInteger
+
+    ImportDK(2, MaterialsId, c1GHzId, Trim(ExcelData.FieldByName('F8').AsString), Trim(ExcelData.FieldByName('F11').AsString));
+    ImportDK(2, MaterialsId, c5GHzId, Trim(ExcelData.FieldByName('F9').AsString), Trim(ExcelData.FieldByName('F12').AsString));
+    ImportDK(2, MaterialsId, c10GHzId, Trim(ExcelData.FieldByName('F10').AsString), Trim(ExcelData.FieldByName('F13').AsString));
+
+    ExcelData.Next;
+  end;
+
+  ExcelData.Active := False;
+  ExcelData.Free;
+
+  GlassData.Active := False;
+  GlassData.Free;
+end;
+
+var
+  aMsg: string;
+begin
+  aMsg := 'Did you define Frequencies and checked the Frequency and MaterialType pointers in this script?';
+  if not (MessageDlg(aMsg, mtConfirmation, SetOf([mbOk, mbCancel]), 0) = mrOk) then
+    Exit;
+
+  Fnc.MouseBusy;
+
+  TableFamily := GetEngenixTable('MaterialsFamily');
+  TableMaterials := GetEngenixTable('Materials');
+  TableFreqDetails := GetEngenixTable('MaterialFreqDetails');
+
+  ImportFamilies;
+  ImportCores;
+  ImportPrepregs;
+
+  TableFamily.Active := False;
+  TableFamily.Free;
+
+  TableMaterials.Active := False;
+  TableMaterials.Free;
+
+  TableFreqDetails.Active := False;
+  TableFreqDetails.Free;
+
+  Fnc.MouseNormal;
+
+  aMsg := 'Import Finished' + #13#13 +
+          '- TG values for Families have to be updated manualy';
+
+  MessageDlg(aMsg, mtInformation, SetOf([mbOk]), 0);
+end;
+

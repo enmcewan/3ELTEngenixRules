@@ -1,0 +1,22 @@
+//HeaderImportExport-->
+//SiteId=0
+//Enterprise=True
+//ScriptType=1
+//ScriptGroup=Layer Maintenance
+//HeaderImportExport<--
+procedure ToolDetails_Edited(ParamList: TStringList; ToolDetails: TSysTable);
+begin
+  // example, as the Drill_Size value is updated, then we calculate
+  // the Drill_Size as 2* finish_size
+
+{
+  case LowerCase(ParamList.Values['FieldName']) of
+    'finish_size':
+      begin
+        ToolDetails.Edit;
+        ToolDetails.FieldByName('Drill_Size').AsFloat := 2 * ToolDetails.FieldByName('Finish_Size').AsFloat;
+        ToolDetails.Post;
+      end;
+  end;
+}
+end;

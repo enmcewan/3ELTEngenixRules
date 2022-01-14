@@ -1,0 +1,32 @@
+//HeaderImportExport-->
+//SiteId=0
+//Enterprise=True
+//ScriptType=1
+//ScriptGroup=ACAM
+//HeaderImportExport<--
+// This script is called prior to retrieving panelization information from
+// the ACAM panelizer.
+
+// The script should do any necessary preparation for calling the ACAM panelizer
+// (i.e. grab any input values from Engenix) and then call the ACAM panelizer
+// program using the FNC.RunExe function using Wait = True.
+
+const
+  ACAM_PANELIZER = 'ACAM_panelizer.exe';
+
+var
+  Params : string;
+
+begin
+  // do any preparation here...for instance you may want the JobID, JobName, etc.
+  // to pass into the ACAM panelization application.
+  Params := '';
+
+  // call the panelizer application
+  //Fnc.RunExe(ACAM_PANELIZER, Params, True);  // Wait parameter MUST be true.
+
+  // at this point the Engenix application will import the data from the ACAM
+  // system.  This includes Panelization information as well as any panelization
+  // images ACAM produces.
+
+end;

@@ -1,0 +1,9 @@
+//HeaderImportExport-->
+//SiteId=0
+//Enterprise=True
+//ScriptType=1
+//ScriptGroup=Dialog Start/Stop
+//HeaderImportExport<--
+begin
+  // showmessage('Event_StackupDialog_Finish');
+end;

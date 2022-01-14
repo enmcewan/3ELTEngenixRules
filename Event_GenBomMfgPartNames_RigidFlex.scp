@@ -1,0 +1,21 @@
+//HeaderImportExport-->
+//SiteId=0
+//Enterprise=True
+//ScriptType=1
+//ScriptGroup=Stackup Image
+//HeaderImportExport<--
+{
+  ParamList.Values['Group']       : Mfg Part group
+  ParamList.Values['BoardType']   : Unknown / RigidFlex / EmbeddedComp
+  ParamList.Values['MfgPartName'] : Return value for the MfgPart Name
+  
+  MfgPartList       : List of existing MfgPart names
+                               
+  tblLayup          : Stack-up of Rigid section
+                      
+  tblLayupRigidFlex : Stack-up of Rigid-Flex sections
+}
+procedure GenBomMfgPartNames_RigidFlex(ParamList: TStringList; MfgPartList: TStringList; tblLayup: TSysTable; tblLayupRigidFlex: TSysTable);
+begin
+  // user code in here
+end;

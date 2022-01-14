@@ -1,0 +1,217 @@
+//HeaderImportExport-->
+//SiteId=0
+//Enterprise=True
+//ScriptType=0
+//ScriptGroup=HCS
+//HeaderImportExport<--
+uses
+  CT_SearchLibrary;
+
+const
+  cOLPhoto_TypeHeader = '1-Header';
+  cOLPhoto_TypePhoto = '2-Photo';
+  cOLPhoto_TypeCondition = '3-Condition';
+  cOLPhoto_LineFieldPreFix = 'Line';
+
+function Search_Table_PhotoLine_CheckConditions(Table_OLPhoto_1A: TSysTable; PhotoType: string; FieldName: string; var errMsg: string): boolean;
+var
+  LineName: string;
+  SaveID: integer; 
+  Table_OLPhoto_1B: TSysTable;
+begin
+  SaveId := Table_OLPhoto_1A.FieldByName('ID').AsInteger;
+
+  Table_OLPhoto_1B := Fnc.CustomTableGet('OLPhoto_1B');
+
+  // Verify that there is a column with the name of the Photo type (method is Case Insensitive)
+  Result := assigned(Table_OLPhoto_1B.FindField(PhotoType));
+  if not Result then
+    errMsg := errMsg + #13 + 'Search_Table_PhotoLine_CheckConditions, no column defined in table: OLPHOTO_1B for PhotoType: ' + PhotoType;
+
+  if Result then
+  begin               
+    Table_OLPhoto_1A.FilterOptions := [foCaseInsensitive];
+    Table_OLPhoto_1A.Filter := Format('Type=%s', [QuotedStr(cOLPhoto_TypeCondition)]);
+    Table_OLPhoto_1A.Filtered := True;
+                                     
+    Table_OLPhoto_1A.First; 
+    while (not Table_OLPhoto_1A.Eof) do
+    begin
+      // check if the condition is applicable for this type of Photo
+      Result := Table_OLPhoto_1B.Locate('VariableName', Table_OLPhoto_1A.FieldByName('Condition').AsString, SetOf([loCaseInsensitive]));
+
+      if not Result then
+      begin
+        errMsg := errMsg + #13 + 'Search_Table_PhotoLine_CheckConditions, no row defined in table: OLPHOTO_1B for variable: ' + Table_OLPhoto_1A.FieldByName('Condition').AsString;
+        break;
+      end;
+
+
+      if Table_OLPhoto_1B.FieldByName(PhotoType).AsBoolean then
+      begin
+        Result := CheckCondition(Table_OLPhoto_1A.FieldByName(FieldName).AsString, Table_OLPhoto_1A.FieldByName('Condition').AsString);
+
+        if not Result then
+        begin
+          LineName := CheckCondition_GetLineName(Table_OLPhoto_1A, FieldName, 'Type;Condition', [cOLPhoto_TypeHeader, 'Line_Name']);
+
+          if errMsg <> '' then
+            errMsg := errMsg + #13;
+          errMsg := errMsg + Format('Line: %s failed on Variable: %s Values: %s',
+                                    [LineName,
+                                     Table_OLPhoto_1A.FieldByName('Condition').AsString,
+                                     Table_OLPhoto_1A.FieldByName(FieldName).AsString]);
+
+          break;
+        end;
+      end;
+
+      Table_OLPhoto_1A.Next;
+    end;
+  end;                                                                                                                             
+
+  if Table_OLPhoto_1A.Filtered then
+  begin
+    Table_OLPhoto_1A.Filtered := False;
+    Table_OLPhoto_1A.Filter := '';
+  end;
+
+  if (Table_OLPhoto_1A.FieldByName('ID').AsInteger <> SaveId) then
+    Table_OLPhoto_1A.Locate('ID', SaveId, SetOf([]));
+end;
+
+procedure Search_Table_PhotoLine(PhotoType: string; var PhotoLine: string; var AltLine: string; var ProdResource: string; var DesLine: string);
+var
+  i, j: integer;
+  bCont: boolean;
+  errMsg: string;
+
+  FieldName: string;
+  FieldNameList: TStringList;
+
+  Table_OLPhoto_1A: TSystable;
+begin
+  PhotoLine := '';
+  AltLine := '';                               
+  ProdResource := '';
+  DesLine := '';
+
+  bCont := True;
+
+  if PhotoType = '' then
+    PhotoType := 'PattFormation';  //' TBC change to "PatternFormation"
+
+  errMsg := 'Search_Table_PhotoLine, PhotoType: ' + PhotoType + #13;
+
+  Table_OLPhoto_1A := Fnc.CustomTableGet('OLPHOTO_1A');
+  Table_OLPhoto_1A.Filtered := False;
+  Table_OLPhoto_1A.Filter := '';
+
+  FieldNameList := TStringList.Create;
+
+  bCont := Table_OLPhoto_1A.Locate('Type;Condition', ([cOLPhoto_TypeHeader, 'Seq_No']), SetOf([loCaseInsensitive]));
+  if bCont then
+    GetFieldNameBySequence(Table_OLPhoto_1A, FieldNameList, cOLPhoto_LineFieldPreFix);
+
+  if bCont then
+  begin
+    bCont := Table_OLPhoto_1A.Locate('Type;Condition', ([cOLPhoto_TypePhoto, PhotoType]), SetOf([loCaseInsensitive]));
+    if not bCont then
+      errMsg := Format('Search_Table_PhotoLine: can not find "%s" in table "OLPHOTO_1A"', ([PhotoType]));
+  end;
+
+  if bCont then
+  begin
+    for i := FieldNameList.Count - 1 downto 0 do
+    begin                                       
+
+      FieldName := FieldNameList.Strings[i];
+
+      if not CheckConditionsAndValuesSimple('B', 'Yes', Table_OLPhoto_1A.FieldByName(FieldName).AsString) then
+        FieldNameList.Delete(i)
+      else
+      begin
+        if not Search_Table_PhotoLine_CheckConditions(Table_OLPhoto_1A, PhotoType, FieldName, errMsg) then
+          FieldNameList.Delete(i);
+      end;
+    end;
+       
+    bCont := FieldNameList.Count > 0;
+  end;
+
+  if bCont then
+  begin
+    for i := 0 to FieldNameList.Count - 1 do
+    begin
+      FieldName := FieldNameList.Strings[i];
+
+      if DesLine = '' then
+      begin
+        if Table_OLPhoto_1A.Locate('Type;Condition', ([cOLPhoto_TypeHeader, 'Des_Line']), SetOf([loCaseInsensitive])) then
+          DesLine := Table_OLPhoto_1A.FieldByName(FieldName).AsString;
+      end;
+
+      if Table_OLPhoto_1A.Locate('Type;Condition', ([cOLPhoto_TypeHeader, 'Line_Name']), SetOf([loCaseInsensitive])) then
+      begin
+        if PhotoLine = '' then
+          PhotoLine := Table_OLPhoto_1A.FieldByName(FieldName).AsString;
+                                              
+        if AltLine <> '' then
+          AltLine := AltLine + '/'
+        AltLine := AltLine + Table_OLPhoto_1A.FieldByName(FieldName).AsString;
+      end;                      
+    end;
+  end;
+
+  case UpperCase(PhotoLine) of
+    'L3':    ProdResource := 'EXPOL-A3';
+    'L4':    ProdResource := 'EXPOL-A4';
+    'L5':    ProdResource := 'EXPOL-A5';
+    'L6':    ProdResource := 'EXPOL-A6';
+    'LEDIA': ProdResource := 'EXPOL-A7';
+  end;                            
+
+  FieldNameList.Free;
+
+  if not bCont then
+    MessageDlg(errMsg, mtWarning, SetOf([mbCancel]), 0);
+end;
+                                        
+function Search_Table_PhotoLine_DesLine(PhotoType: string): string;
+var
+  Dummy1: string;
+  Dummy2: string;                                                                                                                             
+  Dummy3: string;
+begin
+  Search_Table_PhotoLine(PhotoType, Dummy1, Dummy2, Dummy3, Result);
+end;
+
+
+// --> from here to the end of the script can be removed in the final Hitachi setup
+//     this code is only for testing
+var                                                                 
+  PhotoLine: string;                    
+  AltLine: string;                  
+  ProdResource: string 
+  DesLine: string;
+begin
+  InitGlobalVariables;
+                                  
+// --> Method-1, Get all of the parameters based on the PhotoType (1st parameter)
+
+  Search_Table_PhotoLine('ConformalMask', PhotoLine, AltLine, ProdResource, DesLine);
+                                                 
+  showmessage('PhotoLine: ' + PhotoLine + #13 +
+              'AltLine: ' + AltLine + #13 +       
+              'ProdResource: ' + ProdResource + #13 +
+              'DesLine: ' + DesLine);
+
+
+// --> Method-2, Get only the DesLine based on the PhotoType (1st parameter)
+// DesLine := Search_Table_PhotoLine_DesLine('PattFormation');
+  //showmessage('DesLine: ' + DesLine);
+end;
+
+
+
+

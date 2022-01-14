@@ -1,0 +1,12 @@
+//HeaderImportExport-->
+//SiteId=0
+//Enterprise=True
+//ScriptType=1
+//ScriptGroup=Create / Edit Layers
+//HeaderImportExport<--
+{ Script runs as the user pushes the 'Save' button
+  in the CreateEdit Layers dialog }
+
+procedure CreateEditLayers_Save(ParamList: TStringList);
+begin
+end;

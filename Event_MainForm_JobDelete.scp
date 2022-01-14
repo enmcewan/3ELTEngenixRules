@@ -1,0 +1,31 @@
+//HeaderImportExport-->
+//SiteId=0
+//Enterprise=True
+//ScriptType=1
+//ScriptGroup=Job List Screen
+//HeaderImportExport<--
+// Pre_JobDelete is called prior to a Job Delete operation. In the script, the 'Abort'
+// parameter can be set to 'True' to abort the delete operation.
+// If the operation is aborted, please use a ShowMessage to alert the user that
+// the delete will be aborted, Engenix itself will not give any user feedback.
+                    
+procedure Pre_JobDelete(ParamList: TStringList);         
+begin                           
+//  showmessage('Event_MainForm_JobDelete, Pre_JobDelete: ' + #13#13 + ParamList.Text);               
+                                                         
+//  ... do your checks, and to abort the delete action:  
+{       
+  ParamList.Values['Abort'] := 'True';
+}                                                                           
+
+  if ParamList.Values['Abort'] = 'True' then
+    ShowMessage('The Job Delete operation was aborted.');
+end;                                                     
+
+// Post_JobDelete is called immediately after a Job Delete operation.
+
+procedure Post_JobDelete(ParamList: TStringList);
+begin
+//  showmessage('Event_MainForm_JobDelete, Post_JobDelete: ' + #13#13 + ParamList.Text);    
+end;
+

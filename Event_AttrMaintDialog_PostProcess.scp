@@ -1,0 +1,14 @@
+//HeaderImportExport-->
+//SiteId=0
+//Enterprise=True
+//ScriptType=1
+//ScriptGroup=Dialog Start/Stop
+//HeaderImportExport<--
+{
+  This script is executed after the Attribute Grid is closed.
+  You can use the Fnc.SysGetAttr... and SysSetAttr.... functions in
+  here to post-process any attribute values after the Grid is closed
+}
+
+begin
+end;

@@ -1,0 +1,348 @@
+//HeaderImportExport-->
+//SiteId=0
+//Enterprise=True
+//ScriptType=0
+//ScriptGroup=HCS
+//HeaderImportExport<--
+function GetCNCDrilling_StripValueRange(aStr: string): double;
+begin
+  aStr := StringReplace(aStr, ' 1', '', SetOf([rfReplaceAll, rfIgnoreCase])); // 1321
+  aStr := StringReplace(aStr, ' 2', '', SetOf([rfReplaceAll, rfIgnoreCase]));
+  aStr := StringReplace(aStr, ' 3', '', SetOf([rfReplaceAll, rfIgnoreCase]));
+  
+  aStr := StringReplace(aStr, '~', '', SetOf([rfReplaceAll, rfIgnoreCase]));
+  aStr := StringReplace(aStr, '&', '', SetOf([rfReplaceAll, rfIgnoreCase]));
+  aStr := StringReplace(aStr, 'm', '', SetOf([rfReplaceAll, rfIgnoreCase]));
+  aStr := StringReplace(aStr, ' ', '', SetOf([rfReplaceAll, rfIgnoreCase]));
+  aStr := StringReplace(aStr, 'above', '', SetOf([rfReplaceAll, rfIgnoreCase]));
+
+  Result := StrToFloatDef(aStr, 0.0);
+end;
+
+procedure GetCNCDrilling_GetValueRange(aTable: TSysTable; Indx: integer; var valLow: double; var valHigh: double);
+var
+  i: integer;
+  LowStr: string;
+  HighStr: string;
+begin
+  valLow := 0.0;
+  valHigh := 0.0;
+
+  if pos('group_', LowerCase(aTable.Fields.Fields[Indx].FieldName)) < 1 then
+    exit;
+
+  HighStr := '';
+  LowStr := aTable.Fields.Fields[Indx].DisplayLabel;
+  i := pos('~', LowStr);
+  if i < 1 then
+    i := pos('&', LowStr);
+
+  if i > 0 then
+  begin
+    HighStr:= copy(LowStr, i + 1, Length(LowStr));
+    LowStr := copy(LowStr, 1, i - 1);
+  end;
+
+  valLow := GetCNCDrilling_StripValueRange(LowStr);
+  valHigh := GetCNCDrilling_StripValueRange(HighStr);
+
+  if valHigh = 0 then
+  begin
+    if HighStr = '' then
+      valHigh := valLow
+    else
+      valHigh := 999999
+  end;
+end;
+
+function GetCNCDrilling_GetGroupIndexFromFieldName(FieldName: string): integer;
+var
+  TempStr: string;
+begin
+  TempStr := '';
+
+  if StrToIntDef(copy(FieldName, 7, 1), -1) > -1 then
+    TempStr := TempStr + copy(FieldName, 7, 1);
+
+  if StrToIntDef(copy(FieldName, 8, 1), -1) > -1 then
+    TempStr := TempStr + copy(FieldName, 8, 1);
+
+  Result := StrToInt(TempStr);
+end;
+
+
+function GetCNCDrilling_GetGroupIndex(aTable: TSysTable; MinDrillSize: double; var errMsg: string): integer;
+var
+  i: integer;
+  aLabel: string;
+  aList: TStringList;
+
+  valLow: double;
+  valHigh: double;
+begin
+  Result := 0;
+
+  for i := 0 to aTable.FieldCount - 1 do
+  begin
+    GetCNCDrilling_GetValueRange(aTable, i, valLow, valHigh);
+
+    if (valLow <= MinDrillSize) and (MinDrillSize <= valHigh) then
+    begin
+      Result := StrToIntDef(copy(aTable.Fields.Fields[i].FieldName, 7, 1), 0);
+      Result := GetCNCDrilling_GetGroupIndexFromFieldName (aTable.Fields.Fields[i].FieldName);
+      break;
+    end;
+  end;
+
+  if Result = 0 then
+  begin
+    aList := TStringList.Create;
+
+    for i := 0 to aTable.FieldCount - 1 do
+    begin
+      if pos('Group', aTable.Fields.Fields[i].FieldName) = 1 then
+      begin
+        aLabel := aTable.Fields.Fields[i].DisplayLabel;
+        if aList.IndexOf(aLabel) < 0 then
+          aList.Add(aLabel);
+      end;
+    end;
+
+    aLabel := StringReplace(aList.Text, #13, ', ', SetOf([rfReplaceAll]));
+    aLabel := StringReplace(aLabel, #10, '', SetOf([rfReplaceAll]));
+    errMsg := 'No definition for diameter: ' + FloatToStr(MinDrillSize) + ', valid diameters: ' + aLabel;
+
+    aList.Free;
+  end;
+end;
+
+function GetCNCDrilling_StackHeight(TableName: string; MinDrillSize: double; Thickness: double; NumLayers: integer; var StackHeight: integer; var FluteType: string);
+var
+  i: integer;
+  GroupIndex: integer;
+
+  FieldName: string;
+  FieldLabel: string;
+
+  TempStr: string;
+
+  aFilter: string;
+
+  errMsg: string;
+
+  CNCDRillTable: TSysTable;
+begin
+  Result := False;
+  StackHeight := 0;
+  FluteType := '';
+
+  errMsg := '';
+  GroupIndex := 0;
+  FieldName := '';
+  FieldLabel := '';
+
+  if Fnc.SysTableExists(TableName) then
+    CNCDRillTable := Fnc.SysTableGet(TableName)
+  else
+    errMsg := Format('CustomTable %s does not exist', [TableName]);
+
+  if errMsg = '' then
+  begin
+    TableName := LowerCase(TableName);
+
+    //---
+
+    //if (TableName = 'cnc_drilling_a') or (TableName = 'cnc_drilling_b') or (TableName = 'cnc_drilling_new_b') then
+    if (TableName = 'cnc_drilling_a') or (TableName = 'cnc_drilling_b_1321') then
+    begin
+      GroupIndex := GetCNCDrilling_GetGroupIndex(CNCDRillTable, MinDrillSize, errMsg);
+
+      //ShowMessage(GroupIndex);
+
+      if errMsg = '' then
+      begin
+        CNCDRillTable.Filter := '(PnlThckMin < ' + FloatToStr(Thickness) + ' ) and (' + FloatToStr(Thickness) + '<= PnlThckMax)';
+        CNCDRillTable.Filtered := True;
+
+        //Fnc.OpenDataGrid(CNCDrillTable);
+
+        if CNCDRillTable.isEmpty then
+          errMsg := Format('Thickness out of range: %s', [FloatToStr(Thickness)])
+      end;
+
+      if errMsg = '' then
+      begin               
+        for i := 1 to 99 do
+        begin
+          FieldName := Format('Group_%d_%d', [GroupIndex, i]);
+
+          if not assigned(CNCDRillTable.FindField(FieldName)) then
+            break;
+
+          FieldLabel := CNCDRillTable.FieldByName(FieldName).DisplayLabel;
+
+          //showmessage(FieldLabel);
+
+          StackHeight := StrToIntDef(CNCDRillTable.FieldByName(FieldName).AsString, 0);
+          Result := StackHeight > 0;
+
+          if Result then
+            break;
+        end;
+
+        if not Result then
+          errMsg := Format('No valid value for: %s and %s', [FieldLabel, CNCDRillTable.Filter]);
+      end;
+
+      CNCDRillTable.Filtered := False;
+      CNCDRillTable.Filter := '';
+
+      if Result then
+      begin
+        if not CNCDRillTable.LOcate('Name', '01', SetOf([loCaseInsensitive])) then
+          errMsg := 'No valid "Flute" record found'
+        else
+          FluteType := CNCDRillTable.FieldByName(FieldName).AsString;
+      end;
+    end;
+
+    //---
+
+    if (TableName = 'cnc_drilling_new_c') then
+    begin
+      GroupIndex := GetCNCDrilling_GetGroupIndex(CNCDRillTable, MinDrillSize, errMsg);
+
+
+      if errMsg = '' then
+      begin
+        if not CNCDRillTable.Locate('Name', '01', SetOf([loCaseInsensitive])) then
+          errMsg := 'No valid "Layers" record found'
+        else
+        begin
+          FieldName := Format('Group_%d_%d', [GroupIndex, 1]);
+
+          if pos('<', CNCDRillTable.FieldByName(FieldName).AsString) > 0 then
+          begin
+            TempStr := StringReplace(CNCDRillTable.FieldByName(FieldName).AsString, '<', '', SetOf([rfReplaceAll]));
+            TempStr := StringReplace(TempStr, ' ', '', SetOf([rfReplaceAll]));
+            if NumLayers >= StrToIntDef(TempStr, 0) then
+              FieldName := Format('Group_%d_%d', [GroupIndex, 2]);
+          end;
+        end;
+      end;
+
+      if errMsg = '' then
+      begin
+        if not assigned(CNCDRillTable.FindField(FieldName)) then
+          errMsg := Format('FieldName does not exist in the table: "%s"', [FieldName]);
+      end;
+
+      if errMsg = '' then
+      begin
+        CNCDRillTable.Filter := '(PnlThckMin < ' + FloatToStr(Thickness) + ' ) and (' + FloatToStr(Thickness) + '<= PnlThckMax)';
+        CNCDRillTable.Filtered := True;
+
+        //Fnc.OpenDataGrid(CNCDrillTable);
+
+        if CNCDRillTable.isEmpty then
+          errMsg := Format('Thickness out of range: %s', [FloatToStr(Thickness)])
+        else
+        begin
+          CNCDRillTable.First;
+
+          if LowerCase(CNCDRillTable.FieldByName(FieldName).AsString) = 'n/a' then
+            errMsg := 'No valid option defined in the table for this combination'
+          else
+          begin
+            Result := True;
+            StackHeight := 1;
+            FluteType := CNCDRillTable.FieldByName(FieldName).AsString;
+          end;
+        end;
+      end;
+
+      CNCDRillTable.Filtered := False;
+      CNCDRillTable.Filter := '';
+    end;
+
+    //---
+
+    if (TableName = 'cnc_drilling_d') then
+    begin
+      GroupIndex := GetCNCDrilling_GetGroupIndex(CNCDRillTable, MinDrillSize, errMsg);
+
+      if errMsg = '' then
+      begin
+        FieldName := Format('Group_%d_%d', [GroupIndex, 1]);
+
+        if not assigned(CNCDRillTable.FindField(FieldName)) then
+          errMsg := Format('FieldName does not exist in the table: "%s"', [FieldName]);
+      end;
+
+      if errMsg = '' then
+      begin
+        CNCDRillTable.Filter := '(PnlThckMin < ' + FloatToStr(Thickness) + ' ) and (' + FloatToStr(Thickness) + '<= PnlThckMax)';
+        CNCDRillTable.Filtered := True;
+
+        if CNCDRillTable.isEmpty then
+          errMsg := Format('Thickness out of range: %s', [FloatToStr(Thickness)])
+        else
+        begin
+          CNCDRillTable.First;
+
+          if LowerCase(CNCDRillTable.FieldByName(FieldName).AsString) = 'n/a' then
+            errMsg := 'No valid option defined in the table for this combination'
+          else
+          begin
+            StackHeight := CNCDRillTable.FieldByName(FieldName).AsFloat;
+            FluteType := '';
+
+            Result :=StackHeight > 0.0;
+
+            if not Result then
+              errMsg := Format('No valid option defined for combination, Diameter: %s, Thickness: %s', [FloatToStr(MinDrillSize), FloatToStr(Thickness)]);
+          end;
+        end;
+      end;
+
+      CNCDRillTable.Filtered := False;
+      CNCDRillTable.Filter := '';
+    end;
+
+  end;
+
+  Result := errMsg = '';
+
+  if not Result then
+  begin
+    errMsg := 'function GetCNCDrilling_StackHeight, Table: ' + UpperCase(TableName) + #13#13 + errMsg;
+    showmessage(errMsg);
+  end;
+end;
+
+// following code is just for testing the search script
+var
+  TableName: string;
+  MinDrillSize: double;
+  PanelThickness: double;
+  PanelNumLayers: integer;
+
+  StackHeight: integer;
+  Flute: string;
+begin
+  MinDrillSize := 0.50;
+  PanelThickness := 4.0;
+  PanelNumLayers := 14;
+
+  TableName := 'CNC_Drilling_A';
+//  TableName := 'CNC_Drilling_B';
+//  TableName := 'CNC_Drilling_C';
+//  TableName := 'CNC_Drilling_D';
+
+  if not GetCNCDrilling_StackHeight(TableName, MinDrillSize, PanelThickness, PanelNumLayers, StackHeight, Flute) then
+    showmessage(TableName + ': search failed')
+  else
+    showmessage(TableName + ', StackHeight: ' + IntToStr(StackHeight) + ', Flute: ' + Flute);
+end;
+
+

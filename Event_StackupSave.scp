@@ -1,0 +1,336 @@
+//HeaderImportExport-->
+//SiteId=0
+//Enterprise=True
+//ScriptType=1
+//ScriptGroup=Job Save & Export
+//HeaderImportExport<--
+uses
+  ParadigmLibrary
+
+var
+    WO_Abort : boolean;
+
+function GetCustPart_RKEY(part_num : string; part_rev : string; cust_rkey : integer) : integer;
+var
+  qry_str : string;
+  part_table : TADOTable;
+begin
+  Result := 0;
+  qry_str := 'SELECT * FROM DATA0050
+            WHERE CUSTOMER_PART_NUMBER = ' + QuotedStr(part_num) + ' AND CP_REV = ' + QuotedStr(part_rev) + '
+            AND CUSTOMER_PTR = ' + IntToStr(cust_rkey);
+
+  part_table := Fnc.AstaExecuteSql(qry_str);
+
+  //ShowMessage(part_table.FieldByName('RKEY').AsInteger);
+  result := part_table.FieldByName('RKEY').AsInteger;
+
+  if not (part_table = nil) then
+  begin
+    part_table.Close;
+    Fnc.SysTableDestroy(part_table);
+  end;
+end;
+
+function GetCustCode_RKEY(cust_code : string) : integer;
+var
+  qry_str : string;
+  cust_table : TADOTable;
+begin
+  Result := nil;
+  qry_str := 'SELECT RKEY FROM DATA0010
+            WHERE CUST_CODE = ' + QuotedStr(cust_code);
+
+  cust_table := Fnc.AstaExecuteSql(qry_str);
+  result := cust_table.FieldByName('RKEY').AsInteger;
+  //ShowMessage('Customer RKEY is ' + IntToStr(result));
+
+  if not (cust_table = nil) then
+  begin
+    cust_table.Close;
+    Fnc.SysTableDestroy(cust_table);
+  end;
+end;
+
+function GetERPCustCode(egxCustID : integer) : string;
+var
+  Qry: TAdoQuery;
+begin
+ result := '';
+
+ Qry := TAdoQuery.Create(nil);
+ Qry.Connection := Fnc.DBConnection;
+ Qry.SQL.Clear;
+ Qry.SQL.Add('Select * from CustomerLinks where ' +
+             'SiteId=' + IntToStr(Fnc.SiteId) + ' and ' + //RTI 39470 Changed ERPSITEID to SITEID
+             'CustomerID=' + 'N' + QuotedStr(egxCustID)); // 2004-07-02
+ Qry.Open;
+ Qry.First;
+ if Qry.RecordCount = 1 then
+    Result := Qry.FieldByName('CustomerERPCode').AsString;
+ Qry.Close;
+
+end;
+
+function has_ERP_SO(part_ptr : integer) : boolean;
+var
+  qry_str : string;
+  so_table : TADOTable;
+  OptionList: TStringList;
+begin
+  Result := false;
+  //qry_str := 'SELECT RKEY FROM DATA0010
+  //          WHERE CUST_CODE = ' + QuotedStr(cust_code);
+
+  qry_str :='
+    SELECT SALES_ORDER AS "SALES ORDER", ' +
+    'P_CODE AS "PRIORITY", ' +
+    'CASE
+      WHEN STATUS = 1 THEN ' + QuotedStr('Active') +
+      ' WHEN STATUS = 2 THEN ' + QuotedStr('Hold') +
+      ' WHEN STATUS = 3 THEN ' + QuotedStr('Closed') +
+      ' WHEN STATUS = 4 THEN ' + QuotedStr('Completed') +
+      ' WHEN STATUS = 5 THEN ' + QuotedStr('Cancelled') +
+    ' END AS "STATUS",  '  +
+
+    'CASE
+      WHEN PROD_REL = ' + QuotedStr('1') + ' THEN ' + QuotedStr('Not Confirmed') +
+      ' WHEN PROD_REL = ' + QuotedStr('2') + ' THEN ' + QuotedStr('Confirmed to be Planned') +
+      ' WHEN PROD_REL = ' + QuotedStr('3') + '  THEN ' + QuotedStr('Planned not Released') +
+      ' WHEN PROD_REL = ' + QuotedStr('4') + ' THEN ' + QuotedStr('Released') +
+   ' END AS RELEASE,
+  CAST (PARTS_ORDERED AS int) AS "QTY ORDERED", ' +
+  'SCH_DATE AS "SHIP DATE"' +
+
+  ' FROM DATA0060
+  WHERE CUST_PART_PTR = ' + IntToStr(part_ptr) + ' AND STATUS in (1,2,3,4)';
+
+  //ShowMessage(qry_str);
+
+  so_table := Fnc.AstaExecuteSql(qry_str);// except ShowMessage('damn!') end;
+
+  if so_table.RecordCount > 0 then
+  begin
+    OptionList := TStringList.Create;
+    OptionList.Add('Decimals=0');
+    OptionList.Add('HideSave=True');
+    //OptionList.Add('LoadSettings=True');
+    Fnc.OpenDataGrid(so_table, OptionList);
+
+    if not (MessageDlg('Open or Complete Sales Orders exist. Do you want to continue the export and update the ERP Part?', mtWarning, SetOf([mbYes, mbNo]), 0) = mrYes) then
+    begin
+      Fnc.JobJournalUpdate(Fnc.GetJobData.Values['JobId'], 'Export cancelled by user due to SO''s released to production', 'High', 'Stackup Save');
+      result := true;
+    end
+    else
+    begin
+      // User has decided to export regardless of existing WO's
+      Fnc.JobJournalUpdate(Fnc.GetJobData.Values['JobId'], 'Job exported with SO''s released to production by user', 'High', 'Stackup Save');
+      result := false;
+    end;
+  end;
+
+  if not (so_table = nil) then
+  begin
+    so_table.Close;
+    Fnc.SysTableDestroy(so_table);
+  end;
+end;
+
+function has_ERP_WO(part_ptr : integer) : boolean;
+var
+  qry_str : string;
+  wo_table : TADOTable;
+  OptionList: TStringList;
+begin
+  Result := false;
+
+  qry_str := 'SELECT WORK_ORDER_NUMBER AS "WO NUMBER" ' +
+             ' , PRIORITY_CODE AS "PRIORITY"' +
+             //' , CAST(PROD_STATUS AS CHAR(4)) AS "STATUS CODE"' +
+             ' , CASE
+                  WHEN PROD_STATUS =  ' + QuotedStr('2') + ' then ' + QuotedStr('Backlog') +
+             '    WHEN PROD_STATUS =  ' + QuotedStr('3') + ' then ' + QuotedStr('Released') +
+             '    WHEN PROD_STATUS =  ' + QuotedStr('5') + ' then ' + QuotedStr('Completed') +
+             '    WHEN PROD_STATUS =  ' + QuotedStr('206') + ' then ' + QuotedStr('On Hold - Backlog') +
+             '    WHEN PROD_STATUS =  ' + QuotedStr('306') + ' then ' + QuotedStr('On Hold  - Shop Floor') +
+             '    WHEN PROD_STATUS =  ' + QuotedStr('2007') + ' then ' + QuotedStr('Cancelled - Backlog') +
+             '    WHEN PROD_STATUS =  ' + QuotedStr('3007') + ' then ' + QuotedStr('Cancelled - Shop Floor') +
+             ' END AS "STATUS"' +
+             ' , CAST (QUAN_SCH AS CHAR(8)) AS "QTY SCHEDULED" ' +
+             ' , SCH_COMPL_DATE AS "SCHEDULED COMPL DATE" ' +
+             ' FROM DATA0006 WHERE CUST_PART_PTR = ' + IntToStr(part_ptr) + ' AND PROD_STATUS in (2, 3, 5, 206, 306, 2007, 3007 )';
+
+  wo_table := Fnc.AstaExecuteSQL(qry_str);
+
+  if wo_table.RecordCount > 0 then
+  begin
+    WO_Abort := true;
+    OptionList := TStringList.Create;
+    OptionList.Add('Decimals=0');
+    OptionList.Add('HideSave=True');
+    //OptionList.Add('LoadSettings=True');
+    Fnc.OpenDataGrid(wo_table, OptionList);
+
+    if not (MessageDlg('Open or Complete Word Orders exist. Do you want to continue the export and update the ERP Part?', mtWarning, SetOf([mbYes, mbNo]), 0) = mrYes) then
+    begin
+      Fnc.JobJournalUpdate(Fnc.GetJobData.Values['JobId'], 'Export cancelled by user due to WO''s released to production', 'High', 'Stackup Save');
+      result := true;
+
+    end
+    else
+    begin
+      // User has decided to export regardless of existing WO's
+      Fnc.JobJournalUpdate(Fnc.GetJobData.Values['JobId'], 'Job exported with WO''s released to production by user', 'High', 'Stackup Save');
+      result := false;
+    end;
+  end;
+
+  if not (wo_table = nil) then
+  begin
+    wo_table.Close;
+    Fnc.SysTableDestroy(wo_table);
+  end;
+end;
+
+function JobHasBeenReleasedToProduction : boolean;
+var
+  jobDataList: TStringList;
+  customerID : integer;
+  customerERPCode : string;
+  customerERP_RKEY : integer;
+  partNum : string;
+  partRev : string;
+  partNumRKEY : integer;
+
+  Qry: TAdoQuery;
+begin
+  result := true;
+  customerERPCode := '';
+  partNum := '';
+  partRev := '';
+  customerID := 0;
+  customerERP_RKEY := 0;
+  partNumRKEY := 0;
+
+  WO_Abort := false;
+
+
+  Qry := TAdoQuery.Create(nil);
+  Qry.Connection := Fnc.DBConnection;
+
+  jobDataList := Fnc.GetJobData;
+
+  customerID := jobDataList.Values['CustomerId'];
+
+  if customerID <> '' then
+    customerERPCode := (GetERPCustCode(customerID));
+
+  if customerERPCode <> '' then
+    customerERP_RKEY := GetCustCode_RKEY(customerERPCode);
+
+  partNum := jobDataList.Values['PartNumberName'];
+  partRev := jobDataList.Values['PartRevision'];
+  partNumRKEY := GetCustPart_RKEY(partNum, partRev, customerERP_RKEY)
+
+  // Get Data
+  if (( partNum <> '' ) and ( partRev <> '' ))
+   then //ShowMessage('Data0050 RKEY = ' + IntToStr(GetCustPart_RKEY(partNum, partRev, customerERP_RKEY)));
+     if Has_ERP_WO(partNumRKEY) then
+       result := true
+     else
+     begin
+       result := false;
+
+       if WO_Abort = false then
+       begin
+         if has_ERP_SO(partNumRKEY) then
+          result := true
+         else
+           result := false;
+       end;          
+     end;
+
+  JobDataList.Free;
+  Qry.Close;
+end;
+
+
+
+// The JobStackupSave functions are called immediately before and after a 'Blue' Job save.
+procedure Pre_JobStackupSave(ParamList: TStringList);
+begin
+ // showmessage('Event_StackupSave, Pre_JobStackupSave:' + #13#13 + ParamList.Text);
+
+//  .... to abort the save:
+{
+  ParamList.Values['Abort'] := 'True';
+}
+
+  if ParamList.Values['Abort'] = 'True' then
+    showmessage('Save Stackup aborted');
+end;
+
+// If the JobStackup Save operation is unsuccessful, the AfterJobStackupSave procedure is NOT executed.
+procedure Post_JobStackupSave(ParamList: TStringList);
+begin
+//  showmessage('Event_StackupSave, Post_JobStackupSave:' + #13#13 + ParamList.Text);
+end;
+
+// The JobStackupExport functions are called immediately before and after a 'Red' Job save.
+procedure Pre_JobStackupExport(ParamList: TStringList);
+begin
+  //showmessage('Event_StackupSave, Pre_JobStackupExport:' + #13#13 + ParamList.Text);
+
+//  .... to abort the save:
+
+  if JobHasBeenReleasedToProduction then
+  begin
+    ParamList.Values['Abort'] := 'True';
+    // Job Journal Entry
+  end;
+
+  //ParamList.Values['Abort'] := 'True';
+
+  if ParamList.Values['Abort'] = 'True' then
+    showmessage('Save and Export Stackup aborted')
+  else
+    Fnc.SysSetAttrValueTopLevel('ACode1', Fnc.SysGetAttrValueTopLevel('Rules_Version') + '+' + DateToStr(Date)); // 1228 Paradigm export script to include Engenix version + export date
+end;
+
+// If the JobStackup Export operation is unsuccessful, the AfterJobStackupExport procedure is NOT executed.
+procedure Post_JobStackupExport(ParamList: TStringList);
+begin
+//  showmessage('Event_StackupSave, Post_JobStackupExport:' + #13#13 + ParamList.Text);
+end;
+
+// The MassChangeJobStackupSave functions are called immediately before and after a Job save during MassChange processing.
+procedure Pre_MassChangeJobStackupSave(ParamList: TStringList; var LogMessage: TStringList);
+begin
+// .... to abort the save:
+{
+  ParamList.Values['Abort'] := 'True';
+}
+
+  // Do NOT display any popup messages during this function.  It will halt the MassChange
+  //   processing.  Instead, append a message to the LogMessage TStringList.
+
+  // If you abort the save, please append a message to LogMessage describing the
+  //  reason why the save was aborted.
+
+  // Fnc.JobID is not reliable in this function. Please use the ParamList.Values['JobId']
+  // parameter to get the current job.
+end;
+
+// If the Mass Change JobStackup Save operation is unsuccessful, the Post_MassChangeJobStackupSave procedure is NOT executed.
+procedure Post_MassChangeJobStackupSave(ParamList: TStringList; var LogMessage : TStringList);
+begin
+  // Do NOT display any popup messages during this function.  It will halt the MassChange
+  //   processing.  Instead, append a message to the LogMessage TStringList.
+
+  // Fnc.JobID is not reliable in this function. Please use the ParamList.Values['JobId']
+  // parameter to get the current job.
+end;
+
+
+

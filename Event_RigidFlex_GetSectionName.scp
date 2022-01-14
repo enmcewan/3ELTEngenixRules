@@ -1,0 +1,31 @@
+//HeaderImportExport-->
+//SiteId=0
+//Enterprise=True
+//ScriptType=1
+//ScriptGroup=Rigid-Flex
+//HeaderImportExport<--
+{
+- ParamList.Values['Section']
+
+The number of the section that we have to pass back a name
+
+- ParamList.Values['SectionName']
+
+Assign a value to this parameter to pass back the name
+}
+
+procedure RigidFlex_GetSectionName(ParamList: TStringList);
+var
+  Section: integer;
+begin
+  Section := StrToIntDef(ParamList.Values['Section'], 0);
+
+  if Section > 0 then
+    ParamList.Values['SectionName'] := 'R-' + IntToStr(Section);
+
+  if Section = 0 then
+    ParamList.Values['SectionName'] := 'Main';
+
+  if Section < 0 then
+    ParamList.Values['SectionName'] := 'L-' + IntToStr(Abs(Section));
+end;

@@ -1,0 +1,10 @@
+//HeaderImportExport-->
+//SiteId=0
+//Enterprise=True
+//ScriptType=1
+//ScriptGroup=Tool Management
+//HeaderImportExport<--
+procedure ToolManagement_Finish(ToolTable: TSysTable);
+begin
+  // Custom Script
+end;

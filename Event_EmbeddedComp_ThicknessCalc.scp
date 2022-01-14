@@ -1,0 +1,32 @@
+//HeaderImportExport-->
+//SiteId=0
+//Enterprise=True
+//ScriptType=1
+//ScriptGroup=Embedded Component
+//HeaderImportExport<--
+?{           
+ParamList:
+    reserved for future use
+
+tblEmbeddedComp:
+    Table with all the embedded components assigned to layers. In this script you
+    should calculate the actual min/max thickness of the Adhesive and the total
+    min/max thickness for the component + adhesive.
+
+    Script also has to update the fields that specify where the contact spots are
+    located, on top, bottom or both sides
+
+    tblEmbeddedComp.FieldByName('ThicknessAdhesiveMin').AsFloat
+    tblEmbeddedComp.FieldByName('ThicknessAdhesiveMax').AsFloat
+    tblEmbeddedComp.FieldByName('ThicknessStackupMin').AsFloat
+    tblEmbeddedComp.FieldByName('ThicknessStackupMax').AsFloat
+    tblEmbeddedComp.FieldByName('ContactTop').AsBoolean
+    tblEmbeddedComp.FieldByName('ContactBottom').AsBoolean
+
+tblComponents:
+    Table with all the components defined in the Engenix database
+}
+                                                                         
+procedure EmbeddedComp_ThicknessCalc(ParamList: TStringList; tblEmbeddedComp: TSysTable; tblComponents: TSysTable);
+  // your code here    
+end;

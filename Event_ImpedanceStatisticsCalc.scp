@@ -1,0 +1,40 @@
+//HeaderImportExport-->
+//SiteId=0
+//Enterprise=True
+//ScriptType=1
+//ScriptGroup=Impedance
+//HeaderImportExport<--
+{
+ Script to calculate the Standard Deviation, Cp, Cpk and ScrapPercantage that appears
+ in the impedance report.
+
+ Data is passed from the Layup Module to the script using the
+ Fnc.SysImpedanceModels table. This table has all information
+ needed to calculate the final statistics.
+
+ USL and LSL fields are given by the TargetImpedance_HighTol and TargetImpedance_LowTol
+ fields, respectively.
+
+ Fnc.SysImpedanceModels will only have the single record that needs the statistics
+   calculated.
+
+ The script should calculate/update the following fields in Fnc.SysImpedanceModels:
+
+ - 'StdDev' (float)
+       Standard Deviation
+ - 'Cp' (float)
+       Cp value
+ - 'Cpk' (float)
+       Cpk value
+ - 'ScrapPercentage' (float)
+       Scrap Percentage value
+}
+begin
+  // we are just plugging in values to ensure things work in the report.
+  Fnc.SysImpedanceModels.FieldByName('StdDev').AsFloat := 1.2345;
+  Fnc.SysImpedanceModels.FieldByName('Cp').AsFloat := 0.12345;
+  Fnc.SysImpedanceModels.FieldByName('Cpk').AsFloat := 0.67890;
+  Fnc.SysImpedanceModels.FieldByName('ScrapPercentage').AsFloat := 1.345;
+
+  // posting is done by the calling app.
+end.

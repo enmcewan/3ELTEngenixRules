@@ -1,0 +1,17 @@
+//HeaderImportExport-->
+//SiteId=0
+//Enterprise=True
+//ScriptType=1
+//ScriptGroup=ERP
+//HeaderImportExport<--
+?{
+  Alternative method to set the Mfg.Part names for the Erp system. In this
+  script set the following fiields for the Mfg.Parts:
+  
+  SpecBomCopy.Fie3ldByName('ERPMfgPartNum').AsString
+  SpecBomCopy.Fie3ldByName('ERPMfgPartDesc').AsString
+}
+procedure GetErpMfgPartNum_Ext1(ParamList: TStringList; SpecBomCopy: TSysTable);
+begin
+  //
+end;                         

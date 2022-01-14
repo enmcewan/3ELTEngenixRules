@@ -1,0 +1,48 @@
+//HeaderImportExport-->
+//SiteId=0
+//Enterprise=True
+//ScriptType=1
+//ScriptGroup=Mass Change
+//HeaderImportExport<--
+procedure GetErpMaterials(tblSpecMaterials : TSysTable);
+var
+  Data0017: TSysTable;
+  SqlStr: string;
+begin                                   
+ // ScriptDM.Fnc.AstaOpenConnection; 
+                                 
+  SqlStr := ' SELECT ' +
+            '   CAST(Data0017.RKey AS Integer) as RKey' +
+            '   ,Data0017.Inv_Part_Number as InvPartNum' +
+            '   ,Data0017.Inv_Part_Description as InvPartDesc' +
+            '   ,Data0008.Prod_Code as ProdCode' +
+            '   ,Data0007.Pr_Grp_Code as ProdGroup' +
+            ' FROM' +
+            '    Data0017, Data0007, Data0008' +
+            ' WHERE' +                                
+            '    Data0017.P_M = ' + QuotedStr('P') +
+            ' and Data0017.Prod_Code_Sell_Ptr = Data0008.RKey' +
+            ' and Data0008.Pr_Grp_Pointer = Data0007.RKey' +
+            ' ORDER BY' +
+            '     Data0017.Inv_Part_Number';
+
+  Data0017 := {ScriptDM.}Fnc.AstaExecuteSql(SqlStr);
+
+  Data0017.First;
+  while not Data0017.Eof do
+  begin
+    tblSpecMaterials.Append;
+
+    tblSpecMaterials.FieldByName('InvId').AsString := Data0017.FieldByName('RKey').AsString;
+    tblSpecMaterials.FieldByName('InvPartNum').AsString := Data0017.FieldByName('InvPartNum').AsString;
+    tblSpecMaterials.FieldByName('InvPartDesc').AsString := Data0017.FieldByName('InvPartDesc').AsString;
+    tblSpecMaterials.FieldByName('ProdCode').AsString := Data0017.FieldByName('ProdCode').AsString;
+    tblSpecMaterials.FieldByName('ProdGroup').AsString := Data0017.FieldByName('ProdGroup').AsString;
+
+    tblSpecMaterials.Post;
+
+    Data0017.Next;
+  end;
+
+  Fnc.SysTableDestroy(Data0017);
+end;

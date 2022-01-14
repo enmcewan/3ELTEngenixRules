@@ -1,0 +1,121 @@
+//HeaderImportExport-->
+//SiteId=0
+//Enterprise=True
+//ScriptType=1
+//ScriptGroup=Create / Edit Layers
+//HeaderImportExport<--
+{ To search the Materials and Families use the following tables:
+
+- Fnc.SysMaterialsTypeFamilyTable
+- Fnc.SysMaterialsTable.
+
+Both tables have a column 'MaterialsTypeId' this value should
+match the value of the field tblStackup.FieldByName('ItemTypePntr').AsInteger;
+}
+
+procedure SetStackUpItems(ParamList: TStringList; tblStackup: TSysTable);
+var
+  ItemDesc: string;
+begin
+  tblStackup.First;
+
+  while not tblStackup.Eof do
+  begin
+
+    if tblStackup.FieldByName('ItemType').AsString = cStackupLayer then
+    begin
+      // The following fields can be updated for Layers:
+      // - LayerCuDensity
+      // - LayerCodeThckCu -> this is the Code from the Fnc.SysMaterialsConductors Table (type=Copper)
+
+      tblStackup.Edit;
+
+{ Sample code to update the Copper Desity for Layers
+
+      if tblStackup.FieldByName('LayerType').AsString = 'SIGNAL' then
+        tblStackup.FieldByName('LayerCuDensity').AsFloat := 40;
+      if tblStackup.FieldByName('LayerType').AsString = 'MIXED' then
+        tblStackup.FieldByName('LayerCuDensity').AsFloat := 50;
+      if tblStackup.FieldByName('LayerType').AsString = 'POWER-GROUND' then
+        tblStackup.FieldByName('LayerCuDensity').AsFloat := 80;
+}
+
+{ Sample code to update the base copper thickness, code should exists in the
+  Fnc.SysMaterialsConductors Table (type=Copper)
+
+      tblStackup.FieldByName('LayerCodeThckCu').AsString := '1/4oz';
+}
+
+      tblStackup.Post
+    end;
+
+    if tblStackup.FieldByName('ItemType').AsString = cStackupSolderMask then
+    begin
+      tblStackup.Edit;
+
+{ Sample code to update the family for a soldermask:
+      - ItemFamilyPntr from Fnc.SysMaterialsTypeFamilyTable.FieldByName('MaterialsFamilyId').AsInteger;
+
+      tblStackup.FieldByName('ItemFamilyPntr').AsInteger := ?;
+}
+
+{ Sample code to update the soldermask material:
+       - ItemMatrlPntr  from Fnc.SysMaterialsTable.FieldByName('MaterialsId').AsInteger;
+
+      tblStackup.FieldByName('ItemMatrlPntr').AsInteger := ?;
+}
+
+      tblStackup.Post;
+    end;
+
+    if tblStackup.FieldByName('ItemType').AsString = cStackupGenMatrl then
+    begin
+{
+      For all materials the following field can be updated
+      - ItemFamilyPntr from Fnc.SysMaterialsTypeFamilyTable.FieldByName('MaterialsFamilyId').AsInteger;
+
+      For Preper/Fillers
+      - ItemGapHdrPntr from Fnc.SysMaterialsTable.FieldByName('MaterialsGapHeaderId').AsInteger;
+
+      All other Materials (SolderMak, Foil, Core, ....)
+       - ItemMatrlPntr  from Fnc.SysMaterialsTable.FieldByName('MaterialsId').AsInteger
+
+      Descriptions for Materials and Family are updated by Engenix
+
+      To specify a particular material or Prepreg/Filler, only update the
+      ItemMatrlPntr or ItemGapHdrPntr, Engenix will update the Family data
+}
+      tblStackup.Edit;
+
+      ItemDesc := LowerCase(tblStackup.FieldByName('ItemDesc').AsString);
+
+      if ItemDesc = 'foil' then
+      begin
+//        tblStackup.FieldByName('ItemFamilyPntr').AsInteger := ?;
+//        tblStackup.FieldByName('ItemMatrlPntr').AsInteger := ?;
+      end;
+
+      if ItemDesc = 'prepreg/filler' then
+      begin
+//        tblStackup.FieldByName('ItemFamilyPntr').AsInteger := ?;
+//        tblStackup.FieldByName('ItemGapHdrPntr').AsInteger := ?;
+      end;
+
+      if ItemDesc = 'prepreg' then
+      begin
+//        tblStackup.FieldByName('ItemFamilyPntr').AsInteger := ?;
+//        tblStackup.FieldByName('ItemMatrlPntr').AsInteger := ?;
+      end;
+
+      if ItemDesc = 'core' then
+      begin
+//        tblStackup.FieldByName('ItemFamilyPntr').AsInteger := ?;
+//        tblStackup.FieldByName('ItemMatrlPntr').AsInteger := ?;
+      end;
+
+      tblStackup.Post
+    end;
+
+    tblStackup.Next;
+  end;
+end;

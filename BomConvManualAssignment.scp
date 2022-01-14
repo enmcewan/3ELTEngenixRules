@@ -1,0 +1,157 @@
+//HeaderImportExport-->
+//SiteId=0
+//Enterprise=True
+//ScriptType=1
+//ScriptGroup=BOM Conversion
+//HeaderImportExport<--
+{
+- ParamList.Values['Func'] := 'Assign' or 'Insert'
+
+Function as performed by the user, 'Insert' is dragging a material from the Erp list
+into the Spec.Bom, 'Assign' is assigning an Erp material to one or more existing
+Spec.Bom items
+
+- ParamList.Values['Abort'] := 'True' or 'False'
+
+Update the value in this script to proceed ('False') or abort ('True') the user action
+
+-----
+
+- ErpMatrlList.Values['Prime_ErpId'], ErpMatrlList.Values['Prime_InvPartNum']
+  ErpMatrlList.Values['Prime_InvPartDesc']
+
+Selected Erp material that will be assigned to the selected Bom items. The value for
+ErpMatrlList.Values['Prime_ErpId'] can be updated in this script to assign another
+material.
+
+- ErpMatrlList.Values['Alt_ErpId'], ErpMatrlList.Values['Alt_InvPartNum']
+  ErpMatrlList.Values['Alt_InvPartDesc']
+
+Same as the 'Prime_..' parameters but now for the Alternative mataeirls
+                          
+-----                                
+
+- DestMatrlList.Strings[i]
+
+This is the list of generic material pointers that are selected for updating. The
+details for each material can be checked by positioning at the generic material.
+
+  Fnc.SysMaterialsTable.Locate('MaterialsId', DestMatrlList.Strings[i], SetOf([oCaseInsensitive]));
+}
+
+function CheckPanelSize(egxMatType : string; erpLength : string; erpWidth : string ) : string;
+var
+  egxPanelLength : string;
+  egxPanelWidth : string
+begin
+  result := '';
+  egxPanelLength := '';
+  egxPanelWidth := '';
+
+  if egxMatType = 'Core' then
+  begin
+    if Fnc.SysGetAttrValueTopLevel('Grain_Dir') = 'Panel Width' then
+    begin
+      egxPanelLength := IntToStr(Fnc.SysGetAttrValue('Panel_Length'));
+      egxPanelWidth := IntToStr(Fnc.SysGetAttrValue('Panel_Width')); 
+    end             
+    else if Fnc.SysGetAttrValueTopLevel('Grain_Dir') = 'Panel Length' then
+    begin
+      egxPanelLength := IntToStr(Fnc.SysGetAttrValue('Panel_Width'));
+      egxPanelWidth := IntToStr(Fnc.SysGetAttrValue('Panel_Length')); 
+    end
+    else
+    begin
+      egxPanelLength := IntToStr(Fnc.SysGetAttrValue('Panel_Length'));
+      egxPanelWidth := IntToStr(Fnc.SysGetAttrValue('Panel_Width')); 
+    end 
+  end
+  else if egxMatType = 'Prepreg' then
+  begin
+    if Fnc.SysGetAttrValueTopLevel('Grain_Dir') = 'Panel Width' then
+    begin
+      egxPanelLength := IntToStr(Fnc.SysGetAttrValue('Panel_Length_Press'));
+      egxPanelWidth := IntToStr(Fnc.SysGetAttrValue('Panel_Width_Press'));  
+    end  
+    else if Fnc.SysGetAttrValueTopLevel('Grain_Dir') = 'Panel Length' then
+    begin
+      egxPanelLength := IntToStr(Fnc.SysGetAttrValue('Panel_Width_Press'));
+      egxPanelWidth := IntToStr(Fnc.SysGetAttrValue('Panel_Length_Press'));
+    end
+    else 
+    begin
+      egxPanelLength := IntToStr(Fnc.SysGetAttrValue('Panel_Length_Press'));
+      egxPanelWidth := IntToStr(Fnc.SysGetAttrValue('Panel_Width_Press')); 
+    end       
+  end;
+                                                          
+  if (( erpLength <> egxPanelLength ) or ( erpWidth <> egxPanelWidth )) then
+  begin
+    if erpLength <> egxPanelLength then
+      result := result + 'Inventory part Panel Length ' + erpLength + ' does not match Mfg Part Panel length of ' + egxPanelLength + #13#13;
+
+      if erpWidth <> egxPanelWidth then
+      result := result + 'Inventory part Panel Width ' + erpWidth + ' does not match Mfg Part Panel length of ' + egxPanelWidth;
+  end;
+  //showmessage(result);
+end;
+
+procedure ValidateManualAssignment(ParamList: TStringList; ErpMatrlList: TStringList; DestMatrlList: TStringList);
+var
+  erpPanelLength : string;
+  erpPanelWidth : string;
+  matType : string;
+
+  i : integer;
+
+  errMsg : string;
+begin
+  //your code in here
+ // if ParamList.Values['Func'] = 'Assign' then
+ //   ShowMessage('Assigning...');
+
+  //ShowMessage(copy(ErpMatrlList.Values['Prime_InvPartNum'], 16, 3 ));
+
+  erpPanelWidth := copy(ErpMatrlList.Values['Prime_InvPartNum'], 13, 3 );
+  erpPanelLength := copy(ErpMatrlList.Values['Prime_InvPartNum'], 16, 3 );
+  matType := UpperCase(copy(ErpMatrlList.Values['Prime_InvPartNum'], 1, 1 ));
+
+  errMsg := '';
+
+  for i := 0 to DestMatrlList.Count - 1 do
+  begin
+    //ShowMessage(DestMatrlList.Strings[i]);
+    
+    if Fnc.SysMaterialsTable.Locate('MaterialsId', DestMatrlList.Strings[i], SetOf([LoCaseInsensitive])) then
+    begin
+      //Fnc.OpenDataGrid(Fnc.SysMaterialsTable);
+      if Fnc.SysMaterialsTable.FieldByName('Type').AsString = 'Core' then
+      begin
+        // Initial check that laminate part has been selected
+        if (( matType =  'L' ) or ( matType = 'H' ) or ( matType = 'X' ) or ( matType = 'Z' )) then
+          ErrMsg := CheckPanelSize('Core', erpPanelLength, erpPanelWidth);
+        else
+        begin
+          ErrMsg := ErrMsg + 'Wrong material type selected for Core';
+        end;
+      end
+      else if Fnc.SysMaterialsTable.FieldByName('Type').AsString = 'Prepreg' then
+      begin
+        if (( matType =  'P' ) or ( matType = 'B' ) or ( matType = 'Y' ) or ( matType = 'C' )) then
+          ErrMsg := CheckPanelSize('Prepreg', erpPanelLength, erpPanelWidth)
+        else
+          ErrMsg := ErrMsg + 'Wrong material type selected for Pre-Preg';
+      end;
+    end;
+  end;
+   
+  {if ParamList.Values['Abort'] = 'True' then
+    MessageDlg(ErrMsg, mtError, Setof([mbOK]), 0);}
+
+  if ErrMsg <> '' then
+  begin
+    ParamList.Values['Abort'] := 'True';
+    MessageDlg(ErrMsg, mtError, Setof([mbOK]), 0);
+  end;
+end;
+

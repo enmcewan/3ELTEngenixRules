@@ -1,0 +1,526 @@
+//HeaderImportExport-->
+//SiteId=0
+//Enterprise=True
+//ScriptType=1
+//ScriptGroup=
+//HeaderImportExport<--
+function SysEngnxCheckCustCode(CustCode: string; Qry: TAdoQuery): Integer;                                                                                                                                                                                                                                                                                                                                                                         
+begin
+ result := 0;                
+ Qry.Close;                        
+ Qry.SQL.Clear;
+ Qry.SQL.Add('Select * from CustomerLinks where ' +
+             'SiteId=' + IntToStr(Fnc.SiteId) + ' and ' + //RTI 39470 Changed ERPSITEID to SITEID
+             'CustomerErpCode=' + 'N' + QuotedStr(CustCode)); // 2004-07-02 
+ Qry.Open;
+ Qry.First;                                                                
+ if Qry.RecordCount = 1 then
+    Result := Qry.FieldByName('CustomerID').AsInteger;
+ Qry.Close;
+end;
+
+procedure SysEngnxCheckCustName(CustName: string; var Qry: TAdoQuery);
+begin
+ Qry.Close;
+ Qry.SQL.Clear;                            
+ Qry.SQL.Add('Select * from Customers ' +
+         'LEFT OUTER JOIN CustomerLinks on Customers.CustomerID=CustomerLinks.CustomerID ' +
+                                           'and CustomerLinks.SiteId=' + IntToStr(Fnc.SiteId) +  //RTI 39470 Changed ERPSITEID to SITEID
+         ' where ' +
+         'Customers.CustomerName=' + 'N' + QuotedStr(CustName));
+Qry.Open;
+Qry.First;
+end;
+
+procedure SysEngnxInsertCustLink(CustCode: string; CustId: integer; var Qry:TAdoQuery);
+begin
+ Qry.Close;
+ Qry.SQL.Clear;
+ Qry.SQL.Add('Insert Into CustomerLinks(SiteId, CustomerERPCode, CustomerID) ' +  //RTI 39470 Changed ERPSITEID to SITEID
+         'Values(' + IntToStr(Fnc.SiteId) + ',' +
+                 'N' + QuotedStr(CustCode) + ',' + IntToStr(CustId) + ')'); // 2004-07-02
+ Qry.ExecSQL;
+end;
+
+function SysEngnxInsertCust(CustLongName: string; var Qry:TAdoQuery): integer;
+begin
+ Qry.Close;
+ Qry.SQL.Clear;
+ Qry.SQL.Add('Insert Into Customers(CustomerName) Values(' + 'N' + QuotedStr(CustLongName) + ')');
+ Qry.ExecSQL;
+
+ Qry.SQL.Clear;
+ Qry.SQL.Add('Select * from Customers where CustomerName=' + 'N' + QuotedStr(CustLongName));
+ Qry.Open;
+ Qry.First;
+ result := Qry.FieldByName('CustomerID').AsInteger;
+end;
+
+{== public routine =================================================
+Check if CustomerName is in the Engenix DataBase, If not and switch
+is passed as true, insert a new Customer Record.
+Result = CustomerId if exist, 0 = doesn't exist
+====================================================================}
+function SysEngnxCheckCustomer(InsertIfNotExist: boolean;
+                               CustName: string;
+                               AbbrName: string;
+                               CustCode: string): integer;
+var
+  CustTable: TAdoTable;
+  CustLongName: string;
+  Qry: TAdoQuery;
+
+begin
+  Result := 0;
+  // check if the customer is already in the database
+  Qry := TAdoQuery.Create(nil);
+  Qry.Connection := Fnc.DBConnection;
+
+  if CustCode <> '' then
+     result := SysEngnxCheckCustCode(CustCode, Qry);
+
+  // CustCode is not defined, or not in database
+  // check with the CustName
+  if Result = 0 then begin
+     SysEngnxCheckCustName(CustName, Qry);
+     if Qry.RecordCount = 1 then begin
+        if Qry.FieldByName('CustomerERPCode').AsString = CustCode then
+           Result := Qry.FieldByName('CustomerID').AsInteger;
+     end
+     else begin
+        if InsertIfNotExist = true then
+           result := SysEngnxInsertCust(CustName, Qry);
+     end;
+  end;
+
+  // check with combination CustName + AbbrName
+  if Result = 0 then begin
+     CustLongName := CustName + ' - ' + AbbrName;
+     SysEngnxCheckCustName(CustLongName, Qry);
+     if Qry.RecordCount = 1 then begin
+        if Qry.FieldByName('CustomerERPCode').AsString = CustCode then
+           Result := Qry.FieldByName('CustomerID').AsInteger;
+     end
+     else begin
+        if InsertIfNotExist = true then
+           result := SysEngnxInsertCust(CustLongName, Qry);
+     end;
+  end;
+
+  // check with combination CustName + CustCode
+  if Result = 0 then begin
+     CustLongName := CustName + ' - ' + CustCode;
+     SysEngnxCheckCustName(CustLongName, Qry);
+     if Qry.RecordCount = 1 then begin
+        if Qry.FieldByName('CustomerERPCode').AsString = CustCode then
+           Result := Qry.FieldByName('CustomerID').AsInteger;
+     end
+     else begin
+        if InsertIfNotExist = true then
+           result := SysEngnxInsertCust(CustLongName, Qry);
+     end;
+  end;
+
+  if (result <> 0) and (CustCode <> '') then begin
+     if SysEngnxCheckCustCode(CustCode, Qry) = 0 then
+        SysEngnxInsertCustLink(CustCode, result, Qry)
+  end;
+
+  Qry.Close;
+  Qry.Free;
+
+end;
+
+function GetParadigmSoData: TSysTable;
+var
+  QryStr: string;
+  SoNum: string;
+  SoTab: TSysTable;
+  OptionList: TStringList;
+begin
+  SoNum := '';
+
+  QryStr :=
+'Select Data0060_1.SALES_ORDER as "Sales Order", ' +
+        'CAST(Data0060_1.RKey AS Integer) as RKEY, ' +
+     //   'Data0060_1.RKEY as RKEY, '+
+        'Data0060_1.P_CODE as Priority, '+
+        'Data0060_1.STATUS as Status, ' +
+        'Data0097_1.PO_NUMBER as PO, '+
+        'Data0010_1.CUSTOMER_NAME as Customer, '+
+        'Data0050_1.CUSTOMER_PART_NUMBER as "Part No", '+
+        'Data0050_1.CP_REV as Rev, '+
+        'Data0060_1.SCH_DATE as "Ship Date", '+
+        'Data0060_1.PART_PRICE as Price, '+
+        'Data0060_1.TOTAL_ADD_L_PRICE as Tooling, '+
+        'Data0060_1.PARTS_ORDERED as Qty '+
+
+
+'From'+
+'     DATA0060 DATA0060_1,'+
+'     DATA0010 DATA0010_1, '+
+'     DATA0050 DATA0050_1,   '+
+'     DATA0097 DATA0097_1    '+
+
+'Where'+
+     ' Data0060_1.Status < 3 and ' +
+     '(Data0060_1.CUSTOMER_PTR = Data0010_1.RKEY) AND' +
+     '(Data0060_1.CUST_PART_PTR = Data0050_1.RKEY) AND' +
+     '(Data0060_1.PURCHASE_ORDER_PTR = Data0097_1.RKEY)' +
+
+'Order By Data0060_1.RKEY ' ;
+
+  SoTab := Fnc.AstaExecuteSql(QryStr);
+  if SoTab = nil then
+     showmessage('Invalid Data returned from Asta')
+  else begin
+     SoTab.First;
+     // Added Display Options
+     OptionList := TStringList.Create;
+     OptionList.Add('KeyField=RKEY');
+     OptionList.Add('Hide=RKEY');
+
+
+
+
+     OptionList.Add('CustomFilter=Yes');
+     if Fnc.OpenDataGrid(SoTab, OptionList, nil, true) = 1 then
+        SoNum := SoTab.FieldByName('Sales Order').Value;
+     OptionList.Free;
+  end;
+
+  // If No SalesOrder selected, give option to key-in
+  if SoNum = '' then
+    SoNum := InputBox('SalesOrders', 'Enter Paradigm SalesOrderNumber', '');
+
+  // We have a SalesOrder, Get the details
+  Result := nil;
+  if SoNum <> '' then begin
+    QryStr := 'Select' +
+              ' Data0060.Sales_Order as Sales_Order,' +
+              ' Data0060.Due_Date as Due_Date,' +
+              ' Data0060.Sch_Date as Sch_Date,' +
+              ' Data0010.Cust_Code as Cust_Code,' +
+              ' Data0010.Abbr_Name as Abbr_Name,' +
+              ' Data0010.Customer_Name as Customer_Name,' +
+              ' Data0050.Customer_Part_Number as Customer_Part_Number,' +
+              ' Data0050.Customer_Part_Desc as Customer_Part_Desc,' +
+              ' Data0050.Cp_Rev as Cp_Rev' +
+              ' from Data0060, Data0010, Data0050' +
+              ' where' +
+              ' Data0060.SALES_ORDER=' + QuotedStr(SoNum) + ' and' +
+              ' Data0010.RKey=Data0060.Customer_Ptr and' +
+              ' Data0050.RKey=Data0060.Cust_Part_Ptr';
+    Result := Fnc.AstaExecuteSql(QryStr);
+    if Result.RecordCount = 0 then begin
+       Result.Close;
+       Result.Free;
+       Result := nil;
+    end;
+  end; // So <> ''
+
+  SoTab.Close;
+  Fnc.SysTableDestroy(SoTab);
+
+end;
+
+{== public routine =================================================
+If the combination of CustomerId, CustPartNum + CustPartRev doesn't
+excisst in the PartNumbers Table, insert a new record. Always return
+the PartNumberId
+====================================================================}
+function SysEngnxCheckCustPart(InsertIfNotExist: Boolean;
+                               CustomerId: integer;
+                               CustPartNum: string;
+                               CustPartDesc: string;
+                               CustPartRev: string): integer;
+var
+  PartNumTable: TAdoTable;
+begin
+  Result := 0;
+  PartNumTable := TAdoTable.Create(nil);
+//  with PartNumTable do begin
+    PartNumTable.Connection := Fnc.DBConnection;
+    PartNumTable.TableName := 'PartNumbers';
+    PartNumTable.Active := true;
+    if PartNumTable.Locate('CustomerId;PartNumberName;PartRevision',
+              [CustomerId,CustPartNum,CustPartRev], SetOf(loCaseInsensitive)) = true then // 2003-01-11
+      Result := PartNumTable.FieldByName('PartNumberId').Value
+    else begin
+      if InsertIfNotExist = true then begin
+        PartNumTable.Append;
+        PartNumTable.FieldByName('CustomerId').Value := CustomerId;
+        PartNumTable.FieldByName('PartNumberName').Value := CustPartNum;
+        PartNumTable.FieldByName('PartRevision').Value := CustPartRev;
+        PartNumTable.FieldByName('PartDescription').Value := CustPartDesc;
+        PartNumTable.Post;
+        // If not Cose/Open, Id has weird value
+        PartNumTable.Active := False;
+        PartNumTable.Active := True;
+        PartNumTable.Locate('CustomerId;PartNumberName;PartRevision',
+               [CustomerId,CustPartNum,CustPartRev], SetOf(loCaseInsensitive)); // 2003-01-11
+        Result := PartNumTable.FieldByName('PartNumberId').Value;
+      end; // Insert
+    end; // No Insert
+    PartNumTable.Close;
+//  end;
+  PartNumTable.Free;
+end;
+
+{== public routine ======================================================
+Update the fix/predefined fields for a Job. The JobParamList should be
+filled with data in the format FieldName=NewValue. FieldName must
+be an existing field in the Jobs Table. The value is the new value for
+the field. The Tree (FtBlob) can't be updated with this function
+=========================================================================}
+function SysEngnxUpdateJob(JobParamList: TStringList): Boolean;
+var
+  qrySelect: TAdoQuery;
+  qryUpdate: TAdoQuery;
+  ErrCode: integer;
+  I01: integer;
+  FldName: string;
+  FldValue: string;
+  ParamName: string;
+  aDataType: TDataType;
+begin
+  qrySelect := TAdoQuery.Create(nil);
+  qrySelect.Connection := Fnc.DBConnection;
+
+  qryUpdate := TAdoQuery.Create(nil);
+  qryUpdate.Connection := Fnc.DBConnection;
+
+  Result := True;
+
+  // Do we have a valid Job ?
+  if Fnc.JobId <= 0 then
+  begin
+    MessageDlg('Invalid/No Job Selected', mtError, SetOf(mbCancel), 0);
+    Result := False;
+  end;
+
+  // Prepare/Setup the UpdateQuery
+  if Result then                         
+  begin
+    qryUpdate.Sql.Clear;
+    qryUpdate.Sql.Add('UPDATE Jobs SET');
+
+    for I01 := 0 to JobParamList.Count - 1 do
+    begin
+      if I01 = 0 then
+        qryUpdate.Sql.Add(JobParamList.Names[I01] + '=:Param' + IntToStr(I01))
+      else
+        qryUpdate.Sql.Add(', ' + JobParamList.Names[I01] + '=:Param' + IntToStr(I01));
+    end;
+
+    qryUpdate.Sql.Add('WHERE JobId=' + IntToStr(Fnc.JobId));
+    qryUpdate.ParamCheck := True;
+  end;
+
+  // check if we have valid values, and complete the update query
+  if Result then
+  begin
+    for I01 := 0 to JobParamList.Count - 1 do
+    begin
+
+      FldName := JobParamList.Names[I01];
+      FldValue := JobParamList.Values[FldName];
+      ParamName := 'Param' + IntToStr(I01);
+
+      qrySelect.Active := False;
+      qrySelect.Sql.Clear;
+      qrySelect.Sql.Add('SELECT ' + FldName + ' FROM Jobs WHERE JobId=' + IntToStr(Fnc.JobId));
+
+      try // Get the DataType of the field, fieldname may be invalid
+        qrySelect.Active := True;
+        aDataType := qrySelect.Fields.FieldByName(FldName).DataType;
+
+        try
+          case aDataType of
+            ftBoolean:
+                   begin
+                     if LowerCase(FldValue) = 'true' then
+                       qryUpdate.Parameters.ParamByName(ParamName).Value := True
+                     else
+                       qryUpdate.Parameters.ParamByName(ParamName).Value := False;
+                     end;
+            ftBCD:     qryUpdate.Parameters.ParamByName(ParamName).Value := StrToInt(FldValue);
+            ftInteger: qryUpdate.Parameters.ParamByName(ParamName).Value := StrToInt(FldValue);
+            ftFloat:   qryUpdate.Parameters.ParamByName(ParamName).Value := StrToFloat(FldValue);
+            ftDate:    qryUpdate.Parameters.ParamByName(ParamName).Value := StrToDate(FldValue);
+            ftTime:    qryUpdate.Parameters.ParamByName(ParamName).Value := StrToTime(FldValue);
+            ftDateTime:qryUpdate.Parameters.ParamByName(ParamName).Value := StrToDateTime(FldValue);
+            ftString:  qryUpdate.Parameters.ParamByName(ParamName).Value := FldValue;
+            ftUnknown: qryUpdate.Parameters.ParamByName(ParamName).Value := FldValue;
+          end;
+        except
+          MessageDlg('function: SysEngnxUpdate' + #13#13 + 'Invalid Value for Field: ' + FldName, mtError, SetOf(mbCancel), 0);
+          Result := False;
+        end;
+
+      except
+        MessageDlg('function: SysEngnxUpdate' + #13#13 + 'Invalid FieldName: ' + FldName, mtError, SetOf(mbCancel), 0);
+        Result := False;                                                                      
+      end;
+    end;
+  end;
+
+  if Result then
+  begin
+    try
+      qryUpdate.ExecSql;
+    except
+      // no option to get to the error message in the scripter
+    end;
+
+    if qryUpdate.RowsAffected < 1 then
+    begin
+      MessageDlg('function: SysEngnxUpdate Failed/Aborted', mtError, SetOf(mbCancel), 0);
+      Result := False;
+    end;
+  end;                               
+
+  qryUpdate.Active := False;
+  qryUpdate.Free;
+
+  qrySelect.Active := False;
+  qrySelect.Free;
+end;
+
+{== public routine =====================================================
+Update the JobAttributes. JobParamList contains data in the form
+Param-x=Value. The Param-x is the name of a user defined JobAttribute
+(JobAttribute table), the value is the new value that should be stored
+at the current job. If the value is not in the appropriate format, update
+for this parameter will be skipped
+=========================================================================}
+function SysEngnxUpdateJobAttribute(JobParamList: TStringList): Boolean;
+var
+  I01: integer;
+  AttrDefTable: TAdoTable;
+  AttrValTable: TAdoTable;
+  FldIndx: integer;
+  FldType: integer;
+  FldName: string;
+  FldValue: string;
+  ErrorMsg: string;
+begin
+  ErrorMsg := '';
+  Result := true;
+  // Open the Attribute definition tabel
+  AttrDefTable := TAdoTable.Create(nil);
+  AttrDefTable.Connection := Fnc.DbConnection;
+  AttrDefTable.TableName := 'JobAttributes';
+  AttrDefTable.Active := true;
+  // Open the Attribute Values table
+  AttrValTable := TAdoTable.Create(nil);
+  AttrValTable.Connection := Fnc.DbConnection;
+  AttrValTable.TableName := 'JobAnswers';
+  AttrValTable.Active := true;
+
+  if Fnc.JobId <= 0 then
+    showmessage('Invalid/No Job Selected')
+  else begin
+    // Loop through the list and process
+    for I01 := 0 to JobParamList.Count - 1 do begin
+      // get the Name and the Value of the User Attribute
+      FldName := JobParamList.Names[I01];
+      FldValue := JobParamList.Values[FldName];
+      if AttrDefTable.Locate('AttributeName', FldName, SetOf(loCaseInsensitive)) = false then begin // 2003-01-11
+         if ErrorMsg = '' then
+            ErrorMsg := 'Procedure: SysEngnxUpdateJobAttribute' + #13;
+         ErrorMsg := ErrorMsg + #13 + 'Invalid Job Attribute FieldName: ' + FldName;
+      end // error                                   
+      else begin
+        FldType := AttrDefTable.FieldByName('AttributeType').Value;
+        // Check if the Value is valid for the given type
+        if Fnc.SysValidateTypeAndValue(FldType, FldValue) = true then begin
+
+          // Insert or Update the JobAbswer table
+          if AttrValTable.Locate('JobId;JobAttributeId',
+                                 [Fnc.JobId,AttrDefTable.FieldByName('JobAttributeId').Value],
+                                 SetOf(loCaseInsensitive)) = true then // 2003-01-11
+            AttrValTable.Edit
+          else begin
+            AttrValTable.Append;
+            AttrValTable.FieldByName('JobAttributeId').Value :=
+                                 AttrDefTable.FieldByName('JobAttributeId').Value;
+            AttrValTable.FieldByName('JobId').Value := Fnc.JobId;
+          end; // Insert
+          AttrValTable.FieldByName('EntryValue').Value := FldValue;
+          AttrValTable.FieldByName('EntryDate').Value := Now;
+          AttrValTable.Post;
+        end // Valid Value
+        else begin
+          if ErrorMsg = '' then
+             ErrorMsg := 'Procedure: SysEngnxUpdateJobAttribute' + #13;
+          ErrorMsg := ErrorMsg + #13 + 'FieldName: ' + FldName +
+                               ' Invalid value: ' + FldValue;
+        end; // errormsg for filedtype
+      end; // Valid Attribute Name
+    end; // JobParamList
+  end; // Invalid Job
+
+  if ErrorMsg <> '' then
+     showmessage(ErrorMsg);
+
+  // Close and Free the Tables
+  AttrDefTable.Close;
+  AttrDefTable.Free;
+  AttrValTable.Close;
+  AttrValTable.Free;
+end;
+{== Custom Script =================================================
+User gets a list with Active salesorders in Paradigm and select one,
+or he can key-in the So number. Detailed data is retrieved from
+Paradigm, and JobData is updated in Engenix
+===================================================================}
+procedure UpdateJobDataFromParadigm;
+var
+  ParQry: TSysTable;
+  CustomerId: integer;
+  PartNumId: integer;
+  JobParamList: TStringList;
+begin
+  Fnc.MouseBusy;
+  ParQry := GetParadigmSoData;
+  if ParQry = nil then
+    showmessage('No Valid SalesOrder Data selected')
+  else
+    begin
+    ParQry.First;
+    // Insert/Check for the customer in the Engenix DataBase
+    CustomerId := SysEngnxCheckCustomer(true, ParQry.FieldByName('Customer_Name').AsString,
+                                              ParQry.FieldByName('Abbr_Name').AsString,
+                                              ParQry.FieldByName('Cust_Code').AsString);
+    if CustomerId <> 0 then
+      begin             
+      // Check/Insert the Customer Part Number
+      PartNumId := SysEngnxCheckCustPart(
+                          true, CustomerId,
+                          ParQry.FieldByName('Customer_Part_Number').Value,
+                          ParQry.FieldByName('Customer_Part_Desc').Value,
+                          ParQry.FieldByName('Cp_Rev').Value);
+      end;
+    // if valid CustId + CustPartNumId then update Job
+    if (CustomerId <> 0) and (PartNumId <> 0) then
+      begin      
+      // Update the JobRecord
+      JobParamList := TStringList.Create;
+      JobParamList.Add('CustomerId=' + IntToStr(CustomerId));
+      JobParamList.Add('PartNumberId=' + IntToStr(PartNumId));
+      JobParamList.Add('RevisionDate=' + DateToStr(Date)); // (Format: DD/MM/YY)
+      SysEngnxUpdateJob(JobParamList);
+      JobParamList.Free;
+      end;
+    // Update Job Attributes
+    JobParamList := TStringList.Create;
+    JobParamList.Add('Due date=' + DateToStr(ParQry.FieldByName('Due_Date').Value));
+    SysEngnxUpdateJobAttribute(JobParamList);
+    JobParamList.Free;
+
+    ParQry.Close;
+    ParQry.Free;    
+    end;
+  Fnc.MouseNormal;
+end;

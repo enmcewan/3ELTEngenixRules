@@ -1,0 +1,91 @@
+//HeaderImportExport-->
+//SiteId=0
+//Enterprise=True
+//ScriptType=1
+//ScriptGroup=Drill
+//HeaderImportExport<--
+{
+This script is called from the dialog that is show in the function
+Fnc.SysImportDrillRouteToolDetails, button 'Import Files'
+}
+procedure DrillToolImport(ParamList: TStringList);
+var
+  doProcess: boolean;
+  isSlot: boolean;
+  isPlated: boolean;
+
+  DrillSize: string;
+
+  qryExcel: TAdoQuery;
+  tblTools: TSysTable;
+begin
+  qryExcel := TAdoQuery.Create(nil);
+  qryExcel.ConnectionString := Fnc.ExcelConnect(ParamList.Values['FileName'], False, 1);
+  qryExcel.Sql.Text := 'Select * From [NC_SHEET$]';
+  qryExcel.Active := True;
+
+  tblTools := Fnc.SysGetDrillRouteToolsDetails(ParamList.Values['LayerName']);
+
+  while not tblTools.isEmpty do
+  begin
+    tblTools.First;
+    tblTools.Delete;
+  end;
+
+  doProcess := False;                                         
+  qryExcel.First;
+
+  while not qryExcel.Eof do
+  begin
+    if doProcess then
+    begin
+      if qryExcel.FieldByName('F9').AsString = '' then
+        doProcess := False
+      else
+      begin
+        tblTools.Append;
+
+        DrillSize := LowerCase(qryExcel.FieldByName('F9').AsString);
+        isSlot := pos('r', DrillSize) > 0;
+        DrillSize := StringReplace(DrillSize, 'r', '', SetOf([rfReplaceAll]));
+
+        tblTools.FieldByName('Drill_Size').AsFloat := StrToFloatDef(DrillSize, 0.0);
+
+        tblTools.FieldByName('TotNumHoles').AsInteger := qryExcel.FieldByName('F11').AsInteger;
+
+        isPlated := pos('y', LowerCase(qryExcel.FieldByName('F6').AsString)) > 0;
+
+        if isSlot then
+        begin
+          if isPlated then
+            tblTools.FieldByName('HoleType').AsString := 'Slot PTH'
+          else
+            tblTools.FieldByName('HoleType').AsString := 'Slot';
+        end;
+
+        if not isSlot then
+        begin
+          if isPlated then
+            tblTools.FieldByName('HoleType').AsString := 'PTH';
+        end;
+
+        tblTools.Post;
+      end;
+    end;
+
+    if not doProcess then
+    begin
+      doProcess := (Trim(LowerCase(qryExcel.FieldByName('F1').AsString)) = 'code') and
+                   (Trim(LowerCase(qryExcel.FieldByName('F7').AsString)) = 'tool no') and
+                   (Trim(LowerCase(qryExcel.FieldByName('F9').AsString)) = 'drill size');
+    end;
+
+    qryExcel.Next;
+  end;
+
+  Fnc.SysSaveDrillRouteToolsDetails(ParamList.Values['LayerName'], tblTools);
+
+  Fnc.SysTableDestroy(tblTools);
+
+  qryExcel.Free;
+end;

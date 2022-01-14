@@ -1,0 +1,10 @@
+//HeaderImportExport-->
+//SiteId=0
+//Enterprise=True
+//ScriptType=1
+//ScriptGroup=Job Details User Event Scripts
+//HeaderImportExport<--
+procedure StackupUserEvent1(ParamList: TStringList);
+begin
+  Fnc.OpenDataGrid(Fnc.CustomTableGet('Cust_Code_Map'));
+end;

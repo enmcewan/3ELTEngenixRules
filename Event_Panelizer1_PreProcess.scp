@@ -1,0 +1,13 @@
+//HeaderImportExport-->
+//SiteId=0
+//Enterprise=True
+//ScriptType=0
+//ScriptGroup=Panelizer1
+//HeaderImportExport<--
+{
+  Script runs just before the Panelizer1 is started
+}                           
+begin
+  Fnc.SysSetAttrValueTopLevel('Panelizer1_PartLength', Fnc.SysGetAttrValueTopLevel('PCB_Length'));
+  Fnc.SysSetAttrValueTopLevel('Panelizer1_PartWidth', Fnc.SysGetAttrValueTopLevel('PCB_Width'));
+end;                                                                                                                           

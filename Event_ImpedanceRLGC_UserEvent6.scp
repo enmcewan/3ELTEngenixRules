@@ -1,0 +1,15 @@
+//HeaderImportExport-->
+//SiteId=0
+//Enterprise=True
+//ScriptType=1
+//ScriptGroup=Impedance RLGC
+//HeaderImportExport<--
+{
+  Script to set the sorting for the RLGC Impedance Requirements
+
+  Add the FieldNames in the proper sequence to the ParamList
+}
+procedure ImpedanceRLGC_UserEvent6(RLGCImpedance: TSysTable; ParamList: TStringList);
+begin
+  //
+end;

@@ -1,0 +1,16 @@
+//HeaderImportExport-->
+//SiteId=0
+//Enterprise=True
+//ScriptType=1
+//ScriptGroup=Drill Module
+//HeaderImportExport<--
+{
+  This script is called after a tool is copied, in this script you have
+  the option to clear/init variables that should not be included in the
+  copy from the source, example: annular ring values, etc
+}
+
+procedure DrillModule_PostCopy(ParamList: TStringList; DrillDetails: TSysTable);
+begin
+  // custom code in here to cleanup after copy is done
+end;

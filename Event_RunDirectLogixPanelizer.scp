@@ -1,0 +1,21 @@
+//HeaderImportExport-->
+//SiteId=0
+//Enterprise=True
+//ScriptType=1
+//ScriptGroup=Direct Logix
+//HeaderImportExport<--
+// The following are the functions that are applicable to setting
+// up and executing DirectLogix Panelization:
+
+// Fnc.DLGetPanelLibraryTargets(UnitString : string) : TSysTable;  // caller is responsible for disposing returned table.
+// Fnc.DLGetPanelLibraryCoupons(UnitString : string) : TSysTable;  // caller is responsible for disposing returned table.
+// Fnc.DLAddPanelCoupon(CouponName : string; Quantity : string);   // quantity can be a number or ratio (i.e. can be string value '2' or ':2')
+// Fnc.DLAddPanelTarget(PanelName : string);
+// Fnc.DLRunPanelCalculation;
+
+// The retrieval of panelization data is performed after execution of this
+// event script by Engenix.
+
+begin
+
+end;

@@ -1,0 +1,22 @@
+//HeaderImportExport-->
+//SiteId=0
+//Enterprise=True
+//ScriptType=1
+//ScriptGroup=Attribute Edit
+//HeaderImportExport<--
+{
+To get/set attribute values or hide/show attributes use the following functions
+
+Fnc.SysAttrEditGetAttrValue(AttrName: string): variant;
+Fnc.SysAttrEditGetAttrValueTopLevel(AttrName: string): variant;
+Fnc.SysAttrEditGetLayerAttrValue(LayerName: string; AttrName: string): variant;
+
+Fnc.SysAttrEditSetAttrValue(AttrName, AttrValue: string; HideAttrib: boolean = False);
+Fnc.SysAttrEditSetAttrValueTopLevel(AttrName, AttrValue: string; HideAttrib: boolean = False);
+Fnc.SysAttrEditSetLayerAttrValue(LayerName: string; AttrName: string; AttrValue: string; HideAttrib: boolean = False);
+}
+
+procedure AttrEdit_LayerInit(ParamList: TStringList; SpecTable: TSysTable);
+begin
+  //
+end;

@@ -1,0 +1,66 @@
+//HeaderImportExport-->
+//SiteId=0
+//Enterprise=True
+//ScriptType=0
+//ScriptGroup=
+//HeaderImportExport<--
+procedure UpdateAttribDef(OnlyTopLevel: boolean; AttrName: string);
+var
+  aQry: TAdoQuery;
+begin
+  aQry := Fnc.SqlRunNew('Select * From PartAttributes Where TreeName = ' + QuotedStr(AttrName));
+
+  if not aQry.isEmpty then
+  begin
+    aQry.Edit;                                                                                                            
+
+    aQry.FieldByName('CopyToTopLevel').AsBoolean := True;
+
+    if not OnlyTopLevel then
+    begin
+      aQry.FieldByName('CopyToInner').AsBoolean := True;
+      aQry.FieldByName('CopyToBuried').AsBoolean := True;
+      aQry.FieldByName('CopyToInner').AsBoolean := True;
+    end;
+
+    aQry.Post;
+  end;
+
+  aQry.Active := False;
+  aQry.Free;
+end;
+
+begin                                          
+  Fnc.MouseBusy;
+
+  // Input, Toplevel Only
+  UpdateAttribDef(True, 'Panelizer1_PartLength');
+  UpdateAttribDef(True, 'Panelizer1_PartWidth');
+  UpdateAttribDef(True, 'Panelizer1_PartPerArray');                               
+  UpdateAttribDef(True, 'Panelizer1_HasImpCoupon');
+  UpdateAttribDef(True, 'Panelizer1_ImpCouponWidth');
+  UpdateAttribDef(True, 'Panelizer1_HasIST');
+  UpdateAttribDef(True, 'Panelizer1_ISTWidth');
+  UpdateAttribDef(True, 'Panelizer1_RotationAngle');
+  UpdateAttribDef(True, 'Panelizer1_RotationLength');
+  UpdateAttribDef(True, 'Panelizer1_RotationWidth');
+  UpdateAttribDef(True, 'Panelizer1_GoldFingerPosition');
+  UpdateAttribDef(True, 'Panelizer1_FreeSpacePart');
+  UpdateAttribDef(True, 'Panelizer1_FreeSpaceEdge');
+
+  // Input, All Mfg.Parts
+  UpdateAttribDef(False,'Panelizer1_HasLaser');
+  UpdateAttribDef(False, 'Panelizer1_HasConfMask');
+
+  // Output, All Mfg.Parts
+  UpdateAttribDef(False, 'Panelizer1_PanelLength');
+  UpdateAttribDef(False, 'Panelizer1_PanelWidth');
+  UpdateAttribDef(False, 'Panelizer1_PanelWidthConfMask');
+  UpdateAttribDef(False, 'Panelizer1_Yield');
+  UpdateAttribDef(False, 'Panelizer1_OPE_L');
+  UpdateAttribDef(False, 'Panelizer1_OPE_Dist');
+  UpdateAttribDef(False, 'Panelizer1_OPE_Front');
+  UpdateAttribDef(False, 'Panelizer1_OPE_Back');
+
+  Fnc.MouseNormal;
+end;

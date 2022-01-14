@@ -1,0 +1,1403 @@
+//HeaderImportExport-->
+//SiteId=0
+//Enterprise=True
+//ScriptType=0
+//ScriptGroup=HCS
+//HeaderImportExport<--
+   uses                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         
+  Event_RouteGenLibrary,
+  Eng_RouteFunctions,
+  RouteFunctions,
+  CT_CuPlt_GM,
+  CT_CuPlt_Line,
+  CT_OLPhoto,                                                                                                     
+  CT_SearchLibrary;
+
+var
+  PhotoLine: string;
+  AltLine: string;
+  ProdResource: string
+  DesLine: string;
+
+procedure Flash_Plating_SD;
+begin
+  SysRouteInsDepartment('Erp', 'COPPL-E', '');
+  SysRouteInsWorkCenter('Erp', 'COPPL-E', '');
+  SysRouteInsAddlParameter('Erp', 'Process', 'Flash Plating', '', '', false, '', '', '');
+  //InProcessCuThk := InProcessCuThk + 10;
+  UpdateInProcessCuThk(InProcessCuThk + 10);
+  
+  // 1107 Additional Run Card info - Note sequential build
+  if ( Fnc.SysGetAttrValue('Seq_Build') = true ) or ( SubParentIsSequential ) then 
+    SysRouteInsAddlParameter('Erp', 'Remark', 'Sequential Build', '', '', false, '', '', ''); 
+end;
+
+procedure OL_Photo_Common_SD(PhotoProcess : string);
+var
+  ProcessLabel : string;
+  Au_Thk1 : float;
+  Au_Thk2 : float;        
+  thicknessAfterPlating : float;
+  photoAspectRatio : float;             
+  minHoleSize_NP : float;
+
+begin                               
+  ProcessLabel := '';
+  Au_Thk1 := 0.0;                      
+  Au_Thk2 := 0.0;
+  PhotoLine := '';                
+  AltLine := '';
+  ProdResource := '';
+  DesLine := '';
+  thicknessAfterPlating := 0.0;
+  photoAspectRatio := 0.0;
+  minHoleSize_NP := 0.0;
+
+  if photoProcess <> 'ConformalMask' then
+    photoStepList.Add(IntToStr(Fnc.SysRouteInsGetStepNum)); // Photo Sequence 
+
+  SysRouteInsDepartment('Erp', 'EXPOL-A', '');
+
+  if ( PhotoProcess <> 'PForm_SBS' ) and (PhotoProcess <> 'IL_Photo_OL_ThinPanel') then    // 1108 OL Photo Process Update  
+  begin
+    if Fnc.SysGetAttrValue('LayupThickness') >= 4.2 then // 793 Update Photo process rule
+      SysRouteInsWorkCenter('Erp', 'EXPOL-A7', '');
+    else
+      begin
+      Search_Table_PhotoLine(PhotoProcess, PhotoLine, AltLine, ProdResource, DesLine);
+                
+      if ProdResource <> '' then
+        SysRouteInsWorkCenter('Erp', ProdResource, '')
+      else
+      begin
+        ShowMessage('Warning!!! - No Production Resource found for ' + PhotoProcess + '. Department Resource assigned');
+
+        SysRouteInsWorkCenter('Erp', 'EXPOL-A', '');
+      end;
+    end;
+
+    SysRouteInsAddlParameter('Erp', 'Alternative Line', AltLine, '', '', false, '', '', '');
+  end;
+
+  case PhotoProcess of
+    'PattFormation', 'IL_Photo_OL_ThinPanel', 'PForm_SBS' : ProcessLabel := 'Pattern Formation';  // 1108 OL Photo Process Update  
+    'DesPattEtch' : ProcessLabel := 'DES Pattern Etch';
+    'GoldPattPlating' : ProcessLabel := 'Gold Pattern Plating';
+    'GoldFingerPlating' : ProcessLabel := 'Gold Finger Plating';
+    'AlkalineLeadlineEtch' : ProcessLabel := 'Alkaline Lead-line Etch';
+    'HoleTenting' : ProcessLabel := 'Hole Tenting';
+    'AlkalinePattEtch' : ProcessLabel := 'Alkaline Pattern Etch';
+    'SelectiveENIG' : ProcessLabel := 'Selective ENIG';       
+    'ConformalMask' : ProcessLabel := 'Conformal Mask';
+    'DESPattEtchLGA' : ProcessLabel := 'DES Pattern Etch LGA';
+    'HoleTentingLGA' : ProcessLabel := 'Hole Tenting LGA';
+    'SelectiveFinishing' : ProcessLabel := 'Selective ' + Fnc.SysGetAttrValue('Board_Finish'); // 1355
+  end;
+
+  SysRouteInsAddlParameter('Erp','Photo Type', ProcessLabel,'','', false, '', '', '');
+
+  if PhotoProcess <> 'ConformalMask' then
+  begin
+    //if NOT ((Fnc.SysGetAttrValue('BlindVias') = true) and (ProdCodeLBlb = false)) then
+    //begin
+      if ((Fnc.SysGetAttrValue('Overall_Blown_Val') = 0.0) and (Fnc.SysGetAttrValue('Min_PTrace_Gap') = 0.0)) then
+      begin
+        SysRouteInsAddlParameter('Erp', 'Line Width', Fnc.SysGetAttrValue('Line_Width'), '', '', false, '', '', '');
+        SysRouteInsAddlParameter('Erp', 'Min Gap', Fnc.SysGetAttrValue('Min_Gap'), '', '', false, '', '', '');
+      end                       
+      else
+      begin
+        SysRouteInsAddlParameter('Erp', 'Blown Width', Fnc.SysGetAttrValue('Line_Width_Blown'), '', '', false, '', '', '');
+        SysRouteInsAddlParameter('Erp', 'Blown Gap', Fnc.SysGetAttrValue('Air_Gap_Blown'), '', '', false, '', '', '');
+      end;
+
+      SysRouteInsAddlParameter('Erp', 'Land Area', Fnc.SysGetAttrValue('Land_Area'), '', '', false, '', '', '');
+      SysRouteInsAddlParameter('Erp', 'Annular', Fnc.SysGetAttrValue('Annular'), '', '', false, '', '', '');
+      SysRouteInsAddlParameter('Erp', 'Design Thickness', FormatFloat('0.000', Fnc.SysGetAttrValue('LayupThickness')), '', '', false, '', '', '');
+
+      if Fnc.SysGetAttrValue('Abs_Min_Th') > 0 then
+        Fnc.SysSetAttrValue('Min_Hole_Size', Min_Drill - (Fnc.SysGetAttrValue('Abs_Min_Th')/1000*2 ));
+      else
+        Fnc.SysSetAttrValue('Min_Hole_Size', Min_Drill - (Fnc.SysGetAttrValue('Ave_Min_Th')/1000*2 ));
+
+      Fnc.SysSetAttrValue('Min_Hole_Size', Round100(Fnc.SysGetAttrValue('Min_Hole_Size')));
+
+      thicknessAfterPlating := Fnc.SysGetAttrValue('Press_Thickness') + ( InProcessCuThk/1000 * 2 ) - ( StrToFloat(GetBaseCuInMicrons(true, false)) / 1000 );
+
+      // 756 Update Aspect ratio calculation for OL layer photo process
+      if not PluggedFilledB4Photo then
+      begin
+        SysRouteInsAddlParameter('Erp', 'Min Hole Size', Fnc.SysGetAttrValue('Min_Hole_Size'), '', '', false, '', '', '');
+        SysRouteInsAddlParameter('Erp', 'Aspect Ratio', formatFloat('0.0', thicknessAfterPlating / Fnc.SysGetAttrValue('Min_Hole_Size')), '', '', false, '', '', '');
+      end
+      else
+      begin
+        if Fnc.SysGetAttrValue('Abs_Min_Th') > 0 then
+          minHoleSize_NP := Fnc.SysGetAttrValue('Min_Drill_Size_NP') - (Fnc.SysGetAttrValue('Abs_Min_Th') / 1000*2 )
+        else
+          minHoleSize_NP := Fnc.SysGetAttrValue('Min_Drill_Size_NP') - (Fnc.SysGetAttrValue('Ave_Min_Th') / 1000*2 );   
+                                                                                                                                              
+        if Fnc.SysGetAttrValue('MfgPartType') = 'Top' then // 961 - removal of NP Holes from subs
+        begin
+          SysRouteInsAddlParameter('Erp', 'Min Hole Size NP', minHoleSize_NP , '', '', false, '', '', '');
+          SysRouteInsAddlParameter('Erp', 'Aspect Ratio', formatFloat('0.0', thicknessAfterPlating / minHoleSize_NP), '', '', false, '', '', '');
+        end                        
+        else                                     
+          SysRouteInsAddlParameter('Erp', 'Aspect Ratio', formatFloat('0.0', thicknessAfterPlating / Fnc.SysGetAttrValue('Min_Hole_Size')), '', '', false, '', '', '');
+      
+      end;
+                                                         
+      //No Computation required - already done
+      SysRouteInsAddlParameter('Erp', 'Max Hole Size', Fnc.SysGetAttrValue('Max_Hole_Size'), '', '', false, '', '', '');
+      SysRouteInsAddlParameter('Erp', 'Max P-Hole Size', Fnc.SysGetAttrValue('Max_PHole_Size'), '', '', false, '', '', '');
+                                                
+      if Fnc.SysGetAttrValue('EdgePlating') = true then // 793 Update Photo Process
+        SysRouteInsAddlParameter('Erp', 'Edge Plating Max Length', Fnc.SysGetAttrValue('EdgePlating_Max_Length'), '', '', false, '', '', '');
+
+      // 1107 Runcard Process Additional Inf0 - always show slot length
+      //if Fnc.SysGetAttrValue('Slot_Length_PTH') > 6.0 then // 793 Update Photo Process 
+      if MfgPartType = 'Top' then 
+        SysRouteInsAddlParameter('Erp', 'Max Slot Length', Fnc.SysGetAttrValue('Slot_Length_PTH'), '', '', false, '', '', '');
+                      
+      if Fnc.SysGetAttrValue('Design_Type') = 'Flip Chip' then
+        SysRouteInsAddlParameter('Erp', 'Design', Fnc.SysGetAttrValue('Design_Type'), '', '', false, '', '', '');
+                                                           
+      // 919 Add MLB or HDI remarks under OL Photo Step
+      if PhotoBoardType <> '' then
+         SysRouteInsAddlParameter('Erp', 'Board Type', PhotoBoardType, '', '', false, '', '', '');
+         
+      // 972 - Material and Panel size on OL Photo step
+      SysRouteInsAddlParameter('Erp', 'Pre-preg Material', Fnc.SysGetAttrValue('PPGMat'), '', '', false, '', '', '');
+      SysRouteInsAddlParameter('Erp', 'Core Material', Fnc.SysGetAttrValue('CoreMat'), '', '', false, '', '', '');
+      SysRouteInsAddlParameter('Erp', 'Panel Size', IntToStr(Fnc.SysGetAttrValue('Panel_Length')) + ' X ' + IntToStr(Fnc.SysGetAttrValue('Panel_Width')), '', '', false, '', '', '');
+        
+
+      if Au_Plt_Count >= 1 then       
+      begin
+        Fnc.SysSetAttrValue('Sel_Gold_AuSpec1', trim(Fnc.SysGetAttrValue('Sel_Gold_AuSpec1')));
+        Fnc.SysSetAttrValue('Sel_Gold_AuSpec2', trim(Fnc.SysGetAttrValue('Sel_Gold_AuSpec2')));
+                
+        try
+          Au_Thk1 := StrToFloat('0' + Copy(Fnc.SysGetAttrValue('Sel_Gold_AuSpec1'),1,4));
+          Au_Thk2 := StrToFloat('0' + Copy(Fnc.SysGetAttrValue('Sel_Gold_AuSpec2'),1,4));
+
+          if ( Au_Plt_Count = 1 ) and ( Au_Thk1 <= 0.1 ) then
+            SysRouteInsInstruction('Erp', 'AUGAL001', '') // REMARK : OFF CHEMICAL
+
+          if ( Au_Plt_Count = 2 ) and (( Au_Thk1 <= 0.1 ) or ( Au_Thk2 <= 0.1 ))  then
+            SysRouteInsInstruction('Erp', 'AUGAL001', '') // REMARK : OFF CHEMICAL
+        except
+          ShowMessage('ERROR! : Cannot convert Au Thickness 1 or 2 to a number');
+        end;
+      end;
+
+      if ((Fnc.SysGetAttrValue('Design_Type') = 'Flip Chip') or (ProdCodeLX)) then
+        SysRouteInsInstruction('Erp', 'EXPOL001', '') // REMARK : OFF BUFFING
+    //end;
+  end;
+end;                     
+
+procedure OL_Photo_FSF; // 1114 Fixed Scale Factor Info
+var
+  fixedDim: string;
+  controlRange: string;
+begin                                                                                          
+  
+  fixedDim := 'X = ' + FormatFloat('0.000', FloatToStr(Fnc.SysGetAttrValue('OLPhoto_FSF_X'))) + '%; ' +
+              'Y = ' + FormatFloat('0.000', FloatToStr(Fnc.SysGetAttrValue('OLPhoto_FSF_Y'))) + '%';                                 
+                     
+  controlRange := 'X = ' + FormatFloat('0.000', FloatToStr(Fnc.SysGetAttrValue('OLPhoto_FSF_X') - Fnc.SysGetAttrValue('OLPhoto_FSF_X_Tol'))) + '~' +
+                           FormatFloat('0.000', FloatToStr(Fnc.SysGetAttrValue('OLPhoto_FSF_X') + Fnc.SysGetAttrValue('OLPhoto_FSF_X_Tol'))) + '%; ' +
+                  'Y = ' + FormatFloat('0.000', FloatToStr(Fnc.SysGetAttrValue('OLPhoto_FSF_Y') - Fnc.SysGetAttrValue('OLPhoto_FSF_Y_Tol'))) + '~' +
+                           FormatFloat('0.000', FloatToStr(Fnc.SysGetAttrValue('OLPhoto_FSF_Y') + Fnc.SysGetAttrValue('OLPhoto_FSF_Y_Tol'))) + '%';
+                           
+  if Fnc.SysGetAttrValue('OLPhoto_FSF_X') > 0 then
+  begin
+    SysRouteInsAddlParameter('Erp', 'Fixed Scale Factor', fixedDim, '', '', false, '', '', '');
+    SysRouteInsAddlParameter('Erp', 'Control Range', controlRange, '', '', false, '', '', ''); 
+  end;
+end;                                                                                                                   
+    
+procedure OL_Photo_Patt_Form_SD;
+begin
+  OL_Photo_Common_SD('PattFormation');                             
+  OL_Photo_FSF; // 1114 Fixed Scale Factor Info 
+end;
+
+procedure OL_Photo_Patt_Form_4EGoldB4Res_SD;
+begin
+  OL_Photo_Common_SD('DesPattEtch');
+  OL_Photo_FSF; // 1114 Fixed Scale Factor Info 
+end;
+
+procedure OL_Photo_PForm_SbS_SD;
+begin
+  OL_Photo_Common_SD('PForm_SBS');
+  SysRouteInsWorkCenter('Erp', 'EXPOL-A05', '');
+end;                         
+
+// 1108 OL PHoto Process Flow Update
+procedure OL_Photo_PForm_TCI_SD;        
+begin                    
+  OL_Photo_Common_SD('PForm_SBS');
+  SysRouteInsWorkCenter('Erp', 'EXPOL-A05', '');
+end;
+
+procedure OL_Photo_LGA_SD;
+begin
+  OL_Photo_Common_SD('DESPattEtchLGA');
+end; 
+
+// 1108 OL Photo Process Update  
+procedure IL_Photo_OL_ThinPanel_SD;
+begin            
+  OL_Photo_Common_SD('IL_Photo_OL_ThinPanel'); 
+  SysRouteInsWorkCenter('Erp', 'EXPIL-D', '');
+  SysRouteInsWorkCenter('Erp', 'EXPIL-K0', '');
+  OL_Photo_FSF; // 1197 Fixed Scale Factor for OL Thin Panel 
+end; 
+
+procedure OL_DES_Common(PhotoProcess : string; SBS : boolean);
+begin
+
+  if ( PhotoProcess <> 'IL_DES_OL_ThinPanel' ) and ( not SBS ) then  // 1108 OL Photo Process Update  
+  begin
+    SysRouteInsDepartment('Erp', 'DESOL-A', '');
+                                  
+    Search_Table_PhotoLine(PhotoProcess, PhotoLine, AltLine, ProdResource, DesLine);
+                              
+    if CustCode_Rule('Customer') = 'HR' then
+      DESLine := 'DES4';
+  
+    if Fnc.SysGetAttrValue('DynamicEtch') and not SBS then
+      SysRouteInsWorkCenter('Erp', 'DESOL-A4', '')
+    else
+      case DESLine of
+         'DES2'     : SysRouteInsWorkCenter('Erp', 'DESOL-A02', '');
+         'DES3'     : ShowMessage('NO RESOURCE CREATED FOR DES3');
+         'DES2/DES3': SysRouteInsWorkCenter('Erp', 'DESOL-A2', '');
+         'DES4'     : SysRouteInsWorkCenter('Erp', 'DESOL-A4', ''); 
+      end;  
+    end  
+  else
+  begin 
+    if PhotoProcess = 'IL_DES_OL_ThinPanel' then
+    begin                                
+      SysRouteInsDepartment('Erp', 'DESIL-D', '');
+      SysRouteInsWorkCenter('Erp', 'DESIL-A0', '');
+    end 
+    else
+    begin
+      SysRouteInsDepartment('Erp', 'DESOL-A', '');
+      SysRouteInsWorkCenter('Erp', 'DESOL-A2', '');
+      SysRouteInsAddlParameter('Erp', 'Remark', 'Run at DES 3 only', '', '', false, '', '', '');
+    end 
+  end;                                           
+  
+  if (( FindImpedanceSides = 'Outer' ) or ( FindImpedanceSides = 'Both' )) then
+    SysRouteInsAddlParameter('Erp', 'Impedance', 'Yes', '', '', false, '', '', '');            
+  else
+    SysRouteInsAddlParameter('Erp', 'Impedance', 'No', '', '', false, '', '', '');
+                 
+  if Fnc.SysGetAttrValue('DynamicEtch') = true then
+    SysRouteInsAddlParameter('Erp', 'Dynamic', 'True', '', '', false, '', '', '');
+
+  if TopFirstPlatingUM >= 41 then
+    SysRouteInsAddlParameter('Erp', 'Plating Thickness', TopFirstPlatingUM, '', '', false, '', '', '');
+
+  if Fnc.SysGetAttrValue('Design_Type') = 'Flip Chip' then
+    SysRouteInsAddlParameter('Erp', 'Design Type', Fnc.SysGetAttrValue('Design_Type'), '', '', false, '', '', '');
+
+  if ((AOIforCMK = false) and (CustCode_Rule('Customer') = 'FA')) then
+    SysRouteInsInstruction('Erp', 'DESIL007', ''); // REMARK : Sampling check line width.”
+
+end; 
+
+procedure OL_DES_SD;
+begin
+  OL_DES_Common('PattFormation', false);
+end;
+
+procedure OL_DES_4EGoldB4Res_SD;
+begin
+  OL_DES_Common('DesPattEtch', false);
+end;
+
+// 1108 OL Photo Process Update  
+procedure IL_DES_OL_ThinPanel_SD;
+begin
+  OL_DES_Common('IL_DES_OL_ThinPanel', false);
+end;
+
+// 1108 OL Photo Process Update
+procedure OL_DES_TCI_SD;
+begin
+  OL_DES_Common('PattFormation', true); 
+end; 
+
+procedure OL_SbS_DES1_SD;
+begin
+  SysRouteInsAddlParameter('Erp', 'DES #', '1st DES', '', '', false, '', '', '');
+  SysRouteInsInstruction('Erp', 'DESOL0006', ''); // REMARK: SIDE BY SIDE ETCHING.
+  OL_DES_Common('PattFormation', true); 
+end; 
+
+procedure OL_SbS_DES2_SD;
+begin
+  SysRouteInsAddlParameter('Erp', 'DES #', '2nd DES', '', '', false, '', '', '');
+  OL_DES_Common('PattFormation', true);
+end;
+
+procedure OL_DES_CM_SD;
+begin
+  OL_DES_Common('ConformalMask', false);
+
+  if Fnc.SysGetAttrValue('UEtch_Cu') = 0.0 then
+    SysRouteInsAddlParameter('Erp', 'Base Cu', IntToStr(BaseCuTopUM), '', '', false, '', '', '');
+  else
+    //SysRouteInsAddlParameter('Erp', 'Micro-Etch Spec', Fnc.SysGetAttrValue('UEtch_Spec'), '', '', false, '', '', '');
+    // 1138 Micro Etch for Laser Via
+    SysRouteInsAddlParameter('Erp', 'Micro-Etch Spec', Fnc.SysGetAttrValue('UEtch_Cu'), '', '', false, '', '', ''); 
+
+  SysRouteInsAddlParameter('Erp', 'Conf Mask Size A/Etch', Fnc.SysGetAttrValue('ConfMask_Size_AE'), '', '', false, '', '', '');
+
+  if Fnc.SysGetAttrValue('ConfMask_Size_AE_Skip') > 0 then
+    SysRouteInsAddlParameter('Erp', 'Conf Mask Size AE Skip', Fnc.SysGetAttrValue('ConfMask_Size_AE_Skip'), '', '', false, '', '', '');
+
+end;
+
+procedure OL_DES_LGA_SD;
+begin
+  OL_DES_Common('DESPattEtchLGA', false);
+end;
+
+procedure InsertECParameters;  // 1255 EC Parameter Attributes
+begin
+  SysRouteInsAddlParameter('Erp', 'Test Voltage', IntToStr(Fnc.SysGetAttrValue('EC_Test_Voltage')) + ' Volts','', '', false, '', '', '');
+  SysRouteInsAddlParameter('Erp', 'Continuity Resistance', IntToStr(Fnc.SysGetAttrValue('EC_Cont_Res')) + ' Ohms','', '', false, '', '', '');
+  SysRouteInsAddlParameter('Erp', 'Isolation Resistance', IntToStr(Fnc.SysGetAttrValue('EC_Isol_Res')) + ' MOhms','', '', false, '', '', '');
+  //SysRouteInsAddlParameter('Erp', 'Current', IntToStr(Fnc.SysGetAttrValue('EC_Current')) + ' mA','', '', false, '', '', ''); 1309
+end;
+
+procedure Panel_EC_SD;
+begin                                                                                                         
+  SysRouteInsDepartment('Erp', 'ELCHK-P', '');
+  SysRouteInsWorkCenter('Erp', 'ELCHK-P', '');
+                         
+  InsertECParameters;  // 1255 EC Parameter Attributes 
+end;
+
+procedure Epoxy_Plug_PreBake_BackDrill_SD; // 1258 Additional pre-baking b4 Epoxy Plugging                
+begin
+  SysRouteInsDepartment('Erp', 'DMBAK-A', '');
+  SysRouteInsWorkCenter('Erp', 'DMBAK-A', '');
+  SysRouteInsAddlParameter('Erp', 'Remarks', 'Use Cu Tunnel Oven', '', '', false, '', '', '');
+end;
+
+procedure Epoxy_Plug_Common;
+var             
+  Onsokki, Noda : boolean;
+begin                                 
+  Onsokki := true;
+  Noda := true;
+
+  SysRouteInsDepartment('Erp', 'EPXPL-A', '');
+
+  if (
+      (Fnc.SysGetAttrValue('Panel_Width') > 509) or
+      (Fnc.SysGetAttrValue('Panel_Width') < 200) or
+      (Fnc.SysGetAttrValue('Panel_Length') > 609) or
+      (Fnc.SysGetAttrValue('Panel_Length') < 250) or
+      (Fnc.SysGetAttrValue('LayupThickness') > 5.00) or  // Epoxy Plugging Max Thickness Change
+      (Fnc.SysGetAttrValue('LayupThickness') < 0.40) or
+      (Fnc.SysGetAttrValue('BlindVias') = true) or
+      (Fnc.SysGetAttrValue('BuriedVias') = true) or
+      (Fnc.SysGetAttrValue('CappedVia') = true)
+     )
+  then
+    Onsokki := false;
+
+  if (
+      (Fnc.SysGetAttrValue('Panel_Width') > 525) or
+      (Fnc.SysGetAttrValue('Panel_Width') < 200) or
+      (Fnc.SysGetAttrValue('Panel_Length') > 620) or
+      (Fnc.SysGetAttrValue('Panel_Length') < 200) or
+      (Fnc.SysGetAttrValue('LayupThickness') > 5.00) or  // Epoxy Plugging Max Thickness Change
+      (Fnc.SysGetAttrValue('LayupThickness') < 0.40)
+     )
+  then                                        
+    Noda := false;
+
+  if ((Onsokki = true) and (Noda = true)) then
+    SysRouteInsWorkCenter('Erp', 'EPXPL-A', '');
+
+  if ((Onsokki = true) and (Noda = false)) then
+    SysRouteInsWorkCenter('Erp', 'EPXPL-A0', '');
+
+  if ((Onsokki = false) and (Noda = true)) then
+    SysRouteInsWorkCenter('Erp', 'EPXPL-B0', '');
+
+  if ((Onsokki = false) and (Noda = false)) then
+  begin
+    ShowMessage('ERROR!!! - NO EPOXY LINE CAN BE USED!!, PLS CHECK WITH PE.');
+    SysRouteInsDepartment('Erp', 'zzz=====7o', '');
+    SysRouteInsWorkCenter('Erp', 'zzz=====7o', '');
+    SysRouteInsInstruction('Erp', 'MISS STEP', ''); // Missing Precess Step, Please check with DE
+  end;
+
+  SysRouteInsAddlParameter('Erp', 'Plug Ink', Fnc.SysGetAttrValue('EpoxyPlugInk'), '', '', false, '', '', '');
+  
+  // 1107 Runcard Additional Info
+  if Fnc.SysGetAttrValue('MfgPartType') = 'Top' then
+    SysRouteInsAddlParameter('Erp', 'Plug to Non-plug', Fnc.SysGetAttrValue('EpoxyPlug_PlugToNonPlugSpacing'), '', '', false, '', '', '');
+end;
+
+procedure Epoxy_PlugA_SD;
+begin
+  Epoxy_Plug_Common;
+  SysRouteInsAddlParameter('Erp', 'Bottom A Layer', Fnc.SysGetAttrValue('BotLayer'), '', '', false, '', '', '');
+  
+  if ( not Fnc.SysGetAttrValue('BackDrill_Epoxy') ) and  // 1258 Additional pre-baking b4 Epoxy Plugging 
+     (( Fnc.SysGetAttrValue('EpoxySide') = 'Epoxy Side A' ) or ( Fnc.SysGetAttrValue('EpoxySide') = 'Epoxy Side AB' )) then
+    SysRouteInsAddlParameter('Erp', 'Remarks', 'Pre-Bake using Blue Box Oven', '', '', false, '', '', ''); 
+end;
+
+procedure Epoxy_PlugB_SD;
+begin                     
+  Epoxy_Plug_Common;
+  SysRouteInsAddlParameter('Erp', 'Top B Layer', Fnc.SysGetAttrValue('TopLayer'), '', '', false, '', '', '');
+  
+  if ( not Fnc.SysGetAttrValue('BackDrill_Epoxy') ) and  // 1258 Additional pre-baking b4 Epoxy Plugging   
+     (( Fnc.SysGetAttrValue('EpoxySide') = 'Epoxy Side B' ) or ( Fnc.SysGetAttrValue('EpoxySide') = 'Epoxy Side BA' )) then
+    SysRouteInsAddlParameter('Erp', 'Remarks', 'Pre-Bake using Blue Box Oven', '', '', false, '', '', '');
+end;
+
+procedure Epoxy_PlugA_SS_SD;   // 1463
+begin
+  Epoxy_Plug_Common;
+  SysRouteInsAddlParameter('Erp', 'Epoxy Side', 'A side', '', '', false, '', '', '');
+  
+  if not Fnc.SysGetAttrValue('BackDrill_Epoxy') then // 1504
+  SysRouteInsInstruction('Erp', 'EPXPL071', ''); // Pre-Bake using Blue Box Oven' 
+end;
+                                     
+procedure Epoxy_PlugB_SS_SD;  // 1463
+begin
+  Epoxy_Plug_Common;
+  SysRouteInsAddlParameter('Erp', 'Epoxy Side', 'B side', '', '', false, '', '', '');
+  
+  if not Fnc.SysGetAttrValue('BackDrill_Epoxy') then // 1504
+  SysRouteInsInstruction('Erp', 'EPXPL071', ''); // Pre-Bake using Blue Box Oven' 
+end;
+
+procedure EpoxyPlug_Buffing_Common;                          
+begin
+  SysRouteInsDepartment('Erp', 'EPBUF-A', '');
+  SysRouteInsWorkCenter('Erp', 'EPBUF-A', '');
+end;
+
+procedure EpoxyPlug_Buffing_SD;
+begin
+  EpoxyPlug_Buffing_Common;
+end;           
+
+procedure EpoxyPlug_CT_Buffing1_SD;
+begin
+  EpoxyPlug_Buffing_Common;
+  SysRouteInsAddlParameter('Erp', '1st Buffing Spec', formatCuThinValue('EpoxyPlug_CuThin_1stBuff', 'EpoxyPlug'), '', '', false, '', '', '');  // 799 Surface Cu Thickness Value Format
+  SysRouteInsInstruction('Erp', 'COPPL001', '');
+end;
+
+procedure EpoxyPlug_CT_Buffing2_SD;
+begin
+  EpoxyPlug_Buffing_Common;                                                      
+  SysRouteInsAddlParameter('Erp', '2nd Buffing Spec', formatCuThinValue('EpoxyPlug_CuThin_2ndBuff', 'EpoxyPlug'), '', '', false, '', '', '');
+  SysRouteInsInstruction('Erp', 'COPPL001', '');
+end;
+
+procedure EpoxyPlug_MicroEtch_SD;
+begin
+  SysRouteInsDepartment('Erp', 'METCH-A', '');
+  SysRouteInsWorkCenter('Erp', 'METCH-A', '');
+  //SysRouteInsAddlParameter('Erp', 'NOTE', 'Metch for Cu Thin', ''); Removed per request by Jenny 11/11/15
+  SysRouteInsAddlParameter('Erp', 'Micro-Etch Spec', formatCuThinValue('EpoxyPlug_CuThin_MEtch', 'EpoxyPlug'), '', '', false, '', '', '');  //Added per request by Jenny 11/11/15
+  SysRouteInsInstruction('Erp', 'COPPL001', '');
+end;
+
+procedure Pre_Photo_Cu_Thin_SD;  // 1196 Pre-Photo Cu Thinning 
+begin
+  EpoxyPlug_Buffing_Common;
+  SysRouteInsAddlParameter('Erp', 'Buffing Spec', formatCuThinValue('Pre_Photo_Cu_Thin', 'Post-Electrolytic'), '', '', false, '', '', '');
+end;
+
+procedure PrimaryPlug_CT_Buffing1_SD;  // 841 Primary Plu B4 Pattern Cu Thinning Step
+begin
+  SysRouteInsDepartment('Erp', 'EPBUF-A', '');
+  SysRouteInsWorkCenter('Erp', 'EPBUF-A', '');
+  SysRouteInsAddlParameter('Erp', 'Buffing Spec', Fnc.SysGetAttrValue('PrimaryPlug_CuThin_1stBuff'), '', '', false, '', '', '');
+end;
+
+procedure SMPlugAttributes;
+var
+  AttrError : boolean;
+begin
+  AttrError := false;
+
+  if (
+      (Fnc.SysGetAttrValue('SMPlugDepth') <> 'N/A') and
+      (Fnc.SysGetAttrValue('SMPlugJig') <> 'N/A') and
+      (Fnc.SysGetAttrValue('SMPlugMethod') <> 'N/A')
+     )
+  then
+  begin
+    SysRouteInsAddlParameter('Erp', 'Depth', Fnc.SysGetAttrValue('SMPlugDepth'), '', '', false, '', '', '');
+    SysRouteInsAddlParameter('Erp', 'Jig', Fnc.SysGetAttrValue('SMPlugJig'), '', '', false, '', '', '');
+    SysRouteInsAddlParameter('Erp', 'Method', Fnc.SysGetAttrValue('SMPlugMethod'), '', '', false, '', '', '');
+  end
+  else
+  begin
+   if (
+       (Fnc.SysGetAttrValue('SMPlugDepth') = 'N/A') and
+       (Fnc.SysGetAttrValue('SMPlugJig') <> 'N/A') and
+       (Fnc.SysGetAttrValue('SMPlugMethod') <> 'N/A')
+      )
+   then
+     AttrError := true;
+
+   if (
+       (Fnc.SysGetAttrValue('SMPlugDepth') <> 'N/A') and
+       (Fnc.SysGetAttrValue('SMPlugJig') = 'N/A') and
+       (Fnc.SysGetAttrValue('SMPlugMethod') <> 'N/A')
+      )
+   then
+     AttrError := true;
+
+   if (
+       (Fnc.SysGetAttrValue('SMPlugDepth') <> 'N/A') and
+       (Fnc.SysGetAttrValue('SMPlugJig') <> 'N/A') and
+       (Fnc.SysGetAttrValue('SMPlugMethod') = 'N/A')
+      )
+   then
+     AttrError := true;
+
+   if (
+       (Fnc.SysGetAttrValue('SMPlugDepth') = 'N/A') and
+       (Fnc.SysGetAttrValue('SMPlugJig') = 'N/A') and
+       (Fnc.SysGetAttrValue('SMPlugMethod') <> 'N/A')
+      )
+   then
+     AttrError := true;
+
+   if (
+       (Fnc.SysGetAttrValue('SMPlugDepth') <> 'N/A') and
+       (Fnc.SysGetAttrValue('SMPlugJig') = 'N/A') and
+       (Fnc.SysGetAttrValue('SMPlugMethod') = 'N/A')
+      )
+   then
+     AttrError := true;
+
+   if (
+       (Fnc.SysGetAttrValue('SMPlugDepth') = 'N/A') and
+       (Fnc.SysGetAttrValue('SMPlugJig') <> 'N/A') and
+       (Fnc.SysGetAttrValue('SMPlugMethod') = 'N/A')
+      )
+   then
+     AttrError := true;
+
+   if AttrError = true then
+     ShowMessage('Error! - SM Plug Depth, Jig or Method not set correctly');
+  end;
+end;
+
+procedure Primary_Plug_Common;
+begin
+  SysRouteInsDepartment('Erp', 'SCRPP-A', '');
+  SysRouteInsWorkCenter('Erp', 'SCRPP-A0', '');
+  SysRouteInsAddlParameter('Erp', 'Plug Ink', Fnc.SysGetAttrValue('PrimaryPlugInk'), '', '', false, '', '', '');
+  {
+  if (
+      (Fnc.SysGetAttrValue('SMPlugDepth') <> 'N/A') and
+      (Fnc.SysGetAttrValue('SMPlugJig') <> 'N/A') and
+      (Fnc.SysGetAttrValue('SMPlugMethod') <> 'N/A')
+     )
+  then
+    SysRouteInsAddlParameter('Erp', 'Plug %', Fnc.SysGetAttrValue('PrimaryPlugPercent'), '')
+  else
+    SMPlugAttributes;
+  }
+end;
+
+procedure Primary_PlugA_SD;
+begin
+  Primary_Plug_Common;
+  SysRouteInsAddlParameter('Erp', 'Bottom A Layer', Fnc.SysGetAttrValue('BotLayer'), '', '', false, '', '', '');
+  SMPlugAttributes;
+end;
+
+procedure Primary_PlugB_SD;
+begin
+  Primary_Plug_Common;
+  SysRouteInsAddlParameter('Erp', 'Top B Layer', Fnc.SysGetAttrValue('TopLayer'), '', '', false, '', '', '');
+  SMPlugAttributes;
+end;
+
+procedure OffLine_PreTreat_SD;
+begin
+  SysRouteInsDepartment('Erp', 'RESSB-A', '');
+  SysRouteInsWorkCenter('Erp', 'RESSB-A', '');
+
+  // 793 Update Photo Process
+  //SysRouteInsInstruction('Erp', 'RESSB005', ''); // CC1 Pretreatment line
+end;
+
+procedure Oxide_Repl_SD;
+begin
+  SysRouteInsDepartment('Erp', 'OXDOL-D0', '');
+  SysRouteInsWorkCenter('Erp', 'OXDOL-D0', '');
+  SysRouteInsInstruction('Erp', 'OXDOL002', ''); // - BOND FILM LINE #3
+end;
+
+procedure Resist_Common_SD(Res2nd : boolean);
+var
+  Smudges : string;
+  ExposedCu : string;
+begin
+  case Fnc.SysGetAttrValue('SMPlugType') of
+    'Primary SM Plug A' ,
+    'Primary SM Plug AB',
+    'Primary SM Plug BA': SysRouteInsAddlParameter('Erp', 'Side A Down', Fnc.SysGetAttrValue('BotLayer'), '', '', false, '', '', '');
+    'Primary SM Plug B' : SysRouteInsAddlParameter('Erp', 'Side B Down', Fnc.SysGetAttrValue('TopLayer'), '', '', false, '', '', '');
+  end;
+
+  // 1134 Additional Information
+  if Res2nd = true then 
+  begin
+    SysRouteInsAddlParameter('Erp', '2 Times Resist Ink', Fnc.SysGetAttrValue('TwoXResist_Ink'), '', '', false, '', '', '');
+    Fnc.SysSetAttrValue('Soldermask_Type', Fnc.SysGetAttrValue('Soldermask_Type') + '/' + Fnc.SysGetAttrValue('TwoXResist_Ink')); 
+  end
+  else
+  begin         
+    SysRouteInsAddlParameter('Erp', 'Resist Ink', MaskType, '', '', false, '', '', '');
+    Fnc.SysSetAttrValue('Soldermask_Type', MaskType ); 
+  end; 
+
+  SysRouteInsAddlParameter('Erp', 'Min Resist Clearance', Fnc.SysGetAttrValue('Min_Res_Cl'), '', '', false, '', '', '');
+  SysRouteInsAddlParameter('Erp', 'Min Resist Thickness', Fnc.SysGetAttrValue('Min_Res_Th'), '', '', false, '', '', '');
+
+  if Fnc.SysGetAttrValue('Max_Res_Th') > 0 then
+     SysRouteInsAddlParameter('Erp', 'Max Resist Thickness', Fnc.SysGetAttrValue('Max_Res_Th'), '', '', false, '', '', '');
+
+  SysRouteInsAddlParameter('Erp', 'Min Resist Partition', Fnc.SysGetAttrValue('Min_Res_Pa'), '', '', false, '', '', ''); 
+
+  if Fnc.SysGetAttrValue('Smudges') = true then
+    Smudges := 'Allowed'
+  else
+    Smudges := 'Not Allowed';
+
+  if Fnc.SysGetAttrValue('Exposed_Cu') = true then
+    ExposedCu := 'Allowed'
+  else
+    ExposedCu := 'Not Allowed';
+
+  SysRouteInsAddlParameter('Erp', 'Smudges', Smudges, '', '', false, '', '', '');
+  SysRouteInsAddlParameter('Erp', 'Exposed Cu', ExposedCu, '', '', false, '', '', '');
+
+  if ((Fnc.SysGetAttrValue('Design_Type') = 'Flip Chip') or (Fnc.SysGetAttrValue('Design_Type') = 'Egg Crate')) then
+    SysRouteInsAddlParameter('Erp', 'Design Type', Fnc.SysGetAttrValue('Design_Type'), '', '', false, '', '', '');
+
+  if ((Fnc.SysGetAttrValue('Min_Res_Pa') <= 0.1) and (Fnc.SysGetAttrValue('Press_Thickness') > 2.0)) then
+    SysRouteInsInstruction('Erp', 'RESIS001', ''); // CC2 DEVELOPING
+
+  if ((Fnc.SysGetAttrValue('Marking_A') = 'None') and (Fnc.SysGetAttrValue('Marking_B') = 'None')) then
+  SysRouteInsAddlParameter('Erp', 'Curing', Fnc.SysGetAttrValue('Curing'), '', '', false, '', '', '');
+
+  if Fnc.SysGetAttrValue('Res_Insp_Diag') = true then
+    SysRouteInsInstruction('Erp', 'RESIS007', ''); // REMARK:REFER TO RESIST INSPECTION DIAGRAM.
+    
+  // 927 - Add Final OL Cu thickness, board thickness and panel size is Resist step
+  SysRouteInsAddlParameter('Erp', 'Cu Thickness', InProcessCuThk, '', '', false, '', '', ''); 
+  SysRouteInsAddlParameter('Erp', 'Board Thickness', FormatFloat('0.000', Fnc.SysGetAttrValue('LayupThickness')), '', '', false, '', '', ''); 
+  SysRouteInsAddlParameter('Erp', 'Panel Size', IntToStr(Fnc.SysGetAttrValue('Panel_Length')) + ' X ' + IntToStr(Fnc.SysGetAttrValue('Panel_Width')), '', '', false, '', '', ''); 
+  
+  AddBoardFinishAsAttribute; // 1223 Additional Surface Finish info under Electrolytic Cu step  // 1257 Add to SM
+end;
+               
+procedure ResSprayCoatPT_SD;
+begin
+  SysRouteInsDepartment('Erp', 'RESCO-B', '');
+  SysRouteInsWorkCenter('Erp', 'RESCO-B', '');
+  SysRouteInsInstruction('Erp', 'RESCO0013',''); // REMARKS : Pre-treatment / : Coating /: Semi cure /: Spray & Print method”
+  Resist_Common_SD(false);
+end;
+
+procedure ResScreenPrint_SD;
+begin
+  SysRouteInsDepartment('Erp', 'RESCO-C', '');
+  SysRouteInsWorkCenter('Erp', 'RESCO-C', '');
+  Resist_Common_SD(false);
+end;
+
+procedure ResScreenPrint2_SD;  //Resist Printing Step with dual info
+begin
+  SysRouteInsDepartment('Erp', 'RESCO-C', '');
+  SysRouteInsWorkCenter('Erp', 'RESCO-C', '');
+end;
+
+procedure ResScreenPrint2X1_SD;
+begin
+  SysRouteInsDepartment('Erp', 'RESCO-C', '');
+  SysRouteInsWorkCenter('Erp', 'RESCO-C0', '');
+  
+  // 1111
+  if BlueRedResist then
+    SysRouteInsAddlParameter('Erp', 'Side', 'A Side', '', '', false, '', '', ''); 
+    
+  Resist_Common_SD(false);
+end;
+
+procedure ResScreenPrint2X2_SD;
+begin
+  SysRouteInsDepartment('Erp', 'RESCO-C', '');
+  SysRouteInsWorkCenter('Erp', 'RESCO-C0', '');
+  
+  // 1111       
+  if BlueRedResist then
+  begin
+    SysRouteInsAddlParameter('Erp', 'Side', 'B Side', '', '', false, '', '', '');
+    Resist_Common_SD(false);
+  end
+  else
+    Resist_Common_SD(true);
+end;
+
+procedure ResSprayCoat_SD;
+begin
+  SysRouteInsDepartment('Erp', 'RESCO-B', '');
+  SysRouteInsWorkCenter('Erp', 'RESCO-B', '');
+  Resist_Common_SD(false);
+
+  if GetsInkJetLegend = true then
+    SysRouteInsAddlParameter('Erp', 'Warning!', 'INKJET LEGEND', '', '', false, '', '', '');
+end;
+                                      
+procedure ResSprayCoat2X1_SD;
+begin
+  SysRouteInsDepartment('Erp', 'RESCO-B', '');        
+  SysRouteInsWorkCenter('Erp', 'RESCO-B0', '');
+  Resist_Common_SD(false);
+
+  if GetsInkJetLegend = true then
+    SysRouteInsAddlParameter('Erp', 'Warning!', 'INKJET LEGEND', '', '', false, '', '', '');
+end;
+
+procedure ResSprayCoat2X2_SD;
+begin
+  SysRouteInsDepartment('Erp', 'RESCO-B', '');
+  SysRouteInsWorkCenter('Erp', 'RESCO-B0', '');
+  Resist_Common_SD(true);
+
+  if GetsInkJetLegend = true then
+    SysRouteInsAddlParameter('Erp', 'Warning!', 'INKJET LEGEND', '', '', false, '', '', '');
+end;
+
+procedure ResistExp2X_SD;
+begin
+  SysRouteInsDepartment('Erp', 'REEXP-A', '');
+  SysRouteInsWorkCenter('Erp', 'REEXP-A0', '');
+end;
+
+procedure ResistPostCure2X_SD;
+begin
+  SysRouteInsDepartment('Erp', 'RESIS-C', '');
+  SysRouteInsWorkCenter('Erp', 'RESIS-C0', '');
+end;
+
+procedure ScreenPrintBaking_SD;
+begin
+  SysRouteInsDepartment('Erp', 'RESIS-C', '');
+  SysRouteInsWorkCenter('Erp', 'RESIS-C', '');
+end;
+
+procedure Resist_Semi_Cure_SD; // 1111      
+begin
+  SysRouteInsDepartment('Erp', 'REOVN-A', '');
+  SysRouteInsWorkCenter('Erp', 'REOVN-A', '');
+  SysRouteInsAddlParameter('Erp', 'Remark', 'Use Shiny Oven', '', '', false, '', '', '');
+end;              
+
+procedure Resist_Semi_Final_Cure_SD; // 1111  
+begin         
+  Resist_Semi_Cure_SD
+end;
+
+procedure Resist_Exposure2X1_SD; // 1111         
+begin
+  SysRouteInsDepartment('Erp', 'REEXP-A', '');
+  SysRouteInsWorkCenter('Erp', 'REEXP-A', '');
+  SysRouteInsAddlParameter('Erp', 'Side', 'A Side', '', '', false, '', '', '');
+end;
+
+procedure Resist_Exposure2X2_SD; // 1111         
+begin
+  SysRouteInsDepartment('Erp', 'REEXP-A', '');
+  SysRouteInsWorkCenter('Erp', 'REEXP-A', '');
+  SysRouteInsAddlParameter('Erp', 'Side', 'B Side', '', '', false, '', '', '');
+end; 
+
+procedure ResSprayBaking_SD;
+begin
+  SysRouteInsDepartment('Erp', 'RESIS-B', '');
+  SysRouteInsWorkCenter('Erp', 'RESIS-B', '');
+end;
+
+procedure UV_Cure_SD;
+begin
+  SysRouteInsDepartment('Erp', 'UVCUR-A', '');
+  SysRouteInsWorkCenter('Erp', 'UVCUR-A', '');
+end;
+
+procedure Baking_Common;
+begin
+  SysRouteInsDepartment('Erp', 'BAKNG-A', '');
+  SysRouteInsWorkCenter('Erp', 'BAKNG-A', '');
+
+  if CustCode_Rule('Customer') = 'HJ' then
+    SysRouteInsInstruction('Erp', 'BAKE COND', ''); //REMARK: 140 Degree C, 4 hours
+
+  {if ((CustCode_Rule('Customer') = 'BC') or (CustCode_Rule('Customer') = 'BF')) then   // 842 - Baking Parameter for BC and BF
+  begin
+    SysRouteInsAddlParameter('Erp', 'Customer', 'Brocade', '', '', false, '', '', '');
+
+    if Fnc.SysGetAttrValue('LayerCount') < 24 then
+    begin
+      if MaterialMoistureSensitive then
+        SysRouteInsAddlParameter('Erp', 'Bake Condition', '6 hrs @ 140 deg C', '', '', false, '', '', '');
+      else
+        SysRouteInsAddlParameter('Erp', 'Bake Condition', '2 hrs @ 140 deg C', '', '', false, '', '', '');
+    end
+    else
+      SysRouteInsAddlParameter('Erp', 'Bake Condition', '12 hrs @ 120 deg C', '', '', false, '', '', '');
+  end;}
+
+  if Fnc.SysGetAttrValue('Lead_Free') = true then
+    SysRouteInsInstruction('Erp', 'BAKING001', ''); // 838 Instruction Code Update
+end;
+
+procedure Baking_SD;
+begin
+  Baking_Common;
+end;
+
+procedure InkJet_Legend_Common;
+begin
+  SysRouteInsDepartment('Erp', 'JETMK-A', '');
+  SysRouteInsWorkCenter('Erp', 'JETMK-A', '');
+  SysRouteInsInstruction('Erp', 'RESCO0018', ''); // Remark: After developing follow by INKJET LEGEND
+  SysRouteInsInstruction('Erp', 'SCMRK006', ''); // Remark: INKJET LEGEND.
+end;
+
+procedure InkJet_Legend_A_SD;
+begin
+  InkJet_Legend_Common;
+  SysRouteInsAddlParameter('Erp', 'Ink Type', Fnc.SysGetAttrValue('Marking_A'), '', '', false, '', '', '');
+end;
+
+procedure InkJet_Legend_B_SD;
+begin
+  InkJet_Legend_Common;
+  SysRouteInsAddlParameter('Erp', 'Ink Type', Fnc.SysGetAttrValue('Marking_B'), '', '', false, '', '', '');
+end;
+
+procedure InkJet_Legend_SD;
+begin
+  SysRouteInsDepartment('Erp', 'SCMRK-A', '');
+  SysRouteInsWorkCenter('Erp', 'SCMRK-A', '');
+  SysRouteInsInstruction('Erp', 'RESCO0018', ''); // Remark: After developing follow by INKJET LEGEND
+  SysRouteInsInstruction('Erp', 'SCMRK006', ''); // Remark: INKJET LEGEND.
+
+  if Fnc.SysGetAttrValue('Marking_A') = 'INKJET LEGEND' then
+    SysRouteInsAddlParameter('Erp', 'Side', 'A', '', '', false, '', '', '');
+
+  if Fnc.SysGetAttrValue('Marking_B') = 'INKJET LEGEND' then
+    SysRouteInsAddlParameter('Erp', 'Side', 'B', '', '', false, '', '', '');
+end;
+
+procedure BaseCuMarking_Wash_SD;
+begin
+  SysRouteInsDepartment('Erp', 'WASHS-C0', '');
+  SysRouteInsWorkCenter('Erp', 'WASHS-C0', '');
+end;
+
+procedure MarkingPrint_Common(InkType : string);
+begin
+  if ((Fnc.SysGetAttrValue('Marking_Clr') >= 0.25) or (InkColorWhite(InkType) = false)) then
+  begin
+    SysRouteInsDepartment('Erp', 'SCMRK-A', '');
+    SysRouteInsWorkCenter('Erp', 'SCMRK-B0', '');
+  end
+  else
+  begin
+    SysRouteInsDepartment('Erp', 'SCMRK-A', '');
+    SysRouteInsWorkCenter('Erp', 'SCMRK-A0', '');
+  end;
+
+  SysRouteInsAddlParameter('Erp', 'Ink Type', InkType, '', '', false, '', '', '');
+
+  if CustCode_Rule('Customer') = 'FA' then
+    SysRouteInsInstruction('Erp', 'SCMRK003', ''); // REMARK : Sampling scale measurement smart scope ; : No back scraper /: Final cure oven”
+
+  if Fnc.SysGetAttrValue('Marking_ThkTol') = 1 then
+    SysRouteInsInstruction('Erp', 'SCRNP-001', ''); // REMARK:MARKING THICKNESS TOLERANCE 15±5µm.
+
+end;
+
+procedure MarkingPrint_A_SD;
+begin
+  MarkingPrint_Common(Fnc.SysGetAttrValue('Marking_A'));
+end;
+
+procedure MarkingPrint_A1_SD;
+begin
+  MarkingPrint_Common(Fnc.SysGetAttrValue('Marking_A1'));
+end;
+
+procedure MarkingPrint_B_SD;
+begin
+  MarkingPrint_Common(Fnc.SysGetAttrValue('Marking_B'));
+end;
+
+procedure MarkingPrint_B1_SD;
+begin
+  MarkingPrint_Common(Fnc.SysGetAttrValue('Marking_B1'));
+end;
+
+procedure Gold_Develop_SD;
+begin
+  SysRouteInsDepartment('Erp', 'AUDEV-A', '');
+  SysRouteInsWorkCenter('Erp', 'AUDEV-A', '');
+end;
+
+procedure Mdl_Insp_SD;
+begin
+  // Guessed the resource for this. To be confirmed
+  SysRouteInsDepartment('Erp', 'INSOL-A', '');
+  SysRouteInsWorkCenter('Erp', 'INSOL-A', '');
+end;
+
+procedure Gold_Type_Attr;
+begin
+  if Fnc.SysGetAttrValue('Board_Finish') = 'Full Body Gold' then
+    SysRouteInsAddlParameter('Erp', 'Gold Type', 'Full Body Gold', '', '', false, '', '', '');
+    
+  if Fnc.SysGetAttrValue('Board_Finish') = 'Thin/Thick Au Plate' then  // 1256
+    SysRouteInsAddlParameter('Erp', 'Gold Type', 'Thin/Thick Au Plate', '', '', false, '', '', '');
+
+  {if ( Fnc.SysGetAttrValue('Board_Finish') = 'ENIG' ) or ( ENIGplusOSP ) then   // 1173 Additional Surface Finishing. Selective ENIG + OSP // 1256
+    SysRouteInsAddlParameter('Erp', 'Gold Type', 'ENIG', '', '', false, '', '', '');
+
+  if Fnc.SysGetAttrValue('Board_Finish') = 'ENEPIG' then
+    SysRouteInsAddlParameter('Erp', 'Gold Type', 'ENEPIG', '', '', false, '', '', '');}
+
+  if ((Fnc.SysGetAttrValue('Gold_Fgr_Type') <> 'None') and (Fnc.SysGetAttrValue('Gold_Fgr_Type') <> 'Tab Plating')) then
+    SysRouteInsAddlParameter('Erp', 'Gold Type', Fnc.SysGetAttrValue('Gold_Fgr_Type'), '', '', false, '', '', '');
+
+  if Fnc.SysGetAttrValue('Sel_Gold_Type') <> 'None' then
+    SysRouteInsAddlParameter('Erp', 'Gold Type', Fnc.SysGetAttrValue('Sel_Gold_Type'), '', '', false, '', '', '');
+
+end;
+
+procedure Gold_Photo_SD;
+begin
+  Au_Plt_Count := Au_Plt_Count + 1;
+  OL_Photo_Common_SD('GoldPattPlating');
+  Gold_Type_Attr;
+  
+  if Au_Plt_Count = 1 then
+    OL_Photo_FSF; // 1114 Fixed Scale Factor Info                 
+end;
+
+procedure Gold_Photo_AR_SD;
+begin                       
+  Au_Plt_Count := Au_Plt_Count + 1;
+  OL_Photo_Common_SD('GoldFingerPlating');
+  Gold_Type_Attr;
+end;
+
+procedure Gold_Elytic_Common_SD;
+begin
+  SysRouteInsDepartment('Erp', 'AUGAL-A', '');
+  SysRouteInsWorkCenter('Erp', 'AUGAL-A', '');
+  Gold_Type_Attr;
+end;
+
+procedure Gold_Elytic_Plt1_SD;
+begin
+  Gold_Elytic_Common_SD;                    
+  
+  if Fnc.SysGetAttrValue('Board_Finish') = 'Thin/Thick Au Plate' then
+    SysRouteInsAddlParameter('Erp', 'Remark', 'Thin Au Plating', '', '', false, '', '', '');
+  
+  SysRouteInsAddlParameter('Erp', 'Area', Fnc.SysGetAttrValue('Sel_Gold_Area1'), '', '', false, '', '', '');
+  SysRouteInsAddlParameter('Erp', 'Au Spec', Fnc.SysGetAttrValue('Sel_Gold_AuSpec1'), '', '', false, '', '', '');
+  SysRouteInsAddlParameter('Erp', 'Ni Spec', Fnc.SysGetAttrValue('Sel_Gold_NiSpec1'), '', '', false, '', '', ''); 
+end;
+
+procedure Gold_Elytic_Plt2_SD;
+begin
+  Gold_Elytic_Common_SD;
+  
+   if Fnc.SysGetAttrValue('Board_Finish') = 'Thin/Thick Au Plate' then
+    SysRouteInsAddlParameter('Erp', 'Remark', 'Thick Au Plating', '', '', false, '', '', '');
+    
+  SysRouteInsAddlParameter('Erp', 'Area 2', Fnc.SysGetAttrValue('Sel_Gold_Area2'), '', '', false, '', '', '');
+  SysRouteInsAddlParameter('Erp', 'Au Spec 2', Fnc.SysGetAttrValue('Sel_Gold_AuSpec2'), '', '', false, '', '', '');
+  SysRouteInsAddlParameter('Erp', 'Ni Spec 2', Fnc.SysGetAttrValue('Sel_Gold_NiSpec2'), '', '', false, '', '', '');
+end;
+
+procedure Gold_Strip_SD;
+begin
+  SysRouteInsDepartment('Erp', 'AUSTR-A', '');
+  SysRouteInsWorkCenter('Erp', 'AUSTR-A', '');
+end;
+
+procedure Gold_UVBump_SD;
+begin
+  // Guessed the resource for this. To be confirmed
+  SysRouteInsDepartment('Erp', 'UVCUR-A', '');
+  SysRouteInsWorkCenter('Erp', 'UVCUR-A', '');
+
+  SysRouteInsAddlParameter('Erp', 'Note', 'UV Bump for Au Plt', '', '', false, '', '', '');
+
+end;
+
+procedure ResSprayCoat_SF_SD;
+begin
+  SysRouteInsDepartment('Erp', 'RESCO-B', '');
+  SysRouteInsWorkCenter('Erp', 'RESCO-B', '');
+end;
+
+procedure ResistExp_Ledia_SD;
+begin
+  SysRouteInsDepartment('Erp', 'REEXP-A', '');
+  SysRouteInsWorkCenter('Erp', 'REEXP-A05', '');
+  photoStepList.Add(IntToStr(Fnc.SysRouteInsGetStepNum)); // Photo Sequence
+  SysRouteInsAddlParameter('Erp', 'Remark', 'Use step tablet for green ink (step 9~11)', '', '', false, '', '', ''); // 1256 Herole Testing
+  SysRouteInsAddlParameter('Erp', 'Remark', 'Use Auto Print Developer', '', '', false, '', '', '');
+end;                              
+                               
+procedure ResistDev_SF_SD;
+begin
+
+end;
+
+procedure ResistStrip_SF_SD;        
+begin
+  SysRouteInsDepartment('Erp', 'AUSTR-A', '');
+  SysRouteInsWorkCenter('Erp', 'AUSTR-A', '');
+  SysRouteInsAddlParameter('Erp', 'Remark', 'Strip Resist Ink (30min dipping time)', '', '', false, '', '', ''); 
+end;
+
+procedure ResSprayBaking_SF_SD;           
+begin
+  SysRouteInsDepartment('Erp', 'RESIS-B', '');
+  SysRouteInsWorkCenter('Erp', 'RESIS-B', '');
+  SysRouteInsAddlParameter('Erp', 'Remark', 'Use Blue Box Oven (160 deg. 20mins)', '', '', false, '', '', '');
+  SysRouteInsAddlParameter('Erp', 'Remark', '100% IPQC check', '', '', false, '', '', ''); 
+end;
+
+procedure Gold_SMPrint_SIT_SD;  // (722) Gold Steps Missing Info
+begin
+  SysRouteInsDepartment('Erp', 'RESCO-C', '');
+  SysRouteInsWorkCenter('Erp', 'RESCO-C1', '');
+  //SysRouteInsAddlParameter('Erp', 'Note', 'Plus Semi-Cure', '');
+end;
+
+procedure Gold_SMExp_SIT_SD;
+begin
+end;                          
+
+procedure Gold_SMDev_SIT_SD;   
+begin
+end;
+
+procedure Gold_SMInsp_SIT_SD;
+begin
+end;
+
+procedure AELL_Photo_SD;
+begin
+  OL_Photo_Common_SD('AlkalineLeadlineEtch');
+end;
+
+procedure AELL_Develop_SD;
+begin
+  SysRouteInsDepartment('Erp', 'AUDEV-A', '');
+  SysRouteInsWorkCenter('Erp', 'AUDEV-A', '');
+end;
+
+procedure AELL_Etch_SD;
+begin
+  SysRouteInsDepartment('Erp', 'AETCH=A', '');
+  SysRouteInsWorkCenter('Erp', 'AETCH=A', '');
+end;
+
+procedure AELL_Strip_SD;
+begin
+  SysRouteInsDepartment('Erp', 'AUSTR-A', '');
+  SysRouteInsWorkCenter('Erp', 'AUSTR-A', '');
+end;
+
+procedure AE_Develop_SD;
+begin
+  SysRouteInsDepartment('Erp', 'AUDEV-A', '');
+  SysRouteInsWorkCenter('Erp', 'AUDEV-A', '');
+end;
+
+procedure AE_Etch_SD;
+begin
+  SysRouteInsDepartment('Erp', 'AETCH=A', '');
+  SysRouteInsWorkCenter('Erp', 'AETCH=A', '');
+end;
+
+procedure AE_Strip_SD;
+begin
+  SysRouteInsDepartment('Erp', 'AUSTR-A', '');
+  SysRouteInsWorkCenter('Erp', 'AUSTR-A', '');
+end;
+
+procedure IS_Strip_SD;
+begin
+  SysRouteInsDepartment('Erp', 'AUSTR-A', '');
+  SysRouteInsWorkCenter('Erp', 'AUSTR-A', '');
+end;
+
+procedure LFH_Strip_SD;
+begin
+  SysRouteInsDepartment('Erp', 'AUSTR-A', '');
+  SysRouteInsWorkCenter('Erp', 'AUSTR-A', '');
+end;
+
+procedure HoleTent_Photo_SD;
+begin
+  {if Fnc.SysGetAttrValue('Board_Finish') = 'Full Body Gold + LGA' then
+    OL_Photo_Common_SD('HoleTentingLGA')
+  else } // 1256
+    OL_Photo_Common_SD('HoleTenting');
+end;
+
+procedure AlkEtchPatt_Photo_SD;
+begin
+  OL_Photo_Common_SD('AlkalinePattEtch');
+end;
+
+procedure OL_Photo_Selective_Finishing_SD;
+begin
+  OL_Photo_Common_SD('SelectiveFinishing');
+end;
+
+procedure Visual_Insp_SD;
+begin
+end;
+                                                
+procedure ENIG_Photo_SD;
+begin
+  OL_Photo_Common_SD('SelectiveENIG');
+  Gold_Type_Attr;
+end;
+
+procedure ENIG_Develop_SD;
+begin
+  SysRouteInsDepartment('Erp', 'AUDEV-A', '');
+  SysRouteInsWorkCenter('Erp', 'AUDEV-A', '');
+
+  Gold_Type_Attr;
+  SysRouteInsAddlParameter('Erp', 'Curing', 'UV Curing', '', '', false, '', '', '');
+end;
+
+procedure ENIG_SD;
+var
+  AuThk : float;
+begin
+  AuThk := 0.0;
+
+  SysRouteInsDepartment('Erp', 'AUFLA-A', '');
+
+  try
+    AuThk := StrToFloat(Fnc.SysGetAttrValue('Sel_Gold_AuSpec2'));
+
+    if AuThk >= 0.076 then
+      SysRouteInsWorkCenter('Erp', 'AUFLA-A0', '')
+    else
+      SysRouteInsWorkCenter('Erp', 'AUFLA-A', '');
+
+  except                            
+    ShowMessage('Warning!!! - Unable to convert Au Thickness Spec to a number, ENIG Plating Resource may be incorrect');
+    SysRouteInsWorkCenter('Erp', 'AUFLA-A', '');
+  end;
+
+  SysRouteInsAddlParameter('Erp', 'Type', Fnc.SysGetAttrValue('Board_Finish'), '', '', false, '', '', '');
+
+  if Fnc.SysGetAttrValue('Board_Finish') = 'ENEPIG' then
+    SysRouteInsAddlParameter('Erp', 'Note', 'Use ENEPIG Bath', '', '', false, '', '', '');
+
+  SysRouteInsAddlParameter('Erp', 'Area 2', Fnc.SysGetAttrValue('Sel_Gold_Area2'), '', '', false, '', '', '');
+  SysRouteInsAddlParameter('Erp', 'Au Spec 2', Fnc.SysGetAttrValue('Sel_Gold_AuSpec2'), '', '', false, '', '', '');
+  SysRouteInsAddlParameter('Erp', 'Ni Spec 2', Fnc.SysGetAttrValue('Sel_Gold_NiSpec2'), '', '', false, '', '', '');
+end;
+
+procedure ENIG_Baking_SD;
+var
+  ResistType : string;
+begin
+  ResistType := '';
+  Baking_Common;
+
+  if HasSolderMaskType('PSR2000-SP300HFM') then
+    ResistType := 'PSR2000-SP300HFM';
+  else if HasSolderMaskType('PSR4000-AM10') = true then
+    ResistType := 'PSR4000-AM10';
+
+  SysRouteInsAddlParameter('Erp', 'Reason', ResistType, '', '', false, '', '', '');
+
+end;
+
+procedure ENEPIG_SD;
+begin
+  ENIG_SD;  
+  SysRouteInsDepartment('Erp', 'AUPIG-A', ''); // 1205 ENEPIG Changes
+  SysRouteInsWorkCenter('Erp', 'AUPIG-A', '');
+
+  if HasSolderMaskType('DSR330S-50-99R') then // ENEPIG Finish with DSR330S-50-99R Soldermask Instruction
+    SysRouteInsInstruction('Erp', 'AUFLA009', '');
+    
+  SysRouteInsAddlParameter('Erp', 'Palladium Spec', Fnc.SysGetAttrValue('Palladium_Spec'), '', '', false, '', '', '');
+end;
+
+procedure ENEPIG_Plasma_SD;
+begin
+  SysRouteInsDepartment('Erp', 'PLASM-A', '');
+  SysRouteInsWorkCenter('Erp', 'PLASM-A', '');
+end;                   
+
+procedure ENEPIG_AlkRinse_SD;
+begin                                  
+  SysRouteInsDepartment('Erp', 'ARINS-A', '');
+  SysRouteInsWorkCenter('Erp', 'ARINS-A', '');
+end;
+
+procedure ENEPIG_ILPhotoPT_SD;
+begin
+  SysRouteInsDepartment('Erp', 'EXPIL-D', '');
+  SysRouteInsWorkCenter('Erp', 'EXPIL-D', '');
+end;
+
+procedure ENIG_MicroEtch_SD;
+begin
+  SysRouteInsDepartment('Erp', 'METCH-A', '');
+  SysRouteInsWorkCenter('Erp', 'METCH-A', '');
+  SysRouteInsAddlParameter('Erp', 'Etch Rate', '0.8-1.2um', '', '', false, '', '', '');
+end;
+
+procedure DM2_Buff_SD;
+begin
+  SysRouteInsDepartment('Erp', 'DMEAR-C0', '');
+  SysRouteInsWorkCenter('Erp', 'DMEAR-C0', '');
+  SysRouteInsAddlParameter('Erp', 'Remark', 'Buffing Only','', '', false, '', '', '');
+end;
+
+procedure Clean_Room_Oven_SD; // 793 Update Photo process rule
+begin
+  SysRouteInsDepartment('Erp', 'EXPOV-A', '');
+  SysRouteInsWorkCenter('Erp', 'EXPOV-A', '');
+end;
+
+procedure Man_DF_Lam_SD;  // 793 Update Photo process rule
+begin
+  SysRouteInsDepartment('Erp', 'EXPLM-A', '');
+  SysRouteInsWorkCenter('Erp', 'EXPLM-A', '');
+end;
+
+procedure OL_DEV_SD; // 793 Update Photo process rule
+var
+  edgePlating : boolean;
+  slotLength : float;
+  remark : string;
+begin
+  edgePlating := Fnc.SysGetAttrValue('EdgePlating');
+  slotLength := Fnc.SysGetAttrValue('Slot_Length_PTH');
+
+  SysRouteInsDepartment('Erp', 'DESOL-A', '');
+  SysRouteInsWorkCenter('Erp', 'DESOL-A', '');
+
+  remark := 'Developing Only';
+
+  if edgePlating then
+    remark := remark + ' - with Edge Plating';
+
+  if slotLength >= 10 then
+    if edgePlating then
+      remark := remark + ' and Slot Length >= 10.0mm'
+    else                      
+      remark := remark + ' - Slot Length >= 10.0mm';
+
+  SysRouteInsAddlParameter('Erp', 'Remark', remark,'', '', false, '', '', '');
+end;
+
+procedure Mdl_Insp_OLDev_SD; // 793 Update Photo process rule
+begin
+  SysRouteInsDepartment('Erp', 'INSOL-A', '');
+  SysRouteInsWorkCenter('Erp', 'INSOL-D0', '');
+  SysRouteInsAddlParameter('Erp', 'Remark', 'Check for broken tent issue','', '', false, '', '', '');
+end;
+
+procedure Mdl_Insp_OLDev_IS_SD // 1256
+begin
+  SysRouteInsDepartment('Erp', 'INSOL-A', '');
+  SysRouteInsWorkCenter('Erp', 'INSOL-D0', '');
+end;
+    
+procedure SCope_Drilling_BDEP_SD;
+begin
+  SysRouteInsDepartment('Erp', 'SCPDR-A', '');
+  SysRouteInsWorkCenter('Erp', 'SCPDR-A', '');
+end;
+
+procedure Scope_Drilling_PEP_SD;  // 1229 PEP Flow option for Sub-assembly build.          
+begin
+  SysRouteInsDepartment('Erp', 'SCPDR-A', '');
+  SysRouteInsWorkCenter('Erp', 'SCPDR-A', '');
+  SysRouteInsAddlParameter('Erp', 'Remark', 'Drill KK','', '', false, '', '', '');
+  SysRouteInsAddlParameter('Erp', 'PEP KK Distance', Fnc.SysGetAttrValue('KK_Distance_PEP'),'', '', false, '', '', '');
+  
+  if Fnc.SysGetAttrValue('KK_Offset_PEP') > 0  then
+    SysRouteInsAddlParameter('Erp', 'PEP KK Offset', Fnc.SysGetAttrValue('KK_Offset_PEP'),'', '', false, '', '', '');
+end;
+
+procedure NC_Drill_PEP_SD; // 1229 PEP Flow option for Sub-assembly build. 
+begin
+  SysRouteInsDepartment('Erp', 'DRILL-E', '');
+  SysRouteInsWorkCenter('Erp', 'DRILL-E', '');  
+  SysRouteInsAddlParameter('Erp', 'Stack Height', Fnc.SysGetAttrValue('Stack_Hgt'), '', '', false, '', '', ''); 
+  SysRouteInsAddlParameter('Erp', 'Entry Sheet Material', 'Aluminum', '', '', false, '', '', '');  
+  SysRouteInsAddlParameter('Erp', 'Material Tg', Fnc.SysGetAttrValue('TG_Class'), '', '', false, '', '', ''); 
+  SysRouteInsAddlParameter('Erp', 'Thickness', FormatFloat('0.000', Fnc.SysGetAttrValue('LayupThickness')), '', '', false, '', '', '');  
+  SysRouteInsAddlParameter('Erp', 'Drill Side', DrillSide(Fnc.SysGetAttrValue('Drill_Side')), '', '', false, '', '', '');
+  
+  if SubIsSandwich then                  
+    //SysRouteInsInstruction('Erp', 'DRILL123', ''); // 1470
+    SysRouteInsAddlParameter('Erp', 'Remarks', 'Drill the PEP slot Holes. Drill size: 4.788mm', '', '', false, '', '', '');
+  else
+    //SysRouteInsInstruction('Erp', 'DRILL122', ''); 1470
+    SysRouteInsAddlParameter('Erp', 'Remarks', 'Drill the PEP slot Holes. Drill size: 4.788mm', '', '', false, '', '', '');
+end;
+
+procedure NC_Drill_PEP_IL_SD; // 1470
+begin
+  SysRouteInsDepartment('Erp', 'DRILL-E', '');         
+  SysRouteInsWorkCenter('Erp', 'DRILL-E', '');        
+  SysRouteInsAddlParameter('Erp', 'Hole to Edge', 'X: ' + FloatToStr(Fnc.SysGetAttrValue('HoleToEdge_X')) + 'mm / ' +
+                                                  'Y: ' + FloatToStr(Fnc.SysGetAttrValue('HoleToEdge_Y')) + 'mm'     
+                                                  , '', '', false, '', '', '');
+  SysRouteInsAddlParameter('Erp', 'Entry Sheet Material', 'Aluminum', '', '', false, '', '', '');
+end;                                                                   
+

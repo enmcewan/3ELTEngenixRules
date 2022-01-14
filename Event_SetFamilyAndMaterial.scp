@@ -1,0 +1,41 @@
+//HeaderImportExport-->
+//SiteId=0
+//Enterprise=True
+//ScriptType=1
+//ScriptGroup=Stackup
+//HeaderImportExport<--
+{
+- tblConstr
+
+Table with the basic stackup, positioned at the row you can pass back
+a mandatory Family or Material
+
+- tblMaterials
+
+Table of materials, filtered for those materials that are applicable
+for this Stackup position
+
+- ParamList
+
+List with general parameters about the job
+
+There are two parameters you can pass back:
+
+- ParamList.Values['MaterialRecId']
+
+In case you need a specific material to be used at this position,
+pass back the RecId of the tblMaterials:
+
+ParamList.Values['MaterialRecId'] := tblMaterials.FieldByName('RecId').AsString;
+
+- ParamList.Values['FamilyId']
+
+This is the Id of the mandatory family, if you specify a material, no need to specify the family
+
+ParamList.Values['FamilyId'] := tblMaterials.FieldByName('MaterialsFamilyId').AsString;
+
+}
+
+procedure SetFamilyAndMaterial(tblConstr: TSysTable; tblMaterials: TSysTable; ParamList: TStringList);
+begin
+end;

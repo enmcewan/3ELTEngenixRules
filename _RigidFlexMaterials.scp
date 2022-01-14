@@ -1,0 +1,214 @@
+//HeaderImportExport-->
+//SiteId=0
+//Enterprise=True
+//ScriptType=0
+//ScriptGroup=
+//HeaderImportExport<--
+function StackupItemsCheck(StackupItemId: integer; Seq: integer; ItemName: string; Height: integer; BrushColorN: integer; BrushStyleN: integer): integer;
+var
+  aQry: TAdoQuery; 
+begin
+  aQry := TAdoQuery.Create(nil);
+  aQry.Connection := Fnc.DBConnection;
+  aQry.Sql.Add('Select * From StackupItems Where');
+  aQry.Sql.Add('    (ItemName = ' + QuotedStr(ItemName) + ')');
+  aQry.Sql.Add('and (SequenceNum = ' + IntToStr(Seq) + ')');
+  aQry.Active := True;
+
+  if aQry.IsEmpty then
+  begin
+    aQry.Append;
+    aQry.FieldByName('ItemName').AsString := ItemName;
+    aQry.FieldByName('Height').AsInteger := Height;
+    aQry.FieldByName('BrushColorN').AsInteger := BrushColorN;
+    aQry.FieldByName('BrushStyleN').AsInteger := BrushStyleN;
+    aQry.FieldByName('PenColorN').AsInteger := 0;
+    aQry.FieldByName('PenStyleN').AsInteger := 0;
+    aQry.FieldByName('PenWidth').AsInteger := 1;
+    aQry.FieldByName('SequenceNum').AsInteger := Seq;
+    aQry.FieldByName('Indent').AsInteger := 0;
+    aQry.FieldByName('ActiveFlag').AsBoolean := True;
+    aQry.FieldByName('CopperLayer').AsBoolean := False;
+    aQry.FieldByName('SequenceId').AsInteger := 1;
+    aQry.Post;
+
+    aQry.Edit;
+    if StackupItemId > 0 then
+      aQry.FieldByName('SequenceId').AsInteger := StackupItemId
+    else
+      aQry.FieldByName('SequenceId').AsInteger := aQry.FieldByName('StackupItemId').AsInteger;
+    aQry.Post;
+  end;
+
+  aQry.First;
+  Result := aQry.FieldByName('SequenceId').AsInteger;
+
+  aQry.Active := False;
+  aQry.Free;
+end;
+
+function MaterialTypesCheck(Description: string; DefaultForAdhesive: boolean; DefaultForCover: boolean): integer;
+var
+  StackupItemId: integer;
+  aQry: TAdoQuery;
+begin
+  aQry := TAdoQuery.Create(nil);
+  aQry.Connection := Fnc.DBConnection;
+  aQry.Sql.Add('Select * From MaterialsType Where Description = ' + QuotedStr(Description));
+  aQry.Active := True;
+
+  if aQry.IsEmpty then
+  begin
+    aQry.Append;
+
+    aQry.FieldByName('Description').AsString := Description;
+    aQry.FieldByName('StackupItemId1').AsInteger := StackupItemsCheck(-1, 1, Description, 0, 0, 0);
+    aQry.FieldByName('MaterialsClassId').AsInteger := 1;
+    aQry.FieldByName('DefaultForAdhesive').AsBoolean := DefaultForAdhesive;
+    aQry.FieldByName('DefaultForCover').AsBoolean := DefaultForCover;
+
+    aQry.FieldByName('LayupGenSwFamilyId').AsBoolean := True;
+    aQry.FieldByName('LayupGenSwMaterialsId').AsBoolean := True;
+    aQry.FieldByName('LayupGenSwPreferredMaterial').AsBoolean := True;
+    aQry.FieldByName('LayupGenSwDefaultForOuter').AsBoolean := False;
+    aQry.FieldByName('LayupGenSwDefaultForInner').AsBoolean := False;
+
+    aQry.Post;
+  end;
+
+  aQry.First;
+  Result := aQry.FieldByName('MaterialsTypeId').AsInteger;
+
+  aQry.Active := False;
+  aQry.Free;
+end;
+
+function MaterialFamilyCheck(Description: string; UserDesc1: string): integer;
+var
+  aQry: TAdoQuery;
+begin
+  aQry := TAdoQuery.Create(nil);
+  aQry.Connection := Fnc.DBConnection;
+  aQry.Sql.Add('Select * From MaterialsFamily Where Description = ' + QuotedStr(Description));
+  aQry.Active := True;
+
+  if aQry.IsEmpty then
+  begin
+    aQry.Append;
+    aQry.FieldByName('Description').AsString := Description;
+    aQry.FieldByName('UserDescr1').AsString := UserDesc1;
+    aQry.Post;
+  end;
+
+  aQry.First;
+  Result := aQry.FieldByName('MaterialsFamilyId').AsInteger;
+
+  aQry.Active := False;
+  aQry.Free;
+end;
+
+function MaterialCheck(aSiteId: integer; aType: string; Family: string; UserDesc: string; Description: string; Construction: string; BlankCustView: boolean; isPlaceholder: boolean): integer;
+var
+  TypeId: integer;
+  FamilyId: integer;
+  aQry: TAdoQuery;
+begin
+  TypeId := MaterialTypesCheck(aType, False, False);
+  FamilyId := MaterialFamilyCheck(Family, UserDesc);
+
+  aQry := TAdoQuery.Create(nil);
+  aQry.Connection := Fnc.DBConnection;
+  aQry.Sql.Add('Select * From Materials Where');
+  aQry.Sql.Add('    (Description = ' + QuotedStr(Description) + ')');
+  aQry.Sql.Add('and (MaterialsTypeId = ' + IntToStr(TypeId) + ')');
+  aQry.Sql.Add('and (MaterialsFamilyId = ' + IntToStr(FamilyId) + ')');
+  aQry.Active := True;
+
+  if aQry.IsEmpty then
+  begin
+    aQry.Append;
+    aQry.FieldByName('MaterialsTypeId').AsInteger := TypeId;
+    aQry.FieldByName('MaterialsFamilyId').AsInteger := FamilyId;
+    aQry.FieldByName('Description').AsString := Description;
+    aQry.FieldByName('Construction').AsString := Construction;
+    aQry.FieldByName('Active').AsBoolean := True;
+    aQry.FieldByName('LaserApproved').AsBoolean := False;
+    aQry.FieldByName('BlankInCustomerView').AsBoolean := BlankCustView;
+    aQry.FieldByName('DefaultForFlexPlaceholder').AsBoolean := isPlaceholder;
+    aQry.Post;
+  end;
+
+  aQry.First;
+  Result := aQry.FieldByName('MaterialsId').AsInteger;
+
+  aQry.Active := False;
+  aQry.Sql.Clear;
+  aQry.Sql.Add('Select * From MaterialsSite');
+  aQry.Sql.Add(' Where (MaterialsId = ' + IntToStr(Result) + ')');
+  aQry.Sql.Add('   and (SiteId = ' + IntToStr(aSiteId) + ')');
+  aQry.Active := True;
+
+  if aQry.IsEmpty then
+  begin
+    aQry.Append;
+    aQry.FieldByName('MaterialsId').AsInteger := Result;
+    aQry.FieldByName('SiteId').AsInteger := aSiteId;
+    aQry.FieldByName('Active').AsBoolean := True;
+    aQry.FieldByName('LaserApproved').AsBoolean := False;
+    aQry.Post;
+  end;
+
+  aQry.Active := False;
+  aQry.Free;
+end;
+
+var
+  SiteQry: TAdoQuery;
+  aSiteId: integer;
+  StackupItemId: integer;
+begin
+  Fnc.MouseBusy;
+
+  StackupItemsCheck(-1, 1, 'AdhesiveLayer', 10, 65535, 10);
+  MaterialTypesCheck('AdhesiveLayer', True, False);
+
+  StackupItemId := StackupItemsCheck(-1, 1, 'CoverLayer', 10, 53760, 10);
+  StackupItemId := StackupItemsCheck(StackupItemId, 2, 'CoverLayer', 5, 65535, 10);
+  MaterialTypesCheck('CoverLayer', False, True);
+
+  StackupItemId := StackupItemsCheck(-1, 1, 'BondPly', 5, 65535, 10);
+  StackupItemId := StackupItemsCheck(StackupItemId, 2, 'BondPly', 10, 16512, 10);
+  StackupItemId := StackupItemsCheck(StackupItemId, 3, 'BondPly', 5, 65535, 10);
+  MaterialTypesCheck('BondPly', False, False);
+
+  StackupItemsCheck(-1, 1, 'Copper Inlet', 10, 32896, 38);
+  MaterialTypesCheck('Copper Inlet', False, False);
+
+  StackupItemsCheck(-1, 1, 'Stiffener', 10, 8421376, 2);
+  MaterialTypesCheck('Stiffener', False, False);
+
+  StackupItemsCheck(-1, 1, 'Placeholder', 10, 16777215, 51);
+  MaterialTypesCheck('Placeholder', False, False);
+
+  SiteQry := TAdoQuery.Create(nil);
+  SiteQry.Connection := Fnc.DBConnection;
+  SiteQry.Sql.Add('Select * From Sites');
+  SiteQry.Active := True;
+
+  SiteQry.First;
+  while not SiteQry.Eof do
+  begin
+    aSiteId := SiteQry.FieldByName('SiteId').AsInteger;
+
+    MaterialCheck(aSiteId, 'Placeholder', 'Placeholder', 'Air Gap', 'Air Gap', 'Air Gap', True, True);
+
+    SiteQry.Next;
+  end;
+
+  SiteQry.Active := False;
+  SiteQry.Free;
+
+  Fnc.MouseNormal;
+
+  showmessage('Finished inserting (R)Flex data');
+end;

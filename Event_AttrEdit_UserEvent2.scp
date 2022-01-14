@@ -1,0 +1,37 @@
+//HeaderImportExport-->
+//SiteId=0
+//Enterprise=True
+//ScriptType=1
+//ScriptGroup=Attribute Edit
+//HeaderImportExport<--
+procedure resetLayerAttr;
+var
+  LayerList: TStringList;
+  attributes: TStringList;            
+  i : integer;
+  j : integer;                                     
+begin
+  LayerList := TStringList.Create;
+  LayerList := Fnc.SysGetListOfLayerNames(cStackupLayer);
+  
+  attributes := TStringList.Create;
+  attributes.Delimiter := ',';                 
+  attributes.StrictDelimiter := true;
+  attributes.DelimitedText := 'Layer_Land_Area_Via,Layer_Land_Area_Pth,Layer_Min_PadTo,Layer_Land_Area,Layer_Min_Via2Cu,Layer_Min_Pth2Cu,Layer_Min_PadToPad,Layer_Min_PadToCuFeat,Layer_Min_PadTo,Layer_Min_Air_Gap,Layer_Min_Line';
+                                     
+  for i := 0 to LayerList.count - 1 do
+  begin
+    for j := 0 to attributes.Count -1 do
+    begin
+      Fnc.SysAttrEditSetLayerAttrValue(LayerList.Strings[i], attributes.Strings[j], 0.0, false);
+    end;                                                        
+  end;
+                  
+  LayerList.Free;
+  attributes.Free;
+end;
+
+procedure AttrEdit_UserEvent2(ParamList: TStringList; AttrTable: TSysTable; SpecTable: TSysTable);
+begin
+  resetLayerAttr;
+end;

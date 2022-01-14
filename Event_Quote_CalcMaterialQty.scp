@@ -1,0 +1,27 @@
+//HeaderImportExport-->
+//SiteId=0
+//Enterprise=True
+//ScriptType=1
+//ScriptGroup=Quote
+//HeaderImportExport<--
+{ The script is triggered under two conditions:
+
+  - There is an Erp material added to the "On the Fly Materials" section.
+  - The user specified a UOM in the "Manual Materials" section.
+
+  Positioned the Fnc.SysQuoteMatrlTable with the 'RecId' in the paramlist and
+  calculate the quanty based on the UOM
+}
+procedure Quote_CalcMaterialQty(ParamList: TStringList);
+begin
+{
+  if Fnc.SysQuoteMatrlTable.Locate('RecId', ParamList.Values['RecId'], SetOf([])) then
+  begin
+    // Do your processing based on Fnc.SysQuoteMatrlTable.FiedByName('ErpMatrlUom').AsString
+
+    Fnc.SysQuoteMatrlTable.Edit;
+    Fnc.SysQuoteMatrlTable.FiedByName('').AsFloat := ??
+    Fnc.SysQuoteMatrlTable.Post;
+  end;
+}
+end;

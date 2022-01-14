@@ -1,0 +1,35 @@
+//HeaderImportExport-->
+//SiteId=0
+//Enterprise=True
+//ScriptType=1
+//ScriptGroup=Quote
+//HeaderImportExport<--
+?{
+Script runs to (re)initialize and/or sync the Quote data with teh Engenix data.
+
+For example, you can copy the latest Pcb cost data from Engenix into the Quote module
+}
+
+procedure Quote_Init_UpdateQuoteParam(ParamName: string; TopLevelAttrName: string);
+begin
+  if Fnc.SysQuoteParamTable.Locate('ParamName', ParamName, SetOf([loCaseInsensitive])) then
+  begin
+    Fnc.SysQuoteParamTable.Edit;
+    Fnc.SysQuoteParamTable.FieldByName('ParamValue').Value := Fnc.SysGetAttrValueTopLevel(TopLevelAttrName);
+    Fnc.SysQuoteParamTable.Post;
+  end;
+end;
+
+procedure Quote_Init(ParamList: TStringList);
+begin
+  // copy the TopLevel Cost Values
+  Quote_Init_UpdateQuoteParam('CostSetup', 'CostSetup');
+  Quote_Init_UpdateQuoteParam('CostProcess', 'CostProcess');
+  Quote_Init_UpdateQuoteParam('CostDirMatrl', 'CostDirMatrl');
+  Quote_Init_UpdateQuoteParam('CostInDirMatrl1', 'CostInDirMatrl1');
+  Quote_Init_UpdateQuoteParam('CostInDirMatrl2', 'CostInDirMatrl2');
+  Quote_Init_UpdateQuoteParam('CostOverHead', 'CostOverHead');
+
+//  Showmessage('Quote_Init' + #13#13 + ParamList.Text);
+//  Fnc.OpenDataGrid(Fnc.SysQuoteParamTable);
+end;

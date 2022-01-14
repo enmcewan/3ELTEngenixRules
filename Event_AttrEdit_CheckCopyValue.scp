@@ -1,0 +1,24 @@
+//HeaderImportExport-->
+//SiteId=0
+//Enterprise=True
+//ScriptType=1
+//ScriptGroup=Attribute Edit
+//HeaderImportExport<--
+procedure AttrEdit_CheckCopyValue(ParamList: TStringList);
+begin
+{ Script is called as the 'Default from Spec/Cap' or 'Copy Attribute Values'
+  button is pushed. The following parameters are passed:
+
+  ParamList.Values['Function'] : can have the values:
+      'CopyAttribValue' as the attribute copy procedure is called
+      'DefaultFromSpec' as the script is called on running 'default from spec'
+
+  ParamList.Values['AttrName'] : Name of the attribute
+  ParamList.Values['OldValue'] : Current value of the attribute
+  ParamList.Values['DoCopy']   : Default false, set to 'true' as attribute value should be copied
+}
+
+if (ParamList.Values['OldValue'] = '') or
+   (ParamList.Values['OldValue'] = '-') then
+  ParamList.Values['DoCopy'] := 'True';
+end;                           

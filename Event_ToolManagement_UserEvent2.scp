@@ -1,0 +1,15 @@
+//HeaderImportExport-->
+//SiteId=0
+//Enterprise=True
+//ScriptType=1
+//ScriptGroup=Tool Management
+//HeaderImportExport<--
+{
+if the script does any updated, then set the 'isUpdated' parameter to 'True',
+the user will be prompted to save the data on closing the dialog
+}
+
+procedure ToolManagementEvent2(ToolTable: TSysTable; ParamList: TStringList);
+begin
+//  ParamList.Values('isUpdated') := 'True';
+end;

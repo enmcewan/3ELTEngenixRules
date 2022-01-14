@@ -1,0 +1,810 @@
+//HeaderImportExport-->
+//SiteId=0
+//Enterprise=True
+//ScriptType=0
+//ScriptGroup=HCS
+//HeaderImportExport<--
+uses
+  Event_RouteGenLibrary, Eng_RouteFunctions,
+  RouteFunctions, RouteSD03_ElyCu2Marking, CT_RoutStkHt;
+
+procedure Secondary_Plug_Common;
+begin
+  SysRouteInsDepartment('Erp', 'SCRSP-A', '');
+  SysRouteInsWorkCenter('Erp', 'SCRSP-A0', '');
+  SysRouteInsAddlParameter('Erp', 'Plug Ink', Fnc.SysGetAttrValue('SecondaryPlugInk'), '', '', false, '', '', '');
+  SMPlugAttributes;
+end;
+
+procedure Secondary_PlugA_SD;
+begin
+  SysRouteInsAddlParameter('Erp', 'Bottom A Layer', Fnc.SysGetAttrValue('BotLayer'), '', '', false, '', '', '');
+  Secondary_Plug_Common;
+end;
+
+procedure Secondary_PlugB_SD;
+begin
+  SysRouteInsAddlParameter('Erp', 'Top B Layer', Fnc.SysGetAttrValue('TopLayer'), '', '', false, '', '', '');
+  Secondary_Plug_Common
+end;
+
+procedure Plug_Formation_SD;
+begin
+  SysRouteInsDepartment('Erp', 'RESCO-A0', '');
+  SysRouteInsWorkCenter('Erp', 'RESCO-A0', '');
+
+  SysRouteInsAddlParameter('Erp', 'Process', 'Steps Below', '', '', false, '', '', '');
+  SysRouteInsAddlParameter('Erp', 'Step 1', 'Semi-Cure', '', '', false, '', '', '');
+  SysRouteInsAddlParameter('Erp', 'Step 2', 'Exposure', '', '', false, '', '', '');
+  SysRouteInsAddlParameter('Erp', 'Step 3', 'Develop', '', '', false, '', '', '');
+end;
+                  
+procedure SP_Final_Cure_SD;
+begin                              
+  SysRouteInsDepartment('Erp', 'STCUR-A', '');
+  SysRouteInsWorkCenter('Erp', 'STCUR-A', '');
+end;
+
+procedure Step_Curing_SD
+begin
+end;
+
+procedure Back_Drill_Common_SD(process : string);
+var
+  thk : float
+begin
+  SysRouteInsDepartment('Erp', 'BACKD-A', '');
+  SysRouteInsWorkCenter('Erp', 'BACKD-A', '');
+  
+  thk := 0.0;
+  if process = 'epoxy' then  
+    thk := Fnc.SysGetAttrValue('LayupThickness')
+  else if process = 'aftermask' then
+    thk := ThicknessOverMask;
+
+  SysRouteInsAddlParameter('Erp', 'Thickness', FormatFloat('0.000', thk), '', '', false, '', '', ''); 
+  SysRouteInsAddlParameter('Erp', 'Machine', Fnc.SysGetAttrValue('BackDrill_Mch'), '', '', false, '', '', ''); 
+  SysRouteInsInstruction('Erp', 'BACKD001', ''); // REMARK:100% BACKDRILL COUPON X-RAY CHECK
+
+  if (
+      (Fnc.SysGetAttrValue('BackDrill_Mch') = 'CAMERA') or
+      (Eng_JobName = 'KHQ12-0011') or
+      (Eng_JobName = 'KHQ12-0012') or
+      (Eng_JobName = 'WHQ12-0019') or
+      (Eng_JobName = 'WHQ12-0020') or
+      (Eng_JobName = 'WHQ12-0018') or
+      (Eng_JobName = 'KHQ12-0013')
+     )
+  then
+  begin
+    SysRouteInsInstruction('Erp', 'BACKD002', ''); // REMARK:USE 4 CAMERA MACHINE.
+    //ShowMessage('For 3E PCB Only - Specific Job Names used in IES Back Drill rule, how to transfer this to Engenix?')
+  end;
+end;
+
+procedure Back_Drill_A_SD;
+begin                     
+  Back_Drill_Common_SD('aftermask');
+  SysRouteInsAddlParameter('Erp', 'Side A', Fnc.SysGetAttrValue('BotLayer'), '', '', false, '', '', ''); 
+end;
+
+procedure Back_Drill_B_SD;
+begin
+  Back_Drill_Common_SD('aftermask');
+  SysRouteInsAddlParameter('Erp', 'Side B', Fnc.SysGetAttrValue('TopLayer'), '', '', false, '', '', ''); 
+end;
+
+procedure Back_Drill_A_Epoxy_SD;
+begin                     
+  Back_Drill_Common_SD('epoxy');
+  SysRouteInsAddlParameter('Erp', 'Side A', Fnc.SysGetAttrValue('BotLayer'), '', '', false, '', '', ''); 
+end;
+
+procedure Back_Drill_B_Epoxy_SD;
+begin
+  Back_Drill_Common_SD('epoxy');
+  SysRouteInsAddlParameter('Erp', 'Side B', Fnc.SysGetAttrValue('TopLayer'), '', '', false, '', '', ''); 
+end;
+
+procedure Gold_Tab_Plating_SD;
+begin
+  SysRouteInsDepartment('Erp', 'FNGER-A', '');
+  SysRouteInsWorkCenter('Erp', 'FNGER-A', '');
+  SysRouteInsAddlParameter('Erp', 'Au Spec', FloatToStr(Fnc.SysGetAttrValue('Gold_Fgr_AuSpec')) + ' microns', '', '', false, '', '', '');
+  SysRouteInsAddlParameter('Erp', 'Ni Spec', FloatToStr(Fnc.SysGetAttrValue('Gold_Fgr_NiSpec')) + ' microns', '', '', false, '', '', '');
+  SysRouteInsAddlParameter('Erp', 'Area', FloatToStr(Fnc.SysGetAttrValue('Gold_Fgr_Area')) + ' dm2', '', '', false, '', '', '');
+end;
+
+procedure Gold_Finger_Taping_SD;
+begin
+  SysRouteInsDepartment('Erp', 'TAPNG-A', '');
+  SysRouteInsWorkCenter('Erp', 'TAPNG-A', '');
+end;                              
+
+procedure Impedance_SD;
+begin
+  SysRouteInsDepartment('Erp', 'IMPED-A', '');
+  SysRouteInsWorkCenter('Erp', 'IMPED-A', '');
+end;              
+
+procedure HighPressAirBlow_SD;
+begin
+  SysRouteInsDepartment('Erp', 'HPBOW-A', '');
+  SysRouteInsWorkCenter('Erp', 'HPBOW-A', '');
+end;
+
+procedure Hole_Check_SD;
+begin
+
+  {if Fnc.SysGetAttrValue('LayupThickness') >= 3.5 then    // Change per request from Herole Feb 2016
+  begin
+    SysRouteInsDepartment('Erp', 'HOLAN-A', '');
+    SysRouteInsWorkCenter('Erp', 'HOLAN-A', '');
+  end
+  else
+  begin
+    SysRouteInsDepartment('Erp', 'HOLCH-A', '');
+    SysRouteInsWorkCenter('Erp', 'HOLCH-A', '');
+  end;}
+
+  SysRouteInsDepartment('Erp', 'HOLCH-A', '');
+  SysRouteInsWorkCenter('Erp', 'HOLCH-A', '');
+
+  SysRouteInsAddlParameter('Erp', 'Board Thickness', FormatFloat('0.000', ThicknessOverMask), '', '', false, '', '', ''); 
+end;
+
+procedure Hole_Check_BD_SD;
+begin
+  SysRouteInsDepartment('Erp', 'HOLCD-A', '');
+  SysRouteInsWorkCenter('Erp', 'HOLCD-A0', '');
+  
+  if Fnc.SysGetAttrValue('MfgPartType') = 'Top' then
+    SysRouteInsAddlParameter('Erp', 'Board Thickness', FormatFloat('0.000', ThicknessOverMask), '', '', false, '', '', '')
+  else
+    SysRouteInsAddlParameter('Erp', 'Board Thickness', FormatFloat('0.000', Fnc.SysGetAttrValue('LayupThickness')), '', '', false, '', '', ''); 
+end;
+
+procedure Hole_Check_BDB4M_SD;
+begin
+  SysRouteInsDepartment('Erp', 'HOLCD-A', '');
+  SysRouteInsWorkCenter('Erp', 'HOLCD-A0', '');
+  
+  SysRouteInsAddlParameter('Erp', 'Board Thickness', FormatFloat('0.000', Fnc.SysGetAttrValue('LayupThickness')), '', '', false, '', '', ''); 
+end; 
+                                
+procedure HAL_SD;
+begin
+
+  if Fnc.SysGetAttrValue('Board_Finish') = 'Lead Free HAL' then
+  begin
+    SysRouteInsDepartment('Erp', 'HALVL-B', '');
+    SysRouteInsWorkCenter('Erp', 'HALVL-B1', '');
+    //SysRouteInsAddlParameter('Erp', 'Board Finish', Fnc.SysGetAttrValue('Board_Finish'), '', '', false, '', '', '');
+  end
+  else
+  begin
+    SysRouteInsDepartment('Erp', 'HALVL-A', '');
+    SysRouteInsWorkCenter('Erp', 'HALVL-A', '');
+  end;
+  
+  SysRouteInsAddlParameter('Erp', 'Board Finish', Fnc.SysGetAttrValue('Board_Finish'), '', '', false, '', '', '');  // 1322
+
+  SysRouteInsAddlParameter('Erp', 'Min Thickness', Fnc.SysGetAttrValue('HAL_MinThk'), '', '', false, '', '', '');
+  SysRouteInsAddlParameter('Erp', 'HAL Cu Area', Fnc.SysGetAttrValue('HAL_CuArea'), '', '', false, '', '', ''); // 960 - Additional Cu Area for HAL        
+
+  if Fnc.SysGetAttrValue('HAL_BkDrll_Rmk') <> '' then
+    SysRouteInsAddlParameter('Erp', 'Remark', Fnc.SysGetAttrValue('HAL_BkDrll_Rmk'), '', '', false, '', '', '');
+
+  if CustCode_Rule('Customer') = 'HQ' then
+    SysRouteInsInstruction('Erp', 'HALVL001', ''); //REMARKS:MAX 2x TIME HASL..
+
+  if CustCode_Rule('Customer') = 'FA' then
+    SysRouteInsInstruction('Erp', 'HALVL003', ''); //REMARK : 100% non-wetting check”.
+end;
+
+procedure OSP_SD;
+begin
+  if (
+      (Fnc.SysGetAttrValue('OSP_Type') = 'SOLUBLE AVS') or
+      (Fnc.SysGetAttrValue('OSP_Type') = 'LEAD FREE WPF21') or
+      (Fnc.SysGetAttrValue('OSP_Type') = 'LEADFREE WPF21 ORGNC') or
+      (Fnc.SysGetAttrValue('OSP_Type') = 'LEAD FREE F2LX')
+     )
+  then
+  begin
+    if (
+        (Eng_JobType = 'Sample') and
+        (CustCode_Rule('Customer') = 'NE') and
+        (Fnc.SysGetAttrValue('OSP_Type') <> 'LEAD FREE F2LX')
+       )
+    then
+      ShowMessage('FOR ALL NEC MODELS EXCEPT 243-652378-A and 243-651809-A, MUST USE LEADFREE F2LX AS FLUX TYPE.');
+
+    if (
+        (Eng_JobType = 'Sample') and
+        (CustCode_Rule('Customer') = 'HR') and
+        (Fnc.SysGetAttrValue('OSP_Type') <> 'LEAD FREE F2LX')
+       )
+    then
+      ShowMessage('FOR ALL NEC MODELS EXCEPT 243-652378-A and 243-651809-A, MUST USE ''LEADFREE F2LX'' AS FLUX TYPE.');
+
+    if Fnc.SysGetAttrValue('OSP_Type') = 'LEAD FREE F2LX' then
+    begin
+      SysRouteInsDepartment('Erp', 'HHFLX-C', '');
+      SysRouteInsWorkCenter('Erp', 'HHFLX-C02', '');
+    end;
+    else
+    begin
+      if ((CustCode_Rule('Customer') = 'BC') or (CustCode_Rule('Customer') = 'BF')) then
+        Fnc.SysSetAttrValue('OSP_Type','LEADFREE WPF21 ORGNC');
+
+      if Fnc.SysGetAttrValue('OSP_Type') = 'LEADFREE WPF21 ORGNC' then
+      begin
+        SysRouteInsDepartment('Erp', 'HHFLX-C', '');
+        SysRouteInsWorkCenter('Erp', 'HHFLX-C01', '');
+      end
+      else
+      begin
+        if (
+            (
+             (CustCode_Rule('Customer') = 'HP') and
+             ((copy(Fnc.SysGetAttrValue('Part_Desc'),1,1) = 'A') or (copy(Fnc.SysGetAttrValue('Part_Desc'),1,2) = '3A'))
+            )
+            or
+            (Eng_JobName = 'KHQ12-0010')
+           )
+        then
+        begin
+          SysRouteInsDepartment('Erp', 'HHFLX-C', '');
+          SysRouteInsWorkCenter('Erp', 'HHFLX-C01', '');
+        end
+        else
+        begin
+          SysRouteInsDepartment('Erp', 'HHFLX-A', '');
+          SysRouteInsWorkCenter('Erp', 'HHFLX-A02', '');
+        end;
+
+      end;
+    end;
+  end
+  else
+  begin
+    if (
+        (Fnc.SysGetAttrValue('Q1000') = true) or
+        (Fnc.SysGetAttrValue('LayupThickness') <= 1.2) or
+        ((Fnc.SysGetAttrValue('PCB_Length') <= 150) and (Fnc.SysGetAttrValue('PCB_Width') <= 150))
+       )
+    then
+    begin
+      SysRouteInsDepartment('Erp', 'HHFLX-A', '');
+      SysRouteInsWorkCenter('Erp', 'HHFLX-A01', '');
+    end
+    else
+    begin
+      {if ((Fnc.SysGetAttrValue('Gold_Type') <> 'None') and (Fnc.SysGetAttrValue('OSP_Type') = 'WATER SOLUBLE')) then}
+      if (
+          (
+           (Fnc.SysGetAttrValue('Sel_Gold_Type') <> 'None') or
+           (Fnc.SysGetAttrValue('Board_Finish') = 'ENIG') or
+           //(Fnc.SysGetAttrValue('Board_Finish') = 'ENIG + OSP') or // 1173 Additional Surface Finishing. Selective ENIG + OSP 
+           ( ENIGplusOSP ) or // 1256
+           (Fnc.SysGetAttrValue('Board_Finish') = 'ENEPIG') or
+           (Fnc.SysGetAttrValue('Board_Finish') = 'Full Body Gold') or
+           (Fnc.SysGetAttrValue('Board_Finish') = 'Thin/Thick Au Plate') or // 1256 NEED TO CHECK THIS
+           ((Fnc.SysGetAttrValue('Gold_Fgr_Type') <> 'None') and (Fnc.SysGetAttrValue('Gold_Fgr_Type') <> 'Tab Plating'))
+          )
+          and
+          (Fnc.SysGetAttrValue('OSP_Type') = 'WATER SOLUBLE')
+         )
+      then
+      begin
+        SysRouteInsDepartment('Erp', 'HHFLX-A', '');
+        SysRouteInsWorkCenter('Erp', 'HHFLX-A02', '');
+      end
+      else                       
+      begin
+        SysRouteInsDepartment('Erp', 'HHFLX-A', '');
+        SysRouteInsWorkCenter('Erp', 'HHFLX-A', '');
+      end;                         
+    end;
+
+  end;
+
+  SysRouteInsAddlParameter('Erp', 'OSP Type', Fnc.SysGetAttrValue('OSP_Type'), '', '', false, '', '', '');
+
+  //if Fnc.SysGetAttrValue('Cust_Code') = 'KDE' then
+  if ((Eng_JobType = 'Production') and (CustCode_Rule('Customer') = 'DE')) then
+    SysRouteInsInstruction('Erp', 'HHFLX001', ''); //REMARKS:CONTROL FLUX THICKNESS TO 0.2 ~ 0.4µm.
+
+  if (( Fnc.SysGetAttrValue('SMPlugType') <> 'None' ) or ( IsSelectiveGold )) then
+    SysRouteInsInstruction('Erp', 'OSP001', ''); // 836 Instruction Code Update
+
+end;
+
+procedure Final_Insp_SD;
+begin
+  SysRouteInsDepartment('Erp', 'FINAL-A', '');
+  SysRouteInsWorkCenter('Erp', 'FINAL-A', '');
+  
+  if Fnc.SysGetAttrValue('Part_Type') = 'Internal' then
+    SysRouteInsAddlParameter('Erp','KT Number', Fnc.SysGetAttrValue('KT_Number'),'','', false, '', '', ''); 
+
+  if Fnc.SysGetAttrValue('Marking_A') <> 'None' then
+    SysRouteInsAddlParameter('Erp','Marking-A', Fnc.SysGetAttrValue('Marking_A'),'','', false, '', '', ''); 
+
+  if Fnc.SysGetAttrValue('Marking_B') <> 'None' then
+    SysRouteInsAddlParameter('Erp','Marking-B', Fnc.SysGetAttrValue('Marking_B'),'','', false, '', '', '');
+
+  if Fnc.SysGetAttrValue('Marking_A1') <> 'None' then
+    SysRouteInsAddlParameter('Erp','Marking-A1', Fnc.SysGetAttrValue('Marking_A1'),'','', false, '', '', '');
+
+  if Fnc.SysGetAttrValue('Marking_B1') <> 'None' then
+    SysRouteInsAddlParameter('Erp','Marking-B1', Fnc.SysGetAttrValue('Marking_B1'),'','', false, '', '', '');
+
+  if pos('Primary',Fnc.SysGetAttrValue('SMPlugType')) > 0 then
+    SysRouteInsAddlParameter('Erp',Fnc.SysGetAttrValue('SMPlugType'), Fnc.SysGetAttrValue('PrimaryPlugInk'),'','', false, '', '', '');
+
+  if (
+      {(Fnc.SysGetAttrValue('Gold_Type') <> 'None' ) or}
+      (
+       (Fnc.SysGetAttrValue('Sel_Gold_Type') <> 'None') or
+       (Fnc.SysGetAttrValue('Board_Finish') = 'ENIG') or 
+       //(Fnc.SysGetAttrValue('Board_Finish') = 'ENIG + OSP') or // 1173 Additional Surface Finishing. Selective ENIG + OSP
+       ( ENIGplusOSP ) or // 1256
+       (Fnc.SysGetAttrValue('Board_Finish') = 'ENEPIG') or
+       (Fnc.SysGetAttrValue('Board_Finish') = 'Full Body Gold') or
+       (Fnc.SysGetAttrValue('Board_Finish') = 'Thin/Thick Au Plate') or
+       ((Fnc.SysGetAttrValue('Gold_Fgr_Type') <> 'None') and (Fnc.SysGetAttrValue('Gold_Fgr_Type') <> 'Tab Plating'))
+      ) or
+      (Fnc.SysGetAttrValue('Board_Finish') = 'HAL' ) or
+      (Fnc.SysGetAttrValue('Board_Finish') = 'Lead Free HAL' ) or
+      (Fnc.SysGetAttrValue('Board_Finish') = 'LB Free HAL + Immersion silver') or // 1322 
+      (Fnc.SysGetAttrValue('Board_Finish') = 'Immersion Silver' ) or
+      ((Fnc.SysGetAttrValue('OSP_Type') <> 'SOLUBLE AVS' ) and (Fnc.SysGetAttrValue('OSP_Type') <> 'WATER SOLUBLE' )  and (Fnc.SysGetAttrValue('OSP_Type') <> 'None'))
+      // or
+      //(Fnc.SysGetAttrValue('OSP_Type') <> 'ROSIN FLUX' )
+     )
+  then                     
+  begin
+    if pos('Secondary',Fnc.SysGetAttrValue('SMPlugType')) > 0 then
+    SysRouteInsAddlParameter('Erp',Fnc.SysGetAttrValue('SMPlugType'), Fnc.SysGetAttrValue('SecondaryPlugInk'),'','', false, '', '', '');
+  end;
+
+  if Fnc.SysGetAttrValue('CappedVia') = true then
+    SysRouteInsAddlParameter('Erp','Capped Via', 'Yes','','', false, '', '', '');
+
+  if Fnc.SysGetAttrValue('Chamfer_Type') <> 'None' then
+    SysRouteInsAddlParameter('Erp','Chamfer', Fnc.SysGetAttrValue('Chamfer_Spec'),'','', false, '', '', '');
+
+  if Fnc.SysGetAttrValue('Milling_Type') <> 'None' then
+    SysRouteInsAddlParameter('Erp','Milling', Fnc.SysGetAttrValue('Milling_Type'),'','', false, '', '', '');
+
+  if Fnc.SysGetAttrValue('Board_Finish') = 'HAL' then
+    SysRouteInsAddlParameter('Erp','HAL Type', Fnc.SysGetAttrValue('Board_Finish'),'','', false, '', '', '');
+
+  if Fnc.SysGetAttrValue('Board_Finish') = 'Lead Free HAL' then
+    SysRouteInsAddlParameter('Erp','HAL Type', Fnc.SysGetAttrValue('Board_Finish'),'','', false, '', '', '');
+    
+  if Fnc.SysGetAttrValue('Board_Finish') = 'LB Free HAL + Immersion silver' then // 1322
+    SysRouteInsAddlParameter('Erp','HAL Type', Fnc.SysGetAttrValue('Board_Finish'),'','', false, '', '', '');
+
+  if Fnc.SysGetAttrValue('Board_Finish') = 'Immersion Silver' then
+    SysRouteInsAddlParameter('Erp','Immersion Silver', Fnc.SysGetAttrValue('Imm_Silver'),'','', false, '', '', '');
+
+  if Fnc.SysGetAttrValue('VCut_Type') <> 'None' then
+    SysRouteInsAddlParameter('Erp','V-Cut Type', Fnc.SysGetAttrValue('VCut_Type'),'','', false, '', '', '');
+
+  //Requested by Jenny 8/17/15
+  //if Fnc.SysGetAttrValue('Board_Finish') = 'Full Body Gold + LGA' then   1256 
+  //  SysRouteInsAddlParameter('Erp','Gold Type', Fnc.SysGetAttrValue('Board_Finish'),'','', false, '', '', '');
+
+  if Fnc.SysGetAttrValue('Sel_Gold_Type') <> 'None' then
+    SysRouteInsAddlParameter('Erp','Gold Type', Fnc.SysGetAttrValue('Sel_Gold_Type'),'','', false, '', '', '');
+
+  if Fnc.SysGetAttrValue('Gold_Fgr_Type') <> 'None' then
+    SysRouteInsAddlParameter('Erp','Gold Type', Fnc.SysGetAttrValue('Gold_Fgr_Type'),'','', false, '', '', '');
+
+  if ( Fnc.SysGetAttrValue('Board_Finish') = 'OSP' ) or ( ENIGplusOSP ) then // 1173 Additional Surface Finishing. Selective ENIG + OSP  // 1256
+    SysRouteInsAddlParameter('Erp','OSP Type', Fnc.SysGetAttrValue('OSP_Type'),'','', false, '', '', '');
+                              
+  if ( Fnc.SysGetAttrValue('Board_Finish') = 'ENIG' ) or                            
+     //( Fnc.SysGetAttrValue('Board_Finish') = 'ENIG + OSP' ) or // 1173 Additional Surface Finishing. Selective ENIG + OSP 
+     ( ENIGplusOSP ) or
+     ( Fnc.SysGetAttrValue('Board_Finish') = 'ENEPIG' )
+  then
+    SysRouteInsAddlParameter('Erp','Gold Type', Fnc.SysGetAttrValue('Board_Finish'),'','', false, '', '', '');
+
+  if Fnc.SysGetAttrValue('Board_Finish') = 'Immersion Tin' then
+    SysRouteInsAddlParameter('Erp','Immersion Tin', Fnc.SysGetAttrValue('Imm_Tin'),'','', false, '', '', '');
+
+  // 844 Backdrill after Electrolytic Cu Option (Call to SetDrillTypes not needed
+  if BKDRTop = true then
+    SysRouteInsAddlParameter('Erp','Back Drill', Fnc.SysGetAttrValue('TopLayer'),'','', false, '', '', '')
+  else if BKDRwEpoxyTop = true then
+    SysRouteInsAddlParameter('Erp','Back Drill', Fnc.SysGetAttrValue('TopLayer'),'','', false, '', '', '')
+
+  if BKDRBot = true then
+    SysRouteInsAddlParameter('Erp','Back Drill', Fnc.SysGetAttrValue('BotLayer'),'','', false, '', '', '')
+  else if BKDRwEpoxyBot then
+    SysRouteInsAddlParameter('Erp','Back Drill', Fnc.SysGetAttrValue('BotLayer'),'','', false, '', '', '')
+end;
+
+procedure Final_Scope_Ins_SD;
+begin
+  SysRouteInsDepartment('Erp', 'SCPIN-A', '');
+  SysRouteInsWorkCenter('Erp', 'SCPIN-A', '');
+
+  if Fnc.SysGetAttrValue('Design_Type') = 'Flip Chip' then
+    SysRouteInsAddlParameter('Erp', 'Design Type', Fnc.SysGetAttrValue('Design_Type'), '', '', false, '', '', '');
+end;
+
+procedure Final_Rinse_SD;
+begin
+  if ((Fnc.SysGetAttrValue('Board_Finish') = 'Immersion Tin') and (Fnc.SysGetAttrValue('LayupThickness') > 4.0)) then
+  begin
+    SysRouteInsDepartment('Erp', 'WASHS-A', '');
+    SysRouteInsWorkCenter('Erp', 'WASHS-A', '');
+    SysRouteInsInstruction('Erp', 'WASHS007', '');
+  end
+  else
+  begin
+    // Descision for Bondable Gold omitted - no longer used.
+    SysRouteInsDepartment('Erp', 'WASHS-A', '');
+
+    if (
+        (Fnc.SysGetAttrValue('OSP_Type') = 'SOLUBLE AVS' ) or
+        (Fnc.SysGetAttrValue('OSP_Type') = 'WATER SOLUBLE') or
+        // Rosin Flux omitted - no longer used
+        (Fnc.SysGetAttrValue('Board_Finish') = 'Immersion Silver')
+       )
+    then
+      SysRouteInsWorkCenter('Erp', 'WASHS-B0', '')
+    else
+      SysRouteInsWorkCenter('Erp', 'WASHS-A0', '')
+  end;
+
+end;
+
+procedure Part_EC_SD;
+begin
+  SysRouteInsDepartment('Erp', 'ELCHK-A', '');
+  SysRouteInsWorkCenter('Erp', 'ELCHK-A', '');
+  
+  InsertECParameters;  // 1255 EC Parameter Attributes 
+end;
+
+procedure EC_FlyingProbe_SD;
+begin
+  SysRouteInsDepartment('Erp', 'ECMSM-A', '');
+  SysRouteInsWorkCenter('Erp', 'ECMSM-A', '');
+end;
+
+// 1310 Back Drill EC
+procedure BackDrill_EC_SD;
+begin
+  SysRouteInsDepartment('Erp', 'SLVER-A', '');
+  SysRouteInsWorkCenter('Erp', 'SLVER-A', '');
+end;
+
+procedure Immersion_Silver_SD;
+begin
+  SysRouteInsDepartment('Erp', 'SILVR-A', '');
+  SysRouteInsWorkCenter('Erp', 'SILVR-A', '');
+  SysRouteInsAddlParameter('Erp', 'Immersion Silver', Fnc.SysGetAttrValue('Imm_Silver'),'', '', false, '', '', '');
+end;
+
+procedure Carbon_Ink_SD;
+begin
+  SysRouteInsDepartment('Erp', 'CARBN-A', '');
+  SysRouteInsWorkCenter('Erp', 'CARBN-A', '');
+end;
+
+procedure MicroEtch_ImmTin_SD;
+begin
+  SysRouteInsDepartment('Erp', 'METCH-A', '');
+  SysRouteInsWorkCenter('Erp', 'METCH-A', '');
+  SysRouteInsInstruction('Erp', 'METCH008', ''); // REMARK : ETCH RATE: 0.80~1.2µm.
+end;
+
+procedure OffLine_PreTreatNI_SD;
+begin
+  SysRouteInsDepartment('Erp', 'RESSB-A', '');
+  SysRouteInsWorkCenter('Erp', 'RESSB-A', '');
+
+end;
+
+procedure Immersion_Tin_SD;
+begin
+  SysRouteInsDepartment('Erp', 'IMTIN-A', '');
+  SysRouteInsWorkCenter('Erp', 'IMTIN-A', '');
+  SysRouteInsAddlParameter('Erp', 'Immersion Tin', Fnc.SysGetAttrValue('Imm_Tin'),'', '', false, '', '', '');
+end;
+
+procedure Immersion_Tin_THK_SD;
+begin
+  Immersion_Tin_SD;
+  SysRouteInsInstruction('Erp', 'IMTIN001', ''); // REMARKS: - Vertical Immersion Tin line / - Max. 4 panels per basket - Rinse + dry
+end;
+
+procedure Immersion_Tin_Bake_Common;
+begin
+  SysRouteInsDepartment('Erp', 'BAKNG-A', '');
+  SysRouteInsWorkCenter('Erp', 'BAKNG-A', '');
+end;
+
+procedure Immersion_Tin_Bake_Norm_SD;
+begin
+  Immersion_Tin_Bake_Common;
+  SysRouteInsInstruction('Erp', 'BAKNG008', ''); // CONDITION : REFER TO WSI.
+end;
+
+procedure Immersion_Tin_Bake_Thk_SD;
+begin
+  Immersion_Tin_Bake_Common;
+  SysRouteInsInstruction('Erp', 'BAKNG010', ''); // REMARKS: - FI Baking Oven / - Refer to Immersion Tin Baking WSI / - Must bake within 24 hours after Imm Sn
+  ShowMessage('Warning - Immersion Tin Spec = ' + Fnc.SysGetAttrValue('Imm_Tin') + #13 + ' If the Tin thickness >= 0.8um, please FEEDBACK to SY');
+end;
+
+procedure RinseAndDry_SD;
+begin
+  SysRouteInsDepartment('Erp', 'CURIN-A', '');
+  SysRouteInsWorkCenter('Erp', 'CURIN-A', '');
+end;
+
+procedure VCut_SD;
+begin
+
+  case Fnc.SysGetAttrValue('VCut_Type') of
+    'PIECE V-CUT'      : begin SysRouteInsDepartment('Erp', 'V-CUT-D', ''); SysRouteInsWorkCenter('Erp', 'V-CUT-D', ''); end;
+    'SHEARING V-CUT'   : begin SysRouteInsDepartment('Erp', 'V-CUT-A', ''); SysRouteInsWorkCenter('Erp', 'V-CUT-A', ''); end;
+    'JUMP V-CUT'       : begin SysRouteInsDepartment('Erp', 'V-CUT-B0', ''); SysRouteInsWorkCenter('Erp', 'V-CUT-B0', ''); end;
+    'N-V-CUT'          : if Fnc.SysGetAttrValue('LayupThickness') < 1.0 then
+                         begin
+                           SysRouteInsDepartment('Erp', 'V-CUT-B0', '');
+                           SysRouteInsWorkCenter('Erp', 'V-CUT-B0', '');
+                         end
+                         else
+                         begin
+                           SysRouteInsDepartment('Erp', 'V-CUT-B0', '');
+                           SysRouteInsWorkCenter('Erp', 'V-CUT-B0', '');
+                         end;
+  end;
+
+  SysRouteInsAddlParameter('Erp', 'V-Cut Type', Fnc.SysGetAttrValue('VCut_Type'),'', '', false, '', '', '');
+end;
+
+procedure Resistance_Test_SD;
+begin
+  SysRouteInsDepartment('Erp', 'RTEST-A', '');
+  SysRouteInsWorkCenter('Erp', 'RTEST-A', '');
+end;
+
+procedure PnlRte_Chamfer_PR_SD;
+begin
+  SysRouteInsDepartment('Erp', 'ROUTE-A', '');
+  SysRouteInsWorkCenter('Erp', 'ROUTE-A', '');
+  SysRouteInsInstruction('Erp', 'ROUTE001', ''); // REMARKS : PRE-ROUTE
+end;
+
+procedure PnlRte_Chamfer_SD;
+begin
+  SysRouteInsDepartment('Erp', 'ROUTE-D0', '');
+  SysRouteInsWorkCenter('Erp', 'ROUTE-D0', '');
+  SysRouteInsAddlParameter('Erp', 'Chamfer Spec', Fnc.SysGetAttrValue('Chamfer_Spec'), '', '', false, '', '', '');
+
+end;
+
+procedure Milling_Common_SD;
+begin
+  SysRouteInsDepartment('Erp', 'ROUTE-D0', '');
+  SysRouteInsWorkCenter('Erp', 'ROUTE-D0', '');
+  
+  // 1191 Drill Side for Countersink/bore & milling 
+  SysRouteInsAddlParameter('Erp', 'Drill Side', DrillSide(Fnc.SysGetAttrValue('Milling_Side')), '', '', false, '', '', '');
+end;
+
+procedure Milling_SD;
+begin
+  Milling_Common_SD;
+  // No ESL required - process name adequate
+end;              
+
+procedure Edge_Milling_SD;
+begin
+  Milling_Common_SD;
+end;
+
+procedure Edge_Milling_PR_SD;
+begin
+  SysRouteInsDepartment('Erp', 'ROUTE-D0', '');
+  SysRouteInsWorkCenter('Erp', 'ROUTE-D0', '');
+
+  SysRouteInsInstruction('Erp', 'ROUTE001', ''); // REMARKS : PRE-ROUTE
+end;
+
+procedure Counterbore_SD;
+begin
+  SysRouteInsDepartment('Erp', 'ROUTE-D0', '');
+  SysRouteInsWorkCenter('Erp', 'ROUTE-D0', '');
+  
+  // 1191 Drill Side for Countersink/bore & milling 
+  SysRouteInsAddlParameter('Erp', 'Drill Side', DrillSide(Fnc.SysGetAttrValue('Counterbore_Side')), '', '', false, '', '', '');
+end;
+
+procedure Punching_SD;
+begin
+  SysRouteInsDepartment('Erp', 'PUNCH-A', '');
+  SysRouteInsWorkCenter('Erp', 'PUNCH-A', '');
+  SysRouteInsAddlParameter('Erp', 'Die No 1-1', Fnc.SysGetAttrValue('Punch_Die11'),'', '', false, '', '', '');
+
+  if Fnc.SysGetAttrValue('Punch_Die12') <> '0' then
+    SysRouteInsAddlParameter('Erp', 'Die No 1-2', Fnc.SysGetAttrValue('Punch_Die12'),'', '', false, '', '', '');
+end;
+
+procedure Punching_X2_SD;
+begin
+  SysRouteInsDepartment('Erp', 'PUNCH-A', '');
+  SysRouteInsWorkCenter('Erp', 'PUNCH-A', '');
+  SysRouteInsAddlParameter('Erp', 'Die No 2-1', Fnc.SysGetAttrValue('Punch_Die21'),'', '', false, '', '', '');
+
+  if Fnc.SysGetAttrValue('Punch_Die22') <> '0' then
+    SysRouteInsAddlParameter('Erp', 'Die No 2-2', Fnc.SysGetAttrValue('Punch_Die22'),'', '', false, '', '', '');
+end;
+
+procedure Routing_SD;
+begin
+  SysRouteInsDepartment('Erp', 'ROUTE-A', '');
+
+  if Fnc.SysGetAttrValue('Rout_Type') = 'Pinless Rout' then
+  begin
+    SysRouteInsWorkCenter('Erp', 'ROUTE-B0', '');
+    SysRouteInsAddlParameter('Erp', 'Rout Type', Fnc.SysGetAttrValue('Rout_Type'),'', '', false, '', '', '');
+  end
+  else
+    SysRouteInsWorkCenter('Erp', 'ROUTE-A', '');
+
+  //GetRoutStackHeight;
+  
+  if not Fnc.SysGetAttrValue('Rout_StackHt_Ovr') then // 1472
+    GetRoutStackHeight
+  else                    
+  begin                                                    
+    if Fnc.SysGetAttrValue('Rout_StackHt_User') > 0 then
+      Fnc.SysSetAttrValue('Rout_StackHt', Fnc.SysGetAttrValue('Rout_StackHt_User'))
+    else
+      MessageDlg('Route Stack Height user override selected but value is 0', mtWarning, Setof([mbOK]) , 0);
+  end;
+
+  SysRouteInsAddlParameter('Erp', 'Stack Height', Fnc.SysGetAttrValue('Rout_StackHt'),'', '', false, '', '', ''); 
+  //SysRouteInsAddlParameter('Erp', 'Rout Lngth', Fnc.SysGetAttrValue('Rout_LengthPCB'),''); 
+
+  if CustCode_Rule('Customer') = 'FA' then
+    SysRouteInsInstruction('Erp', 'ROUTE010', ''); //REMARK : Scale measurement
+
+end;
+
+procedure Piece_Chamfer_SD;
+begin
+  SysRouteInsDepartment('Erp', 'CHAMF-A', '');
+  SysRouteInsWorkCenter('Erp', 'CHAMF-A', '');
+  SysRouteInsAddlParameter('Erp', 'Chamfer Spec', Fnc.SysGetAttrValue('Chamfer_Spec'), '', '', false, '', '', '');
+end;
+
+procedure InkJet_SD;
+begin
+  SysRouteInsDepartment('Erp', 'JETMK-A', '');
+  if (
+      (Fnc.SysGetAttrValue('ProfileL3Str8') = true) or
+      ((Fnc.SysGetAttrValue('PCB_Length') < 100) and (Fnc.SysGetAttrValue('PCB_Width') < 100)) or
+      ((Fnc.SysGetAttrValue('PCB_Length') > 300) and (Fnc.SysGetAttrValue('PCB_Width') > 300))
+     )
+  then
+    SysRouteInsWorkCenter('Erp', 'JETMK-A0', '')
+  else
+    SysRouteInsWorkCenter('Erp', 'JETMK-A', '');
+
+  if CustCode_Rule('Customer') = 'FA' then
+  begin
+    if Fnc.SysGetAttrValue('Inkjet_Type') = 'INKJET-BTAB' then
+      SysRouteInsInstruction('Erp', 'JETMK005', '') // REMARK : 100% ON BREAKAWAY TAB”.
+    else
+      SysRouteInsInstruction('Erp', 'JETMK002', '');  // REMARK : 100% on all cavity”
+  end;
+
+  //if ((Fnc.SysGetAttrValue('Cust_Code') = 'KRB') or (Fnc.SysGetAttrValue('Cust_Code') = 'PRB')) then
+  if CustCode_Rule('Customer') = 'RB' then
+    SysRouteInsInstruction('Erp', 'JETMK001', ''); // REMARKS :MARK T" OR " MARK "T" & "H""; REFER TO CID.
+
+  if ((Fnc.SysGetAttrValue('Board_Finish') = 'Immersion Tin') and (Fnc.SysGetAttrValue('LayupThickness') > 4)) then
+       SysRouteInsInstruction('Erp', 'JETMK006', ''); // Ensure no scratches on the ImmSn surface
+end;
+
+procedure DeWarp_SD;
+begin
+  SysRouteInsDepartment('Erp', 'DEWRP-A', '');
+  SysRouteInsWorkCenter('Erp', 'DEWRP-A', '');
+
+  //Change request from Herole Feb 2016
+  {if Fnc.SysGetAttrValue('Warpage_Type') = 'Percent' then
+    SysRouteInsAddlParameter('Erp', 'Warpage', FLoatToStr( Fnc.SysGetAttrValue('Warpage') ) + ' %','');
+  else if Fnc.SysGetAttrValue('Warpage_Type') = 'MM' then
+    SysRouteInsAddlParameter('Erp', 'Warpage', FLoatToStr( Fnc.SysGetAttrValue('Warpage_mm') ) + ' MM',''); }
+
+  SysRouteInsAddlParameter('Erp','Warpage', Fnc.SysGetAttrValue('Warpage_Str'), '', '', false, '', '', '');
+
+end;
+
+procedure Packing_SD;
+begin
+  SysRouteInsDepartment('Erp', 'PACKN-A', '');
+  SysRouteInsWorkCenter('Erp', 'PACKN-A', '');
+
+  if ((CustCode_Rule('Customer') = 'BA') and (Fnc.SysGetAttrValue('LayupThickness') <= 1.0)) then
+    SysRouteInsInstruction('Erp', 'PAC0010', ''); // PUT STIFFENER TO PREVENT WARPAGE.
+end;
+
+procedure CMPlusCoating_SD;
+begin
+  SysRouteInsDepartment('Erp', 'CMPCO-A', '');
+  SysRouteInsWorkCenter('Erp', 'CMPCO-A0', '');
+end;
+
+procedure CZPretreat_SD;
+begin
+  SysRouteInsDepartment('Erp', 'RESCZ-A', '');
+  SysRouteInsWorkCenter('Erp', 'RESCZ-A0', '');
+end;
+
+procedure TwoDBarcode_SD;
+begin
+  SysRouteInsDepartment('Erp', 'LAS2D-A', '');
+  SysRouteInsWorkCenter('Erp', 'LAS2D-A', '');
+end;
+
+
+procedure CMPlusInspection_SD;
+begin
+  SysRouteInsDepartment('Erp', 'FINAL-A', '');
+  SysRouteInsWorkCenter('Erp', 'FINAL-A', '');
+end;
+
+procedure PreFinish_Insp_SD;
+begin
+
+  if Fnc.SysGetAttrValue('Board_Finish') = 'Immersion Tin' then
+  begin
+    SysRouteInsDepartment('Erp', 'FINSP-B', '');
+    SysRouteInsWorkCenter('Erp', 'FINSP-B', '');
+  end
+  else
+  begin
+    SysRouteInsDepartment('Erp', 'FINSP-A', '');
+    SysRouteInsWorkCenter('Erp', 'FINSP-A', '');
+  end;
+
+end;
+
+procedure ImmTin_AlkRinse_SD;   // Immersion Tin Changes
+begin
+  SysRouteInsDepartment('Erp', 'ARINS-A', '');
+  SysRouteInsWorkCenter('Erp', 'ARINS-A', '');
+end;
+
+procedure OSP_Bake_Wash_SD;
+begin                              
+  SysRouteInsDepartment('Erp', 'WASHS-A', '');
+  SysRouteInsWorkCenter('Erp', 'WASHS-B0', '');
+end;
+
+procedure Imm_Silv_Taping_SD // (785) Selective Finger with Immersion silver Flow change
+begin
+  SysRouteInsDepartment('Erp', 'TAPNG-A', '');
+  SysRouteInsWorkCenter('Erp', 'TAPNG-A', '');
+end;
+
+procedure LFH_Taping_SD // 1355
+begin
+  SysRouteInsDepartment('Erp', 'TAPNG-A', '');
+  SysRouteInsWorkCenter('Erp', 'TAPNG-A', '');
+end;
+

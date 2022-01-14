@@ -1,0 +1,321 @@
+//HeaderImportExport-->
+//SiteId=0
+//Enterprise=True
+//ScriptType=0
+//ScriptGroup=
+//HeaderImportExport<--
+const
+  ExcelFile = 'EngenixJobAttributes.xlsx';
+  FileTemplateDir = 'C:\Engenix\Report\Template\';
+  WorkingDir = 'C:\Engenix\Report\';
+
+var
+  ErrFound : boolean;
+  ErrMsg : string;
+  Excelquery : TADOQuery;
+
+procedure CheckTemplatesExists;
+begin
+  if (DirectoryExists(FileTemplateDir)) then
+  begin
+    if not (FileExists(FileTemplateDir + ExcelFile)) then
+    begin
+      ErrFound := True;
+      ErrMsg := 'Template file ' + FileTemplateDir + ExcelFile + ' not found';
+    end;                  
+  end
+  else
+  begin
+    ErrFound := True;
+    ErrMsg := 'Template directory ' + FileTemplateDir + ' not found.';
+  end;
+end;
+
+function FileCopy(Source,Dest : String): Boolean;
+var
+  SourceStream,DestStream : TFileStream;
+begin
+  try
+    SourceStream:=TFileStream.Create(Source,fmOpenRead);
+    DestStream:=TFileStream.Create(Dest,fmCreate);
+    DestStream.CopyFrom(SourceStream,SourceStream.Size);
+    SourceStream.Free;
+    DestStream.Free;
+    Result := True;
+  except
+    Result := False;
+  end;
+end;
+
+procedure CopyTemplateToWorkingDir;
+begin
+  try
+    begin
+      if not(FileCopy(FileTemplateDir+ExcelFile,WorkingDir+ExcelFile)) then
+      begin
+        ErrFound := True;
+        ErrMsg := 'Unable to copy Excel file from the template directory';
+      end;
+    end
+  except
+    ErrFound := True;
+    ErrMsg := 'Exception error copying Excel file from the template directory';
+  end;
+end;
+
+
+function ExcelColumnMap(jobAttributeID : integer) : string
+begin
+  result := '';
+  case jobAttributeID of
+      1     : result := 'Rules Version';
+      2     : result := 'Layer Count';
+      19    : result := 'Thick Board';
+      3     : result := 'Sequential Build';
+      26    : result := 'Build-Up';
+      4     : result := 'Core Capping';
+      5     : result := 'Hybrid Construction';
+      27    : result := 'VIPPO';
+      28    : result := 'Cu Filled Via';
+      8     : result := 'Skip BVH';
+      9     : result := 'Surface BVH';
+      7     : result := 'Mech Blind Via';
+      29    : result := '2-mil Core';
+      30    : result := '1-mil or less Core';
+      14    : result := 'Back Drill';
+      11    : result := 'Back Drill VIP';
+      10    : result := 'Dual Drilling';
+      15    : result := 'Surface Finish';
+      24    : result := 'Selective Gold';
+      25    : result := 'Gold Finger';
+      12    : result := 'Stacked BVH over BVH';
+      13    : result := 'Stacked BVH over Buried Hole';
+      21    : result := 'PTH AR 1-15';
+      22    : result := 'BVH AR 1-075';   
+      23    : result := 'New Customer';
+      16    : result := 'Application';
+      18    : result := 'Cavity Milling';
+      31    : result := 'Material Type';
+      32    : result := '065mm Drill Pitch';
+      33    : result := 'Nano Connector';
+  end;
+  //showmessage(result);
+end;
+
+procedure ExcelHandler(currentJob : integer; jobAttributes : TSysTable; ExcelQuery : TadoQuery);
+var
+  ExcelColumn : string;
+  i : integer;
+  ExceptionMessage : string;
+begin
+  // Query declaration moved to initializing procedure so it is only accessed one time
+
+  Excelquery.Append; // Add a new row for the next Job
+  ExcelColumn := '';
+
+  //if currentJob = 1 then
+  //  Fnc.OpenDataGrid(jobAttributes);
+  jobAttributes.First;
+
+  // Add Job Values
+  Excelquery.FieldByName('JobID').AsString := jobAttributes.FieldByName('JobID').AsString;
+  Excelquery.FieldByName('Job Name').AsString := jobAttributes.FieldByName('JobName').AsString;
+  Excelquery.FieldByName('Job Revision').AsString := jobAttributes.FieldByName('JobRev').AsString;
+  Excelquery.FieldByName('Customer').AsString := jobAttributes.FieldByName('CustomerName').AsString;
+  Excelquery.FieldByName('Part Description').AsString := jobAttributes.FieldByName('PartDescription').AsString;
+  Excelquery.FieldByName('Part Revision').AsString := jobAttributes.FieldByName('PartRevision').AsString;
+  Excelquery.FieldByName('Job Type').AsString := jobAttributes.FieldByName('JobType').AsString;
+  Excelquery.FieldByName('Engr').AsString := jobAttributes.FieldByName('UserName').AsString;
+  Excelquery.FieldByName('Status').AsString := jobAttributes.FieldByName('Status').AsString;
+  Excelquery.FieldByName('Completed Date').AsDateTime := jobAttributes.FieldByName('CompletedDate').AsDateTime;
+  Excelquery.FieldByName('Done').AsBoolean := jobAttributes.FieldByName('Done').AsBoolean; 
+
+  // Add Attribute Values
+  while not jobAttributes.EOF do
+  begin
+    ExcelColumn := ExcelColumnMap(jobAttributes.FieldByName('JobAttributeID').AsInteger);
+    try
+      Excelquery.FieldByName(ExcelColumn).AsString := jobAttributes.FieldByName('EntryValue').AsString;
+    except
+      //Fnc.SysShowException('Failed updating Excel sheet for Job ' + IntToStr(currentJob));
+      //Fnc.SysShowException(ExceptionMessage);
+    end;
+
+    jobAttributes.Next;
+  end;
+  //Fnc.OpenDataGrid(Excelquery);
+  Excelquery.Post;
+end;
+
+
+procedure GenReport(Excelquery : TadoQuery) ;
+var
+  Qry : TADOQuery;
+  tbl : TSysTable;
+
+  lastJob : integer;
+  currentJob : integer;
+
+  jobAttributes : TSysTable;
+
+begin
+
+  Qry := TAdoQuery.Create(nil);
+  Qry.Connection := Fnc.DbConnection;
+
+  Qry.SQL.Add('SELECT
+  JobAnswers.JobAnswerID,
+  JobAnswers.JobAttributeID,
+  JobAttributes.AttributeName,
+  JobAttributes.Seq,
+  JobAnswers.EntryValue,
+  JobAnswers.JobID,
+  Jobs.JobName,
+  Jobs.Revision,
+  Jobs.CompletedDate,
+  Jobs.Done,
+  Customers.CustomerName,
+  PartNumbers.PartDescription,
+  PartNumbers.PartRevision,
+  JobTypes.JobTypeName,
+  Users.UserName,
+  JobStatuses.StatusName ');
+
+  Qry.SQL.Add('FROM JobAttributes
+  left join JobAnswers on (JobAnswers.JobAttributeID = JobAttributes.JobAttributeID)
+  left join jobs on (Jobs.JobID = JobAnswers.JobID)
+  left join Customers on (Customers.CustomerID = jobs.CustomerID)
+  left join PartNumbers on (PartNumbers.PartNumberID = jobs.PartNumberID)
+  left join JobTypes on (JobTypes.JobTypeId = jobs.JobTypeID)
+  left join Users on (Users.UserID = jobs.Engr)
+  left join JobStatuses on (JobStatuses.JobStatusId = jobs.JobStatusId)');
+
+  Qry.SQL.Add('ORDER BY JobAnswers.JobID, JobAttributes.Seq');
+  //ShowMessage(Qry.SQL.Text);
+  Qry.Open;
+
+  if not(Qry.IsEmpty) then
+  begin
+    tbl := Qry;
+    //Fnc.OpenDataGrid(tbl);
+    tbl.first;
+    lastJob := tbl.FieldByName('JobID').AsInteger;
+    currentJob := lastJob;
+
+    // Pass a sub table of all Attribute records for each job to reduce CPU load
+    jobAttributes := Fnc.SysTableCreate('MyTable');
+    Fnc.SysTableAddField(jobAttributes, 'JobAnswerID', 0, FtInteger, False);
+    Fnc.SysTableAddField(jobAttributes, 'JobID', 0, FtInteger, False);
+    Fnc.SysTableAddField(jobAttributes, 'JobAttributeID', 0, FtInteger, False);
+    Fnc.SysTableAddField(jobAttributes, 'AttributeName', 50, FtString, False);
+    Fnc.SysTableAddField(jobAttributes, 'Seq', 0, FtInteger, False);
+    Fnc.SysTableAddField(jobAttributes, 'EntryValue', 50, FtString, False);
+    Fnc.SysTableAddField(jobAttributes, 'JobName', 50, FtString, False);
+    Fnc.SysTableAddField(jobAttributes, 'JobRev', 50, FtString, False);
+    Fnc.SysTableAddField(jobAttributes, 'CustomerName', 50, FtString, False);
+    Fnc.SysTableAddField(jobAttributes, 'PartDescription', 50, FtString, False);
+    Fnc.SysTableAddField(jobAttributes, 'PartRevision', 50, FtString, False);
+    Fnc.SysTableAddField(jobAttributes, 'JobType', 50, FtString, False);
+    Fnc.SysTableAddField(jobAttributes, 'UserName', 50, FtString, False);
+    Fnc.SysTableAddField(jobAttributes, 'Status', 50, FtString, False);
+    Fnc.SysTableAddField(jobAttributes, 'CompletedDate', 0, FtDateTime, False);
+    Fnc.SysTableAddField(jobAttributes, 'Done', 0, FtBoolean, False);
+    jobAttributes.Open;
+
+    while not tbl.EOF do
+    begin                                 
+      if currentJob <> lastJob then // Now we have a complete dataset for last job
+      begin
+        ExcelHandler(lastJob, jobAttributes, ExcelQuery);
+        jobAttributes.EmptyTable;
+
+        // PREVENT Going through entire table.
+        //if currentJob > 20 then
+        //  break;
+      end;
+
+      jobAttributes.Append;
+      jobAttributes.FieldByName('JobAnswerID').AsInteger := tbl.FieldByName('JobAnswerID').AsInteger;
+      jobAttributes.FieldByName('JobID').AsInteger := tbl.FieldByName('JobID').AsInteger;
+      jobAttributes.FieldByName('JobAttributeID').AsInteger := tbl.FieldByName('JobAttributeID').AsInteger;
+      jobAttributes.FieldByName('AttributeName').AsString := tbl.FieldByName('AttributeName').AsString;
+      jobAttributes.FieldByName('Seq').AsInteger := tbl.FieldByName('Seq').AsInteger;
+      jobAttributes.FieldByName('EntryValue').AsString := tbl.FieldByName('EntryValue').AsString;
+      jobAttributes.FieldByName('JobName').AsString := tbl.FieldByName('JobName').AsString;
+      jobAttributes.FieldByName('JobRev').AsString := tbl.FieldByName('Revision').AsString;
+      jobAttributes.FieldByName('CustomerName').AsString := tbl.FieldByName('CustomerName').AsString;
+      jobAttributes.FieldByName('PartDescription').AsString := tbl.FieldByName('PartDescription').AsString;
+      jobAttributes.FieldByName('PartRevision').AsString := tbl.FieldByName('PartRevision').AsString;
+      jobAttributes.FieldByName('JobType').AsString := tbl.FieldByName('JobTypeName').AsString;
+      jobAttributes.FieldByName('UserName').AsString := tbl.FieldByName('UserName').AsString;
+      jobAttributes.FieldByName('Status').AsString := tbl.FieldByName('StatusNAme').AsString;
+      jobAttributes.FieldByName('CompletedDate').AsDateTime := tbl.FieldByName('CompletedDate').AsDateTime;
+      jobAttributes.FieldByName('Done').AsBoolean := tbl.FieldByName('Done').AsBoolean;
+      jobAttributes.Post;
+
+      lastJob := tbl.FieldByName('JobID').AsInteger;
+      tbl.next;
+      currentJob := tbl.FieldByName('JobID').AsInteger;
+    end;
+
+    if not (tbl = nil) then
+    begin
+       tbl.Close;
+       Fnc.SysTableDestroy(tbl);
+    end;
+
+    if not (jobAttributes = nil) then
+    begin
+       jobAttributes.Close;
+       Fnc.SysTableDestroy(jobAttributes);
+    end;
+  end;
+end;
+
+
+begin
+  ErrMsg := '';
+  ErrFound := false;
+
+  CheckTemplatesExists;
+  if ErrFound then
+  begin
+    MessageDlg(ErrMsg, mtError, Setof([mbOK]), 0);
+    exit;
+  end
+  else
+    CopyTemplateToWorkingDir;
+  if ErrFound then
+    MessageDlg(ErrMsg, mtError, Setof([mbOK]), 0);
+
+  if not ErrFound then
+  begin
+    // Create the Excel Connection one time - Saves tons of time!!! (4.5 Seconds versus 2.2 mins)
+    Excelquery := TadoQuery.Create(nil);
+    Excelquery.ConnectionString := Fnc.ExcelConnect(WorkingDir + ExcelFile, true, 0);
+    Excelquery.Close;
+    Excelquery.Sql.Clear;
+    Excelquery.Sql.Add('SELECT * FROM [Report$]');
+    try
+    Excelquery.Open;
+    except
+      MessageDlg('Error on Excel query', mtError, Setof([mbOK]), 0);
+      Excelquery.Close;
+      Excelquery.Free;
+      exit;
+    end;
+    Fnc.MouseBusy;
+
+    try
+      GenReport(Excelquery);
+      Fnc.MouseNormal;
+      MessageDlg('The report generated successfully', mtInformation, Setof([mbOK]), 0);
+    except
+      MessageDlg('Error generating report', mtError, Setof([mbOK]), 0);
+    end;
+
+    Excelquery.Close;
+    Excelquery.Free;
+
+  end;
+end;

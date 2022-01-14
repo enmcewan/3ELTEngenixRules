@@ -1,0 +1,101 @@
+//HeaderImportExport-->
+//SiteId=0
+//Enterprise=True
+//ScriptType=1
+//ScriptGroup=Quote
+//HeaderImportExport<--
+{
+  Script is fired to get from the Erp system a list of available components for
+  the Engenix Quote Module. This is to the Erp side similar to what is done in
+  the BomConvGetErpMaterials.
+
+  The dataset is used in the Quote Componnets tab.
+
+  The tblQuoteErpComponents has already a number of mandatory fields pre-defined.
+  It is free to the user to add additional fields to show in the Quote Components
+  module
+
+  Pre-defined fields in tblQuoteErpComponents:
+
+  - ErpId            Unique identifier in the Erp system for the component (like Paradigm Data0017.RKey)
+  - Manufacturer     Manufacturer of the components
+  - PartNumber       Erp Partnumber
+  - PartDescr        Erp Partdescription
+  - UOM              Erp Unit of Measure
+  - Package          Package of the component like: 24-ssop, 8-soic, dpak, gbj, ....
+  - Type             Component type like: SMD, DNS, ....
+  - Price            Cost of the component
+  - QtyOnHand        Free quantity on-hand
+
+  Before opening the table, you can add more fields to the table like:
+
+  Fnc.SysTableAddField(tblQuoteErpComponents, 'UserField-1', 25, ftString);
+  Fnc.SysTableAddField(tblQuoteErpComponents, 'UserField-2', 25, ftString);
+  ......
+}
+
+procedure Quote_GetErpComponents(tblQuoteErpComponents: TSysTable);
+var
+  SqlStr: string;
+  ErpComponents: TSysTable;
+begin
+{
+  // step-1, get the data form the Erp system
+  SqlStr := 'SELECT' +
+            ' CAST(Data0017.RKey AS Integer) as RKey' +
+            ' ,Data0017.Inv_Part_Number' +
+            ' ,Data0017.Inv_Part_Description' +
+            ' ,Data0017.Quan_On_Hand' +
+            ' ,Data0017.Std_Cost' +
+            ' ,Data0017.Analysis_Code1' +        // just to show how to add additional fields
+            ' ,Data0002.Unit_Code' +
+            ' ,Data0008.Prod_Code' +
+            ' FROM Data0017, Data0002, Data0008' +
+            ' WHERE' +
+            '   Data0017.P_M = ' + QuotedStr('P') +
+            '   and Data0002.RKey = Data0017.Stock_Unit_Ptr' +
+            '   and Data0008.RKey = Data0017.Prod_Code_Sell_Ptr' +
+            ' ORDER BY Data0017.Inv_Part_Number';
+
+  ErpComponents  := Fnc.AstaExecuteSql(SqlStr);
+
+  if assigned(ErpComponents) then
+  begin
+
+    // step-2a, eventual add additional fields to the tblQuoteErpComponents table
+    Fnc.SysTableAddField(tblQuoteErpComponents, 'Code1', 20, ftString);
+    Fnc.SysTableAddField(tblQuoteErpComponents, 'QLeadWire', 0, ftFloat);
+    Fnc.SysTableAddField(tblQuoteErpComponents, 'QCompReadOnly', 50, ftString);
+
+    // step-2b, open the tblQuoteErpComponents table and copy the data form step-1 into the table
+    tblQuoteErpComponents.Active := True;
+
+    ErpComponents.First;
+
+    while not ErpComponents.Eof do
+    begin
+      tblQuoteErpComponents.Append;
+
+      tblQuoteErpComponents.FieldByName('ErpId').AsString := ErpComponents.FieldByName('RKey').AsString;
+      tblQuoteErpComponents.FieldByName('Manufacturer').AsString := '';
+      tblQuoteErpComponents.FieldByName('PartNumber').AsString := ErpComponents.FieldByName('Inv_Part_Number').AsString;
+      tblQuoteErpComponents.FieldByName('PartDescr').AsString := ErpComponents.FieldByName('Inv_Part_Description').AsString;
+      tblQuoteErpComponents.FieldByName('UOM').AsString := ErpComponents.FieldByName('Unit_Code').AsString;
+      tblQuoteErpComponents.FieldByName('Package').AsString := '';
+      tblQuoteErpComponents.FieldByName('Type').AsString := '';
+      tblQuoteErpComponents.FieldByName('Std_Cost').AsFloat := ErpComponents.FieldByName('Std_Cost').AsFloat;
+      tblQuoteErpComponents.FieldByName('QtyOnHand').AsFloat := ErpComponents.FieldByName('Quan_On_Hand').AsFloat;
+
+      tblQuoteErpComponents.FieldByName('Code1').AsString := ErpComponents.FieldByName('Analysis_Code1').AsString;
+      tblQuoteErpComponents.FieldByName('QLeadWire').AsFloat :=  1.12 * tblQuoteErpComponents.FieldByName('RecId').AsInteger;
+      tblQuoteErpComponents.FieldByName('QCompReadOnly').AsString :=  tblQuoteErpComponents.FieldByName('RecId').AsString;
+
+      tblQuoteErpComponents.Post;
+
+      ErpComponents.Next;
+    end;
+
+    Fnc.SysTableDestroy(ErpComponents);
+  end;
+}
+end;

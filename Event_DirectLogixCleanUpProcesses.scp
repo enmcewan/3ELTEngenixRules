@@ -1,0 +1,92 @@
+//HeaderImportExport-->
+//SiteId=0
+//Enterprise=True
+//ScriptType=1
+//ScriptGroup=Direct Logix
+//HeaderImportExport<--
+// This unit allows for restricting which Direct Logix EPM processes are shown to the
+//   end user to start and stop.  By default, all processes are hidden from the user.  This
+//   script must make the records visible that are to be shown to the end user.
+//
+// Toggle constant SHOWALL to True below to temporarily show all EPM Processes.  Normally, this
+//   should be False unless testing.
+
+// The ProcessesDataset that is passed into CleanupProcesses has the following fields:
+//
+//  ID : integer - DO NOT MODIFY!
+//  DL_GroupID : integer
+//  GroupName : string
+//  DL_ProcessID : integer
+//  ProcessName : string
+//  Visible : boolean - this should be the only field you modify.
+
+const
+  SHOWALL = True;
+  //SHOWALL = False;
+
+procedure CleanupProcesses(ProcessesDataset: TSysTable);
+var
+  MakeVisible: boolean;
+begin
+  if SHOWALL then
+  begin
+    ProcessesDataSet.First;
+
+    while not ProcessesDataset.EOF do
+    begin
+      ProcessesDataset.Edit;
+      ProcessesDataset.FieldByName('Visible').AsBoolean := True;
+      ProcessesDataset.Post;
+
+      ProcessesDataset.Next;
+    end;
+  end
+  else
+  begin // unfilter the Processes you want the end user to see...
+    ProcessesDataSet.First;
+
+    while not ProcessesDataset.EOF do
+    begin
+      MakeVisible := False;
+
+      // if you know the EPM Group ID you want to make visible (best option),
+      //  place it in the case statement below... Do this to make all processes in the group visible.
+      case ProcessesDataset.FieldByName('DL_GroupID').AsInteger of
+        1, 2, 3: // this line needs to be customized.
+          MakeVisible := True;
+      end;
+
+      // alternatively, you can check the GroupName...but using the GroupID would be the best method...
+      //if (ProcessesDataset.FieldByName('GroupName').AsString = 'Group1') or
+      //   (ProcessesDataset.FieldByName('GroupName').AsString = 'Group2') or
+      //   (ProcessesDataset.FieldByName('GroupName').AsString = 'Group3')  then
+      //  MakeVisible := True;
+
+      if (not MakeVisible) then
+      begin
+        // if you know the EPM Process ID you want to make visible (best option),
+        //   place it in the case statement below.
+        //  Do this if you want to make only certain processes in a group visible.
+        case ProcessesDataset.FieldByName('DL_ProcessID').AsInteger of
+          100, 101, 102: // this line needs to be customized.
+            MakeVisible := True;
+        end;
+
+        // alternatively again, you can check the ProcessName...but using the ProcessID would be the best method...
+        //if (ProcessesDataset.FieldByName('ProcessName').AsString = 'Process1') or
+        //   (ProcessesDataset.FieldByName('ProcessName').AsString = 'Process2') or
+        //   (ProcessesDataset.FieldByName('ProcessName').AsString = 'Process3')  then
+        //  MakeVisible := True;
+      end;
+
+      if MakeVisible then
+      begin
+        ProcessesDataset.Edit;
+        ProcessesDataset.FieldByName('Visible').AsBoolean := True;
+        ProcessesDataset.Post;
+      end;
+
+      ProcessesDataset.Next;
+    end;
+  end;
+end;

@@ -1,0 +1,10 @@
+//HeaderImportExport-->
+//SiteId=0
+//Enterprise=True
+//ScriptType=1
+//ScriptGroup=Script Conversion
+//HeaderImportExport<--
+procedure ScriptConversion_UserEvent2(FileName: string);
+begin         
+  // user code in here                     
+end;        

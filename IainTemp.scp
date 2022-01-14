@@ -1,0 +1,40 @@
+//HeaderImportExport-->
+//SiteId=0
+//Enterprise=True
+//ScriptType=0
+//ScriptGroup=
+//HeaderImportExport<--
+begin
+
+
+
+  Fnc.SysItemTypeAttrLinkTable.Filter := Format('(ItemType = %s) and (Visible = True)', [QuotedStr(cStackupMfgTopLevel)]);
+
+  Fnc.SysItemTypeAttrLinkTable.Filtered := True;  
+
+  showmessage(IntToStr(Fnc.SysItemTypeAttrLinkTable.RecordCount));
+
+  Fnc.SysItemTypeAttrLinkTable.Filtered := False;
+
+  
+
+  Fnc.SysItemTypeAttrLinkTable.Filter  := Format('(ItemType = %s) and (Visible = True)', [QuotedStr(cStackupMfgSubAssy)]); 
+
+  Fnc.SysItemTypeAttrLinkTable.Filtered := True;  
+
+  showmessage(IntToStr(Fnc.SysItemTypeAttrLinkTable.RecordCount));
+
+  Fnc.SysItemTypeAttrLinkTable.Filtered := False;                                                  
+
+                                                                                 
+
+  Fnc.SysItemTypeAttrLinkTable.Filter  := Format('(ItemType = %s) and (Visible = True)', [QuotedStr(cStackupMfgSubLevel)]);
+
+  Fnc.SysItemTypeAttrLinkTable.Filtered := True;  
+
+  showmessage(IntToStr(Fnc.SysItemTypeAttrLinkTable.RecordCount));
+
+  Fnc.SysItemTypeAttrLinkTable.Filtered := False;
+
+
+end;

@@ -1,0 +1,21 @@
+//HeaderImportExport-->
+//SiteId=0
+//Enterprise=True
+//ScriptType=1
+//ScriptGroup=Embedded Component
+//HeaderImportExport<--
+{              
+- Input:
+ParamList.Values['MaterialsId']          pointer in Fnc.SysMaterialsTable        
+ParamList.Values['MaterialsGapHeaderId'] pointer in Fnc.SysMaterialsTable
+
+- Ouput
+Default already filled with the name of the material. Script can tweak the name
+like stripping the occurance and the resin percentage, used for grouping the materials.
+
+ParamList.Values['MaterialDesc']
+}    
+
+procedure EmbeddedComp_SplitLaser_MatrlDesc(ParamList: TStringList);
+begin
+end;                         

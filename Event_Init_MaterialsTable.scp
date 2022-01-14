@@ -1,0 +1,15 @@
+//HeaderImportExport-->
+//SiteId=0
+//Enterprise=True
+//ScriptType=1
+//ScriptGroup=Materials
+//HeaderImportExport<--
+{
+  This script is executed as the Materials and FillerPrepreg table
+  are loaded from the DataBase into cache. It gives the user/customer
+  the option to do whatever kind of post-processing if required
+}
+
+begin
+//  Fnc.OpenDataGrid(Fnc.SysMaterialsTable);
+end.

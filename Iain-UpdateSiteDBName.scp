@@ -1,0 +1,26 @@
+//HeaderImportExport-->
+//SiteId=0
+//Enterprise=True
+//ScriptType=0
+//ScriptGroup=
+//HeaderImportExport<--
+Function UpdateSiteDB;
+var
+  aSql: string;
+  aQry: TAdoQuery;
+begin                                                       
+  aSql := 'Select * From Sites';
+  //aSql := 'UPDATE Sites SET Site_DB_Name = ' + QuotedStr('EngenixLive');
+  
+  aQry := Fnc.SqlRunNew(aSql);
+  
+  Fnc.OpenDataGrid(aQry);
+                                                        
+  aQry.Active := False;
+  aQry.Free;                                   
+  
+end;
+
+begin  
+  UpdateSiteDB;
+end;

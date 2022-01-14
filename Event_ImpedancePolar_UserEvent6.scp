@@ -1,0 +1,15 @@
+//HeaderImportExport-->
+//SiteId=0
+//Enterprise=True
+//ScriptType=1
+//ScriptGroup=Impedance
+//HeaderImportExport<--
+?{
+  Script to set the sorting for the Polar Impedance Requirements
+
+  Add the FieldNames in the proper sequence to the ParamList
+}
+procedure ImpedancePolar_UserEvent6(PolarImpedance: TSysTable; ParamList: TStringList);
+begin
+  // your code in here
+end;

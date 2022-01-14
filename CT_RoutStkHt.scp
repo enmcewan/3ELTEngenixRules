@@ -1,0 +1,130 @@
+//HeaderImportExport-->
+//SiteId=0
+//Enterprise=True
+//ScriptType=0
+//ScriptGroup=HCS
+//HeaderImportExport<--
+function GetRoutSmallestDiameter: double;
+var
+  i: integer;
+  LayerList: TStringList;
+  BitTable: TSysTable;
+begin
+  Result := 50;
+
+  LayerList := Fnc.SysGetItemAttrValueList('ItemLayerName', cStackupRout, 0);
+
+//  ShowMessage(LayerList.Text);
+
+  for i := 0 to LayerList.Count - 1 do
+  begin
+    BitTable := Fnc.SysGetDrillRouteToolsDetails(LayerList.Strings[i]);
+
+//    Fnc.OpenDataGrid(BitTable);
+
+    BitTable.First;
+                                      
+    while not BitTable.Eof do
+    begin
+      if BitTable.FieldByName('Drill_Size').AsFloat > 0.0 then
+      begin                  
+        if Result > BitTable.FieldByName('Drill_Size').AsFloat then
+          Result := BitTable.FieldByName('Drill_Size').AsFloat;
+      end;
+
+      BitTable.Next;
+    end;
+
+    Fnc.SysTableDestroy(BitTable);
+  end;
+
+  LayerList.Free;
+end;
+
+function GetRouteDiamFromFieldName(aString: string): double;
+var
+  i: integer;
+  TempStr: string;
+begin
+  Result := 0.0;
+
+  i := pos('m', aString);
+  if i > 0 then
+  begin
+    TempStr := copy(aString, i + 1, Length(aString));
+    Result := FloatToStr(TempStr);
+    Result := Result/10;
+  end;
+end;
+
+function GetRoutStackHeight: integer;
+var
+  i: integer;                 
+  FieldName: string;
+
+  aMsg: string;
+
+  MinRoutDiam: double;
+  BoardThickness: double;
+
+  RoutStackTable: TSysTable
+begin
+  Result := 0;
+
+  // get all the required numbers
+  //MinRoutDiam := GetRoutSmallestDiameter;
+  
+  MinRoutDiam := Fnc.SysGetAttrValue('Rout_MinBitSize');
+  BoardThickness := Fnc.SysGetAttrValue('LayupThickness');
+  RoutStackTable := Fnc.CustomTableGet('RoutStackHeight');
+
+  // get the name of the Diameter column
+  FieldName := '';
+  // start looping by 3rd field, tables have always a hidden 'ID' as first field
+  for i := 3 to RoutStackTable.FieldCount - 1 do
+  begin
+    if MinRoutDiam <= GetRouteDiamFromFieldName(RoutStackTable.Fields.Fields[i].FieldName) then
+    begin
+      FieldName := RoutStackTable.Fields.Fields[i].FieldName;
+      break;
+    end;                                                  
+  end;                                      
+
+  if FieldName <> '' then
+  begin
+    RoutStackTable.Filtered := False;
+    RoutStackTable.Filter := Format('[BoardThickness] >= %s', [FloatToStr(BoardThickness)]);
+    RoutStackTable.Filtered := True;
+
+    RoutStackTable.SortFields := 'BoardThickness';
+    RoutStackTable.SortDefault;
+
+//    Fnc.OpenDataGrid(RoutStackTable);
+
+    if not RoutStackTable.IsEmpty then
+    begin
+      RoutStackTable.First;
+      Result := RoutStackTable.FieldByName(FieldName).AsInteger;
+    end;
+                       
+                                             
+    // cleanup
+    RoutStackTable.Filtered := False;
+    RoutStackTable.Filter := '';
+                                   
+    RoutStackTable.SortFields := '';
+    RoutStackTable.SortDefault;
+  end;                         
+                   
+  if Result = 0 then
+  begin
+    aMsg := 'Function: GetRoutStackHeight, no valid value found. Stack Height set to 1' + #13#13 +
+            'Rout Diameter: ' + FloatToStr(MinRoutDiam) + #13 +
+            'Board Thickness: ' + FloatToStr(BoardThickness);
+    MessageDlg(aMsg, mtWarning, SetOf([mbCancel]), 0);
+    Result := 1;
+  end;            
+  
+  //ShowMessage(Result);
+  Fnc.SysSetAttrValue('Rout_StackHt', Result);
+end; 

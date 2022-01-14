@@ -1,0 +1,342 @@
+//HeaderImportExport-->
+//SiteId=0
+//Enterprise=True
+//ScriptType=1
+//ScriptGroup=ERP
+//HeaderImportExport<--
+{
+--> Input Parameters:
+
+ParamList.Values['JobId']
+ParamList.Values['JobRev']
+ParamList.Values['JobName']
+ParamList.Values['CustCode']
+ParamList.Values['CustName']
+ParamList.Values['CustPartNum']
+ParamList.Values['CustPartRev']
+ParamList.Values['CustPartDesc']
+ParamList.Values['BomLevel']
+ParamList.Values['BomLevelSeq']
+ParamList.Values['PartType'] (TOOL or MFGPART)
+ParamList.Values['TopLayer']  = Name
+ParamList.Values['BottomLayer']
+ParamList.Values['CombinedMfgPart']
+ParamList.Values['CombinedLayers']
+ParamList.Values['MfgPartUniqueSeq']
+ParamList.Values['TopLayerSeq'] = Actual layer number
+ParamList.Values['BottomLayerSeq']
+
+--> Output Parameters:
+
+ParamList.Values['ErpMfgPartNum']
+ParamList.Values['ErpMfgPartDesc']
+}
+
+Uses
+  Eng_RouteFunctions, RouteFunctions;
+                          
+procedure GetErpMfgPartNum(ParamList);
+
+var
+  PDM_PartNo : string;
+  MfgPartNum: string;
+  MfgPartDes : string;
+  Cust_Code : string;
+  Layer_Count : string;
+  Seq_No : string;
+  CP_Rev : string;
+  TLayer_No : string;
+  BLayer_No : string;
+
+  eRevChange : string;
+  iRevChange : string;
+Begin
+  PDM_PartNo := '';
+  MfgPartNum := '';
+  MfgPartDes := '';
+  Cust_Code := '';
+  Layer_Count := '';
+  Seq_No := '';
+  CP_Rev := '';
+  TLayer_No := '';
+  BLayer_No := '';
+
+  eRevChange := '';
+  iRevChange := '';
+
+  MfgPartDes := ParamList.Values['JobName']; // + '-' + ParamList.Values['JobRev']; Removed Rev per Alison's request 7/20
+
+  //ShowMessage(ParamList.Values['TopLayerSeq']);
+
+  if Eng_PartNumber <> 'XXXXX' then
+  begin
+    PDM_PartNo := Eng_PartNumber;
+
+    if Fnc.SysGetAttrValueTopLevel('Part_Type') = 'Standard' then  // 408 Paradigm Part Number Coding - Internal Part number
+    begin
+      Cust_Code := copy(PDM_PartNo, 3, 2) + '-';
+      Layer_Count := copy(PDM_PartNo, 6, 2) + '-';
+      Seq_No := copy(PDM_PartNo, 9, 4) + '.';
+      CP_Rev := copy(PDM_PartNo, 14, 2) + '-';
+    end
+    else if Fnc.SysGetAttrValueTopLevel('Part_Type') = 'Internal' then
+    begin
+      Cust_Code := copy(PDM_PartNo, 3, 2);
+      Seq_No := copy(PDM_PartNo, 5, 6) + '.';
+      eRevChange := copy(PDM_PartNo, 12, 2);
+      iRevChange := copy(PDM_PartNo, 14, 2) + '-';
+    end
+    else
+      MessageDlg('Part Type is not recognized. Paradigm BOM Number may not be correct', mtWarning, SetOf([mbOK]), 0);
+  end;
+
+  if PDM_PartNo <> 'XXXXX' then
+  begin
+    if ParamList.Values['MfgPartStructure'] = 'TopLevel' then
+      MfgPartNum := PDM_PartNo
+    else // Inners & Subs
+    begin
+
+      if Fnc.SysGetAttrValueTopLevel('Part_Type') = 'Standard' then
+      begin
+        if Eng_JobType = 'Sample' then
+          MfgPartNum := 'Q-'
+        else if Eng_JobType = 'Production' then
+          MfgPartNum := 'H-'
+        else MfgPartNum := 'Q-';
+
+        MfgPartNum := MfgPartNum + Cust_Code + Layer_Count + Seq_No + CP_Rev;
+      end
+      else if Fnc.SysGetAttrValueTopLevel('Part_Type') = 'Internal' then
+      begin
+        if Eng_JobType = 'Sample' then
+          MfgPartNum := 'SM'
+        else if Eng_JobType = 'Production' then
+          MfgPartNum := 'PD'
+        else MfgPartNum := 'SM';
+
+        MfgPartNum := MfgPartNum + Cust_Code + Seq_No + eRevChange + iRevChange;
+
+      end
+      else
+        // Don't know what this should be so using same formula as production
+        MfgPartNum := MfgPartNum + Cust_Code + Layer_Count + Seq_No + CP_Rev;
+
+      if (
+         (ParamList.Values['MfgPartStructure'] = 'InnerLayer') and
+         (ParamList.Values['TopLayer'] = 'x') and
+         (ParamList.Values['BottomLayer'] = 'x')
+         )
+      then
+      begin  // Dummy Cores
+        if ParamList.Values['ErpMfgPartDesc'] = 'InnerLayer x / x' then
+          MfgPartNum :=  MfgPartNum + '0000';
+
+        if ParamList.Values['ErpMfgPartDesc'] = 'InnerLayer -1 x / x' then
+          MfgPartNum :=  MfgPartNum + '0001';
+
+        if ParamList.Values['ErpMfgPartDesc'] = 'InnerLayer -2 x / x' then
+          MfgPartNum :=  MfgPartNum + '0002';
+
+        if ParamList.Values['ErpMfgPartDesc'] = 'InnerLayer -3 x / x' then
+          MfgPartNum :=  MfgPartNum + '0003';
+
+        if ParamList.Values['ErpMfgPartDesc'] = 'InnerLayer -4 x / x' then
+          MfgPartNum :=  MfgPartNum + '0004';
+
+        if ParamList.Values['ErpMfgPartDesc'] = 'InnerLayer -5 x / x' then
+          MfgPartNum :=  MfgPartNum + '0006';
+
+        if ParamList.Values['ErpMfgPartDesc'] = 'InnerLayer -6 x / x' then
+          MfgPartNum :=  MfgPartNum + '0007';
+
+        if ParamList.Values['ErpMfgPartDesc'] = 'InnerLayer -7 x / x' then
+          MfgPartNum :=  MfgPartNum + '0008';
+
+        if ParamList.Values['ErpMfgPartDesc'] = 'InnerLayer -8 x / x' then
+          MfgPartNum :=  MfgPartNum + '0009';
+
+        if ParamList.Values['ErpMfgPartDesc'] = 'InnerLayer -9 x / x' then
+          MfgPartNum :=  MfgPartNum + '0010';
+
+        // Special condtions for "new" dummy layer names IW 15/11/03
+        if ParamList.Values['ErpMfgPartDesc'] = 'InnerLayer L0 / L0' then
+          MfgPartNum :=  MfgPartNum + '0000';
+
+        if ParamList.Values['ErpMfgPartDesc'] = 'InnerLayer L0 / L1' then
+          MfgPartNum :=  MfgPartNum + '0001';
+
+        if ParamList.Values['ErpMfgPartDesc'] = 'InnerLayer L0 / L2' then
+          MfgPartNum :=  MfgPartNum + '0002';
+
+        if ParamList.Values['ErpMfgPartDesc'] = 'InnerLayer L0 / L3' then
+          MfgPartNum :=  MfgPartNum + '0003';
+
+        if ParamList.Values['ErpMfgPartDesc'] = 'InnerLayer L0 / L4' then
+          MfgPartNum :=  MfgPartNum + '0004';
+
+        if ParamList.Values['ErpMfgPartDesc'] = 'InnerLayer L0 / L5' then
+          MfgPartNum :=  MfgPartNum + '0006';
+
+        if ParamList.Values['ErpMfgPartDesc'] = 'InnerLayer L0 / L6' then
+          MfgPartNum :=  MfgPartNum + '0007';
+
+        if ParamList.Values['ErpMfgPartDesc'] = 'InnerLayer L0 / L7' then
+          MfgPartNum :=  MfgPartNum + '0008';
+
+        if ParamList.Values['ErpMfgPartDesc'] = 'InnerLayer L0 / L8' then
+          MfgPartNum :=  MfgPartNum + '0009';
+
+        if ParamList.Values['ErpMfgPartDesc'] = 'InnerLayer L0 / L9' then
+          MfgPartNum :=  MfgPartNum + '0010';
+
+      end  // Dummy Cores
+      else
+      Begin // Inners and subs
+        TLayer_No := ParamList.Values['TopLayerSeq'];
+
+        if length(TLayer_No) = 1 then
+          TLayer_No := '0' + TLayer_No;
+
+        BLayer_No := ParamList.Values['BottomLayerSeq'];
+
+        if length(BLayer_No) = 1 then
+          BLayer_No := '0' + BLayer_No;
+
+        MfgPartNum := MfgPartNum + TLayer_No + BLayer_No;
+
+      End;
+      //ShowMessage(MfgPartNum);
+
+    end;
+  end
+  else
+  begin  // Default Engenix Script
+    ShowMessage('Warning!!! : Paradigm Part Number not Assigned to Job. BOM Names for Mfg Parts will use 5 characters from Job Name');
+    if ParamList.Values['PartType'] = 'MFGPART' then
+    Begin
+      MfgPartNum := 'Z';
+      if ParamList.Values['CombinedMfgPart'] = 'TRUE' then
+      begin
+      MfgPartNum := MfgPartNum +
+                    copy(ParamList.Values['JobName'], 1, 5) + '-' +
+                    copy(ParamList.Values['JobRev'], 1, 2) + '-' +
+                    copy(ParamList.Values['TopLayer'], 1, 3) + '-' +
+                    copy(ParamList.Values['BottomLayer'],1, 3);
+                    //ShowMessage(MfgPartNum);
+      end
+      else
+      begin
+        //For Top Level Parts
+        if ParamList.Values['MfgPartStructure'] = 'TopLevel' then
+        begin
+          MfgPartNum := MfgPartNum +
+                        'BOM-' +
+                        copy(ParamList.Values['JobName'], 1, 5);
+         // ShowMessage(MfgPartNum);
+        end
+        else
+        //subs & inners
+        begin
+         // ShowMessage(ParamList.Values['TopLayer'] + '  ' + ParamList.Values['BottomLayer']);
+         // ShowMessage(ParamList.Values['MfgPartStructure']);
+
+          MfgPartNum := MfgPartNum +
+                        copy(ParamList.Values['JobName'], 1, 5) + '-';
+
+          if ParamList.Values['MfgPartStructure'] = 'Blind'
+          then
+            MfgPartNum := MfgPartNum + 'BLIND ';
+
+          if ParamList.Values['MfgPartStructure'] = 'Buried'
+          then
+            MfgPartNum := MfgPartNum + 'BURIED ';
+
+          if ParamList.Values['MfgPartStructure'] = 'SubLam'
+          then
+            MfgPartNum := MfgPartNum + 'SUBLAM ';
+
+          if (
+             (ParamList.Values['MfgPartStructure'] = 'InnerLayer') and
+             (ParamList.Values['TopLayer'] = 'x') and
+             (ParamList.Values['BottomLayer'] = 'x')
+             )
+          then
+          Begin
+            if ParamList.Values['ErpMfgPartDesc'] = 'InnerLayer x / x' then
+              MfgPartNum :=  MfgPartNum + 'ETCHOFF 1 ';
+
+            if ParamList.Values['ErpMfgPartDesc'] = 'InnerLayer -1 x / x' then
+              MfgPartNum :=  MfgPartNum + 'ETCHOFF 2 ';
+
+            if ParamList.Values['ErpMfgPartDesc'] = 'InnerLayer -2 x / x' then
+              MfgPartNum :=  MfgPartNum + 'ETCHOFF 3 ';
+
+            if ParamList.Values['ErpMfgPartDesc'] = 'InnerLayer -3 x / x' then
+              MfgPartNum :=  MfgPartNum + 'ETCHOFF 4 ';
+
+            if ParamList.Values['ErpMfgPartDesc'] = 'InnerLayer -4 x / x' then
+              MfgPartNum :=  MfgPartNum + 'ETCHOFF 5 ';
+
+            if ParamList.Values['ErpMfgPartDesc'] = 'InnerLayer -5 x / x' then
+              MfgPartNum :=  MfgPartNum + 'ETCHOFF 5 ';
+
+            if ParamList.Values['ErpMfgPartDesc'] = 'InnerLayer -6 x / x' then
+              MfgPartNum :=  MfgPartNum + 'ETCHOFF 7 ';
+
+            if ParamList.Values['ErpMfgPartDesc'] = 'InnerLayer -7 x / x' then
+              MfgPartNum :=  MfgPartNum + 'ETCHOFF 8 ';
+
+            if ParamList.Values['ErpMfgPartDesc'] = 'InnerLayer -8 x / x' then
+              MfgPartNum :=  MfgPartNum + 'ETCHOFF 9 ';
+
+            if ParamList.Values['ErpMfgPartDesc'] = 'InnerLayer -9 x / x' then
+              MfgPartNum :=  MfgPartNum + 'ETCHOFF 10 ';
+          End
+          else
+          Begin
+            if copy(ParamList.Values['TopLayer'], 1, 4) = 'LYR-' then
+            begin
+              MfgPartNum := MfgPartNum + copy(ParamList.Values['TopLayer'], 5, 2);
+            end
+            else //Assuming "L-XX' for Engenix created layer names
+            begin
+              MfgPartNum := MfgPartNum + copy(ParamList.Values['TopLayer'], 3, 2);
+            end;
+
+            MfgPartNum := MfgPartNum + '-'; //Add a dash between the layers for subs
+
+            if copy(ParamList.Values['BottomLayer'], 1, 4) = 'LYR-' then
+            begin
+              MfgPartNum := MfgPartNum + copy(ParamList.Values['BottomLayer'], 5, 2);
+            end
+            else
+            begin
+              MfgPartNum := MfgPartNum + copy(ParamList.Values['BottomLayer'], 3, 2);
+            end;
+
+          End;
+          //ShowMessage(MfgPartNum);
+        end;
+
+      end;
+
+    End;
+
+    if ParamList.Values['PartType'] = 'TOOLING' then
+    begin
+      MfgPartNum := 'T';
+      MfgPartNum := MfgPartNum +
+                    copy(ParamList.Values['JobName'], 1, 5) + '-' +
+                    copy(ParamList.Values['BomLevel'], 1, 2) + '-' +
+                    copy(ParamList.Values['BomLevelSeq'], 1, 2);
+
+    // ShowMessage(MfgPartNum);
+    end;
+  End;
+
+
+  ParamList.Values['ErpMfgPartNum'] := MfgPartNum;
+  ParamList.Values['ErpMfgPartDesc'] := MfgPartDes;
+End;
+

@@ -1,0 +1,12 @@
+//HeaderImportExport-->
+//SiteId=0
+//Enterprise=True
+//ScriptType=1
+//ScriptGroup=Reports
+//HeaderImportExport<--
+// Script runs just before the pipilines for the reports are setup
+
+procedure Report_Start(ParamList: TStringList);
+begin
+ //
+end;

@@ -1,0 +1,10 @@
+//HeaderImportExport-->
+//SiteId=0
+//Enterprise=True
+//ScriptType=1
+//ScriptGroup=Quote
+//HeaderImportExport<--
+procedure Quote_MiscChargesUserEvent3(ParamList: TStringList);
+begin
+  //
+end;

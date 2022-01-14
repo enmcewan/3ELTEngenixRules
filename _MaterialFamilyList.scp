@@ -1,0 +1,19 @@
+//HeaderImportExport-->
+//SiteId=0
+//Enterprise=True
+//ScriptType=0
+//ScriptGroup=
+//HeaderImportExport<--
+var
+  aList: TStringList;
+begin
+  aList := TStringList.Create;
+  aList.Add('ShowExportToCsv=True');
+
+  Fnc.SysMaterialsFamilyTable.Filtered := False;
+
+  Fnc.OpenDataGrid(Fnc.SysMaterialsFamilyTable, aList);
+
+  aList.Free;
+end;
+                                                                                                 

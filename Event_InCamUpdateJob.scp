@@ -1,0 +1,85 @@
+//HeaderImportExport-->
+//SiteId=0
+//Enterprise=True
+//ScriptType=1
+//ScriptGroup=InCam
+//HeaderImportExport<--
+uses
+  Event_InCamScriptLibrary;
+
+procedure AddAttributeUpdate(ScriptList: TStringList; JobName: string; StepName: string; LayerName:string; tblData: TSysTable);
+var
+  AttrName: string;
+  AttrValue: string;
+  AttrType: string;
+  UpdateStr: string;
+begin
+  // set the type of attribute/property job/step/layer/....
+  AttrType := 'job';
+  if StepName <> '' then
+    AttrType := 'step';
+  if LayerName <> '' then
+    AttrType := 'layer';
+
+  // get the attribute name
+  AttrName := tblData.FieldByName('AttrNameOdb').AsString;
+
+  // There might be some conversion required based on the fieldtype
+  AttrValue := tblData.FieldByName('AttrValue').AsString;
+
+  // probably need to do some data conversion                                 
+  case tblData.FieldByName('DataType').AsInteger of
+    ftFloat: AttrValue := StringReplace(AttrValue, ',', '.', SetOf([]));
+  end;
+
+  // now create the actual InCam commandline to do the update
+  UpdateStr := Format('job=%s, name1=%s, name2=%s, name3=, attribute=%s, value=%s',
+                       [JobName, StepName, LayerName, AttrName, AttrValue]);
+
+  UpdateStr := Format('COM set_attribute, type=%s, %s, units=mm', [AttrType, UpdateStr]);
+
+  // and append the command to the cShell script
+  ScriptList.Add(UpdateStr);
+end;
+
+procedure InCamUpdateJob(ParamList: TSytringList; tblData: TSysTable; ScriptList: TStringList);
+var
+  Group: string;
+  JobName: string;
+  StepName: string;
+  LayerName: string;
+begin
+  JobName := ParamList.Values['OdbJobName'];
+
+  AddcShellScriptHeader(ScriptList);
+
+  tblData.First;
+  while not tblData.Eof do
+  begin
+    // only process those that are selected by the user, most likely not all
+    // attribute values needs to be pushed back to InCam, so adjust the
+    // selection to fit the customers need
+    if tblData.FieldByName('Visible').AsBoolean then
+    begin
+      // just to make the script easier to read
+      StepName := tblData.FieldByName('StepName').AsString;
+      LayerName := tblData.FieldByName('LayerName').AsString;
+      Group := LowerCase(tblData.FieldByName('Group').AsString);
+
+      if Group = 'job' then
+        AddAttributeUpdate(ScriptList, JobName, '', '', tblData);
+
+      if Group = 'step' then
+        AddAttributeUpdate(ScriptList, JobName, StepName, '', tblData);
+
+      if Group = 'layer' then
+        AddAttributeUpdate(ScriptList, JobName, StepName, LayerName, tblData);
+    end;
+
+    tblData.Next;
+  end;
+
+  AddcShellScriptSaveJob(ScriptList);
+
+  AddcShellScriptTrailer(ScriptList);
+end;

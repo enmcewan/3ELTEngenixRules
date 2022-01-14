@@ -1,0 +1,12 @@
+//HeaderImportExport-->
+//SiteId=0
+//Enterprise=True
+//ScriptType=1
+//ScriptGroup=Impedance
+//HeaderImportExport<--
+{ ParamList for futhur use }
+
+procedure ImpedancePolar_UserEvent1(ParamList: TStringList);
+begin              
+  // your script          
+end;                          

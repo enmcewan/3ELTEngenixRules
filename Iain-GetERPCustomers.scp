@@ -1,0 +1,32 @@
+//HeaderImportExport-->
+//SiteId=0
+//Enterprise=True
+//ScriptType=0
+//ScriptGroup=
+//HeaderImportExport<--
+Function GetParadigmCustomers;
+var
+  SqlStr: string;
+  CustTable: TSysTable;
+  OptionList: TStringList;
+begin
+
+    SqlStr := 'SELECT CUST_CODE, CUSTOMER_NAME FROM DATA0010 ORDER BY CUST_CODE'
+              ;
+
+    CustTable := Fnc.AstaExecuteSql(SqlStr);
+    
+    OptionList := TStringList.Create;
+    OptionList.Add('ShowExportToCSV=true');
+
+    Fnc.OpenDataGrid(CustTable, OptionList)
+    
+    CustTable.Free;
+
+end; 
+
+begin  
+  GetParadigmCustomers;
+end;
+
+

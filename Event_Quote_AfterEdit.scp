@@ -1,0 +1,24 @@
+//HeaderImportExport-->
+//SiteId=0
+//Enterprise=True
+//ScriptType=1
+//ScriptGroup=Quote
+//HeaderImportExport<--
+?{
+Script will run as the user updates a Quote Parameter or cell in the Pricing
+grid as that attribute is flagged for "Run Post Edit Script" in the Quote Module
+
+- ParamList: Has some information on which Parameter of Pricing cell is updated.
+
+- Fnc.SysQuoteParamTable: table with all the parameters defined for quoting
+
+- Fnc.SysQuotePricingTable: table with the Pricing Grid data.
+
+Update in this script any fields in the two tables that needs to be calculated
+based on the entry made by the user.
+}
+
+procedure Quote_AfterEdit(ParamList: TStringList);
+begin
+//  Showmessage('Event_Quote_AfterEdit' + #13#13 + ParamList.Text);
+end;

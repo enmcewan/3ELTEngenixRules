@@ -1,0 +1,218 @@
+//HeaderImportExport-->
+//SiteId=0
+//Enterprise=True
+//ScriptType=1
+//ScriptGroup=Library
+//HeaderImportExport<--
+//HeaderImportExport-->
+//SiteId=0
+//Enterprise=True
+//ScriptType=1
+//ScriptGroup=Library
+//HeaderImportExport<--
+// Following global variables are updated by the System Scripts.                                                                                      
+var
+
+  Engx_ViaMax,
+  Engx_ViaMin,
+  Engx_PthMax,
+  Engx_PthMin,
+  Engx_NptMax,
+  Engx_NptMin,
+  Engx_DrlMax,
+  Engx_DrlMin  : float;
+
+
+////////////////////////////////////////////////////////////////////////
+// Following functions are for drill file and tool related attributes //
+////////////////////////////////////////////////////////////////////////
+
+{-------------------------------------------------------
+Find the number of drillfiles linked to the MfgPart
+--------------------------------------------------------}
+function FindNumberOfDrillFiles: integer;
+var                            
+  Dummy1, Dummy2: string;
+begin
+  Fnc.SysStackupItemTypeCount(cStackupDrill, False, Result, Dummy1, Dummy2);
+
+end;
+                             
+{----------------------------------------------------------
+Get the name of a drillfile for a specified sequence
+if there is no file with the specified sequence, the function
+would return no name, you could check in your code:
+
+if result = '' then
+   NoFile
+else
+   .........
+
+-----------------------------------------------------------}
+function GetTheDrillFileName(DrillFileSeq): string;
+var
+  TotCount: integer;
+  Top, Bot: string;
+  DrillNames: TStringList;
+begin
+  Fnc.SysStackupItemTypeCount('DL', True, TotCount, Top, Bot);
+
+  DrillNames := TStringList.Create;
+  DrillNames.Text := Top + Bot;
+
+  if DrillFileSeq > DrillNames.Count then
+    Result := ''
+  else
+    Result := DrillNames.Strings[DrillFileSeq - 1];
+
+  DrillNames.Free;
+
+//==> V2.0    result := '';
+//==> V2.0    // First find the DrillFileName for the given sequence
+//==> V2.0    with Fnc.SysBomAttrTable do begin
+//==> V2.0       first;
+//==> V2.0       while not Eof do begin
+//==> V2.0          if pos(SFStkUpDrillFile, Fnc.SysBomAttrTable.FieldByName('GenBomSysFlags').AsString) > 0 then begin
+//==> V2.0             DrillFileSeq := DrillFileSeq - 1;
+//==> V2.0             if DrillFileSeq = 0 then begin
+//==> V2.0                result := Fnc.SysBomAttrTable.FieldByName('GenBomItemValue').AsString;
+//==> V2.0                break;
+//==> V2.0             end;
+//==> V2.0          end;
+//==> V2.0          Next;
+//==> V2.0       end;
+//==> V2.0    end;
+//==> V2.0    // Reposition at the MfgPart
+//==> V2.0    Fnc.SysBomAttrTable.Locate('ActiveSw', true,  SetOf([]));
+end;
+
+{-----------------------------------------------------------
+Get the biggest tool for the specified LayerName
+------------------------------------------------------------}
+function BiggestToolOneFile(DrillFileName: string; DrillType: string): double;
+var
+  DrillRouteDetails: TSysTable;
+begin
+  // Init with a large value
+  result := 0;
+
+  // Retrieve the details for this DrillFile
+  DrillRouteDetails := Fnc.SysGetDrillRouteToolsDetails(DrillFileName);
+
+//  showmessage('function BiggestToolOneFile(' + DrillFileName + ': string, ' + DrillType + ': string)');
+//  Fnc.OpenDataGrid(DrillRouteDetails, nil, nil, True);
+
+  // Check if valid tools found
+  if DrillRouteDetails.IsEmpty then
+    result := 0.0
+  else
+  begin
+    // Just to let you see what we retrieved
+    // Loop through the table to find the smallest drillsize
+    DrillRouteDetails.First;
+    while not DrillRouteDetails.Eof do
+    begin
+      if (lowercase(DrillType) = lowercase(DrillRouteDetails.FieldByName('HoleType').AsString)) or
+         (lowercase(DrillType) = lowercase('all')) then
+      begin
+        if (DrillRouteDetails.FieldByName('Drill_Size').AsFloat > result) then
+          result := DrillRouteDetails.FieldByName('Drill_Size').AsFloat;
+      end;
+      DrillRouteDetails.next;                          
+    end;
+  end;
+
+  // Cleanup
+  DrillRouteDetails.Close;
+  Fnc.SysTableDestroy(DrillRouteDetails);
+end;
+
+{-----------------------------------------------------------
+Get the smallest tool for the specified LayerName
+------------------------------------------------------------}
+function SmallestToolOneFile(DrillFileName: string; DrillType: string): double;
+var
+  DrillRouteDetails: TSysTable;
+begin
+  // Init with a large value
+  result := 99999999;
+
+  // Retrieve the details for this DrillFile
+  DrillRouteDetails := Fnc.SysGetDrillRouteToolsDetails(DrillFileName);
+
+//  showmessage('function SmallestToolOneFile(' + DrillFileName + ': string, ' + DrillType + ': string)');
+//  Fnc.OpenDataGrid(DrillRouteDetails, nil, nil, True);
+
+  // Check if valid tools found
+  if DrillRouteDetails.IsEmpty then
+    result := 99999999.9
+  else
+  begin
+    // Loop through the table to find the smallest drillsize
+      DrillRouteDetails.First;         
+      while not DrillRouteDetails.Eof do 
+      begin
+
+        if (lowercase(DrillType) = lowercase(DrillRouteDetails.FieldByName('HoleType').AsString)) or
+           (lowercase(DrillType) = lowercase ('all')) then
+        begin
+          if (DrillRouteDetails.FieldByName('Drill_Size').AsFloat < result) then
+            result := DrillRouteDetails.FieldByName('Drill_Size').AsFloat;
+        end;
+
+        DrillRouteDetails.next;
+      end;
+  end;
+
+  // Cleanup
+  DrillRouteDetails.Close;
+  Fnc.SysTableDestroy(DrillRouteDetails);
+end;
+
+function GetMinDrillTool(DrillType: String): double;
+var
+  NumDrillFiles: integer;
+  I: integer;
+  CurrentLayerName: string;
+  CurrentSmallestTool: float;
+  DrillFileName: string;
+begin
+  Result := 99999999.9;
+
+  // Get the number of drillfiles
+  NumDrillFiles := FindNumberOfDrillFiles;
+
+  for I := 1 to NumDrillFiles do
+  begin
+    CurrentLayerName := GetTheDrillFileName(I);
+    CurrentSmallestTool := SmallestToolOneFile(CurrentLayerName, DrillType);
+    if CurrentSmallestTool < Result then
+      Result := CurrentSmallestTool;
+  end;
+
+//  showmessage('function GetMinDrillTool(' + DrillType + ')' + #13#13 + 'Result: ' + FloatToStr(Result));
+end;
+
+function GetMaxDrillTool(DrillType: String): double;
+var
+  NumDrillFiles: integer;
+  I: integer;
+  CurrentLayerName: string;
+  DrillFileName: string;
+  CurrentBiggestTool: float;
+begin
+  Result := 0.0;
+
+  // Get the number of drillfiles
+  NumDrillFiles := FindNumberOfDrillFiles;
+  for I := 1 to NumDrillFiles do
+  begin
+    CurrentLayerName := GetTheDrillFileName(I);
+    CurrentBiggestTool := BiggestToolOneFile(CurrentLayerName, DrillType);
+    if CurrentBiggestTool > Result then
+      Result := CurrentBiggestTool;
+  end;
+
+//  showmessage('function GetMaxDrillTool(' + DrillType + ')' + #13#13 + 'Result: ' + FloatToStr(Result));
+end;
+

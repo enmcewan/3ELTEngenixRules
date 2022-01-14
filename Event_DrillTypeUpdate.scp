@@ -1,0 +1,45 @@
+//HeaderImportExport-->
+//SiteId=0
+//Enterprise=True
+//ScriptType=1
+//ScriptGroup=Layer Maintenance
+//HeaderImportExport<--
+{ -----------------------------------------------------------------------
+  Script is called as the user changes the 'Base Drill Type' or the
+  'Plugged/Filled' fields in the Create/Edit Layers tab.
+
+  -----------------------------------------------------------------------
+
+  This script can be used to update Drill/Route layers attributes based
+  on the selection of the user. Most likely the following field can be
+  used as triggers to update Drill/Rout Layer attributes:
+
+  - LayerTable.FieldByName('DrillDefId').AsInteger
+
+  This is the value Id as assigned to the definition in the Config Man.
+
+  - LayerTable.FieldByName('DrillFilledId').AsInteger
+
+  This is the 'Id' value as assigned to the fill type in the Config Man.
+
+  -----------------------------------------------------------------------
+
+  Most likely fields (attributes) that will be updated in this script are
+
+  - LayerTable.FieldByName('HoledPlugged').AsBoolean
+  - LayerTable.FieldByName('FilledViaCond').AsBoolean
+  - LayerTable.FieldByName('FilledViaNotCond').AsBoolean
+
+  to update the fieldvalues, include something like:
+
+  LayerTable.Edit;
+  LayerTable.FieldByName('HoledPlugged').AsBoolean := True;
+  LayerTable.Post;
+
+  -----------------------------------------------------------------------
+}
+
+procedure DrillTypeUpdate(ParamList: TStringList; LayerTable: TSysTable);
+begin
+  // custom code here
+end;

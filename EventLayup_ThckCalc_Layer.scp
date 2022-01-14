@@ -1,0 +1,126 @@
+//HeaderImportExport-->
+//SiteId=0
+//Enterprise=True
+//ScriptType=1
+//ScriptGroup=Stackup
+//HeaderImportExport<--
+// Rev: 1.7.0.01
+
+{
+ Script to calculate the thickness/height for the Layer
+
+ Data is passed from the Layup Module to the script using the
+ Fnc.SysLayupParamTable. It has all information to calculate
+ the (final) thickness/height for the individual items for a
+ Layer.
+
+ Secord DataSet available in this event is the Fnc.SysMaterialsConductors
+ table. This is a link/copy to the MsSql database table where we define the
+ options available for each plating type and the thickness/height for this
+ option
+
+ The record to calculate has always the 'ActiveRecord' = True
+
+ The script should calculate/update the following fields:
+
+ - 'LayupThckCu' (float)
+       The Base copper height (use the value of the 'LayupCodeThckCu' field).
+
+ - 'LayupThckPlating' (float)
+       Thickness height for plating (use the value of the 'LayupCodeThckPlating' field).
+
+ - 'LayupThckNi' (float)
+       Thickness/height Nickel (use the value of the 'LayupCodeThckNi' field).
+
+ - 'LayupThckAu' (float)
+       Thickness/height of the Gold (use the 'LayupCodeThckAu' field).
+                                                       
+}
+procedure PostProcessThicknessValues;
+begin                                    
+  if  Fnc.SysLayupParamTable.Locate('ActiveRecord', True,  SetOf([])) then
+  begin   
+    Fnc.SysLayupParamTable.Edit;
+                              
+    if  Fnc.SysLayupParamTable.FieldByName('LayupThckPlatingByUser').AsFloat = 0 then
+       Fnc.SysLayupParamTable.FieldByName('LayupThckBasePlusPlating').AsFloat :=
+           Fnc.SysLayupParamTable.FieldByName('LayupThckCu').AsFloat +
+           Fnc.SysLayupParamTable.FieldByName('LayupThckPlating').AsFloat
+    else
+       Fnc.SysLayupParamTable.FieldByName('LayupThckBasePlusPlating').AsFloat :=
+           Fnc.SysLayupParamTable.FieldByName('LayupThckCu').AsFloat +
+           Fnc.SysLayupParamTable.FieldByName('LayupThckPlatingByUser').AsFloat;           
+    {
+    if Fnc.SysLayupParamTable.FieldByName('LayupThckPlating').AsFloat > 0 then
+      Fnc.SysLayupParamTable.FieldByName('MultiplierImpedance').AsFloat := Fnc.SysLayupParamTable.FieldByName('LayupThckBasePlusPlating').AsFloat + 0.10005;
+      
+    if Fnc.SysLayupParamTable.FieldByName('LayupThckPlatingByUser').AsFloat > 0 then
+      Fnc.SysLayupParamTable.FieldByName('MultiplierImpedance').AsFloat := Fnc.SysLayupParamTable.FieldByName('LayupThckBasePlusPlating').AsFloat + 0.10005; 
+    }
+    Fnc.SysLayupParamTable.Post;
+  end;                                             
+                                            
+end;
+
+function GetThickness(CondType: string; CondCode: string): float;
+begin
+  Result := 0;                                                        
+
+  if Fnc.SysMaterialsConductors.Locate(
+                      'Type;Code',
+                      [CondType, CondCode],
+                       SetOf([])) then
+    Result := Fnc.SysMaterialsConductors.FieldByName('Thickness').AsFloat;
+end;                               
+                                                                              
+begin
+  if Fnc.SysLayupParamTable.Locate('ActiveRecord', True,  SetOf([])) then
+  begin
+    //Fnc.OpenDataGrid(Fnc.SysLayupParamTable); 
+    Fnc.SysLayupParamTable.Edit;
+
+    // Base Copper Calculation
+    if  Fnc.SysLayupParamTable.FieldByName('LayupCodeThckCu').AsString <> '' then
+       Fnc.SysLayupParamTable.FieldByName('LayupThckCu').AsFloat :=
+           GetThickness('Copper',  Fnc.SysLayupParamTable.FieldByName('LayupCodeThckCu').AsString);
+
+    // Plating Calculation, only if set to Automatic
+    if  Fnc.SysLayupParamTable.FieldByName('LayupCodeThckPlating').AsString <> '' then
+      Fnc.SysLayupParamTable.FieldByName('LayupThckPlating').AsFloat :=
+          GetThickness('Plating',  Fnc.SysLayupParamTable.FieldByName('LayupCodeThckPlating').AsString);
+
+    // Second Plating calculation added on 5/9/07 -MPS
+    if not ( Fnc.SysLayupParamTable.FieldByName('LayupCodeThckSecondPlating').AsString = '') then
+      Fnc.SysLayupParamTable.FieldByName('LayupThckSecondPlating').AsFloat :=
+          GetThickness('Plating',  Fnc.SysLayupParamTable.FieldByName('LayupCodeThckSecondPlating').AsString);
+
+    // Differential etching
+    if not  Fnc.SysLayupParamTable.FieldByName('LayupThckDiffEtchOverride').AsBoolean then
+      Fnc.SysLayupParamTable.FieldByName('LayupThckDiffEtch').AsFloat :=
+          GetThickness('DiffEtch',  Fnc.SysLayupParamTable.FieldByName('LayupCodeThckDiffEtch').AsString);
+
+    // Nickel Calculation                          
+    if  Fnc.SysLayupParamTable.FieldByName('LayupCodeThckNi').AsString <> '' then
+      Fnc.SysLayupParamTable.FieldByName('LayupThckNi').AsFloat :=
+          GetThickness('Nickel',  Fnc.SysLayupParamTable.FieldByName('LayupCodeThckNi').AsString);
+
+    // Gold Calculation
+    if  Fnc.SysLayupParamTable.FieldByName('LayupCodeThckAu').AsString <> '' then
+      Fnc.SysLayupParamTable.FieldByName('LayupThckAu').AsFloat :=
+          GetThickness('Gold',  Fnc.SysLayupParamTable.FieldByName('LayupCodeThckAu').AsString);
+
+    // Silver Calculation
+    if  Fnc.SysLayupParamTable.FieldByName('LayupCodeThckAg').AsString <> '' then
+      Fnc.SysLayupParamTable.FieldByName('LayupThckAg').AsFloat :=
+          GetThickness('Silver',  Fnc.SysLayupParamTable.FieldByName('LayupCodeThckAg').AsString);
+
+    Fnc.SysLayupParamTable.Post;
+  end;
+
+  PostProcessThicknessValues;
+  {
+  Fnc.SysLayupParamTable.EnableControls;
+  Fnc.OpenDataGrid(Fnc.SysLayupParamTable);
+  Fnc.SysLayupParamTable.DisableControls; 
+  }
+end;

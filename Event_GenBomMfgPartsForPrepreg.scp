@@ -1,0 +1,18 @@
+//HeaderImportExport-->
+//SiteId=0
+//Enterprise=True
+//ScriptType=1
+//ScriptGroup=Stackup
+//HeaderImportExport<--
+{
+ Script is triggered from the MfgParts dialog in the Rigid-Flex/EmbeddedComp/..
+ MfgPartsForPrepregs dialog in the Edit stackup dialog.
+ 
+ The script must set the value for the SpecBom.FieldByName('MfgPartGroup').AsString 
+ 
+ ParamList does not have any data yet, is for future use
+}                                                   
+procedure GenBomMfgPartsForPrepreg(SpecBomCopy: TSysTable; ParamList: TStringList);
+begin
+  // user code        
+end;

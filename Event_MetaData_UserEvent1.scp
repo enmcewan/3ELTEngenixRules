@@ -1,0 +1,10 @@
+//HeaderImportExport-->
+//SiteId=0
+//Enterprise=True
+//ScriptType=1
+//ScriptGroup=Meta-Data
+//HeaderImportExport<--
+procedure MetaDataUserEvent1(ParamList : TStringList);
+begin
+
+end;

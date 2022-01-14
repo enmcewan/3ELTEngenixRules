@@ -1,0 +1,10 @@
+//HeaderImportExport-->
+//SiteId=0
+//Enterprise=True
+//ScriptType=1
+//ScriptGroup=Script Audit
+//HeaderImportExport<--
+procedure ScriptAuditUserEvent1(ParamList: TStringList; OldScript: string; NewScript: string);
+begin
+  showmessage(ParamList.Text + #13#13 + OldScript + #13#13 + NewScript);
+end;

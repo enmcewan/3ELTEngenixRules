@@ -1,0 +1,12 @@
+//HeaderImportExport-->
+//SiteId=0
+//Enterprise=True
+//ScriptType=1
+//ScriptGroup=Stackup Image
+//HeaderImportExport<--
+procedure GetMaterialDescription(tblConstr: TSysTable; tblErpBom: TSysTable; ParamList: TStringList);
+begin
+  // ParamList.Values['ErpBom']        -> True/False -> tblErpBom proper positioned
+  // ParamList.Values['MaterialDescr'] -> Pass back updated description
+end;
+

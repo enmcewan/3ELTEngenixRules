@@ -1,0 +1,75 @@
+//HeaderImportExport-->
+//SiteId=0
+//Enterprise=True
+//ScriptType=1
+//ScriptGroup=BOM Conversion
+//HeaderImportExport<--
+{--------------------------------------------------------------
+Convert the "Occurence" in the Stackup to the Unit Of Inventory
+Measure for the ERP Inventory material This should be adapted to
+the requirements of the customer
+---------------------------------------------------------------}
+
+uses
+  RouteFunctions;
+
+procedure BomConvGetQuantity(ParamList: TStringList);
+var
+  PrimeQty: double;
+  AltQty: double;
+  StepNum: integer;
+begin
+                           
+
+//  Fnc.OpenDataGrid(Fnc.SysErpBomTable, nil, nil, True);
+//  Fnc.OpenDataGrid(Fnc.SysStackupTable, nil, nil, True);
+                                   
+  // Init the variables                           
+  PrimeQty := 0;
+  AltQty := 0;
+  StepNum := 0;            
+                                   
+  // Foils always get standard qty for the BOM
+  if Fnc.SysErpBomTable.FieldByName('GenMatrlType').AsString = 'Foil' then
+  begin
+    if Fnc.SysErpBomTable.FieldByName('ErpMatrlUom').AsString = 'KG' then  // 1247 BOM Cu Foil Unitpin
+    begin
+      Case Fnc.GetStackupMaterialValue('TopLayer.LayupCodeThckCu') of
+        //'5um'   : PrimeQty := 1 ;         // 1200 5um Cu Foil  
+        '1/3oz' : PrimeQty := 0.0416 ;
+        '1/2oz' : PrimeQty := 0.0588 ;
+        '1oz'   : PrimeQty := 0.1088 ;                       
+        '2oz'   : PrimeQty := 0.2215 ;       
+      end;
+    end
+    else if Fnc.SysErpBomTable.FieldByName('ErpMatrlUom').AsString = 'SHEET' then
+      PrimeQty := 1;
+    else
+      MessageDlg('Unknown BOM Unit ' + Fnc.SysErpBomTable.FieldByName('ErpMatrlUom').AsString + ' for Cu Foil', mtWarning, SetOf([mbOK]), 0 ); 
+  end
+  else // PPG & Core get 0.0 qty per BOM for sample Jobs.
+  begin
+    //if Eng_JobType = 'Sample' then     //Condition removed per email request from Alison 2015-09-03
+    //  PrimeQty := 0
+    //else
+      PrimeQty := 1;
+      
+      // 1183 Wrong Thin Core BOM Unit
+      if Fnc.SysErpBomTable.FieldByName('ErpMatrlUom').AsString <> 'PANEL' then
+        MessageDlg('BOM material Unit for ' +
+                   Fnc.SysErpBomTable.FieldByName('ErpMatrlNum').AsString + ' is ' +
+                   Fnc.SysErpBomTable.FieldByName('ErpMatrlUom').AsString + ' not PANEL. ' +
+                   'Change UOM in Paradigm Inventory before proceeding.', mtWarning, SetOf([mbOK]), 0 );
+  end;
+                                       
+  // if Alternate Parts are implemented, do a similar conversion of
+  // the quantity for these parts. Unit of Measure is in the field
+  // 'ErpMatrlUomAlt'
+
+//  case UpperCase(Fnc.SysErpBomTable.FieldByName('ErpMatrlUomAlt').AsString) of
+//  end;
+
+  ParamList.Add('Qty=' + FloatToStr(PrimeQty));
+  ParamList.Add('AltQty=' + FloatToStr(AltQty));
+  ParamList.Add('StepNum=' + IntToStr(StepNum));
+end;

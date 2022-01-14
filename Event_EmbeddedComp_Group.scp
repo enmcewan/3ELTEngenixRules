@@ -1,0 +1,18 @@
+//HeaderImportExport-->
+//SiteId=0
+//Enterprise=True
+//ScriptType=1
+//ScriptGroup=Embedded Component
+//HeaderImportExport<--
+{                                                                                                      
+tblEmbeddedComp
+    The integer field 'ThicknessGroup' is used to minimize the number of components
+    displayed in the stackup graphics, there will be 1 graphical presentation
+    per group in the stackup.
+
+    tblEmbeddedComp.FieldByName('ThicknessGroup').AsInteger
+}
+procedure EmbeddedComp_Group(tblEmbeddedComp: TSysTable; tblLayers: TSysTable; tblComponents: TSysTable; ParamList: TStringList);
+begin
+  // Your Code Here
+end;

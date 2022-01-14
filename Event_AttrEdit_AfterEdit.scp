@@ -1,0 +1,464 @@
+//HeaderImportExport-->
+//SiteId=0
+//Enterprise=True
+//ScriptType=1
+//ScriptGroup=Attribute Edit
+//HeaderImportExport<--
+{                                                                                                                                                                                                                                                                                                                                                                                                                         
+To get/set attribute values or hide/show attributes use the following functions
+
+Fnc.SysAttrEditGetAttrValue(AttrName: string): variant;
+Fnc.SysAttrEditGetAttrValueTopLevel(AttrName: string): variant;
+Fnc.SysAttrEditGetLayerAttrValue(LayerName: string; AttrName: string): variant;
+
+Fnc.SysAttrEditSetAttrValue(AttrName, AttrValue: string; HideAttrib: boolean = False);
+Fnc.SysAttrEditSetAttrValueTopLevel(AttrName, AttrValue: string; HideAttrib: boolean = False);
+Fnc.SysAttrEditSetLayerAttrValue(LayerName: string; AttrName: string; AttrValue: string; HideAttrib: boolean = False);
+}
+
+uses                                                   
+  RouteFunctions,
+  HiPot_Table_Lookup;
+                                
+procedure AttrEdit_AfterEdit(ParamList: TStringList; AttrTable: TSysTable; SpecTable: TSysTable);
+begin                  
+  // Check for incompatible finish combinations
+  if ( ParamList.values['ItemType'] = 'MFGTP' ) and ( ParamList.values['Sender'] = 'EditValue' ) then
+  begin                     
+    if ( Fnc.SysAttrEditGetAttrValue('Gold_Fgr_Type') = 'Tab Plating' ) and
+       ( Fnc.SysAttrEditGetAttrValue('Board_Finish') <> 'Immersion Silver' ) and 
+       ( Fnc.SysAttrEditGetAttrValue('Board_Finish') <> 'OSP' ) then
+    begin                                       
+      MessageDlg(Fnc.SysAttrEditGetAttrValue('Board_Finish') + ' is not compatible with Tab Plating.',  mtWarning, Setof([mbOK]) , 0);
+      Fnc.SysAttrEditSetAttrValue('Board_Finish', 'None', false);
+    end; 
+                                              
+    if (( Fnc.SysAttrEditGetAttrValue('Sel_Gold_Type') <> 'None' ) and
+       ( Fnc.SysAttrEditGetAttrValue('Board_Finish') <> 'Immersion Silver' ) and 
+       ( Fnc.SysAttrEditGetAttrValue('Board_Finish') <> 'OSP' ) and
+       ( Fnc.SysAttrEditGetAttrValue('Board_Finish') <> 'ENIG' ) and 
+       ( Fnc.SysAttrEditGetAttrValue('Board_Finish') <> 'ENEPIG' )) and
+       
+       (( Fnc.SysAttrEditGetAttrValue('Sel_Gold_Type') <> 'None' ) and  // 1355
+       ( Fnc.SysAttrEditGetAttrValue('Sel_Gold_Type') <> 'Pattern Overhang / PTH' ) and
+       ( Fnc.SysAttrEditGetAttrValue('Sel_Gold_Type') <> 'Gold Finger + Pattern Overhang / PTH' ) and
+       ( Fnc.SysAttrEditGetAttrValue('Board_Finish') = 'Lead Free HAL' ))
+    then
+    begin
+      MessageDlg('Board Finish "' + Fnc.SysAttrEditGetAttrValue('Board_Finish') + '" is not compatible with ' + Fnc.SysAttrEditGetAttrValue('Sel_Gold_Type'),  mtWarning, Setof([mbOK]) , 0);
+      Fnc.SysAttrEditSetAttrValue('Board_Finish', 'None', false);
+    end;
+                                                          
+     if (( Fnc.SysAttrEditGetAttrValue('Gold_Fgr_Type') <> 'None' ) and 
+        ( Fnc.SysAttrEditGetAttrValue('Gold_Fgr_Type') <> 'Tab Plating' ) and         
+        ( Fnc.SysAttrEditGetAttrValue('Board_Finish') <> 'Immersion Silver' ) and 
+        ( Fnc.SysAttrEditGetAttrValue('Board_Finish') <> 'OSP' ) and
+        ( Fnc.SysAttrEditGetAttrValue('Board_Finish') <> 'ENIG' ) and 
+        ( Fnc.SysAttrEditGetAttrValue('Board_Finish') <> 'ENEPIG' )) and
+        
+        (( Fnc.SysAttrEditGetAttrValue('Gold_Fgr_Type') <> 'Lead Line Etching' ) and // 1355
+         ( Fnc.SysAttrEditGetAttrValue('Gold_Fgr_Type') <> 'NO Lead Line Etching' ) and
+         (Fnc.SysAttrEditGetAttrValue('Board_Finish') = 'Lead Free HAL' ))       
+     then
+     begin
+        MessageDlg('Board Finish "' + Fnc.SysAttrEditGetAttrValue('Board_Finish') + '" is not compatible with ' + Fnc.SysAttrEditGetAttrValue('Gold_Fgr_Type'),  mtWarning, Setof([mbOK]) , 0);
+        Fnc.SysAttrEditSetAttrValue('Board_Finish', 'None', false);
+     end;
+  end;
+  
+  if ( ParamList.values['ItemType'] = 'MFGTP' ) then 
+  begin                                                      
+    //ShowMessage(ParamList.text);
+    //Initialize optional finish settings to be hidden
+    
+    Fnc.SysAttrEditSetAttrValue('HAL_MinThk', '', true);
+    Fnc.SysAttrEditSetAttrValue('HAL_BkDrll_Rmk', '', true);
+    Fnc.SysAttrEditSetAttrValue('HAL_CuArea', '', true); // 960 - Additional Cu Area for HAL  
+    Fnc.SysAttrEditSetAttrValue('Imm_Silver', '', true);
+    Fnc.SysAttrEditSetAttrValue('Imm_Silver_Process', '', true); 
+    Fnc.SysAttrEditSetAttrValue('CM_Plus', '', true); 
+    Fnc.SysAttrEditSetAttrValue('Imm_Tin', '', true); 
+    Fnc.SysAttrEditSetAttrValue('OSP_Type', '', true);
+    Fnc.SysAttrEditSetAttrValue('Lead_Free_HAL_Process', '', true); // 1355 
+                                                      
+    if Fnc.SysAttrEditGetAttrValue('Lead_Free_Over') = 'Auto' then  // Lead Free Required
+    begin
+      if Fnc.SysAttrEditGetAttrValue('Board_Finish') = 'HAL' then 
+        Fnc.SysAttrEditSetAttrValue('Lead_Free', false, false)
+      else                           
+        Fnc.SysAttrEditSetAttrValue('Lead_Free', true, false); 
+    end
+    else if Fnc.SysAttrEditGetAttrValue('Lead_Free_Over') = 'Non-Lead Free' then
+    begin
+      Fnc.SysAttrEditSetAttrValue('Lead_Free', false, false); 
+    end; 
+   
+    if (Fnc.SysAttrEditGetAttrValue('Board_Finish') = 'HAL') or 
+       (Fnc.SysAttrEditGetAttrValue('Board_Finish') = 'Lead Free HAL') or
+       (Fnc.SysAttrEditGetAttrValue('Board_Finish') = 'LB Free HAL + Immersion silver') then // 1322
+    begin
+      Fnc.SysAttrEditSetAttrValue('HAL_MinThk', '', false);                           
+      Fnc.SysAttrEditSetAttrValue('HAL_BkDrll_Rmk', '', false);
+      Fnc.SysAttrEditSetAttrValue('HAL_CuArea', '', false); // 960 - Additional Cu Area for HAL  
+    end;                                                  
+    
+    if Fnc.SysAttrEditGetAttrValue('Board_Finish') = 'Immersion Tin' then
+      Fnc.SysAttrEditSetAttrValue('Imm_Tin', '', false);                    
+                                                                  
+    if Fnc.SysAttrEditGetAttrValue('Board_Finish') = 'Immersion Silver' then
+    begin
+      Fnc.SysAttrEditSetAttrValue('Imm_Silver', '', false);
+      Fnc.SysAttrEditSetAttrValue('CM_Plus', '', false); 
+      Fnc.SysAttrEditSetAttrValue('Imm_Silver_Process', '', false); 
+    end;
+    
+    if Fnc.SysAttrEditGetAttrValue('Board_Finish') = 'Lead Free HAL' then
+    begin
+      Fnc.SysAttrEditSetAttrValue('Lead_Free_HAL_Process', '', false); 
+    end;
+    
+    if Fnc.SysAttrEditGetAttrValue('Board_Finish') = 'LB Free HAL + Immersion silver' then  // 1322
+    begin
+      Fnc.SysAttrEditSetAttrValue('Imm_Silver', '', false);
+    end; 
+                   
+    if ( Fnc.SysAttrEditGetAttrValue('Board_Finish') = 'OSP' ) // 1256   
+    then
+      Fnc.SysAttrEditSetAttrValue('OSP_Type', '', false);
+                                                               
+    if  (Fnc.SysAttrEditGetAttrValue('Board_Finish') = 'Full Body Gold') or
+        (Fnc.SysAttrEditGetAttrValue('Board_Finish') = 'Thin/Thick Au Plate') or
+        //(Fnc.SysAttrEditGetAttrValue('Gold_Fgr_Type') = 'Lead Line Etching B4 Res (Sel)') or // 1256
+        (Fnc.SysAttrEditGetAttrValue('Gold_Fgr_Type') = 'Lead Line Etching') or
+        // (Fnc.SysAttrEditGetAttrValue('Gold_Fgr_Type') = 'No Horn - Lead Line Etching B4 Res (Sel)') or 1256
+        //(Fnc.SysAttrEditGetAttrValue('Gold_Fgr_Type') = 'Chamfer B4 Res (Sel)') or 
+        // (Fnc.SysAttrEditGetAttrValue('Gold_Fgr_Type') = 'After Pattern (Sel)') or // 911  1256
+        (Fnc.SysAttrEditGetAttrValue('Gold_Fgr_Type') = 'NO Lead Line Etching') or
+        // (Fnc.SysAttrEditGetAttrValue('Gold_Fgr_Type') = 'Lead Line Etching Af Res (Sel)') or  1256
+        (Fnc.SysAttrEditGetAttrValue('Gold_Fgr_Type') = 'Au Finger Plate after SM') //or
+        //(Fnc.SysAttrEditGetAttrValue('Gold_Fgr_Type') = 'Chamfer Af Res (Sel)') or  1256
+        //(Fnc.SysAttrEditGetAttrValue('Gold_Fgr_Type') = 'Thin/Thick - Lead Line Etching B4 Res (Sel)') or  1256
+        //(Fnc.SysAttrEditGetAttrValue('Gold_Fgr_Type') = 'Thin/Thick - Chamfer B4 Res (Sel)') or
+        //(Fnc.SysAttrEditGetAttrValue('Gold_Fgr_Type') = 'Thin/Thick - After Pattern (Sel)') // 911  1256
+    then                                    
+      Fnc.SysAttrEditSetAttrValue('Sel_Gold_Type', '', true)
+    else
+      Fnc.SysAttrEditSetAttrValue('Sel_Gold_Type', '', false);                       
+                                    
+    if  (Fnc.SysAttrEditGetAttrValue('Gold_Fgr_Type') = 'None') or
+        //(Fnc.SysAttrEditGetAttrValue('Gold_Fgr_Type') = 'Lead Line Etching B4 Res (Sel)') or 1256
+        (Fnc.SysAttrEditGetAttrValue('Gold_Fgr_Type') = 'Lead Line Etching') or
+        //(Fnc.SysAttrEditGetAttrValue('Gold_Fgr_Type') = 'No Horn - Lead Line Etching B4 Res (Sel)') or  1256
+        //(Fnc.SysAttrEditGetAttrValue('Gold_Fgr_Type') = 'Chamfer B4 Res (Sel)') or
+        // (Fnc.SysAttrEditGetAttrValue('Gold_Fgr_Type') = 'After Pattern (Sel)') or // 911 1256
+        (Fnc.SysAttrEditGetAttrValue('Gold_Fgr_Type') = 'NO Lead Line Etching') or
+        //(Fnc.SysAttrEditGetAttrValue('Gold_Fgr_Type') = 'Lead Line Etching Af Res (Sel)') or 1256
+        (Fnc.SysAttrEditGetAttrValue('Gold_Fgr_Type') = 'Au Finger Plate after SM') or
+        (Fnc.SysAttrEditGetAttrValue('Gold_Fgr_Type') = 'Soldermask Spray')
+        //(Fnc.SysAttrEditGetAttrValue('Gold_Fgr_Type') = 'Chamfer Af Res (Sel)') or  1256
+        //(Fnc.SysAttrEditGetAttrValue('Gold_Fgr_Type') = 'Thin/Thick - Lead Line Etching B4 Res (Sel)') or  1256
+        //(Fnc.SysAttrEditGetAttrValue('Gold_Fgr_Type') = 'Thin/Thick - After Pattern (Sel)') or
+        //(Fnc.SysAttrEditGetAttrValue('Gold_Fgr_Type') = 'Thin/Thick - Chamfer B4 Res (Sel)')  // 911      
+    then                                    
+    begin                                                                  
+      Fnc.SysAttrEditSetAttrValue('Gold_Fgr_Area', '', true);     
+      Fnc.SysAttrEditSetAttrValue('Gold_Fgr_AuSpec', '', true);
+      Fnc.SysAttrEditSetAttrValue('Gold_Fgr_NiSpec', '', true);    
+      Fnc.SysAttrEditSetAttrValue('Gold_Tab_Rows', '', true);
+    end      
+    else // Tab Plating                                 
+    begin                                                                                     
+      Fnc.SysAttrEditSetAttrValue('Gold_Fgr_Area', '', false);
+      Fnc.SysAttrEditSetAttrValue('Gold_Fgr_AuSpec', '', false);             
+      Fnc.SysAttrEditSetAttrValue('Gold_Fgr_NiSpec', '', false);
+      Fnc.SysAttrEditSetAttrValue('Gold_Tab_Rows', '', false);
+    end;
+    
+    //Initialize Sel Gold Options to be hidden
+    Fnc.SysAttrEditSetAttrValue('Sel_Gold_Area1', '', true);
+    Fnc.SysAttrEditSetAttrValue('Sel_Gold_AuSpec1', '', true);
+    Fnc.SysAttrEditSetAttrValue('Sel_Gold_NiSpec1', '', true);  
+    Fnc.SysAttrEditSetAttrValue('Sel_Gold_Area2', '', true);
+    Fnc.SysAttrEditSetAttrValue('Sel_Gold_AuSpec2', '', true);
+    Fnc.SysAttrEditSetAttrValue('Sel_Gold_NiSpec2', '', true);
+    Fnc.SysAttrEditSetAttrValue('Palladium_Spec', '', true);
+    
+    if  ((Fnc.SysAttrEditGetAttrValue('Sel_Gold_Type') <> 'None') and (Fnc.SysAttrEditGetAttrValue('Sel_Gold_Type') <> 'ENIG')) or
+        (Fnc.SysAttrEditGetAttrValue('Board_Finish') = 'Full Body Gold') or
+        (Fnc.SysAttrEditGetAttrValue('Board_Finish') = 'Thin/Thick Au Plate') or
+        //(Fnc.SysAttrEditGetAttrValue('Gold_Fgr_Type') = 'Lead Line Etching B4 Res (Sel)') or 1256
+        (Fnc.SysAttrEditGetAttrValue('Gold_Fgr_Type') = 'Lead Line Etching') or
+        //(Fnc.SysAttrEditGetAttrValue('Gold_Fgr_Type') = 'No Horn - Lead Line Etching B4 Res (Sel)') or 1256
+        //(Fnc.SysAttrEditGetAttrValue('Gold_Fgr_Type') = 'Chamfer B4 Res (Sel)') or 
+        //(Fnc.SysAttrEditGetAttrValue('Gold_Fgr_Type') = 'After Pattern (Sel)') or // 911 1256
+        (Fnc.SysAttrEditGetAttrValue('Gold_Fgr_Type') = 'NO Lead Line Etching') or
+        (Fnc.SysAttrEditGetAttrValue('Gold_Fgr_Type') = 'Lead Line Etching Af Res (Sel)') or
+        (Fnc.SysAttrEditGetAttrValue('Gold_Fgr_Type') = 'Au Finger Plate after SM') or
+        (Fnc.SysAttrEditGetAttrValue('Gold_Fgr_Type') = 'Soldermask Spray')
+        //(Fnc.SysAttrEditGetAttrValue('Gold_Fgr_Type') = 'Chamfer Af Res (Sel)') or  1256
+        //(Fnc.SysAttrEditGetAttrValue('Gold_Fgr_Type') = 'Thin/Thick - Lead Line Etching B4 Res (Sel)') or 1256
+        //(Fnc.SysAttrEditGetAttrValue('Gold_Fgr_Type') = 'Thin/Thick - Chamfer B4 Res (Sel)') or
+        //(Fnc.SysAttrEditGetAttrValue('Gold_Fgr_Type') = 'Thin/Thick - After Pattern (Sel)')                             
+    then                                             
+    begin                                                              
+      Fnc.SysAttrEditSetAttrValue('Sel_Gold_Area1', '', false);
+      Fnc.SysAttrEditSetAttrValue('Sel_Gold_AuSpec1', '', false);
+      Fnc.SysAttrEditSetAttrValue('Sel_Gold_NiSpec1', '', false);
+    end;                                          
+                                            
+    if  //(Fnc.SysAttrEditGetAttrValue('Sel_Gold_Type') = 'Thin/Thick Encapsulated Pattern') or   1256                                  
+        //(Fnc.SysAttrEditGetAttrValue('Gold_Fgr_Type') = 'Thin/Thick - Lead Line Etching B4 Res (Sel)') or 1256
+        //(Fnc.SysAttrEditGetAttrValue('Gold_Fgr_Type') = 'Thin/Thick - Chamfer B4 Res (Sel)') or 
+        //(Fnc.SysAttrEditGetAttrValue('Gold_Fgr_Type') = 'Thin/Thick - After Pattern (Sel)') or 1256
+        (Fnc.SysAttrEditGetAttrValue('Board_Finish') = 'ENIG') or
+        (Fnc.SysAttrEditGetAttrValue('Board_Finish') = 'ENEPIG') or
+        (Fnc.SysAttrEditGetAttrValue('Sel_Gold_Type') = 'ENIG') or
+        (Fnc.SysAttrEditGetAttrValue('Board_Finish') = 'Thin/Thick Au Plate') //1256
+    then                                             
+    begin                                                                                           
+      Fnc.SysAttrEditSetAttrValue('Sel_Gold_Area2', '', false);                                
+      Fnc.SysAttrEditSetAttrValue('Sel_Gold_AuSpec2', '', false);
+      Fnc.SysAttrEditSetAttrValue('Sel_Gold_NiSpec2', '', false);                          
+    end;                        
+                                  
+    if Fnc.SysAttrEditGetAttrValue('Board_Finish') = 'ENEPIG' then
+      Fnc.SysAttrEditSetAttrValue('Palladium_Spec', '', false);
+                                                              
+    if  (Fnc.SysAttrEditGetAttrValue('Board_Finish') <> 'Full Body Gold') and
+        (Fnc.SysAttrEditGetAttrValue('Board_Finish') <> 'Thin/Thick Au Plate') and
+        (Fnc.SysAttrEditGetAttrValue('Board_Finish') <> 'ENIG') and
+        (Fnc.SysAttrEditGetAttrValue('Sel_Gold_Type') <> 'ENIG') and  // 1256 
+        //(Fnc.SysAttrEditGetAttrValue('Board_Finish') <> 'ENIG + OSP') and  // 1173 Additional Surface Finishing. Selective ENIG + OSP 
+        (Fnc.SysAttrEditGetAttrValue('Board_Finish') <> 'ENEPIG') and
+        (Fnc.SysAttrEditGetAttrValue('Gold_Fgr_Type') <> 'None') and
+        (Fnc.SysAttrEditGetAttrValue('Gold_Fgr_Type') <> 'Tab Plating') and
+        (Fnc.SysAttrEditGetAttrValue('Sel_Gold_Type') <> 'None')                                 
+    then
+    begin                                                           
+      Fnc.SysAttrEditSetAttrValue('Sel_Gold_Area2', '', true);
+      Fnc.SysAttrEditSetAttrValue('Sel_Gold_AuSpec2', '', true);
+      Fnc.SysAttrEditSetAttrValue('Sel_Gold_NiSpec2', '', true);   
+    end;
+    
+    {// Check for incompatible finish combinations
+    if ( Fnc.SysAttrEditGetAttrValue('Gold_Fgr_Type') = 'Tab Plating' ) and
+       ( Fnc.SysAttrEditGetAttrValue('Board_Finish') <> 'Immersion Silver' ) and 
+       ( Fnc.SysAttrEditGetAttrValue('Board_Finish') <> 'OSP' ) then
+    begin                                       
+      MessageDlg(Fnc.SysAttrEditGetAttrValue('Board_Finish') + ' is not compatible with Tab Plating.',  mtWarning, Setof([mbOK]) , 0);
+      //Fnc.SysAttrEditSetAttrValue('Board_Finish', 'None', false);
+    end; 
+                          
+    if ( Fnc.SysAttrEditGetAttrValue('Sel_Gold_Type') <> 'None' ) and
+       ( Fnc.SysAttrEditGetAttrValue('Board_Finish') <> 'Immersion Silver' ) and 
+       ( Fnc.SysAttrEditGetAttrValue('Board_Finish') <> 'OSP' ) and
+       ( Fnc.SysAttrEditGetAttrValue('Board_Finish') <> 'ENIG' ) and 
+       ( Fnc.SysAttrEditGetAttrValue('Board_Finish') <> 'ENEPIG' ) then
+     begin
+       MessageDlg('Board Finish "' + Fnc.SysAttrEditGetAttrValue('Board_Finish') + '" is not compatible with ' + Fnc.SysAttrEditGetAttrValue('Sel_Gold_Type'),  mtWarning, Setof([mbOK]) , 0);
+      // Fnc.SysAttrEditSetAttrValue('Board_Finish', 'None', false);
+     end;
+                                                          
+     if (( Fnc.SysAttrEditGetAttrValue('Gold_Fgr_Type') <> 'None' ) and ( Fnc.SysAttrEditGetAttrValue('Gold_Fgr_Type') <> 'Tab Plating' )) and
+        ( Fnc.SysAttrEditGetAttrValue('Board_Finish') <> 'Immersion Silver' ) and 
+        ( Fnc.SysAttrEditGetAttrValue('Board_Finish') <> 'OSP' ) and
+        ( Fnc.SysAttrEditGetAttrValue('Board_Finish') <> 'ENIG' ) and 
+        ( Fnc.SysAttrEditGetAttrValue('Board_Finish') <> 'ENEPIG' ) then
+     begin
+        MessageDlg('Board Finish "' + Fnc.SysAttrEditGetAttrValue('Board_Finish') + '" is not compatible with ' + Fnc.SysAttrEditGetAttrValue('Sel_Gold_Type'),  mtWarning, Setof([mbOK]) , 0);
+        //Fnc.SysAttrEditSetAttrValue('Board_Finish', 'None', false);
+     end;}
+                         
+  end;
+   
+   //ShowMessage(ParamList.text);
+     
+  //Initialize 2X Drill Options to be Hidden
+  Fnc.SysAttrEditSetAttrValue('Aspect_Ratio_Val_2', '', true);
+  Fnc.SysAttrEditSetAttrValue('Drill_Entry_Sht_2', '', true);
+  Fnc.SysAttrEditSetAttrValue('Flute_Len_2', '', true);       // 843 Process Override Rule 
+  Fnc.SysAttrEditSetAttrValue('Flute_Len_2_User', '', true);
+  Fnc.SysAttrEditSetAttrValue('Flute_Len_Ovr_2', '', true);
+  Fnc.SysAttrEditSetAttrValue('Min_Drill_Size_2', '', true);
+  Fnc.SysAttrEditSetAttrValue('Min_Slot_Size_2', '', true);
+
+  Fnc.SysAttrEditSetAttrValue('Stack_Hgt_2', '', true);
+  Fnc.SysAttrEditSetAttrValue('Stack_Hgt_2_Ovr', '', true);
+  Fnc.SysAttrEditSetAttrValue('Stack_Hgt_2_User', '', true);
+  
+  Fnc.SysAttrEditSetAttrValue('Drill_FSF_X_2', '', true);
+  Fnc.SysAttrEditSetAttrValue('Drill_FSF_X_Tol_2', '', true);
+  Fnc.SysAttrEditSetAttrValue('Drill_FSF_Y_2', '', true);
+  Fnc.SysAttrEditSetAttrValue('Drill_FSF_Y_Tol_2', '', true);
+  
+  Fnc.SysAttrEditSetAttrValue('Drill_Offset_X_2', '', true);  // 1259 Additional attributes for NC Drill
+  Fnc.SysAttrEditSetAttrValue('Drill_Offset_Y_2', '', true);
+  
+  if Fnc.SysAttrEditGetAttrValue('NCRunX2') = true then
+  begin
+    Fnc.SysAttrEditSetAttrValue('Aspect_Ratio_Val_2', '', false);
+    Fnc.SysAttrEditSetAttrValue('Drill_Entry_Sht_2', '', false);
+    Fnc.SysAttrEditSetAttrValue('Flute_Len_2', '', false);       // 843 Process Override Rule 
+    Fnc.SysAttrEditSetAttrValue('Flute_Len_2_User', '', false);
+    Fnc.SysAttrEditSetAttrValue('Flute_Len_Ovr_2', '', false);
+    Fnc.SysAttrEditSetAttrValue('Min_Drill_Size_2', '', false);
+    Fnc.SysAttrEditSetAttrValue('Min_Slot_Size_2', '', false);
+
+    Fnc.SysAttrEditSetAttrValue('Stack_Hgt_2', '', false);
+    Fnc.SysAttrEditSetAttrValue('Stack_Hgt_2_Ovr', '', false);
+    Fnc.SysAttrEditSetAttrValue('Stack_Hgt_2_User', '', false);
+                                        
+    Fnc.SysAttrEditSetAttrValue('Drill_FSF_X_2', '', false);
+    Fnc.SysAttrEditSetAttrValue('Drill_FSF_X_Tol_2', '', false);
+    Fnc.SysAttrEditSetAttrValue('Drill_FSF_Y_2', '', false);
+    Fnc.SysAttrEditSetAttrValue('Drill_FSF_Y_Tol_2', '', false);
+    
+    Fnc.SysAttrEditSetAttrValue('Drill_Offset_X_2', '', false);  // 1259 Additional attributes for NC Drill
+    Fnc.SysAttrEditSetAttrValue('Drill_Offset_Y_2', '', false);
+  end;
+  
+  //Initialize Epoxy Plugging Cu Thinning
+  Fnc.SysAttrEditSetAttrValue('EpoxyPlug_CuThin_1stBuff', '', true);
+  Fnc.SysAttrEditSetAttrValue('EpoxyPlug_CuThin_2ndBuff', '', true);
+  Fnc.SysAttrEditSetAttrValue('EpoxyPlug_CuThin_MEtch', '', true);
+  Fnc.SysAttrEditSetAttrValue('EpoxyPlug_CuThin_Tol', '', true);  // 799 Surface Cu Thickness Value Format
+  
+  if Fnc.SysAttrEditGetAttrValue('EpoxyPlug_CuThin_Process') <> 'None' then
+  begin
+  
+    if Fnc.SysAttrEditGetAttrValue('EpoxyPlug_CuThin_Process') = 'Buffing' then
+       Fnc.SysAttrEditSetAttrValue('EpoxyPlug_CuThin_1stBuff', '', false); 
+                                     
+    else if Fnc.SysAttrEditGetAttrValue('EpoxyPlug_CuThin_Process') = 'Micro-Etch + Buffing' then
+    begin                                                                                                                                      
+      Fnc.SysAttrEditSetAttrValue('EpoxyPlug_CuThin_MEtch', '', false);  
+      Fnc.SysAttrEditSetAttrValue('EpoxyPlug_CuThin_1stBuff', '', false);
+    end;
+    
+    else if Fnc.SysAttrEditGetAttrValue('EpoxyPlug_CuThin_Process') = 'Buffing + Mirco-Etch + Buffing' then
+    begin                                                                                                                                        
+      Fnc.SysAttrEditSetAttrValue('EpoxyPlug_CuThin_1stBuff', '', false);
+      Fnc.SysAttrEditSetAttrValue('EpoxyPlug_CuThin_MEtch', '', false);
+      Fnc.SysAttrEditSetAttrValue('EpoxyPlug_CuThin_2ndBuff', '', false);
+    end;
+                                                             
+    Fnc.SysAttrEditSetAttrValue('EpoxyPlug_CuThin_Tol', '', false);
+  
+  end;
+  
+  //Warpage - Uses default type, no need to initialize
+  if Fnc.SysAttrEditGetAttrValue('Warpage_Type') = 'Percent' then
+  begin
+    Fnc.SysAttrEditSetAttrValue('Warpage', '', false);
+    Fnc.SysAttrEditSetAttrValue('Warpage_mm', '', true);
+  end
+  else
+  begin
+    Fnc.SysAttrEditSetAttrValue('Warpage', '', true);
+    Fnc.SysAttrEditSetAttrValue('Warpage_mm', '', false);
+  end;
+  
+  // Core Build Cu Thinning
+  Fnc.SysAttrEditSetAttrValue('CoreBuild_CuThin_Process', '', false); 
+  Fnc.SysAttrEditSetAttrValue('CoreBuild_CuThin_1stBuff', '', true); 
+  Fnc.SysAttrEditSetAttrValue('CoreBuild_CuThin_2ndBuff', '', true);
+  Fnc.SysAttrEditSetAttrValue('CoreBuild_CuThin_MEtch', '', true);
+  Fnc.SysAttrEditSetAttrValue('CoreBuild_CuThin_Tol', '', true); // 799 Surface Cu Thickness value format 
+  
+  if (( CoreBuild ) or ( SubAssemblyCoreBuild ) or ( Fnc.SysGetAttrValue('MfgPartType') = 'Sub' )) then
+  begin                                
+    // Copy value from old attribute to new
+    if (( Fnc.SysAttrEditGetAttrValue('CoreBuildCuThin') > 0 ) and ( fnc.SysAttrEditGetAttrValue('CoreBuild_CuThin_1stBuff') = '' )) then
+    begin
+      Fnc.SysAttrEditSetAttrValue('CoreBuild_CuThin_1stBuff', Fnc.SysAttrEditGetAttrValue('CoreBuildCuThin'), false);
+                                  
+      if Fnc.SysAttrEditGetAttrValue('CoreBuildCuThin') = 10 then
+        Fnc.SysAttrEditSetAttrValue('CoreBuild_CuThin_Process', 'Buffing', false)
+      else if Fnc.SysAttrEditGetAttrValue('CoreBuildCuThin') > 10 then
+      begin
+        Fnc.SysAttrEditSetAttrValue('CoreBuild_CuThin_Process', 'Buffing + Mirco-Etch + Buffing', false);
+       // Fnc.SysAttrEditSetAttrValue('CoreBuild_CuThin_1stBuff', '', false); 
+        Fnc.SysAttrEditSetAttrValue('CoreBuild_CuThin_2ndBuff', '', false);
+        Fnc.SysAttrEditSetAttrValue('CoreBuild_CuThin_MEtch', '', false); 
+      end;
+    end
+                                                         
+    // 1473 - Fix Attribute Typo
+    if fnc.SysAttrEditGetAttrValue('CoreBuild_CuThin_Process') = 'Buffing + Mirco-Etch + Buffing' then
+      Fnc.SysAttrEditSetAttrValue('CoreBuild_CuThin_Process', 'Buffing + Micro-Etch + Buffing')
+                                                         
+    Fnc.SysAttrEditSetAttrValue('CoreBuild_CuThin_Process', '', false);
+    Fnc.SysAttrEditSetAttrValue('CoreBuild_CuThin_Tol', '', false); // 799 Surface Cu Thickness value format 
+    
+    if ( Fnc.SysAttrEditGetAttrValue('CoreBuild_CuThin_Process') = 'Buffing' ) or
+       ( Fnc.SysAttrEditGetAttrValue('CoreBuild_CuThin_Process') = 'Vertical Buffing' ) // 1473
+    then
+      Fnc.SysAttrEditSetAttrValue('CoreBuild_CuThin_1stBuff', '', false)
+    else if Fnc.SysAttrEditGetAttrValue('CoreBuild_CuThin_Process') = 'Buffing + Micro-Etch + Buffing' then // 1473 Fix Attr Value
+    begin                
+      Fnc.SysAttrEditSetAttrValue('CoreBuild_CuThin_1stBuff', '', false); 
+      Fnc.SysAttrEditSetAttrValue('CoreBuild_CuThin_2ndBuff', '', false);
+      Fnc.SysAttrEditSetAttrValue('CoreBuild_CuThin_MEtch', '', false); 
+    end
+    else if Fnc.SysAttrEditGetAttrValue('CoreBuild_CuThin_Process') = 'Micro-Etch + Buffing' then // 1473
+    begin
+      Fnc.SysAttrEditSetAttrValue('CoreBuild_CuThin_1stBuff', '', false); 
+      Fnc.SysAttrEditSetAttrValue('CoreBuild_CuThin_MEtch', '', false); 
+    end;                                                        
+     
+  end;                             
+  
+  Fnc.SysAttrEditSetAttrValue('Tight_PressFit_Spec', '', true);
+  Fnc.SysAttrEditSetAttrValue('Tight_PressFit_Spec_2', '', true);
+  Fnc.SysAttrEditSetAttrValue('Tight_PressFit_Spec_3', '', true);
+  
+  if Fnc.SysAttrEditGetAttrValue('Tight_PressFit_Tol') = true then
+  begin
+    Fnc.SysAttrEditSetAttrValue('Tight_PressFit_Spec', '', false);
+    Fnc.SysAttrEditSetAttrValue('Tight_PressFit_Spec_2', '', false);
+    Fnc.SysAttrEditSetAttrValue('Tight_PressFit_Spec_3', '', false);
+  end;
+              
+  // 841 Primary Plug before Pattern                                  
+  Fnc.SysAttrEditSetAttrValue('PrimaryPlug_CuThin_1stBuff', '', true);
+  Fnc.SysAttrEditSetAttrValue('PrimaryPlug_CuThin_Process', '', true); 
+  
+  if Fnc.SysAttrEditGetAttrValue('PrimaryPlugProcess') = 'Before Pattern' then
+  begin
+    Fnc.SysAttrEditSetAttrValue('PrimaryPlug_CuThin_Process', '', false);
+    if Fnc.SysAttrEditGetAttrValue('PrimaryPlug_CuThin_Process') <> 'None' then 
+    begin
+                                   
+      if Fnc.SysAttrEditGetAttrValue('PrimaryPlug_CuThin_Process') = 'Buffing' then
+        Fnc.SysAttrEditSetAttrValue('PrimaryPlug_CuThin_1stBuff', '', false);
+    end;
+  end;
+  
+    // 1196 Pre-Photo Cu Thinning
+  Fnc.SysAttrEditSetAttrValue('Pre_Photo_CuThin_Spec', '', true);
+  Fnc.SysAttrEditSetAttrValue('Pre_Photo_CuThin_Tol', '', true);
+                                                            
+  if Fnc.SysAttrEditGetAttrValue('Pre_Photo_CuThin') then
+  begin
+    Fnc.SysAttrEditSetAttrValue('Pre_Photo_CuThin_Spec', '', false);
+    Fnc.SysAttrEditSetAttrValue('Pre_Photo_CuThin_Tol', '', false);
+  end
+  else
+  begin
+    Fnc.SysAttrEditSetAttrValue('Pre_Photo_CuThin_Spec', '', true);
+    Fnc.SysAttrEditSetAttrValue('Pre_Photo_CuThin_Tol', '', true);   
+  end;
+  
+  if ( ParamList.values['ItemType'] = 'MFGTP' ) or ( ParamList.values['ItemType'] = 'MFGSB' ) then
+  begin
+    if ( Fnc.SysAttrEditGetAttrValue('HiPot_Reset') ) and ( ParamList.values['Sender'] = 'EditValue' ) then       
+    SetHiPotValues(ParamList.values['ItemType'], true);
+    Fnc.SysAttrEditSetAttrValue('HiPot_Reset', false, false);
+    
+    if (Fnc.SysAttrEditGetAttrValue('Volt') > 0) and (Fnc.SysAttrEditGetAttrValue('Ramp') > 0) then
+      Fnc.SysAttrEditSetAttrValue('Wait', (Fnc.SysAttrEditGetAttrValue('Volt') / Fnc.SysAttrEditGetAttrValue('Ramp')) * 1000); 
+  
+    // 1354 CNC Fixed Offset Selection Rule 
+  end;
+   
+End;                                                          

@@ -1,0 +1,36 @@
+//HeaderImportExport-->
+//SiteId=0
+//Enterprise=True
+//ScriptType=0
+//ScriptGroup=
+//HeaderImportExport<--
+var
+  Qry : TADOQuery;
+  tbl : TSysTable;
+
+  lastJob : integer;
+  currentJob : integer;
+
+  jobAttributes : TSysTable;
+
+begin
+
+  Qry := TAdoQuery.Create(nil);
+  Qry.Connection := Fnc.DbConnection;
+
+  //Qry.SQL.Add('SELECT * from JobAttributes ORDER BY Seq');
+  //Qry.SQL.Add('SELECT COUNT(*) from Cust_JobPartAttributes'); 
+  // Qry.SQL.Add('SELECT * from JobAnswers WHERE JobID = 2022');
+  // Qry.SQL.Add('SELECT JobName from Jobs WHERE JobID = 2022');
+  Qry.SQL.Add('SELECT * from CUST_JOBPARTATTRIBUTES ');
+  Qry.SQL.Add('WHERE PARTTYPE = ' + QuotedStr('MFGTP') + ' AND ATTRIBUTENAME LIKE ' + QuotedStr('CoreBuild_CuThin%') );
+  Qry.SQL.Add(' ORDER BY ' + QuotedStr('JobID') + ' DESC' );
+
+  Qry.Open 
+                                        
+  tbl := qry;
+  
+  Fnc.OpenDataGrid(tbl);
+  
+  
+end

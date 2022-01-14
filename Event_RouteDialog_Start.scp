@@ -1,0 +1,11 @@
+//HeaderImportExport-->
+//SiteId=0
+//Enterprise=True
+//ScriptType=1
+//ScriptGroup=Dialog Start/Stop
+//HeaderImportExport<--
+// Called at opening the Route Generate Dialog
+
+begin
+  // Your code in here ....
+end.

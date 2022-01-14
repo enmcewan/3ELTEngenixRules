@@ -1,0 +1,10 @@
+//HeaderImportExport-->
+//SiteId=0
+//Enterprise=True
+//ScriptType=1
+//ScriptGroup=Bacon
+//HeaderImportExport<--
+procedure ExportBacon_MatrlType(ParamList: TStringList);
+begin
+  // custom code for specifying the Bacon Material Type + ShortCut
+end;

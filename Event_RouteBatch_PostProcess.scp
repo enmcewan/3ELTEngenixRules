@@ -1,0 +1,24 @@
+//HeaderImportExport-->
+//SiteId=0
+//Enterprise=True
+//ScriptType=1
+//ScriptGroup=Route Gen/Regen
+//HeaderImportExport<--
+{
+  Script runs after the selected, tagged or all Mfg.Part RouteGen/ReGen has finished
+
+  MfgPartList.Names[i] = MfgPart Name
+
+  MfgPartList.Values[MfgPartName] = Status for RouteGen/ReGen
+  - Blocked
+  - Aborted
+  - Skip
+  - Success
+
+  ParamList = future use
+}
+
+procedure RouteBatch_PostProcess(MfgPartList: TStringList; ParamList: TStringList);
+begin
+  // Example: your code for rollup of the step copper calculated values
+end;

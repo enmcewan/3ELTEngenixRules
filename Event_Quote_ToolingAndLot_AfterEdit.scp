@@ -1,0 +1,14 @@
+//HeaderImportExport-->
+//SiteId=0
+//Enterprise=True
+//ScriptType=1
+//ScriptGroup=Quote
+//HeaderImportExport<--
+procedure Quote_ToolingAndLot_AfterEdit(ParamList: TStringList);
+begin
+  if Fnc.SysQuoteToolingTable.Locate('RecId', ParamList.Values['RecId'], SetOf([])) then
+  begin
+//    Fnc.OpenDataGrid(Fnc.SysQuoteToolingTable);
+//    ShowMessage('Event_Quote_ToolingAndLot_AfterEdit' + #13#13 + ParamList.Text);
+  end;
+end;

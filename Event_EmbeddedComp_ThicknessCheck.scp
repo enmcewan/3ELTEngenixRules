@@ -1,0 +1,28 @@
+//HeaderImportExport-->
+//SiteId=0
+//Enterprise=True
+//ScriptType=1
+//ScriptGroup=Embedded Component
+//HeaderImportExport<--
+{
+ Script will run as there is a change made to the stackup that results in updates
+ for thicknesses. This can be add/delete ietms from the stackup, but also change
+ plating, etc, etc.
+ 
+ The ParamList has all kind of general information about the component(group) like
+ Adhesiev thickness, Component Thickness, type of ECP, etc.
+ 
+ The Stackup table is a subset of the total stackup, the table has only the materials
+ around the component. For the 2EC structure, it will hold all the prepregs between
+ the two foil layers. This stackup can be used to check if the pile of prepregs will
+ fit for this component.
+ 
+ If the materials and component do not fit, just set the 'isError' parameter and
+ Engenix will present the component in the style as defined in the Configuration
+ Manager for the 'Show Prepreg Thciness Alert'       
+}
+procedure EmbeddedComp_ThicknessCheck(ParamList: TStringList; Stackup: TSysTable);
+begin
+//  ShowMessage('EmbeddedComp_ThicknessCheck' + #13#13 + ParamList.Text);
+//  Fnc.OpenDataGrid(Stackup);     
+end;                                

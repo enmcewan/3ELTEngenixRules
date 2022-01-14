@@ -1,0 +1,346 @@
+//HeaderImportExport-->
+//SiteId=0
+//Enterprise=True
+//ScriptType=0
+//ScriptGroup=HCS
+//HeaderImportExport<--
+uses
+  CT_SearchLibrary;
+
+const
+  // --> have these names defined in lowercases <--
+  cDesmear_Header1 = '1-header';
+  cDesmear_Header2 = '2-header';
+  cDesmear_Material = '2-material';
+  cDesmear_Thickness = 'thickness';
+  cDesmear_DeepBlindVia = 'deepblindvia';
+
+procedure Desmear_AppendError(var errMsg: string; newMsg: string);
+begin
+  if errMsg <> '' then
+    errMsg := errMsg + #13;
+  errMsg := errMsg + newMsg;
+end;
+
+function Desmear_RestrictToMaterial(DesmearTab: TSysTable; MaterialList: TStringList; var errMsg: string): boolean;
+var
+  i: integer;
+  Material: string;
+  TempList: TStringList;
+begin
+  Result := False;
+
+  Material := '';
+
+  TempList := TStringList.Create;
+  TempList.Duplicates := dupIgnore
+  TempList.Sorted := True;
+  TempList.CaseSensitive := False;
+
+  DesmearTab.Filtered := False;
+  DesmearTab.Filter := Format('(Type=%s) and (Seq=1)', [QuotedStr('3-Material')]);
+  DesmearTab.Filtered := True;
+
+  // pass-1, search for 100% match
+  DesmearTab.First;
+  while not DesmearTab.Eof do
+  begin
+    TempList.Text := StringReplace(DesmearTab.FieldByName('Material').AsString, ';', #13, SetOf([rfReplaceAll]));
+
+    if (MaterialList.Count = 1) or DesmearTab.FieldByName('Hybrid').AsBoolean then
+    begin
+
+      Result := LowerCase(MaterialList.Text) = LowerCase(TempList.Text);
+
+      if Result then
+      begin
+        Material := DesmearTab.FieldByName('Material').AsString;
+        break;
+      end;
+    end;
+
+    DesmearTab.Next;
+  end;
+
+  // pass-2, search for any combination
+  if not Result then
+  begin
+
+    DesmearTab.First;
+    while not DesmearTab.Eof do
+    begin
+      if not DesmearTab.FieldByName('Hybrid').AsBoolean then
+      begin
+        TempList.Text := StringReplace(DesmearTab.FieldByName('Material').AsString, ';', #13, SetOf([rfReplaceAll]));
+
+        for i := 0 to MaterialList.Count - 1 do
+        begin
+          if TempList.IndexOf(MaterialList.Strings[i]) < 0 then
+            break;
+
+          Result := i = (MaterialList.Count - 1);
+        end;
+
+        if Result then
+        begin
+          Material := DesmearTab.FieldByName('Material').AsString;
+          break;
+        end;
+      end;
+
+      DesmearTab.Next;
+    end;
+  end;
+
+  TempList.Free;
+
+  DesmearTab.Filtered := False;
+  DesmearTab.Filter := '';
+
+  if not Result then
+    Desmear_AppendError(errMsg, Format('Material: %s not found in Desmear table', [QuotedStr(MaterialList.Text)]))
+  else
+  begin
+    DesmearTab.Filter := Format('(Material=%s)', [QuotedStr(Material)]);
+    DesmearTab.Filtered := True;
+  end;
+
+  //Fnc.OpenDataGrid(DesmearTab);
+end;
+
+function Desmear_CheckParamAndCondition(DesmearTab: TSysTable; Material: string; Thickness: double; var errMsg: string): boolean;
+begin
+  Result := False;
+
+  DesmearTab.SortFields := 'Seq';
+  DesmearTab.SortDefault;
+
+  DesmearTab.First;
+  while not DesmearTab.Eof do
+  begin
+    if LowerCase(DesmearTab.FieldByName('Parameter').AsString) = cDesmear_Thickness then
+      Result := CheckConditionsAndValuesSimple('N', DesmearTab.FieldByName('Condition').AsString, FloatToStr(Thickness));
+
+    if Result then
+      break;
+
+    DesmearTab.Next;
+  end;
+
+  if not Result then
+    Desmear_AppendError(errMsg, Format('Searching Desmear table failed, invalid Thickness or DeepBlindVia for material: ', [QuotedStr(Material)]))
+end;
+
+{
+function SpreadsheetColumnList : TStringList;
+begin
+  result := TStringList.Create;
+  result.Add('D');
+  result.Add('E');
+  result.Add('F');
+  result.Add('G');
+  result.Add('H');
+  result.Add('I');
+  result.Add('J');
+  result.Add('K');
+  result.Add('L');
+  result.Add('M');
+  result.Add('N');
+  result.Add('O');
+  result.Add('P');
+  result.Add('Q');
+  result.Add('R');
+  result.Add('S');
+  result.Add('T');
+  result.Add('U');
+  result.Add('V');
+  result.Add('W');
+  result.Add('X');
+  result.Add('Y');
+  result.Add('Z');
+  result.Add('AA');
+  result.Add('AB');
+  result.Add('AC');
+  result.Add('AD');
+  result.Add('AE');
+  result.Add('AF');
+  result.Add('AG');
+  result.Add('AH');
+  result.Add('AI');
+
+  //ShowMessage(result.Text);
+end;
+}
+
+function GetDesmearStepList(Material: string; Thickness: float): TStringList;
+var
+  i: integer;
+  errMsg: string;
+  FieldName: string;
+  FieldValue: string;
+  TempList: TStringList;
+  MaterialList: TStringList;
+  DesmearTab: TSysTable;
+  colList : TstringList;
+begin
+  Result := TStringList.Create;
+
+  if Trim(Material) = '' then
+    exit;
+
+  errMsg := '';
+
+  MaterialList := TStringList.Create;
+  MaterialList.Duplicates := dupIgnore
+  MaterialList.Sorted := True;
+  MaterialList.CaseSensitive := False;
+
+  MaterialList.Text := StringReplace(Material, '/', #13, SetOf([rfReplaceAll]));
+
+  DesmearTab := Fnc.CustomTableGet('Desmear_978'); // 978 Updated Cu Rule - Metalization 
+  DesmearTab.Filtered := False;
+  DesmearTab.Filter := '';
+  DesmearTab.FilterOptions := SetOf([foCaseInsensitive]);
+
+  if Desmear_RestrictToMaterial(DesmearTab, MaterialList, errMsg) then
+  begin
+    if Desmear_CheckParamAndCondition(DesmearTab, Material, Thickness, errMsg) then
+    begin
+      TempList := TStringList.Create;
+
+      // get a list with all the 'Data_x' columns that are applicable
+      i := 0
+      repeat
+        Inc(i);
+        FieldName := Format('Data_%d', [i]);
+//-->        SpreadsheetColumnList;
+
+        if not assigned(DesmearTab.FindField(FieldName)) then
+          i := -1
+        else
+        begin
+          FieldValue := LowerCase(DesmearTab.FieldByName(FieldName).AsString);
+
+          if (FieldValue <> 'none') and (FieldValue <> '') then
+            TempList.Add(FieldName);
+        end;
+      until i < 0;
+
+      DesmearTab.Filtered := False;
+
+      if TempList.Count < 1 then
+      begin
+        errMsg := 'Search Desmear table, no valid entry found for ' +
+                  'Material: ' + Material +
+                  ', Thickness: ' + FloatToStr(Thickness);
+      end
+      else
+      begin
+        if DesmearTab.Locate('Type', cDesmear_Header1, SetOf([loCaseInsensitive])) then
+        begin
+          for i := 0 to TempList.Count - 1 do
+          begin
+            FieldValue := DesmearTab.FieldByName(TempList.Strings[i]).AsString;
+            if Result.IndexOf(FieldValue) < 0 then
+              Result.Add(FieldValue);
+          end;
+        end;
+      end;
+
+      TempList.Free;
+    end;
+  end;
+
+  MaterialList.Free;
+
+  DesmearTab.Filtered := False;
+  DesmearTab.Filter := '';
+
+  DesmearTab.SortFields := '';
+  DesmearTab.SortDefault;
+
+  if errMsg <> '' then
+    MessageDlg(errMsg, mtWarning, SetOf([mbCancel]), 0);
+end;
+
+function GetDesmearStepParameters(Material: string; Thickness: float; ProdStep: string): TStringList;
+var
+  i: integer;
+  errMsg: string;
+  FieldName: string;
+  FieldList: TStringList;
+  MaterialList: TStringList;
+  DesmearTab: TSysTable;
+begin
+  Result := TStringList.Create;
+
+  if Trim(Material) = '' then
+    exit;
+
+  MaterialList := TStringList.Create;
+  MaterialList.Duplicates := dupIgnore
+  MaterialList.Sorted := True;
+  MaterialList.CaseSensitive := False;
+
+  MaterialList.Text := StringReplace(Material, '/', #13, SetOf([rfReplaceAll]));
+
+  errMsg := '';
+
+   DesmearTab := Fnc.CustomTableGet('Desmear_978'); // 978 Updated Cu Rule - Metalization 
+  DesmearTab.Filtered := False;
+  DesmearTab.Filter := '';
+  DesmearTab.FilterOptions := SetOf([foCaseInsensitive]);
+
+  // get a list with fields for this step
+  FieldList := TStringList.Create;
+  ProdStep := LowerCase(ProdStep);
+
+  if DesmearTab.Locate('Type', cDesmear_Header1, SetOf([loCaseInsensitive])) then
+  begin
+    i := 0
+    repeat
+      Inc(i);
+      FieldName := Format('Data_%d', [i]);
+
+      if not assigned(DesmearTab.FindField(FieldName)) then
+        i := -1
+      else
+      begin
+        if LowerCase(DesmearTab.FieldByName(FieldName).AsString) = ProdStep then
+          FieldList.Add(FieldName);
+      end;
+    until i < 0;
+  end;
+
+  if Desmear_RestrictToMaterial(DesmearTab, MaterialList, errMsg) then
+  begin
+    if Desmear_CheckParamAndCondition(DesmearTab, Material, Thickness, errMsg) then
+    begin
+      // add the values to the result list
+      for i := 0 to FieldList.Count - 1 do
+        Result.Add(DesmearTab.FieldByName(FieldList.Strings[i]).AsString);
+
+      // add the parameter name
+      DesmearTab.Filtered := False;
+      if DesmearTab.Locate('Type', cDesmear_Header2, SetOf([loCaseInsensitive])) then
+      begin
+        for i := 0 to FieldList.Count - 1 do
+          Result.Strings[i] := DesmearTab.FieldByName(FieldList.Strings[i]).AsString + '=' + Result.Strings[i];
+      end;
+    end;
+  end;
+
+  MaterialList.Free;
+
+  FieldList.Free;
+
+  DesmearTab.Filtered := False;
+  DesmearTab.Filter := '';
+
+  DesmearTab.SortFields := '';
+  DesmearTab.SortDefault;
+
+  if errMsg <> '' then
+    MessageDlg(errMsg, mtWarning, SetOf([mbCancel]), 0);
+end;
+

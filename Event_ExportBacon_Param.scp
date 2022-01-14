@@ -1,0 +1,11 @@
+//HeaderImportExport-->
+//SiteId=0
+//Enterprise=True
+//ScriptType=1
+//ScriptGroup=Bacon
+//HeaderImportExport<--
+procedure ExportBacon_Param(ParamList: TStringList);
+begin
+//  ParamList.Values['BaconJobName'] := '';
+//  ParamList.Values['BaconFilePath'] := '';
+end;

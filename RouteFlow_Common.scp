@@ -1,0 +1,24 @@
+//HeaderImportExport-->
+//SiteId=0
+//Enterprise=True
+//ScriptType=0
+//ScriptGroup=HCS
+//HeaderImportExport<--
+uses
+  Event_RouteGenLibrary, //Route System Scripts
+  Eng_RouteFunctions, //Route System Functions
+  RouteFunctions;
+  
+procedure Back_Drill_Epoxy; // 844 Backdrill after electrolytic Cu
+begin
+  SysRouteInsertStepExt('Scope_Drilling_BDEP', 'Scope_Drilling_BDEP01');
+
+  if BKDRwEpoxyTop = true then
+    SysRouteInsertStepExt('Back_Drill_B_Epoxy', 'Back_Drill_B00');
+                                                   
+  if BKDRwEpoxyBot = true then
+    SysRouteInsertStepExt('Back_Drill_A_Epoxy', 'Back_Drill_A00');
+
+  SysRouteInsertStepExt('HighPressAirBlow', 'HighPressAirBlow00');
+  SysRouteInsertStepExt('Hole_Check_BDB4M', 'Hole_Check_BD00');
+end; 

@@ -1,0 +1,1099 @@
+//HeaderImportExport-->
+//SiteId=0
+//Enterprise=True
+//ScriptType=0
+//ScriptGroup=HCS
+//HeaderImportExport<--
+uses                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         
+  Event_RouteGenLibrary, //Route System Scripts
+  Eng_RouteFunctions, Eng_DrillFunctions,    //Route System Functions
+  RouteFunctions,
+  RouteFunctions_Drilling,
+  RouteFlow01_PEInners,
+  RouteFlow02_Bk2Drill;  //Route User Scripts
+
+function VerifyKeyAttributesOK(ErrorList : TStringList) : boolean;
+begin
+  Result := true;
+
+  if ((fnc.SysGetAttrValue('Panel_Length') = 0) or (fnc.SysGetAttrValue('Panel_Width') = 0)) then                           
+  begin        
+    Result := false;                
+    ErrorList.Add('Panel Length or Panel Width');
+  end;
+
+  if LayupCoreCount > 0 then 
+  begin
+    if ((fnc.SysGetAttrValue('Panel_Length_Press') = 0) or (fnc.SysGetAttrValue('Panel_Width_Press') = 0)) then
+    begin                      
+      Result := false;                     
+      ErrorList.Add('Panel Length Press or Panel Width Press');
+    end;                
+  end;                        
+
+  if fnc.SysGetAttrValue('BlindVias') = true then
+  begin                                           
+    if ((fnc.SysGetAttrValue('LaserABotHits') = 0) and  (fnc.SysGetAttrValue('LaserBTopHits') = 0)) then
+    begin
+      Result := false;                              
+      ErrorList.Add('Laser A or Laser B Hits');    
+    end;                                                                       
+                           
+    if (                                     
+        ((Fnc.SysGetAttrValue('LaserBTopHits') = 0) and (Fnc.SysGetAttrValue('LaserABotHits') = 0)) and
+        Fnc.SysGetAttrValue('ForceUVLaser') = true
+       )                                                                                       
+    then
+    begin                           
+      Result := false;
+      ErrorList.Add('Force UV Laser and no Laser Hits value');
+    end;
+  end;                     
+
+  if fnc.SysFindAttrValue('Registration',false) = 0 then
+  begin
+    Result := false;
+    ErrorList.Add('Registration');                
+  end;
+
+  {if ( (CoreBuild or SubAssemblyCoreBuild ) and (Fnc.SysGetAttrValue('LayerCount') > 2)) then
+  begin
+    if fnc.sysgetattrvalue('CoreBuildCuThin') = 0 then
+    begin
+      Result := false;
+      ErrorList.Add('Cu Thinning for Core Build');
+    end;
+  end;}
+
+  if (( CoreBuild or SubAssemblyCoreBuild ) and ( Fnc.SysGetAttrValue('LayerCount') > 2 )) then
+  begin
+    // Copy value from old attribute to new
+    if (( Fnc.SysGetAttrValue('CoreBuildCuThin') > 0 ) and ( fnc.sysgetattrvalue('CoreBuild_CuThin_1stBuff') = '' )) then
+      Fnc.SysSetAttrValue('CoreBuild_CuThin_1stBuff', Fnc.SysGetAttrValue('CoreBuildCuThin'));
+          
+    // 1473 - Fix Attribute Typo
+    if fnc.sysgetattrvalue('CoreBuild_CuThin_Process') = 'Buffing + Mirco-Etch + Buffing' then
+      Fnc.SysSetAttrValue('CoreBuild_CuThin_Process', 'Buffing + Micro-Etch + Buffing');
+      
+    if fnc.sysgetattrvalue('CoreBuild_CuThin_Process') = 'None' then  // Core Build Cu Thinning
+    begin
+      Result := false;
+      ErrorList.Add('Cu Thinning Process for Core Build');
+    end
+    else
+    begin
+      if ( fnc.sysgetattrvalue('CoreBuild_CuThin_Process') = 'Buffing' ) or
+         ( fnc.sysgetattrvalue('CoreBuild_CuThin_Process') = 'Vertical Buffing' ) then
+      begin
+         if fnc.sysgetattrvalue('CoreBuild_CuThin_1stBuff') = '' then
+         begin
+           Result := false;
+           ErrorList.Add('Core Build Cu Thinning 1st Buff');
+         end;                
+      end
+      else if fnc.sysgetattrvalue('CoreBuild_CuThin_Process') = 'Buffing + Micro-Etch + Buffing' then // 1473 Fix Attribute
+      begin
+         if (
+             ( fnc.sysgetattrvalue('CoreBuild_CuThin_1stBuff') = '' ) or
+             ( fnc.sysgetattrvalue('CoreBuild_CuThin_2ndBuff') = '' ) or
+             ( fnc.sysgetattrvalue('CoreBuild_CuThin_MEtch') = '' )
+            ) then
+         begin
+           Result := false;
+           ErrorList.Add('Core Build Cu Thinning 1st Buff or Micro-Etch or 2nd Buff');
+         end;
+      end
+      else if fnc.sysgetattrvalue('CoreBuild_CuThin_Process') = 'Micro-Etch + Buffing' then  // 1473
+      begin
+         if (
+             ( fnc.sysgetattrvalue('CoreBuild_CuThin_1stBuff') = '' ) or
+             ( fnc.sysgetattrvalue('CoreBuild_CuThin_MEtch') = '' )
+            ) then
+         begin
+           Result := false;
+           ErrorList.Add('Core Build Cu Thinning 1st Buff or Micro-Etch');
+         end;
+      end;   
+    end;
+  end;
+  
+  if Fnc.SysGetAttrValue('Pre_Photo_CuThin') then  // 1196 Pre-Photo Cu Thinning 
+  begin
+    if Fnc.SysGetAttrValue('Pre_Photo_CuThin_Spec') = '' then
+    begin
+      Result := false;
+      ErrorList.Add('Pre-Photo Cu Thinning Spec Required');
+    end;
+  end;
+
+  if Fnc.SysGetAttrValue('MfgPartType') = 'Top' then
+  begin
+
+    if ((fnc.SysGetAttrValue('Panel_LengthEA') = 0) or (fnc.SysGetAttrValue('Panel_WidthEA') = 0)) then
+    begin
+      Result := false;
+      ErrorList.Add('Panel Length or Panel Width Edge Allowance');
+    end;
+
+    if ((fnc.SysGetAttrValue('PunchB4EC') = true) and (fnc.SysGetAttrValue('Punch_Type') = 'None')) then
+    begin
+      Result := false;
+      ErrorList.Add('Punch Type');
+    end;
+
+    if ((pos('Primary',fnc.SysGetAttrValue('SMPlugType')) > 0) and (fnc.SysGetAttrValue('PrimaryPlugProcess') = 'None')) then
+    begin
+      Result := false;
+      ErrorList.Add('Primary Plug Process');
+    end;
+
+    if ((pos('Primary',fnc.SysGetAttrValue('SMPlugType')) > 0) and (fnc.SysGetAttrValue('PrimaryPlugInk') = 'None')) then
+    begin
+      Result := false;
+      ErrorList.Add('Primary Plug Ink');
+    end;
+
+    if ((pos('Secondary',fnc.SysGetAttrValue('SMPlugType')) > 0) and (fnc.SysGetAttrValue('SecondaryPlugInk') = 'None')) then
+    begin
+      Result := false;
+      ErrorList.Add('Secondary Plug Ink');
+    end;          
+
+    if (
+        (Fnc.SysGetAttrValue('NCRunX2') = true) and
+        (Fnc.SysGetAttrValue('CappedVia') = true) and
+        (Fnc.SysGetAttrValue('EpoxySide') = 'None')
+       )
+    then
+    begin
+      Result := false;
+      ErrorList.Add('Cappped Via with No Epoxy Plug');
+    end;            
+
+    if (((Fnc.SysGetAttrValue('EpoxySide') <> 'None')) and (Fnc.SysGetAttrValue('EpoxyPlugInk') = 'None')) then
+    begin
+      Result := false;
+      ErrorList.Add('Epoxy Plug but no Ink selected');
+    end;
+    
+    // 756 Update Aspect ratio calculation for OL layer photo process     
+    if PluggedFilledB4Photo then
+    begin     
+      if Fnc.SysGetAttrValue('Min_Drill_Size_NP') = 0.0 then
+        begin
+        Result := false;
+        ErrorList.Add('Min Drill Size for Non-Plugged/Filled Holes Required');
+      end; 
+    end;
+
+    if ((Fnc.SysGetAttrValue('BackDrill') = true) and (Fnc.SysGetAttrValue('BackDrill_Mch') = 'None')) then
+    begin
+      Result := false;
+      ErrorList.Add('Back Drill Machine Type');
+    end;
+
+    if ((Fnc.SysGetAttrValue('TwoXResist_Ink') = 'None') and (Fnc.SysGetAttrValue('TwoXResist') = true)) then
+    begin
+      Result := false;
+      ErrorList.Add('Two Times Resist Ink');
+    end;
+
+    if ((Fnc.SysGetAttrValue('PunchB4EC') = true) and (Fnc.SysGetAttrValue('Punch_Type') = 'None')) then
+    begin
+      Result := false;
+      ErrorList.Add('PunchB4EC but PunchType = None');
+    end;
+
+    if ((Fnc.SysGetAttrValue('Punch_Type') <> 'None') and (Fnc.SysGetAttrValue('Punch_Die11') = '0')) then
+    begin
+      Result := false;
+      ErrorList.Add('Punching but Punch Die 1-1 = 0');
+    end;
+
+    if ((Fnc.SysGetAttrValue('Punch_Type') = '2 Stage Punch') and (Fnc.SysGetAttrValue('Punch_Die21') = '0')) then
+    begin
+      Result := false;
+      ErrorList.Add('Punchingx2 but Punch Die 2-1 = 0');
+    end;
+
+    if SubProdCodeSameAsTopLevel then
+    begin
+      result := false;
+      ErrorList.Add('Sub-Assemblies and Inners cannot have the same Product Code as the Top-Level');
+    end;
+
+    if Fnc.SysGetAttrValue('Board_Finish') = 'ENEPIG' then   // ENIG Changes from Mani Feb 2016
+    begin
+      if not
+         (
+          ( HasSolderMaskType('DSR330S-50-99R') ) or
+          ( HasSolderMaskType('PSR2000-SP300HFM') ) or
+          ( HasSolderMaskType('PSR4000-AUS308') ) or 
+          ( HasSolderMaskType('PSR4000 AUS308 GREEN') ) or  // 1125
+          ( HasSolderMaskType('FZ-2700GA') )
+         )
+      then
+      begin
+        result := false;
+        ErrorList.Add('Solder Mask type not compatible with ENEPIG');
+      end;
+    end;
+                                  
+    if ( Fnc.SysGetAttrValue('Board_Finish') = 'ENIG' ) or 
+       (( Fnc.SysGetAttrValue('Board_Finish') = 'OSP' ) and ( Fnc.SysGetAttrValue('Sel_Gold_Type') = 'ENIG' )) then  // ENIG Changes from Mani  // 1173 Additional Surface Finishing. Selective ENIG + OSP  // 1256
+    begin
+      if (( HasSolderMaskType('PSR4000-BNDG') ) or ( HasSolderMaskType('PSR4000-AM10') )) and
+         ( ThicknessOverMask > 3.0 )
+      then
+      begin
+        //result := false;  Change request from Herole 3/1/16
+        ShowMessage('Warning! Solder Mask type not compatible with ENIG & Thk > 3.0');
+      end;
+    end;
+                                
+    {if Fnc.SysGetAttrValue('Board_Finish') = 'ENEPIG' then   // 1256
+    begin
+      if (( Fnc.SysGetAttrValue('Sel_Gold_Type') <> 'None' ) or (Fnc.SysGetAttrValue('Gold_Fgr_Type') <> 'None' )) then
+      begin
+        result := false;
+        ErrorList.Add('ENEPIG not compatible with Selective Gold or Gold Finger Plating');
+      end;               
+    end;}
+    
+                                      // 1110 Soldermask Override                                                  
+    if ( not ScreenPrintResist ) and (Fnc.SysGetAttrValue('SM_Process') <> 'Spray Coat' ) then    // (760) condition for spray coat PSR-2000, If Board thickness>/= 3.6mm, Error will prompt that the board cannot run Spray coat.
+    begin
+      if Fnc.SysGetAttrValue('LayupThickness') >= 3.6 then
+      begin
+        result := false;                                       
+        ErrorList.Add('Board Thickness: ' + FloatToStr(Fnc.SysGetAttrValue('LayupThickness')) + ' mm is too thick for Spray Coat Soldermask.');
+      end;  
+    end;
+    
+    if Fnc.SysGetAttrValue('Part_Type') = 'Internal' then
+    begin
+      if Fnc.SysGetAttrValue('KT_Number') = '' then
+      begin
+        result := false;                                       
+        ErrorList.Add('Internal Part Number, KT Number is required');
+      end;
+    end;
+    
+    if Fnc.SysGetAttrValue('BackDrill') then  // 1213 Additional Hole Check after Backdrill step condition 
+    begin                   
+      if ( Fnc.SysGetAttrValue('SMPlugType') <> 'None' ) or ( Fnc.SysGetAttrValue('EpoxySide') <> 'None' ) then
+      begin
+        if Fnc.SysGetAttrValue('BackDrill_Hole_Type') = '<Not Selected>' then
+          begin
+            result := false;                                       
+            ErrorList.Add('Back Drill Hole Type not set');
+          end;
+      end;
+    end;
+
+  end; // End Top Level Checking
+
+  if Fnc.SysGetAttrValueTopLevel('Panel_Cavity') = 0 then
+  begin
+    Result := false;
+    ErrorList.Add('Panel Cavity for Top Level Part cannot be 0');
+  end;
+
+  if Fnc.SysGetAttrValueTopLevel('SO_Unit') <> 'Part'  then
+  begin
+    if Fnc.SysGetAttrValueTopLevel('Part_Cavity') = 0 then
+    begin
+      Result := false;
+      ErrorList.Add('Part Cavity for Top Level Part cannot be 0');
+    end;
+  end;                        
+                
+  if Fnc.SysGetAttrValueTopLevel('PCB_Length') = 0 then
+  begin
+    Result := false;
+    ErrorList.Add('PCB_Length for Top Level Part cannot be 0');
+  end;
+
+  if Fnc.SysGetAttrValueTopLevel('PCB_Width') = 0 then
+  begin
+    Result := false;
+    ErrorList.Add('PCB_Width for Top Level Part cannot be 0');
+  end;
+
+  if Fnc.SysGetAttrValueTopLevel('Parts_Per_PCB') = 0 then
+  begin
+    Result := false;
+    ErrorList.Add('Parts_Per_PCB for Top Level Part cannot be 0');
+  end;
+
+  if Fnc.SysGetAttrValue('MfgPartType') <> 'DmC' then
+  begin
+    if Fnc.SysGetAttrValue('Air_Gap') = 0 then
+    begin
+      Result := false;
+      ErrorList.Add('Air_Gap cannot be 0');
+    end;
+
+    if Fnc.SysGetAttrValue('Line_Width') = 0 then
+    begin
+      Result := false;
+      ErrorList.Add('Line_Width cannot be 0');
+    end;
+  end
+
+end;
+
+procedure RoutePreProcess;
+var
+  ErrorList : TStringList;
+begin
+  ErrorList := TStringList.Create;
+  GetPartType;       
+  Engx_MfgPartLayerCount;
+  Engx_ScanBOM; 
+  Engx_ScanDrill;
+  GetPartCoreFamilies;
+  GetPartPPGFamilies;     
+  SetTopBotLayerNames;
+  TotalThickestCuUM;
+  SetThicknessRequirements;
+  GET_VCUT_TYPE;
+  GetCopperInfo;
+  CheckProdPartUsesQualMats;             
+  Find2milorlessCores; // Special Process Description
+  SetMatTGClass;   // CNC Entry Sheet updated Rule (613)
+
+  photoStepList := TStringList.Create;
+
+  if Fnc.SysGetAttrValue('MfgPartType') <> 'DmC' then 
+  begin
+    BaseCuTopUM := ConvertBaseCuLabelToMicrons('True', 'False');
+    BaseCuBotUM := ConvertBaseCuLabelToMicrons('False', 'False');
+  end;                        
+
+  NCRun := 0;
+  BakingDone := false;
+  ENIG_NFluxDone := false;
+  PANEL_VCUT_DONE := false;
+  BackDrillDone := false;
+  ImpedanceDone := false;
+  VCutDone := false;
+  //ImmersionSilverDone := false; 1256
+  AOIforCMK := false;            
+  MicroEtchDone := false;
+  OLPhotoLineforDES := '';
+
+  GLB_NC_Thickness := 0.0;
+  GLB_Ave_CuThk := 0.0;
+  GLB_Abs_CuThk := 0.0;
+  GLB_TGT_Ave_Hole_CuThk := 0.0;
+  GLB_TGT_Abs_HOLE_CuThk := 0.0;
+
+  Min_Drill := 0.0;
+  Min_Slot := 0.0;
+
+  Au_Plt_Count := 0;
+
+  CU_RATIO_WARNING := 0; 
+          
+  MetalizationRun := 0;
+  
+  //InProcessCuThk := 0;
+  
+  epoxyPlugDone := false;  //978 
+  verticalDesmear :=false;
+
+  Fnc.SysSetAttrValue('MfgPartType', MfgPartType);
+               
+  if Fnc.SysGetAttrValue('MfgPartType') = 'Sub' then
+    Fnc.SysSetAttrValue('LayerCount', GetCopperLayerCount)
+  else                          
+    Fnc.SysSetAttrValue('LayerCount', Engx_TotLayerCount);
+
+  if Fnc.HasImpedance = true then
+    Fnc.SysSetAttrValue('Has_Impedance', true)
+  else
+    Fnc.SysSetAttrValue('Has_Impedance', false);
+
+  if Engx_TotLayerCount = 0 then
+    fnc.SysSetAttrValue('MfgPartType', 'DmC');
+
+  if FindNumberOfDrillFiles > 0 then
+  begin
+    SetDrillTypes;
+    SetBlindViaInfo;
+                      
+    fnc.SysSetAttrValue('BlindVias', false);
+    fnc.SysSetAttrValue('BuriedVias', false);
+    fnc.SysSetAttrValue('Mech_BlindVias', false);
+
+    if CheckBlindDrill(0) = true then
+      fnc.SysSetAttrValue('BlindVias', true);
+                               
+    if CheckBuriedDrill(1) = true then
+      fnc.SysSetAttrValue('BuriedVias', true);
+                                         
+    //if CheckMechBlindDrill(0) then                  // Mech Blind Vias
+    if MechBlindViaSide <> 'None' then
+    //  Fnc.SysSetAttrValue('Mech_BlindVias', true);
+    begin // 917 Correct of Seq Lam w. Mech Blind Vias                      
+      Fnc.SysSetAttrValue('Mech_BlindVias', true);
+      
+      if (( Fnc.SysGetAttrValue('MfgPartType') = 'Sub' ) and ( SubLayersAreOnTopMfgPart )) then
+        Fnc.SysSetAttrValueTopLevel('Sfc_Sub_Mech_BlindVias', true);  
+    end;                         
+
+    if Fnc.SysGetAttrValue('MfgPartType') = 'Top' then  // Engenix special Process description
+      FindStackedVias;
+
+    if Fnc.SysGetAttrValue('NCRunX2') = true then
+    begin
+      if Fnc.SysGetAttrValue('Min_Drill_Size_2') > 0 then
+        fnc.SysSetAttrValue('Aspect_Ratio_Val_2', Round1000(Fnc.SysGetAttrValue('Press_Thickness')/Fnc.SysGetAttrValue('Min_Drill_Size_2')))
+      else
+        ShowMessage('Warning! : 2nd Min_Drill_Size = 0.0');
+    end;             
+    
+    if Fnc.SysGetAttrValue('BlindVias') then
+    begin
+      //Fnc.SysSetAttrValue('Blind_Via_Depth', Fnc.SysGetAttrValue('Blind_AspectRatio') * Fnc.SysGetAttrValue('Laser_Check_Hole')); //  Blind Via Changes
+      if Fnc.SysGetAttrValue('Blind_AspectRatio') = 0.0 then
+        Fnc.SysSetAttrValue('Blind_AspectRatio', BlindViaMAspect);
+
+      if Fnc.SysGetAttrValue('Blind_Via_Depth') = 0.0 then
+        Fnc.SysSetAttrValue('Blind_Via_Depth', BlindViaMDepth)
+      else
+        Fnc.SysSetAttrValue('Blind_Via_Depth', Fnc.SysGetAttrValue('Blind_AspectRatio') * Fnc.SysGetAttrValue('Laser_Check_Hole'));
+    end;
+
+    if Fnc.SysGetAttrValue('Abs_Min_Th') > 0 then
+    begin
+      Fnc.SysSetAttrValue('Max_Hole_Size', Fnc.SysGetAttrValue('Max_Drill_Size') - (Fnc.SysGetAttrValue('Abs_Min_Th')/1000*2 ));
+      Fnc.SysSetAttrValue('Max_PHole_Size', Fnc.SysGetAttrValue('Max_PDrill_Size') - (Fnc.SysGetAttrValue('Abs_Min_Th')/1000*2 ));
+    end
+    else
+    begin
+      Fnc.SysSetAttrValue('Max_Hole_Size', Fnc.SysGetAttrValue('Max_Drill_Size') - (Fnc.SysGetAttrValue('Ave_Min_Th')/1000*2 ));
+      Fnc.SysSetAttrValue('Max_PHole_Size', Fnc.SysGetAttrValue('Max_PDrill_Size') - (Fnc.SysGetAttrValue('Ave_Min_Th')/1000*2 ));
+    end;
+
+    Fnc.SysSetAttrValue('Max_Hole_Size', Round100(Fnc.SysGetAttrValue('Max_Hole_Size')));
+    Fnc.SysSetAttrValue('Max_PHole_Size', Round100(Fnc.SysGetAttrValue('Max_PHole_Size')));
+
+    if Fnc.SysGetAttrValue('Max_P_CHole_Size') > Fnc.SysGetAttrValue('Max_PHole_Size') then
+       Fnc.SysSetAttrValue('Max_PHole_Size',Fnc.SysGetAttrValue('Max_P_CHole_Size'));
+
+    if Fnc.SysGetAttrValue('Max_PHole_Size') > Fnc.SysGetAttrValue('Max_Hole_Size') then
+      Fnc.SysSetAttrValue('Max_Hole_Size',Fnc.SysGetAttrValue('Max_PHole_Size')); 
+  end;
+  
+  if Fnc.SysGetAttrValue('MfgPartType') <> 'DmC' then  // 1525
+  begin
+    // Check if Layer Attribute Values exist && populate Mfg attr with the minimum
+    SetMfgPartAttrToLayerMin('Air_Gap', 'Layer_Min_Air_Gap' );
+    SetMfgPartAttrToLayerMin('Land_Area', 'Layer_Land_Area' ); 
+    SetMfgPartAttrToLayerMin('Line_Width', 'Layer_Min_Line' ); 
+    SetMfgPartAttrToLayerMin('Min_PTrace_Gap', 'Layer_Min_PadTo' );  
+  end;
+         
+  if Fnc.SysGetAttrValue('Line_Width') > 0 then
+    Fnc.SysSetAttrValue('Line_Width_Blown', Fnc.SysGetAttrValue('Line_Width') + Fnc.SysGetAttrValue('Overall_Blown_Val'));
+
+  if ((Fnc.SysGetAttrValue('Min_PTrace_Gap') > 0) and (Fnc.SysGetAttrValue('Air_Gap') > 0)) then
+  begin
+    if Fnc.SysGetAttrValue('Air_Gap') < Fnc.SysGetAttrValue('Min_PTrace_Gap') then
+      Fnc.SysSetAttrValue('Min_Gap', Fnc.SysGetAttrValue('Air_Gap'))
+    else
+      Fnc.SysSetAttrValue('Min_Gap', Fnc.SysGetAttrValue('Min_PTrace_Gap'));
+
+    if (Fnc.SysGetAttrValue('Air_Gap') - Fnc.SysGetAttrValue('Overall_Blown_Val')) < Fnc.SysGetAttrValue('Min_PTrace_Gap') then
+      Fnc.SysSetAttrValue('Air_Gap_Blown', Fnc.SysGetAttrValue('Air_Gap') - Fnc.SysGetAttrValue('Overall_Blown_Val'))
+    else
+      Fnc.SysSetAttrValue('Air_Gap_Blown', Fnc.SysGetAttrValue('Min_PTrace_Gap'));
+
+    if Fnc.SysGetAttrValue('Air_Gap') - Fnc.SysGetAttrValue('Overall_Blown_Val') < 0 then
+      ShowMessage('ERROR: Air Gap cannot be less than Overall Blown Value');
+  end
+  else
+  begin     
+    if Fnc.SysGetAttrValue('Air_Gap') > 0  then                                            
+    begin
+      Fnc.SysSetAttrValue('Min_Gap', Fnc.SysGetAttrValue('Air_Gap'));
+      Fnc.SysSetAttrValue('Air_Gap_Blown', Fnc.SysGetAttrValue('Air_Gap') - Fnc.SysGetAttrValue('Overall_Blown_Val')) ;
+
+      if Fnc.SysGetAttrValue('Air_Gap') - Fnc.SysGetAttrValue('Overall_Blown_Val') < 0 then
+        ShowMessage('ERROR: Air Gap cannot be less than Overall Blown Value');
+    end
+    else
+    begin
+      Fnc.SysSetAttrValue('Min_Gap', Fnc.SysGetAttrValue('Min_PTrace_Gap'));
+      Fnc.SysSetAttrValue('Air_Gap_Blown', Fnc.SysGetAttrValue('Min_PTrace_Gap'));
+    end;
+  end;
+
+  Fnc.SysSetAttrValue('Press_Thickness', 0.0);
+
+  if Fnc.SysGetAttrValue('LayerCount') > 2 then
+  begin
+    Fnc.SysSetAttrValue('Press_Thickness', Fnc.SysGetAttrValue('LayupThicknessRelam')); 
+       
+    if Fnc.SysGetAttrValue('Actual_Press_Thickness') <> 0.0 then 
+      Fnc.SysSetAttrValue('Press_Thickness', Fnc.SysGetAttrValue('Actual_Press_Thickness')); 
+
+    SequentialorBuildup;
+  end;
+                                                         
+  if FindNumberOfDrillFiles > 0 then
+  begin
+    if Fnc.SysGetAttrValue('LayerCount') > 2 then
+    begin
+      if Fnc.SysGetAttrValue('Min_Drill_Size') > 0 then
+        fnc.SysSetAttrValue('Aspect_Ratio_Val', Round1000(Fnc.SysGetAttrValue('Press_Thickness')/Fnc.SysGetAttrValue('Min_Drill_Size')))
+      else               
+        ShowMessage('Warning! : Min_Drill_Size = 0.0');
+    end
+    else   
+    begin          
+      if Fnc.SysGetAttrValue('Min_Drill_Size') > 0 then
+        fnc.SysSetAttrValue('Aspect_Ratio_Val', Round1000(Fnc.SysGetAttrValue('LayupThickness')/Fnc.SysGetAttrValue('Min_Drill_Size')))
+      else        
+        ShowMessage('Warning! : Min_Drill_Size = 0.0');
+    end;                       
+  end;                                        
+  
+  SetHCSPartType;  // 408 Paradigm Part Number Coding - Internal Part number
+  
+  if Fnc.SysGetAttrValue('MfgPartType') = 'Top' then   
+    Get_SO_Unit; // 408 Paradigm Part Number Coding - Internal Part number 
+
+  // 977 Automate attribute 'Product Code' by rule
+  if Fnc.SysGetAttrValue('ProdCode') = 'Auto' then   // 1323
+    Fnc.SysSetAttrValue('ProdCode', GenProductCode); 
+
+  if not VerifyKeyAttributesOK(ErrorList) then  //760 - condition for spray coat PSR-2000, If Board thickness>/= 3.6mm, Error will prompt that the board cannot run Spray coat.
+  begin
+    //ShowMessage('Key Attribute Values have not been entered - Check the Attribute Grid' + #10#13#10#13 + ErrorList.text);
+    MessageDlg('Key Attribute Values have not been entered or there is conflicting data' + #10#13#10#13 + ErrorList.text, mtError, Setof([mbOK]), 0); 
+    //ShowMessage('Route Gen Aborted - No changes have been made');
+    Fnc.UserRouteGenAbort := true;
+    ErrorList.free;
+  end
+  else
+  begin
+    Fnc.SysSetAttrValue('Rout_LengthPCB', 0.0);
+
+    if MfgPartType = 'Top' then
+      Fnc.SysSetAttrValue('Rout_LengthPCB', (Fnc.SysGetAttrValue('PCB_Length') + Fnc.SysGetAttrValue('PCB_Width')) * 2);
+
+    // Paradigm Units, CPS, CPP, CPD      
+    Fnc.SysSetAttrValue('BomEffDays', 5000);
+    Fnc.SysSetAttrValue('Core_Count', TotNumOfCores);
+
+    Fnc.SysSetAttrValue('Grain_Dir', Fnc.SysGetAttrValueTopLevel('Grain_Dir'));
+                
+    if Eng_JobType = 'Production' then
+    begin
+      Fnc.SysSetAttrValue('ERPWarehouse', 'LOYAN');
+      if MfgPartType = 'Top' then
+        Fnc.SysSetAttrValue('ERPLocation', 'FGILP')
+      else
+        Fnc.SysSetAttrValue('ERPLocation', 'L0001');
+    end
+    else if Eng_JobType = 'Sample' then       //Updated 16/01/13 Per email request from Alison
+    begin
+      Fnc.SysSetAttrValue('ERPWarehouse', 'LOYSM');
+      if MfgPartType = 'Top' then
+        Fnc.SysSetAttrValue('ERPLocation', 'FGILP')
+      else
+        Fnc.SysSetAttrValue('ERPLocation', 'L0001');
+    end;   
+
+    PDM_LotSize;
+    PDM_LdTime;
+    
+    Fnc.SysSetAttrValue('CountCode', 'C'); // 
+
+    Fnc.SysSetAttrValue('Track_Width', Round(Fnc.SysGetAttrValue('Line_Width') / 0.0254));
+    Fnc.SysSetAttrValue('Gap_Width', Round(Fnc.SysGetAttrValue('Min_Gap') / 0.0254));
+
+    Fnc.SysSetAttrValue('Panel_Size', IntToStr(Fnc.SysGetAttrValue('Panel_Length')) + ' X ' + IntToStr(Fnc.SysGetAttrValue('Panel_Width')));
+
+    Fnc.SysSetAttrValue('Panel_Cavity', Fnc.SysGetAttrValueTopLevel('Panel_Cavity'));
+
+    Fnc.SysSetAttrValue('Pattern_Density', FloatToStr(Round1000(Fnc.SysGetAttrValue('Line_Width') / 0.0254))
+                                           + '/' +
+                                           FloatToStr(Round1000(Fnc.SysGetAttrValue('Min_Gap') / 0.0254))
+                        );
+
+    Fnc.SysSetAttrValue('PCB_Size', FloatToStr(Fnc.SysGetAttrValueTopLevel('PCB_Length')) + ' X ' + FloatToStr(Fnc.SysGetAttrValueTopLevel('PCB_Width')));
+
+    Fnc.SysSetAttrValue('PCB_Length', Fnc.SysGetAttrValueTopLevel('PCB_Length'));
+    Fnc.SysSetAttrValue('PCB_Width', Fnc.SysGetAttrValueTopLevel('PCB_Width'));
+
+    if MfgPartType = 'Top' then
+    begin
+      if Fnc.SysGetAttrValue('Warpage_Type') = 'Percent' then
+        Fnc.SysSetAttrValue('Warpage_Str', FloatToStr( Fnc.SysGetAttrValue('Warpage') ) + ' %');
+      else if Fnc.SysGetAttrValue('Warpage_Type') = 'MM' then
+        Fnc.SysSetAttrValue('Warpage_Str', FloatToStr( Fnc.SysGetAttrValue('Warpage_mm') ) + ' MM');
+                             
+      if CustCode_Rule('Customer') = 'FA' then    
+        Fnc.SysSetAttrValue('Warpage_Str_PCPS', '<' + Fnc.SysGetAttrValue('Warpage_Str') + '(highest pt of any corner)')
+      else
+        Fnc.SysSetAttrValue('Warpage_Str_PCPS', Fnc.SysGetAttrValue('Warpage_Str'));
+
+    end;
+
+    Fnc.SysSetAttrValue('Parts_Per_PCB', Fnc.SysGetAttrValueTopLevel('Parts_Per_PCB'));
+              
+    Fnc.SysSetAttrValue('X_Out', Fnc.SysGetAttrValueTopLevel('X_Out'));
+
+    if MfgPartType = 'Top' then 
+      SetParadigmUserName;
+                          
+    Fnc.SysSetAttrValue('PBS_Part', false);
+    Fnc.SysSetAttrValue('RouteCode', 'ENGIX');
+
+    if Fnc.SysGetAttrValueTopLevel('SO_Unit') = 'Part'  then
+    begin
+      Fnc.SysSetAttrValue('Parts_Per_PCB', 1);
+      Fnc.SysSetAttrValue('Panel', Fnc.SysGetAttrValueTopLevel('Panel_Cavity'));
+    end               
+    else
+    begin
+      Fnc.SysSetAttrValue('Parts_Per_PCB', Fnc.SysGetAttrValueTopLevel('Part_Cavity'));
+      Fnc.SysSetAttrValue('Panel', Fnc.SysGetAttrValueTopLevel('Panel_Cavity') * Fnc.SysGetAttrValueTopLevel('Part_Cavity'));
+    end;
+
+    Fnc.SysSetAttrValue('ReportUnitValue1', 1.0);
+    Fnc.SysSetAttrValue('ReportUnitValue2', 1 / Fnc.SysGetAttrValue('Panel'));
+    Fnc.SysSetAttrValue('ReportUnitValue3', ((Fnc.SysGetAttrValue('Panel_Length') / 100 ) * (Fnc.SysGetAttrValue('Panel_Width') / 100)) / Fnc.SysGetAttrValue('Panel'));
+
+    if MfgPartType = 'Top' then 
+      Fnc.SysSetAttrValue('Mat_Yield', Round1000(
+                                                 (Fnc.SysGetAttrValue('PCB_Length') * Fnc.SysGetAttrValue('PCB_Width') * Fnc.SysGetAttrValue('Panel_Cavity') /
+                                                  Fnc.SysGetAttrValue('Panel_Length') / Fnc.SysGetAttrValue('Panel_Width'))
+                                                 * 100
+                                                ))
+    else if MfgPartType = 'Sub' then
+      Fnc.SysSetAttrValue('Mat_Yield', Round1000(
+                                                 (Fnc.SysGetAttrValue('Panel_Length') * Fnc.SysGetAttrValue('Panel_Width')) /
+                                                 (Fnc.SysGetAttrValue('Panel_Length_Press') * Fnc.SysGetAttrValue('Panel_Width_Press'))
+                                                 * 100
+                                                ))
+    else
+      Fnc.SysSetAttrValue('Mat_Yield', Round1000(
+                                                 (Fnc.SysGetAttrValueParent('Panel_Length') * Fnc.SysGetAttrValueParent('Panel_Width')) /
+                                                 (Fnc.SysGetAttrValue('Panel_Length') * Fnc.SysGetAttrValue('Panel_Width'))
+                                                 * 100
+                                                ))
+
+    Fnc.SysSetAttrValue('PCS_MSQ', Round100(Fnc.SysGetAttrValue('Panel') / ((Fnc.SysGetAttrValue('Panel_Length') / 1000) * (Fnc.SysGetAttrValue('Panel_Width') / 1000))));
+
+    // Email request from Alison 8/12/15
+    if MfgPartType <> 'Top' then 
+    begin
+      Fnc.SysSetAttrValue('ReleaseHold', false);
+      Fnc.SysSetAttrValue('EditingHold', false);
+    end;
+  end;
+         
+  // Max Epoxy Plugging = 5mm
+  if ((Fnc.SysGetAttrValue('EpoxySide') <> 'None') and (Fnc.SysGetAttrValue('LayupThickness') > 5.00)) then
+    MessageDlg('Max Thickness for Epoxy Plugging is 5.00 MM.', mtWarning, Setof([mbOK]), 0);
+                          
+  // 757 - Job Type Checking  
+  if MfgPartType = 'Top' then  
+    CheckJobType;
+    
+  // 911 Change Chamfer B4 Res (Sel) name to Finger Au After Pattern (Sel)
+  if MfgPartType = 'Top' then
+  begin
+    if Fnc.SysGetAttrValue('Gold_Fgr_Type') = 'Chamfer B4 Res (Sel)' then
+      Fnc.SysSetAttrValue('Gold_Fgr_Type', 'After Pattern (Sel)');
+    
+     if Fnc.SysGetAttrValue('Gold_Fgr_Type') = 'Thin/Thick - Chamfer B4 Res (Sel)' then
+      Fnc.SysSetAttrValue('Gold_Fgr_Type', 'Thin/Thick - After Pattern (Sel)');   
+  end;
+  
+  // Check or Update Finish, Selective Gold & Gold Finger Type
+  // Item 1256  
+  if MfgPartType = 'Top' then
+  begin             
+    if Fnc.SysGetAttrValue('Board_Finish') = 'Full Body Gold + LGA' then
+    begin                                 
+      MessageDlg('The board finish "Full Body Gold + LGA" is no longer valid. Select another option', mtError, Setof([mbOK]), 0); 
+      Fnc.UserRouteGenAbort := true;
+    end;
+    
+    if Fnc.SysGetAttrValue('Board_Finish') = 'ENIG + OSP' then
+    begin
+      MessageDlg('The board finish "ENIG + OSP" is no longer valid. Board Finish set to "OSP" and Selective Gold set to "ENIG"', mtInformation, Setof([mbOK]), 0);
+      Fnc.SysSetAttrValue('Board_Finish', 'OSP');
+                                                      
+      if Fnc.SysGetAttrValue('Sel_Gold_Type') = 'None' then
+        Fnc.SysSetAttrValue('Sel_Gold_Type', 'ENIG');
+      else
+      begin
+        MessageDlg('ENIG + OSP cannot have another Selective Gold Type. Select another option', mtError, Setof([mbOK]), 0);
+        Fnc.UserRouteGenAbort := true;
+      end;
+    end;
+    
+    if ( Fnc.SysGetAttrValue('Sel_Gold_Type') = 'ENIG' ) and ( Fnc.SysGetAttrValue('Board_Finish') <> 'OSP' ) then
+    begin
+      MessageDlg('ENIG Selective Gold can only have OSP for the Board Finish', mtError, Setof([mbOK]), 0);
+      Fnc.UserRouteGenAbort := true;
+    end;
+    
+    if ( Fnc.SysGetAttrValue('Sel_Gold_Type') = 'BGA, Encapsulation' ) or 
+       ( Fnc.SysGetAttrValue('Sel_Gold_Type') = 'Thin/Thick Encapsulated Pattern' ) then
+    begin
+      MessageDlg(Fnc.SysGetAttrValue('Sel_Gold_Type') + ' is no longer valid. Select another Selective Gold Type', mtError, Setof([mbOK]), 0); 
+      Fnc.UserRouteGenAbort := true; 
+    end;
+    
+    if ( Fnc.SysGetAttrValue('Sel_Gold_Type') = 'Pattern (Overhang)' ) or 
+       ( Fnc.SysGetAttrValue('Sel_Gold_Type') = 'PTH' ) then
+    begin
+      MessageDlg('Selective Gold type: "' + Fnc.SysGetAttrValue('Sel_Gold_Type') + '" is no longer valid. Value set to "Pattern Overhang / PTH"', mtInformation, Setof([mbOK]), 0); 
+      Fnc.SysSetAttrValue('Sel_Gold_Type', 'Pattern Overhang / PTH'); 
+    end;       
+    
+    if Fnc.SysGetAttrValue('Gold_Fgr_Type') = 'Lead Line Etching B4 Res (Sel)' then
+    begin
+      MessageDlg('Gold Finger type: "' + Fnc.SysGetAttrValue('Gold_Fgr_Type') + '" is no longer valid. Value set to "Lead Line Etching"', mtInformation, Setof([mbOK]), 0);
+      Fnc.SysSetAttrValue('Gold_Fgr_Type', 'Lead Line Etching');
+    end;
+    
+    if Fnc.SysGetAttrValue('Gold_Fgr_Type') = 'Lead Line Etching Af Res (Sel)' then
+    begin 
+      MessageDlg('Gold Finger type: "' + Fnc.SysGetAttrValue('Gold_Fgr_Type') + '" is no longer valid. Value set to "Au Finger Plate after SM"', mtInformation, Setof([mbOK]), 0);
+      Fnc.SysSetAttrValue('Gold_Fgr_Type', 'Au Finger Plate after SM');
+    end;
+                                    
+    if ( Fnc.SysGetAttrValue('Gold_Fgr_Type') = 'Chamfer Af Res (Sel)' ) or
+       ( Fnc.SysGetAttrValue('Gold_Fgr_Type') = 'Thin/Thick - Lead Line Etching B4 Res (Sel)' ) or
+       ( Fnc.SysGetAttrValue('Gold_Fgr_Type') = 'Thin/Thick - After Pattern (Sel)' ) or // Rename of rename - see above
+       ( Fnc.SysGetAttrValue('Gold_Fgr_Type') = 'No Horn - Lead Line Etching B4 Res (Sel)' )
+    then                             
+    begin
+      MessageDlg('"' + Fnc.SysGetAttrValue('Gold_Fgr_Type') + '"' + ' is no longer valid. Select another Gold Finger Type', mtError, Setof([mbOK]), 0); 
+      Fnc.UserRouteGenAbort := true;     
+    end;
+    
+    if ( Fnc.SysGetAttrValue('Board_Finish') = 'Immersion Silver' ) and
+       ( SelectiveGoldorFinger ) and
+       ( Fnc.SysGetAttrValue('Imm_Silver_Process') = '<Not Selected>' ) then
+    begin
+      MessageDlg('Immersion Silver Process not selected for Selective Gold', mtError, Setof([mbOK]), 0); 
+      Fnc.UserRouteGenAbort := true;
+    end;
+    
+    if ( Fnc.SysGetAttrValue('Board_Finish') = 'Lead Free HAL' ) and  // 1355
+       ( SelectiveGoldorFinger ) and
+       ( Fnc.SysGetAttrValue('Lead_Free_HAL_Process') = '<Not Selected>' ) then
+    begin
+      MessageDlg('Lead Free HAL Process not selected for Selective Gold', mtError, Setof([mbOK]), 0); 
+      Fnc.UserRouteGenAbort := true;
+    end;
+    
+    if (( Fnc.SysGetAttrValue('Sel_Gold_Type') <> 'None' ) or ( Fnc.SysGetAttrValue('Gold_Fgr_Type') <> 'None' )) and       
+       (( Fnc.SysGetAttrValue('Board_Finish') <> 'Immersion Silver' )  and
+         ( Fnc.SysGetAttrValue('Board_Finish') <> 'ENIG' ) and
+         ( Fnc.SysGetAttrValue('Board_Finish') <> 'ENEPIG' ) and
+         ( Fnc.SysGetAttrValue('Board_Finish') <> 'OSP' ) and 
+         ( Fnc.SysGetAttrValue('Board_Finish') <> 'Lead Free HAL' ))
+    then
+    begin
+      MessageDlg('Selective Gold / Gold Finger is not compatible with ' + Fnc.SysGetAttrValue('Board_Finish'), mtError, Setof([mbOK]), 0); 
+      Fnc.UserRouteGenAbort := true;
+    end;
+    
+    if ( Fnc.SysGetAttrValue('Gold_Fgr_Type') = 'Tab Plating' ) and
+       (( Fnc.SysGetAttrValue('Board_Finish') <> 'OSP' ) and ( Fnc.SysGetAttrValue('Board_Finish') <> 'Immersion Silver' )) 
+    then
+    begin
+      MessageDlg('Gold Finger Tab Plating is not comaptible with ' + Fnc.SysGetAttrValue('Board_Finish'), mtError, Setof([mbOK]), 0); 
+      Fnc.UserRouteGenAbort := true; 
+    end;
+                   
+    // 1305 Addtional Rule Check for CZ Pre-Treat
+    if ( HardGoldB4Resist ) and ( Fnc.SysGetAttrValue('CZPreTreat') ) and ( MfgPartType = 'Top' ) then
+    begin
+      MessageDlg('CZ Pre-Treat is not compatible with Hard Gold Before Resist process, step will be omitted.', mtInformation, Setof([mbOK]), 0);
+    end;                 
+                     
+  end;
+  
+  if ( MfgPartType = 'Top') or (MfgPartType = 'Inn') then
+  begin
+    // 1308 Update Hi-Pot table Value Units                                                   
+    // For existing Jobs with Data, recalculate Test Voltage & Leakage Values
+    // Make sure only to convert once - old values are in the 100's
+    if (Fnc.SysGetAttrValue('Volt') > 0) and (Fnc.SysGetAttrValue('Volt') > 100) then
+      Fnc.SysSetAttrValue('Volt', Fnc.SysGetAttrValue('Volt') / 1000);
+
+    if (Fnc.SysGetAttrValue('Leak') > 0) and (Fnc.SysGetAttrValue('Leak_New') = 0) then // Don't need to check for converting more than once since we use a new attribute
+      Fnc.SysSetAttrValue('Leak_New', Fnc.SysGetAttrValue('Leak') * 1000);
+  end;
+  
+  // 1354 CNC Fixed Offset Selection Rule 
+  if ( MfgPartType = 'Top') or (MfgPartType = 'Sub') then
+  begin
+    if (Fnc.SysGetAttrValue('LaserBTopHits') +
+       Fnc.SysGetAttrValue('LaserABotHits') +
+       Fnc.SysGetAttrValue('UVLaserB_Top') +
+       Fnc.SysGetAttrValue('UVLaserA_Bot') = 0) and                                                                    
+       ( Fnc.SysGetAttrValue('Drill_OffsetX_Mode') = 'Auto' ) then
+    begin
+      if Fnc.SysGetAttrValue('Drill_FSF_X') <> 0 then
+        Fnc.SysSetAttrValue('Drill_Offset_X', SetDrillXOffset(1));
+      if ( Fnc.SysGetAttrValue('NCRunX2') ) and ( Fnc.SysGetAttrValue('Drill_FSF_X') <> 0 ) then
+        Fnc.SysSetAttrValue('Drill_Offset_X_2', SetDrillXOffset(2));
+    end;             
+  end;
+  
+  // Set Layer Attributes
+  if Fnc.SysGetItemAttrValue('Layer_Min_Line', true, cStackupLayer, 1) = 0.0 then
+    Fnc.SysSetItemAttrValue('Layer_Min_Line', Fnc.SysGetAttrValue('Line_Width'), true, cStackupLayer, 1);
+  if Fnc.SysGetItemAttrValue('Layer_Min_Line', false, cStackupLayer, 1) = 0.0 then
+    Fnc.SysSetItemAttrValue('Layer_Min_Line', Fnc.SysGetAttrValue('Line_Width'), false, cStackupLayer, 1);
+    
+  if Fnc.SysGetItemAttrValue('Layer_Min_Air_Gap', true, cStackupLayer, 1) = 0.0 then
+    Fnc.SysSetItemAttrValue('Layer_Min_Air_Gap', Fnc.SysGetAttrValue('Air_Gap'), true, cStackupLayer, 1);
+  if Fnc.SysGetItemAttrValue('Layer_Min_Air_Gap', false, cStackupLayer, 1) = 0.0 then
+    Fnc.SysSetItemAttrValue('Layer_Min_Air_Gap', Fnc.SysGetAttrValue('Air_Gap'), false, cStackupLayer, 1);
+    
+  if Fnc.SysGetItemAttrValue('Layer_Min_PadTo', true, cStackupLayer, 1) = 0.0 then
+    Fnc.SysSetItemAttrValue('Layer_Min_PadTo', Fnc.SysGetAttrValue('Min_PTrace_Gap'), true, cStackupLayer, 1);
+  if Fnc.SysGetItemAttrValue('Layer_Min_PadTo', false, cStackupLayer, 1) = 0.0 then
+    Fnc.SysSetItemAttrValue('Layer_Min_PadTo', Fnc.SysGetAttrValue('Min_PTrace_Gap'), false, cStackupLayer, 1);
+  
+  if Fnc.SysGetItemAttrValue('Layer_Land_Area', true, cStackupLayer, 1) = 0.0 then
+    Fnc.SysSetItemAttrValue('Layer_Land_Area', Fnc.SysGetAttrValue('Land_Area'), true, cStackupLayer, 1);
+  if Fnc.SysGetItemAttrValue('Layer_Land_Area', false, cStackupLayer, 1) = 0.0 then
+    Fnc.SysSetItemAttrValue('Layer_Land_Area', Fnc.SysGetAttrValue('Land_Area'), false, cStackupLayer, 1);
+end;
+                  
+procedure InitRouteGeneratedAttributes;
+begin
+  Fnc.SysSetAttrValue('UEtch_Cu', 0.0);
+  Fnc.SysSetAttrValue('UEtch_Spec', '');
+                 
+  InProcessCuThk := 0;
+  if (( CoreBuild or SubAssemblyCoreBuild ) and ( Fnc.SysGetAttrValue('LayerCount') > 2 )) then 
+  begin
+    InProcessCuThk := GetSuborCoreIPCT;
+    
+    if InProcessCuThk = 0 then
+      InProcessCuThk := BaseCuTopUM; 
+  end             
+  else            
+  begin
+    if Fnc.SysGetAttrValue('MfgPartType') <> 'DmC' then
+      InProcessCuThk := BaseCuTopUM; //364 Surface Cu Calculation
+  end;
+  
+  Fnc.SysSetAttrValue('Pin_Lam', false); 
+end;
+                     
+procedure FlowSelect;
+begin
+  //Fnc.SysSetAttrValue('Rules_Version', 1.01);
+  //Fnc.SysSetAttrValue('Rules_Version', 1.10); // Blind Via Changes
+  //Fnc.SysSetAttrValue('Rules_Version', 1.11); // Photo Sequence
+  //Fnc.SysSetAttrValue('Rules_Version', 1.12); // Resist Printing Step with dual info
+                                              // New Drill Bit Instruction for Faradflex Material
+                                              // Include the Electrolytic Machine name on the process step
+  //Fnc.SysSetAttrValue('Rules_Version', 1.13); // Desmear for Hybrid builds.
+  //Fnc.SysSetAttrValue('Rules_Version', 1.14);  // Updated Photo Sequence to exclude Conformal Mask
+  //Fnc.SysSetAttrValue('Rules_Version', 1.15); // New Rules for Pre/Post Oxide Bake. Oxide line now accepts 0.012 min for Faradflex Rules
+  //Fnc.SysSetAttrValue('Rules_Version', 1.20); // Mech Blind Vias
+  //Fnc.SysSetAttrValue('Rules_Version', 1.30); // 2 Layer Fixes
+  //Fnc.SysSetAttrValue('Rules_Version', 1.31); // Immersion Tin updates
+  //Fnc.SysSetAttrValue('Rules_Version', 1.32); // Core Build Cu Thinning
+  //Fnc.SysSetAttrValue('Rules_Version', 1.33); // Cu Ratio & Plating Area for filled via jobs; Shear Size; Immersion Tin extra condition
+  //Fnc.SysSetAttrValue('Rules_Version', 1.34); // Cu Hole Check; AUS 308 Mask
+  //Fnc.SysSetAttrValue('Rules_Version', 1.35); // Max Epoxy Plug Thk; Thin Core remarks for sequential & core capping builds
+  //Fnc.SysSetAttrValue('Rules_Version', 1.36); // Special Process Description (614)
+  //Fnc.SysSetAttrValue('Rules_Version', 1.37); // CNC Entry Sheet updated Rule (613)
+  //Fnc.SysSetAttrValue('Rules_Version', 1.40); // Keep Manually Added Instructions (708); Change Plating Line PAL5 change to PAL6 (719); Gold Steps Missing Info (722)
+  //Fnc.SysSetAttrValue('Rules_Version', 1.41); // Lead Free Req'd (730)                      
+  //Fnc.SysSetAttrValue('Rules_Version', 1.42); // Updating Inventory Part Number Cycle Code (750)
+  //Fnc.SysSetAttrValue('Rules_Version', 1.50); // Change Step Attributes to Parameters
+  //Fnc.SysSetAttrValue('Rules_Version', 1.51); //(755) Job Revision to follow Engenix calculation; (757) Job Type checking 
+  //Fnc.SysSetAttrValue('Rules_Version', 1.52); // (782) For FN Customer code with Conformal mask, the default is without micro etch before laser drill
+                                                // 761 - Add Washing step after baking for OSP finishing
+                                                // 760 - condition for spray coat PSR-2000, If Board thickness>/= 3.6mm, Error will prompt that the board cannot run Spray coat.
+                                                // 785 - Selective Finger with Immersion silver Flow change
+                                                //  784 - Scope Drill remarks for HDI jobs (multiple press or jobs with laser via
+  //Fnc.SysSetAttrValue('Rules_Version', 1.60); // (364) Surface Cu thickness calculation correction
+  //Fnc.SysSetAttrValue('Rules_Version', 1.61); // 797 Pulse Bond
+                                              // 795 Tight Press Fit Tolerance
+                                              // 793 Update Photo Process
+                                              // 802 Additional Special PRocess Info
+                                              // 803 Add Remarks for IL runcard for Faradflex
+                                              // 804 UV Process Step after resist for ENIG
+  // Fnc.SysSetAttrValue('Rules_Version', 1.62); // 836 Instruction Code update
+                                               // 837 Mechanical drill should show A and B format the same as Backdrill format.
+                                               // 838 Core Build buffing remarks
+                                               // 839 Electrolytic Cu - Capped Via / 2nd Plating DE Cu Thickness Tolerance
+                                               // 840 Additional Baking step for EM888 material 
+                                               // 842 Baking additional Parameter for BC and BF job
+                                               // 843 Process Override Rule
+   // Fnc.SysSetAttrValue('Rules_Version', 1.63); // 756 Update Aspect Ratio Calc for OL Photo PRocess
+                                               // 854, 856 New Job Attribute for Finished Thickness
+   //Fnc.SysSetAttrValue('Rules_Version', 1.64); // 841 Primary Plug Before Pattern Cu Thinning Step
+   //Fnc.SysSetAttrValue('Rules_Version', 1.65); // 844 Back Drill After Electrolytic Cu
+   //Fnc.SysSetAttrValue('Rules_Version', 1.70); // 409 Paradigm Part Number Coding 
+                                               // 867 Update Back Drill After Mask Board Thickness
+                                               // 881 Limit Step Parameter name & Value Length
+  //Fnc.SysSetAttrValue('Rules_Version', 1.71); // 887 Backdrill After Plate (Fix thickness values at various steps
+  //Fnc.SysSetAttrValue('Rules_Version', 1.72); // 799 Surface Cu Thickness Value Format
+                                              // 845 ENEPIG finish with DSR330S-50-99R mask
+   // Fnc.SysSetAttrValue('Rules_Version', 1.73); // 911 Change Chamfer B4 Res (Sel) to After Pattern Sel
+                                                // 910 Addition of Ultrasonic and After VELCP Hole Check
+                                                // 918 Backdrill at Sublam stage
+                                                // 915 Job with tight pressfit specification
+                                                // 919 Add MLB or HDI remarks under OL Photo 
+    //Fnc.SysSetAttrValue('Rules_Version', 1.74);  // 912 Mech Blind Via Entry Material
+                                                 //  927 Add Final OL thk, board thk, Panel Size to SM step
+//  Fnc.SysSetAttrValue('Rules_Version', 1.75); // 913 Update CNC Stack Height
+ //  Fnc.SysSetAttrValue('Rules_Version', 1.76); // 917 Correct of Seq Lam w/ Mech Blind Vias
+   // Fnc.SysSetAttrValue('Rules_Version', 1.77); // 783 Automate BOM Conversion
+                                                // 939 BOM Panel Size v Attribute Panel Size
+    //Fnc.SysSetAttrValue('Rules_Version', 1.78); // 959 Laser Machine Resource     
+                                                // 960 Additional Cu Area for HAL
+                                                // 962 Imdepdance info for DES 
+    //Fnc.SysSetAttrValue('Rules_Version', 1.79); // 961 Removal of min Non Plug Holes from sub-assembly.
+    //Fnc.SysSetAttrValue('Rules_Version', 1.80); // 957 BOM Conversion Cu Type for Cores
+   // Fnc.SysSetAttrValue('Rules_Version', 1.81); // 956 BOM Conversion for Cu Foil  
+                                                // 972 Material & Panel Size on OL Photo Step
+                                                // 973 Hole Check after Back Drill Step
+                                                // 976 Filled Via Plating Line Missing Info
+                                                // 983 Additional Condition to Edge Plating & Slot Length Steps
+                                                // 977 Automate Product Code
+                                                // 979 Plating line for 2x NC (Manual plating line 2 only) 
+    //Fnc.SysSetAttrValue('Rules_Version', 1.90); // 978 Desmear & Metalization, fixes for blind via attributes 
+    //Fnc.SysSetAttrValue('Rules_Version', 1.91); // 1084 Vertical Desmear Params
+    //Fnc.SysSetAttrValue('Rules_Version', 1.92); // 1085 Update Reverse Pulse Table
+                                                  // 1087 Electroles Cu - Capped Via Remark Error
+    //  Fnc.SysSetAttrValue('Rules_Version', 2.00); // 1086 Electrolytic Cu Plating Selection & Cu Calculations
+    //Fnc.SysSetAttrValue('Rules_Version', 2.01);  // 1106 Baking Before NC
+                                                 // 1107 Runcard Process Additional Information
+    //Fnc.SysSetAttrValue('Rules_Version', 2.02); // 1119 ENEPIG Resource 
+    //Fnc.SysSetAttrValue('Rules_Version', 2.03); // 1108 OL Process Flow Update
+                                                  // 1109 CNC Drilling Table New B Update 0.457, 0.48 
+    //Fnc.SysSetAttrValue('Rules_Version', 2.04); // 1110 Override Attribute for Soldermask Process
+                                                  // 1111 Red & Blue Soldermask flow  
+    //Fnc.SysSetAttrValue('Rules_Version', 2.05); // 1113 NP Countersink Board thickness is incorrect
+    //Fnc.SysSetAttrValue('Rules_Version', 2.10); // 1114 Scale Factor Information
+    //Fnc.SysSetAttrValue('Rules_Version', 2.11); // 1112 Micro-etch for thick boards
+    //Fnc.SysSetAttrValue('Rules_Version', 2.20); // 1137 Baking before CNC Drill for Sub-Assembly
+                                                // 1138 Micro-Etch for Laser Via
+                                                // 1139 Hole Check after Electroless
+    //Fnc.SysSetAttrValue('Rules_Version', 2.21); // 1172 NC Stack Height Generation Error Message
+    //Fnc.SysSetAttrValue('Rules_Version', 2.22); // 1144 Additional AZ Blower Step after CNC Drill
+    //Fnc.SysSetAttrValue('Rules_Version', 2.30); // 1173 Additional Surface Finish ENIG + OSP
+    //Fnc.SysSetAttrValue('Rules_Version', 2.31); // 1177 Update Soldermask Pre-Treatment
+                                                // 1183 Wrong Thin Core UNIT
+    //Fnc.SysSetAttrValue('Rules_Version', 2.32); // 1190 Product Code for Core Drilling
+                                                  // 1191 Countersink/bore Milling Side
+                                                  // 1177 Soldermask Pre-Treatment, Screen Print Mask only 
+    //Fnc.SysSetAttrValue('Rules_Version', 2.33); // 1197 Thin Panel IL Pohot Fixed Scalre Factor
+                                                  // 1198 OL Photo Rule Update Thin Panel changed to 0.6
+                                                  // 1200 5um Cu Foil
+     //Fnc.SysSetAttrValue('Rules_Version', 2.34);// 1205 ENEPIG Changes
+     //Fnc.SysSetAttrValue('Rules_Version', 2.35); // 1196 Pre-Photo Cu Thinning
+     //Fnc.SysSetAttrValue('Rules_Version', 2.36); // 1213 Additional Hole Check after Backdrill step condition
+     //Fnc.SysSetAttrValue('Rules_Version', 2.37); // 1223 Add surface finish to Electrolytic Cu step
+                                                   // 1224 Updated Desmear Flow
+                                                   // 1225 Add Fill_Via line as manual override option for plating lines 
+     //Fnc.SysSetAttrValue('Rules_Version', 2.40); // 1229 PEP Flow Option for Sub-Assembly Build 
+     //Fnc.SysSetAttrValue('Rules_Version', 2.41); // 1230 Auto Add Hi Pot Spec
+     //Fnc.SysSetAttrValue('Rules_Version', 2.42);   // 1245 Updates CZ Rule
+                                                   // 1246 Remove PBOOK008 Instruction
+                                                   // 1247 BOM Cu Foil Unit for Pin Lam
+     //Fnc.SysSetAttrValue('Rules_Version', 2.43); // 1254 DES Rule Update
+                                                   // 1255 EC Parameter Attributes
+                                                   // 1257 Show Surface Finish at Soldermask
+                                                   // 1258 Pre-Bake before Epoxy Plug
+                                                   // 1259 Offset Attributes for NC Drill
+                                                   // 1260 Updated Fill Via Plating Rule
+     //Fnc.SysSetAttrValue('Rules_Version', 3.00); // 1256 Selective Finishing  
+     //Fnc.SysSetAttrValue('Rules_Version', 3.01); // 1256 Selective Finishing - fix Hole Check for Imm Silver Photo 
+     //Fnc.SysSetAttrValue('Rules_Version', 3.10); // 1305 Additional Rule Condition for CZ Pre-Treatment
+                                                   // 1306 Updated Electroless Plating Rule
+                                                   // 1307 Direct Laser MEthod
+                                                   // 1308 Update Hi Pot Parameter
+                                                   // 1309 Update EC Condition Table
+                                                   // 1310 Additional /Back Drill EC Step
+                                                   // 1323 Changed Product Code for Dummy Layer Boards. Added 9/14/20. Rule not incremented since route not changed
+      //Fnc.SysSetAttrValue('Rules_Version', 3.11);// 1322 LB Free HAL + Immersion Silver 
+      //Fnc.SysSetAttrValue('Rules_Version', 3.12);// 1321 CNC Drilling Table B Updated
+      //Fnc.SysSetAttrValue('Rules_Version', 3.13);// 1462 Updated ELCP and Plating Rules
+                                                   // 1463 Epoxy Plug Side by Side
+                                                   // 1466 Update the IL Exposure Process resource code
+                                                   // 1468 Missing HiPot Leakage Current
+                                                   // 1474 New Soldermask Type
+      //Fnc.SysSetAttrValue('Rules_Version', 3.14);// 1465 Panel Length & Width /discatance /calculation update
+                                                   // 1467 Reverse Pulse Plating Table Update
+                                                   // 1469 Missing Secondary Plug Process Steps
+                                                   // 1470 Sequential Build with Sanwich CoreProcess Flow
+      //Fnc.SysSetAttrValue('Rules_Version', 3.15);// 1472 User Defined Stack Heigh for IL Rout & Rout
+                                                   // 1473 Additional Core Build Cu thinning attribute
+        Fnc.SysSetAttrValue('Rules_Version', 3.16);// 1568 Micro-Etch after Direct Laser
+                                                   // 1569 Correct og V1/V2 rule for Job with 2X NC
+                                                   // 1570 Duplicate ID error for BGA/LGA Encapsulation
+                                                    
+  InitRouteGeneratedAttributes;
+  
+  if ((MfgPartType = 'Inn') or (MfgPartType = 'DmC')) then  //Simple Inner or Dummy Core
+  begin
+    if FindNumberOfDrillFiles = 0 then                       
+      InnerLayerPE;
+    else
+      RouteFlow02;                                                                         
+  end                                               
+  else
+    RouteFlow02;                       
+end;
+                                            
+procedure RoutePostProcess;
+var
+  i : integer;                          
+  routeStep : integer;                                                                                                                 
+  photoSeqStr : string;                                        
+begin
+  photoSeqStr := ''; 
+                                                                           
+  if photoStepList.Count > 1 then
+  begin                                              
+    //ShowMessage(photoStepList.Text);                    
+
+    for i := 0 to photoStepList.Count - 1 do
+    begin
+      routeStep := StrToInt(photoStepList.Strings[i]);
+                                                                                  
+      case i of        
+        0 : photoSeqStr := '1st Photo';
+        1 : photoSeqStr := '2nd Photo';
+        2 : photoSeqStr := '3rd Photo';
+        3 : photoSeqStr := '4th Photo';
+        4 : photoSeqStr := '5th Photo';
+        5 : photoSeqStr := '6th Photo';
+        6 : photoSeqStr := '7th Photo';
+        7 : photoSeqStr := '8th Photo';
+        8 : photoSeqStr := '9th Photo';
+      end;
+
+      Fnc.SysRouteGenInsAddlParam(routeStep, 'Erp', 'Photo Sequence', photoSeqStr, '', '', false, '', '', '');
+
+    end;
+  end;
+  
+  //Fnc.SysSetAttrValue('In_Process_Cu_Thk', InProcessCuThk); // (364) Surface Cu thickness calculation correction
+  //ShowMessage( 'Ending Cu Thk ' + IntToStr(InProcessCuThk) + 'um'  );   
+  
+end;

@@ -1,0 +1,16 @@
+//HeaderImportExport-->
+//SiteId=0
+//Enterprise=True
+//ScriptType=1
+//ScriptGroup=Drill Module
+//HeaderImportExport<--
+procedure DrillModule_PreEdit(ParamList: TStringList; tblDrillTools: TSysTable; tblLayers: TSysTable);
+begin
+{
+  Fnc.Debug := True;
+  Fnc.SendDebugStrings('DrillModule_PreEdit, FieldName', ParamList.Values('FieldName'));
+  Fnc.SendDebugStrings('RecId', tblDrillTools.FieldByName('RecId').AsString);
+  Fnc.SendDebugStrings('DrillModule_PreEdit, Options', ParamList.Values('Options'));
+  Fnc.Debug := False;
+}
+end;

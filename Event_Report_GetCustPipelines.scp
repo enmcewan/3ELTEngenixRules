@@ -1,0 +1,435 @@
+//HeaderImportExport-->
+//SiteId=0
+//Enterprise=True
+//ScriptType=1
+//ScriptGroup=Reports
+//HeaderImportExport<--
+uses                                                                                                                                                                                                                                                                     
+  RouteFunctions;
+
+procedure RepCustPipelines_SpecBomGetTables(ParamList: TStringList; var PipeLineCntr: integer; var HeaderPipeLine: TSysTable; var SummPipeLine: TSysTable; var SpecBomPipeLine: TSysTable; var ReportHeader: TSysTable);
+begin
+  HeaderPipeLine := Fnc.SysTableCreate('rptSpecBomHeader');
+  Fnc.SysTableAddField(HeaderPipeLine, 'RecId', 0, ftAutoInc);
+  Fnc.SysTableAddField(HeaderPipeLine, 'MfgPartName', 50, ftString);
+  Fnc.SysTableAddField(HeaderPipeLine, 'Family', 50, ftString);
+  Fnc.SysTableAddField(HeaderPipeLine, 'Copper', 50, ftString);
+  Fnc.SysTableAddField(HeaderPipeLine, 'RequiredThickness', 20, ftString);
+  Fnc.SysTableAddField(HeaderPipeLine, 'PressThickness', 20, ftString);
+  HeaderPipeLine.Active := True;
+
+  Inc(PipeLineCntr);                            
+  ParamList.Values[Format('CustPipeline%d', [PipeLineCntr])] := HeaderPipeLine.Name;
+
+  //--                      
+                                                                          
+  SummPipeLine := Fnc.SysTableCreate('rptSpecBomSumm');
+  Fnc.SysTableAddField(SummPipeLine, 'RecId', 0, ftAutoInc);
+  Fnc.SysTableAddField(SummPipeLine, 'Qty', 0, ftInteger);
+  Fnc.SysTableAddField(SummPipeLine, 'ErpMatrlNum', 50, ftString);
+  Fnc.SysTableAddField(SummPipeLine, 'ErpMatrlDesc', 50, ftString);
+  SummPipeLine.Active := True;
+
+  Inc(PipeLineCntr);
+  ParamList.Values[Format('CustPipeline%d', [PipeLineCntr])] := SummPipeLine.Name;
+
+  //--
+
+  SpecBomPipeLine := Fnc.SysTableCreate('rptSpecBom');
+  Fnc.SysTableAddField(SpecBomPipeLine, 'RecId', 0, ftAutoInc);            
+  Fnc.SysTableAddField(SpecBomPipeLine, 'GenMatrlType', 50, ftString);
+  Fnc.SysTableAddField(SpecBomPipeLine, 'Family', 50, ftString);
+  Fnc.SysTableAddField(SpecBomPipeLine, 'Seq', 0, ftInteger);
+  Fnc.SysTableAddField(SpecBomPipeLine, 'Graphic', 20, ftString);
+  Fnc.SysTableAddField(SpecBomPipeLine, 'ErpMatrlNum', 50, ftString);
+  Fnc.SysTableAddField(SpecBomPipeLine, 'ErpMatrlDesc', 50, ftString);
+  Fnc.SysTableAddField(SpecBomPipeLine, 'MfgPartMatrl', 50, ftString);
+  SpecBomPipeLine.Active := True;
+
+  Inc(PipeLineCntr);
+  ParamList.Values[Format('CustPipeline%d', [PipeLineCntr])] := SpecBomPipeLine.Name;
+
+  //--
+
+  ReportHeader := Fnc.SysTableCreate('rptReportHeader');
+  Fnc.SysTableAddField(ReportHeader, 'RecId', 0, ftAutoInc);
+  Fnc.SysTableAddField(ReportHeader, 'ParadigmUser', 50, ftString);
+  ReportHeader.Active := True;
+                       
+  Inc(PipeLineCntr);                         
+  ParamList.Values[Format('CustPipeline%d', [PipeLineCntr])] := ReportHeader.Name;
+end;
+
+procedure FillReportHeader(ReportHeader:TSysTable);
+var
+  ParadigmUserName: string;
+begin
+  ParadigmUserName := Fnc.SysGetAttrValueTopLevel('UserName');
+  if ParadigmUserName = '' then
+    ParadigmUserName := '** Unknown **';
+
+  ReportHeader.Append;
+  ReportHeader.FieldByName('ParadigmUser').AsString := ParadigmUserName;
+  ReportHeader.Post;
+end;
+
+function GetLastLayerWithLayerNumber : string;
+var
+  LayerTable: TSysTable;
+  LayerTableFilter: string;
+  SecondLastLayerName : string;
+  SecondLastLayerNumber: integer
+begin
+  result := '999';
+  SecondLastLayerName := '';
+  LayerTable := Fnc.SysGetAllItemAttrValueListAsTable('ItemLayerName');
+  LayerTable.Filtered := false;
+  LayerTable.Filter := 'itemtype=' + QuotedStr('LYR');
+  LayerTable.Filtered := true;
+  LayerTable.Last;   
+  LayerTable.Prior;  
+  SecondLastLayerName := LayerTable.FieldByName('ItemLayerName').AsString;
+  
+  // Assuming this is an ODB Job with inner layers named like 'LAYER-XX' or LAYER-X
+  SecondLastLayerNumber := StrToInt(copy(SecondLastLayerName, AnsiPos('-', SecondLastLayerName) + 1, Length(SecondLastLayerName) - AnsiPos('-', SecondLastLayerName)));
+  result := IntToStr(SecondLastLayerNumber + 1); 
+  //ShowMessage(result);
+end;
+
+function RepCustPipelines_SpecBomGetLayers(SpecBom: TSysTable): string;
+var
+  i: integer;
+  MfgPartName: string;
+  TopLayer: string;
+  BottomLayer: string;
+begin
+  TopLayer := '';
+  BottomLayer := ''; 
+
+  MfgPartName := SpecBom.FieldByName('GenMatrlType').AsString;
+
+  if (SpecBom.FieldByname('ItemType').AsString = cStackupMfgSubLevel) or
+     (SpecBom.FieldByname('ItemType').AsString = cStackupMfgSubAssy) then
+  begin
+    Fnc.SysGetMfgPartLayerNames(MfgPartName, TopLayer, BottomLayer, True);
+  end;
+                                                                                  
+  // Replace Patterns for Manually Created Layers
+  TopLayer := StringReplace(TopLayer, 'LYR-', 'L', SetOf([]));
+  BottomLayer := StringReplace(BottomLayer, 'LYR-', 'L', SetOf([]));
+  
+  // Replace patterns for ODB Import Jobs
+  TopLayer := StringReplace(TopLayer, 'PAT-B1', 'L1', SetOf([]));
+  TopLayer := StringReplace(TopLayer, 'PAT-B', 'L1', SetOf([]));
+  BottomLayer := StringReplace(BottomLayer, 'PAT-A1', 'A', SetOf([]));
+  BottomLayer := StringReplace(BottomLayer, 'PAT-A', 'A', SetOf([]));
+  TopLayer := StringReplace(TopLayer, 'LAYER-', 'L', SetOf([]));                            
+  BottomLayer := StringReplace(BottomLayer, 'LAYER-', 'L', SetOf([]));
+                                                     
+  // Change ODB Last Layer to Layer Number
+  if BottomLayer = 'A' then
+  begin
+    BottomLayer := 'L' + GetLastLayerWithLayerNumber;
+  end;
+  
+  if (TopLayer = '') and (Bottomlayer = '') then
+  begin                
+    i := Pos('L0', MfgPartName); // Dummy Cores                
+    Result := copy(MfgPartName, i, Length(MfgPartName));
+  end                            
+  else
+  begin                                         
+    if TopLayer = '' then
+      TopLayer := 'x';             
+    if BottomLayer = '' then                                                                                
+      BottomLayer := 'x';
+
+    Result := Format('= %s/%s =', [TopLayer, BottomLayer]);
+  end;
+
+  while Length(Result) < 11 do
+    Result := Format('=%s=', [Result]);
+end;                                      
+
+function RepCustPipelines_SpecBomGetMfgPartMatrl(SpecBom: TSysTable);
+var
+  MfgPartName: string;
+  SaveRecId: integer;
+  SaveFilter: string;
+begin
+  Result := '';
+
+  MfgPartName := SpecBom.FieldByName('GenMatrlType').AsString;
+  SaveRecId := SpecBom.FieldByName('RecId').AsInteger;
+  SaveFilter := SpecBom.Filter;
+
+  SpecBom.Filtered := False;
+  SpecBom.Filter := 'ParentMfgPartName=' + QuotedStr(MfgPartName);
+  SpecBom.Filtered := True;
+
+  SpecBom.First;         
+  while not SpecBom.Eof do
+  begin
+    if LowerCase(SpecBom.FieldByName('GenMatrlType').AsString) = 'core' then
+    begin
+      Result := SpecBom.FieldByName('ErpMatrlNum').AsString;
+      break;
+    end;
+
+    SpecBom.Next;
+  end;
+
+  SpecBom.Filtered := False;
+  SpecBom.Filter := SaveFilter;
+  SpecBom.Filtered := True;
+  SpecBom.Locate('RecId', SaveRecId, SetOf([]));
+end;
+
+function RepCustPipelines_GetHeaderMfgPartName(MfgPartName: string): string;
+var
+  i: integer;
+  TopLayer: string;
+  BottomLayer: string;
+begin
+  Fnc.SysGetMfgPartLayerNames(MfgPartName, TopLayer, BottomLayer, True);
+
+  i := pos(' ', MfgPartName);
+  Result := Format('%s %s / %s', [copy(MfgPartName, 1, i - 1), TopLayer, BottomLayer]);
+end;
+
+procedure RepCustPipelines_SpecBomFillHeader(HeaderPipeLine: TSysTable; SpecBomPipeLine: TSysTable; ParamList: TStringList);
+var
+  i: integer;
+
+  isTop: boolean;
+  Copper: string;
+  CopperTop: string;
+  CopperBot: string;
+
+  Family: string;
+  FamilyStack: TStringList;
+
+  PressThickness: double;
+begin
+  isTop := True;
+  CopperTop := '';
+  CopperBot := '';
+  FamilyStack := TStringList.Create;
+
+  HeaderPipeLine.Append;
+  HeaderPipeLine.FieldByName('MfgPartName').AsString := RepCustPipelines_GetHeaderMfgPartName(ParamList.Values['MfgPartName']);
+
+  // -- scan all materials
+  SpecBomPipeLine.First;
+  while not SpecBomPipeLine.Eof do
+  begin
+    case LowerCase(SpecBomPipeLine.FieldByName('GenMatrlType').AsString) of
+      'foil':
+        begin
+          Copper := copy(SpecBomPipeLine.FieldByName('ErpMatrlNum').AsString, 2 , 3);
+          repeat
+            if copy(Copper, 1, 1) <> '0' then
+              break;
+            Copper := copy(Copper, 2, Length(Copper));
+          until Copper = '';
+
+          if isTop then
+            CopperTop := Copper
+          else
+            CopperBot := Copper;
+        end;
+
+      'pp/filler':
+        begin
+          Family := SpecBomPipeLine.FieldByName('Family').AsString;
+          i := Length(SpecBomPipeLine.FieldByName('ErpMatrlNum').AsString);
+          if i > 0 then
+            Family := Family + ' (' + copy(SpecBomPipeLine.FieldByName('ErpMatrlNum').AsString, i - 1, 2) + ')';
+          if FamilyStack.IndexOf(Family) < 0 then
+            FamilyStack.Add(Family);
+        end;
+
+      else isTop := False;
+    end;
+
+    SpecBomPipeLine.Next;
+  end;
+
+  //-- Fill the Family
+  Family := '';
+  for i := 0 to FamilyStack.Count - 1 do
+  begin
+    if Family <> '' then
+      Family := Family + ' / ';
+    Family := Family + FamilyStack.Strings[i];
+  end;
+
+  HeaderPipeLine.FieldByName('Family').AsString := Family;
+
+  //-- Fill the Copper
+  if CopperTop = '' then
+    CopperTop := CopperBot;
+  if CopperBot = '' then
+    CopperBot := CopperTop;
+
+  if CopperTop = CopperBot then
+    HeaderPipeLine.FieldByName('Copper').AsString := CopperTop + ' uM';
+  else
+    HeaderPipeLine.FieldByName('Copper').AsString := CopperTop + '/' + CopperBot + ' uM';
+
+  //-- Fill the Thickness Incl Mask
+  if Fnc.SysRequirementTable.Locate('ReqType', 2, SetOf([])) then
+    HeaderPipeLine.FieldByName('RequiredThickness').AsString := FormatFloat('0.000 mmt', Fnc.SysRequirementTable.FieldByName('GapReq').AsFloat);
+
+  //-- Fill the Press Thickness
+  PressThickness := Fnc.SysGetMfgPartAttrValue(ParamList.Values['MfgPartName'], 'Actual_Press_Thickness');
+  if PressThickness = 0.0 then
+    PressThickness := Fnc.SysGetMfgPartAttrValue(ParamList.Values['MfgPartName'], 'Press_Thickness');
+
+  HeaderPipeLine.FieldByName('PressThickness').AsString := FormatFloat('0.000', PressThickness);
+
+  HeaderPipeLine.Post;
+
+  FamilyStack.Free;
+end;
+
+function RepCustPipelines_SpecBomGetLayupForIES(SpecBom: TSysTable): string
+var
+  sqlStr: stirng;
+  aTable: TSysTable;
+begin
+  Result := ' /\/\/\/\ ';
+
+  sqlStr := Format('Select * From Data0017 Where Inv_Part_Number = %s', [QuotedStr(SpecBom.FieldByName('ErpMatrlNum').AsString)]);
+
+  aTable := Fnc.AstaExecuteSQL(sqlStr);
+
+  if not aTable.IsEmpty then
+  begin
+    aTable.First;
+    Result := aTable.FieldByName('Layup_For_Ies').AsString;
+  end;
+
+  Fnc.SysTableDestroy('aTable');
+end;
+                                       
+procedure RepCustPipelines_SpecBom(ParamList: TStringList; var PipeLineCntr: integer);
+var
+  i: integer;
+  SpecBom: TSysTable;
+  HeaderPipeLine: TSysTable;
+  SummPipeLine: TSysTable;
+  SpecBomPipeLine: TSysTable;
+  ReportHeader: TSysTable;
+begin
+  RepCustPipelines_SpecBomGetTables(ParamList, PipeLineCntr, HeaderPipeLine, SummPipeLine, SpecBomPipeLine, ReportHeader);
+
+  SpecBom := Fnc.SysGetSpecificBomCopy;
+
+  SpecBom.Filter := 'ParentMfgPartName=' + QuotedStr(ParamList.Values['MfgPartName']);
+  SpecBom.Filtered := True;
+
+  // Fill Spec Bom             
+  if SpecBom.RecordCount > 1 then
+  begin
+    SpecBom.First;
+    while not SpecBom.Eof do
+    begin         
+      if (SpecBom.FieldByName('ItemType').AsString = cStackupMfgSubLevel) or
+         (SpecBom.FieldByName('ItemType').AsString = cStackupMfgSubAssy) or
+         (SpecBom.FieldByName('ItemType').AsString = cStackupGenMatrl) or
+         (SpecBom.FieldByName('ItemType').AsString = cStackupSpecMatrl) then
+      begin
+        SpecBomPipeLine.Append;
+        SpecBomPipeLine.FieldByName('GenMatrlType').AsString := SpecBom.FieldByName('GenMatrlType').AsString
+        SpecBomPipeLine.FieldByName('Family').AsString := SpecBom.FieldByName('GenMatrlFamily').AsString
+
+        Inc(i);
+        SpecBomPipeLine.FieldByName('Seq').AsInteger := i;
+
+        case LowerCase(SpecBom.FieldByName('GenMatrlType').AsString) of
+          'foil'     : SpecBomPipeLine.FieldByName('Graphic').AsString := '----------';
+          'core'     : SpecBomPipeLine.FieldByName('Graphic').AsString := '==========';
+          'pp/filler': SpecBomPipeLine.FieldByName('Graphic').AsString := RepCustPipelines_SpecBomGetLayupForIES(SpecBom);
+          else         
+          begin
+          //ShowMessage(SpecBom.FieldByName('GenMatrlType').AsString );
+          SpecBomPipeLine.FieldByName('Graphic').AsString := RepCustPipelines_SpecBomGetLayers(SpecBom);
+          end;
+        end;    
+
+        if (SpecBom.FieldByName('ItemType').AsString = cStackupMfgSubLevel) or
+           (SpecBom.FieldByName('ItemType').AsString = cStackupMfgSubAssy) then
+          SpecBomPipeLine.FieldByName('MfgPartMatrl').AsString := RepCustPipelines_SpecBomGetMfgPartMatrl(SpecBom);
+        else       
+        begin
+          SpecBomPipeLine.FieldByName('ErpMatrlNum').AsString := SpecBom.FieldByName('ErpMatrlNum').AsString
+          SpecBomPipeLine.FieldByName('ErpMatrlDesc').AsString := SpecBom.FieldByName('ErpMatrlDesc').AsString
+        end;
+                  
+        SpecBomPipeLine.Post;
+      end;                              
+
+      SpecBom.Next;
+    end;
+  end;
+
+  //Fnc.OpenDataGrid(SpecBomPipeLine); //@@
+
+  // Fill Spec Bom Summary
+  SpecBomPipeLine.First;
+  while not SpecBomPipeLine.Eof do           
+  begin
+    if (SpecBomPipeLine.FieldByName('ErpMatrlNum').AsString <> '') and
+       (SpecBomPipeLine.FieldByName('GenMatrlType').AsString <> 'Foil') then
+    begin
+      if SummPipeLine.Locate('ErpMatrlNum', SpecBomPipeLine.FieldByName('ErpMatrlNum').AsString, SetOf ([])) then
+        SummPipeLine.Edit
+      else
+      begin
+        SummPipeLine.Append;
+        SummPipeLine.FieldByName('ErpMatrlNum').AsString := SpecBomPipeLine.FieldByName('ErpMatrlNum').AsString;
+        SummPipeLine.FieldByName('ErpMatrlDesc').AsString := SpecBomPipeLine.FieldByName('ErpMatrlDesc').AsString;
+        SummPipeLine.FieldByName('Qty').AsInteger := 0;
+      end;
+
+      SummPipeLine.FieldByName('Qty').AsInteger := SummPipeLine.FieldByName('Qty').AsInteger + 1;
+      SummPipeLine.Post;
+    end;
+
+    SpecBomPipeLine.Next;
+  end;
+
+  // Fill Spec Bom Header
+  if SpecBomPipeLine.RecordCount > 0 then
+    RepCustPipelines_SpecBomFillHeader(HeaderPipeLine, SpecBomPipeLine, ParamList);
+
+  Fnc.SysTableDestroy(SpecBom);
+                                             
+  // Fill ReportHeader
+  FillReportHeader(ReportHeader);
+
+//  Fnc.OpenDataGrid(HeaderPipeLine);
+//  Fnc.OpenDataGrid(SpecBomPipeLine);
+//  Fnc.OpenDataGrid(SummPipeLine);
+end;
+
+procedure Report_GetCustPipelines(ParamList: TStringList);
+var
+  i: integer;
+begin
+//  Fnc.SendDebugString('ReportName: ' + ParamList.Values['ReportName']);
+//  Fnc.SendDebugString('MfgPartName: ' + ParamList.Values['MfgPartName']);
+//  Fnc.SendDebugString('LayerName: ' + ParamList.Values['LayerName']);
+
+  i := 0;
+
+  case LowerCase(ParamList.Values['ReportName']) of
+    'partlayup'
+   ,'template_stackup'
+   ,'template_stackup_mfgpart'
+   ,'stackup'
+        : RepCustPipelines_SpecBom(ParamList, i);
+  end;
+end;
+               

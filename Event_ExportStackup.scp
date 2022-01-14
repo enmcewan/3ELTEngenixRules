@@ -1,0 +1,441 @@
+//HeaderImportExport-->
+//SiteId=0
+//Enterprise=True
+//ScriptType=1
+//ScriptGroup=Custom Table Export
+//HeaderImportExport<--
+uses
+  Event_ExportStackup_CreateTables;
+
+
+function CheckForExport(theTable: TSysTable; CheckFieldName: string): boolean;
+begin
+  Result := (CheckFieldName = '');
+
+  if not Result then
+  begin
+    if theTable.FieldDefs.IndexOf(CheckFieldName) > -1 then
+      Result := theTable.FieldByName(CheckFieldName).AsBoolean;
+  end;
+end;
+
+procedure ExportToSQLTable(SQLTableName:string; theTable:TSysTable; CheckFieldName:string);
+var
+  i: integer;
+  FieldName: string;
+  Query: TADOQuery;
+  doExport: boolean;
+begin
+  if not Assigned(theTable) then
+    Exit;
+
+  if Fnc.SysExport_UpdateDBDef then
+    ExportStackup_EnsureTableExists(SQLTableName, theTable);
+
+  Query := TADOQuery.Create(nil);
+  Query.Connection := Fnc.DbConnection;
+
+  // first remove any existing records for this JobID...
+  Query.SQL.Clear;               
+  Query.SQL.Add('DELETE FROM ' + SQLTableName + ' WHERE JobID = ' + IntToStr(Fnc.JobID));
+  Query.ExecSQL;
+
+  // now add in all of the new records
+  Query.SQL.Clear;
+  Query.SQL.Add('SELECT * FROM ' + SQLTableName + ' WHERE JobID = ' + IntToStr(Fnc.JobID));
+  Query.Open;
+
+  try
+    theTable.First;
+    while not theTable.EOF do
+    begin
+      if CheckForExport(theTable, CheckFieldName) then
+      begin
+
+        Query.Append;
+        Query.FieldByName('JobID').AsInteger := Fnc.JobID;
+
+        for i := 0 to theTable.FieldCount - 1 do
+        begin
+          FieldName := theTable.FieldDefs.Items[i].Name;
+
+          //if Query.FieldDefs.IndexOf(FieldName) > -1 then
+          //  Query.FieldByName(FieldName).Value := theTable.FieldByName(FieldName).Value;
+
+          begin
+            case theTable.FieldByName(FieldName).DataType of
+              ftFloat: Query.FieldByName(FieldName).AsFloat :=theTable.FieldByName(FieldName).AsFloat;
+            else
+              Query.FieldByName(FieldName).Value := theTable.FieldByName(FieldName).Value;
+            end;
+          end;
+        end;
+
+        // These may need to be re-enabled if using DirectLogix
+        //if Query.FieldDefs.IndexOf('Dl_LayerId') > -1 then
+        //begin
+        //  Query.FieldByName('Dl_LayerId').AsInteger :=
+        //    Fnc.SysGetLayerAttrValue(theTable.FieldByName('LayerName').AsString, 'Dl_LayerId');
+        //end;
+
+        Query.Post;
+      end;
+
+      theTable.Next;
+    end;
+  finally
+    Query.Close;
+    Query.Free;
+  end;
+end;
+
+procedure ExportPartAttributes(SQLTableName: string);
+var
+  i: integer;
+  MfgPartList: TStringList;
+  TempList: TStringList;
+  Query: TAdoQuery;
+  MfgPartName: string;
+  MfgPartType: string;
+  AttrName: string;
+  AttrValue: variant;
+  AttrSource: string;
+begin
+  if Fnc.SysExport_UpdateDBDef then
+    ExportStackup_EnsureTableExists(SQLTableName, nil);
+
+  Query := TADOQuery.Create(nil);
+  Query.Connection := Fnc.DbConnection;
+
+  // first remove any existing records for this JobID...
+  Query.SQL.Clear;
+  Query.SQL.Add('delete from ' + SQLTableName + ' where JobID = ' + IntToStr(Fnc.JobID));
+  Query.ExecSQL;
+
+  // prepare to insert all new record
+  Query.SQL.Clear;
+  Query.SQL.Add('select * from ' + SQLTableName + ' where JobID = ' + IntToStr(Fnc.JobID));
+  Query.Open;
+
+  TempList := TStringList.Create;
+  MfgPartList := Fnc.SysGetAllItemAttrValueList('ItemMatrlDesc');
+
+  for i := 0 to MfgPartList.Count - 1 do
+  begin
+    TempList.Text := MfgPartList.Strings[i];
+
+    MfgPartType := TempList.Strings[0];
+    MfgPartName := TempList.Strings[1];
+
+    if (MfgPartType = cStackupMfgTopLevel) or
+      (MfgPartType = cStackupMfgSubLevel) or
+      (MfgPartType = cStackupMfgSubAssy) or
+      (MfgPartType = cStackupMfgTooling) then
+    begin
+
+      Fnc.SysItemTypeAttrLinkTable.Filtered := False;
+      Fnc.SysItemTypeAttrLinkTable.Filter := '(ItemType=' + QuotedStr(MfgPartType) + ') and (CustomStackupExport=True)';
+      Fnc.SysItemTypeAttrLinkTable.Filtered := True;
+
+      // now parse the dataset to see what is selected for inserting
+      Fnc.SysItemTypeAttrLinkTable.First;
+      while not Fnc.SysItemTypeAttrLinkTable.Eof do
+      begin
+
+        AttrName := Fnc.SysItemTypeAttrLinkTable.FieldByName('AttrName').AsString;
+
+        if Fnc.SysExportAttributeDetails.Locate('PartAttributeId', Fnc.SysItemTypeAttrLinkTable.FieldByName('AttrId').AsInteger,  SetOf([])) then
+        begin
+
+          if Fnc.SysGetMfgPartAttrValueExt1(MfgPartName, AttrName, AttrValue, AttrSource) then
+          begin
+
+            Query.Append;
+            Query.FieldByName('JobID').AsInteger := Fnc.JobID;
+
+            Query.FieldByName('PartName').AsString := MfgPartName;
+            Query.FieldByName('PartType').AsString := MfgPartType;
+            Query.FieldByName('AttributeName').AsString := AttrName;
+            Query.FieldByName('AttributeID').AsInteger := Fnc.SysExportAttributeDetails.FieldByName('PartAttributeId').AsString;
+            Query.FieldByName('DisplayName').AsString := Fnc.SysExportAttributeDetails.FieldByName('Name').AsString;
+            Query.FieldByName('AttributeGroup').AsString := Fnc.SysExportAttributeDetails.FieldByName('DisplayGroup').AsString;
+            Query.FieldByName('Sequence').AsInteger := Fnc.SysExportAttributeDetails.FieldByName('DisplaySequence').AsInteger;
+            Query.FieldByName('ReadOnly').AsBoolean := Fnc.SysExportAttributeDetails.FieldByName('ReadOnly').AsBoolean;
+            Query.FieldByName('Required').AsBoolean := Fnc.SysExportAttributeDetails.FieldByName('Required').AsBoolean;
+            Query.FieldByName('Visible').AsBoolean := Fnc.SysExportAttributeDetails.FieldByName('Visible').AsBoolean;
+            Query.FieldByName('MinValue').AsFloat := Fnc.SysExportAttributeDetails.FieldByName('LimitMin').AsFloat;
+            Query.FieldByName('MaxValue').AsFloat := Fnc.SysExportAttributeDetails.FieldByName('LimitMax').AsFloat;
+
+            Query.FieldByName('Source').AsString := AttrSource;
+
+            case Fnc.SysExportAttributeDetails.FieldByName('DataType').AsInteger of
+              ftString, ftUnknown:
+                begin
+                  Query.FieldByname('DataType').AsString := 'string';
+
+                  if not VarIsNull(AttrValue) then
+                    Query.FieldByName('Value').AsString := AttrValue;
+                end;
+
+              ftBoolean:
+                begin
+                  Query.FieldByname('DataType').AsString := 'boolean';
+
+                  if not VarIsNull(AttrValue) then
+                  begin
+                    if AttrValue then
+                      Query.FieldByName('Value').AsString := 'True'
+                    else
+                      Query.FieldByName('Value').AsString := 'False'
+                  end;
+                end;
+
+              ftInteger, ftBCD, ftAutoInc:
+                begin
+                  Query.FieldByname('DataType').AsString := 'integer';
+
+                  if not VarIsNull(AttrValue) then
+                    Query.FieldByName('Value').AsString := IntToStr(AttrValue);
+                end;
+
+              ftFloat:
+                begin
+                  Query.FieldByname('DataType').AsString := 'float';
+
+                  if not VarIsNull(AttrValue) then
+                    Query.FieldByName('Value').AsString := StringReplace(FloatToStr(AttrValue), DecimalSeparator, '.',  SetOf([]));
+                end;
+
+              ftTime, ftDate:
+                begin
+                  Query.FieldByname('DataType').AsString := 'datetime';
+
+                  if not VarIsNull(AttrValue) then
+                    Query.FieldByName('Value').AsString := AttrValue;
+                end;
+
+              ftMemo:
+                begin
+                  Query.FieldByname('DataType').AsString := 'memo';
+
+                  if not VarIsNull(AttrValue) then
+                    Query.FieldByName('Value').AsString := AttrValue;
+                end;
+
+            else
+              begin
+                Query.FieldByname('DataType').AsString := 'string';
+
+                if not VarIsNull(AttrValue) then
+                  Query.FieldByName('Value').AsString := AttrValue;
+              end;
+            end;
+            //ShowMessage(MfgPartName + ' : ' + AttrName );
+            Query.Post;
+
+          end;
+
+        end;
+
+        Fnc.SysItemTypeAttrLinkTable.Next;
+      end;
+
+      Fnc.SysItemTypeAttrLinkTable.Filtered := False;
+      Fnc.SysItemTypeAttrLinkTable.Filter := '';
+
+    end;
+  end;
+  Query.Close;
+  Query.Free;
+
+  Fnc.SysExportAttributeDetails.Filtered := False;
+  Fnc.SysExportAttributeDetails.Filter := '';
+
+  TempList.Free;
+  MfgPartList.Free;
+end;
+
+procedure ExportLayerAttributes(SQLTableName: string);
+var
+  i: integer;
+  Query: TAdoQuery;
+  _LayerName: string;
+  LayerType: string;
+  _Type: string;
+  LayerDesc: string;
+  AttrName: string;
+  AttrValue: variant;
+  AttrSource: string;
+begin
+  if Fnc.SysExport_UpdateDBDef then
+    ExportStackup_EnsureTableExists(SQLTableName, nil);
+
+  Query := TADOQuery.Create(nil);
+  Query.Connection := Fnc.DbConnection;
+
+  // first remove any existing records for this JobID...
+  Query.SQL.Clear;
+  Query.SQL.Add('delete from ' + SQLTableName + ' where JobID = ' + IntToStr(Fnc.JobID));
+  Query.ExecSQL;
+
+  // prepare to insert all new record
+  Query.SQL.Clear;
+  Query.SQL.Add('select * from ' + SQLTableName + ' where JobID = ' + IntToStr(Fnc.JobID));
+  Query.Open;
+
+  Fnc.SysExportLayers.First;
+
+  while not Fnc.SysExportLayers.EOF do
+  begin
+    LayerType := Fnc.SysExportLayers.FieldByName('ItemType').AsString;
+    _LayerName := Fnc.SysExportLayers.FieldByName('LayerName').AsString;
+    LayerDesc := Fnc.SysExportLayers.FieldByName('LayerDesc').AsString;
+    _Type := Fnc.SysExportLayers.FieldByName('Type').AsString;
+
+    if (LayerType <> cStackupDrillTool) then
+    begin
+      Fnc.SysItemTypeAttrLinkTable.Filtered := False;
+
+      if (LayerType = cStackupLayer) then
+        Fnc.SysItemTypeAttrLinkTable.Filter := '(ItemType=' + QuotedStr(LayerType) + ') and (ItemTypeSub=' + QuotedStr(_Type) + ') and (CustomStackupExport=True)'
+      else
+        Fnc.SysItemTypeAttrLinkTable.Filter := '(ItemType=' + QuotedStr(LayerType) + ') and (CustomStackupExport=True)';
+
+      Fnc.SysItemTypeAttrLinkTable.Filtered := True;
+
+      // now parse the dataset to see what is selected for inserting
+      Fnc.SysItemTypeAttrLinkTable.First;
+      while not Fnc.SysItemTypeAttrLinkTable.Eof do
+      begin
+        AttrName := Fnc.SysItemTypeAttrLinkTable.FieldByName('AttrName').AsString;
+
+        if Fnc.SysExportAttributeDetails.Locate('PartAttributeId', Fnc.SysItemTypeAttrLinkTable.FieldByName('AttrId').AsInteger,  SetOf([])) then
+        begin
+          if Fnc.SysGetLayerAttrValueExt1(_LayerName, AttrName, AttrValue, AttrSource) then
+          begin
+            Query.Append;
+            Query.FieldByName('JobID').AsInteger := Fnc.JobID;
+
+            Query.FieldByName('LayerName').AsString := _LayerName;
+            Query.FieldByName('LayerType').AsString := LayerType;
+            Query.FieldByName('LayerDesc').AsString := LayerDesc;
+            Query.FieldByName('AttributeName').AsString := AttrName;
+            Query.FieldByName('AttributeID').AsInteger := Fnc.SysExportAttributeDetails.FieldByName('PartAttributeId').AsString;
+            Query.FieldByName('DisplayName').AsString := Fnc.SysExportAttributeDetails.FieldByName('Name').AsString;
+            Query.FieldByName('AttributeGroup').AsString := Fnc.SysExportAttributeDetails.FieldByName('DisplayGroup').AsString;
+            Query.FieldByName('Sequence').AsInteger := Fnc.SysExportAttributeDetails.FieldByName('DisplaySequence').AsInteger;
+            Query.FieldByName('ReadOnly').AsBoolean := Fnc.SysExportAttributeDetails.FieldByName('ReadOnly').AsBoolean;
+            Query.FieldByName('Required').AsBoolean := Fnc.SysExportAttributeDetails.FieldByName('Required').AsBoolean;
+            Query.FieldByName('Visible').AsBoolean := Fnc.SysExportAttributeDetails.FieldByName('Visible').AsBoolean;
+            Query.FieldByName('MinValue').AsFloat := Fnc.SysExportAttributeDetails.FieldByName('LimitMin').AsFloat;
+            Query.FieldByName('MaxValue').AsFloat := Fnc.SysExportAttributeDetails.FieldByName('LimitMax').AsFloat;
+
+            Query.FieldByName('Source').AsString := AttrSource;
+
+            case Fnc.SysExportAttributeDetails.FieldByName('DataType').AsInteger of
+              ftString, ftUnknown:
+                begin
+                  Query.FieldByname('DataType').AsString := 'string';
+
+                  if not VarIsNull(AttrValue) then
+                    Query.FieldByName('Value').AsString := AttrValue;
+                end;
+
+              ftBoolean:
+                begin
+                  Query.FieldByname('DataType').AsString := 'boolean';
+
+                  if not VarIsNull(AttrValue) then
+                  begin
+                    if AttrValue then
+                      Query.FieldByName('Value').AsString := 'True'
+                    else
+                      Query.FieldByName('Value').AsString := 'False'
+                  end;
+                end;
+
+              ftInteger, ftBCD, ftAutoInc:
+                begin
+                  Query.FieldByname('DataType').AsString := 'integer';
+
+                  if not VarIsNull(AttrValue) then
+                    Query.FieldByName('Value').AsString := IntToStr(AttrValue);
+                end;
+
+              ftFloat:
+                begin
+                  Query.FieldByname('DataType').AsString := 'float';
+
+                  if not VarIsNull(AttrValue) then
+                    Query.FieldByName('Value').AsString := StringReplace(FloatToStr(AttrValue), DecimalSeparator, '.',  SetOf([]));
+                end;
+
+              ftTime, ftDate:
+                begin
+                  Query.FieldByname('DataType').AsString := 'datetime';
+
+                  if not VarIsNull(AttrValue) then
+                    Query.FieldByName('Value').AsString := AttrValue;
+                end;
+
+              ftMemo:
+                begin
+                  Query.FieldByname('DataType').AsString := 'memo';
+
+                  if not VarIsNull(AttrValue) then
+                    Query.FieldByName('Value').AsString := AttrValue;
+                end;
+
+            else
+              begin
+                Query.FieldByname('DataType').AsString := 'string';
+
+                if not VarIsNull(AttrValue) then
+                  Query.FieldByName('Value').AsString := AttrValue;
+              end;
+            end;
+
+            Query.Post;
+
+          end;
+
+        end;
+
+        Fnc.SysItemTypeAttrLinkTable.Next;
+      end;
+
+      Fnc.SysItemTypeAttrLinkTable.Filtered := False;
+      Fnc.SysItemTypeAttrLinkTable.Filter := '';
+    end;
+
+    Fnc.SysExportLayers.Next;
+  end;
+  Query.Close;
+  Query.Free;
+
+  Fnc.SysExportAttributeDetails.Filtered := False;
+  Fnc.SysExportAttributeDetails.Filter := '';
+end;
+
+begin
+  // this is an example of how to export to SQLServer tables in the Engenix DB...
+  if Fnc.JobID < 1 then
+    ShowMessage('Cannot export because no full job is loaded.')
+  else
+  begin
+    ExportToSQLTable(T_JOBREQUIREMENTS, Fnc.SysExportRequirements, '');
+    ExportToSQLTable(T_JOBREQDETAILS, Fnc.SysExportReqDetails, '');
+    ExportToSQLTable(T_JOBIMPEDANCEMODELS_RLGC, Fnc.SysExportImpedanceModels_RLGC, '');
+    ExportToSQLTable(T_JOBIMPEDANCEMODELS_POLAR, Fnc.SysExportImpedanceModels_Polar, '');
+    ExportToSQLTable(T_JOBIMPEDANCECOUPONS, Fnc.SysExportImpedanceCoupons, '');
+    ExportToSQLTable(T_JOBSTACKUP, Fnc.SysExportStackup, '');
+    ExportToSQLTable(T_JOBLAYERS, Fnc.SysExportLayers, '');
+    ExportToSQLTable(T_JOBDRILLTOOLS, Fnc.SysExportDrillTools, '');
+    ExportToSQLTable(T_JOBSPECCAPABILITIES, Fnc.SysJobSpecsDetail, 'JobActive');
+    ExportToSQLTable(T_JOBERPBOM, Fnc.SysExportErpBom, '');
+
+    // at the moment, this will NOT export values for memo datatype attributes...
+    ExportPartAttributes(T_JOBPARTATTRIBUTES);
+    ExportLayerAttributes(T_JOBLAYERATTRIBUTES);
+  end;
+end;

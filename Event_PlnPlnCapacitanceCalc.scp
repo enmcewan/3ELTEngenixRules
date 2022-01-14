@@ -1,0 +1,41 @@
+//HeaderImportExport-->
+//SiteId=0
+//Enterprise=True
+//ScriptType=1
+//ScriptGroup=Impedance
+//HeaderImportExport<--
+{
+ Script to calculate the Plane to Plane capacitance value in the impedence
+ model grid.
+
+ Data is passed from the Layup Module to the script using the
+ Fnc.SysLayupParamTable and Fnc.SysImpedanceModels. They have all information
+ needed to calculate the final capacitance.
+
+ Fnc.SysImpedanceModels will only have the single record that needs the line width
+   calculated.
+
+ The script should calculate/update the following fields in Fnc.SysImpedanceModels:
+
+ - 'PlnPln' (float)
+       Predicted Plane to Plane capacitance of the model given the input values
+       for the model and layup.
+
+ Some fields that will be necessary for this calculation are as follows:
+
+  - 'DielectricConstant' (float)
+       This is the Dielectric constant as calculated by RLGC.exe.
+
+  - 'PlnPlnHeight' (float)
+       This is the height in the base unit of measure between the 2 planes.  This is
+       taken directly from the stackup.
+}
+
+begin
+  //Fnc.CS.Send('Dielectric Const: ' + Fnc.SysImpedanceModels.FieldByName('DielectricConstant').AsString);
+  //Fnc.CS.Send('PlnPln Height: ' + Fnc.SysImpedanceModels.FieldByName('PlnPlnHeight').AsString);
+
+  Fnc.SysImpedanceModels.FieldByName('PlnPln').AsFloat := Fnc.SysImpedanceModels.FieldByName('DielectricConstant').AsFloat / (Fnc.SysImpedanceModels.FieldByName('PlnPlnHeight').AsFloat * 4.45);
+
+  //Fnc.CS.Send('Calculated: ' + Fnc.SysImpedanceModels.FieldByName('PlnPln').AsString);
+end.

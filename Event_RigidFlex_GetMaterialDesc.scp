@@ -1,0 +1,19 @@
+//HeaderImportExport-->
+//SiteId=0
+//Enterprise=True
+//ScriptType=1
+//ScriptGroup=Rigid-Flex
+//HeaderImportExport<--
+procedure RigidFlex_GetMaterialDesc(ParamList: TStringList);
+var
+  Description: string;
+begin
+//  showmessage(ParamList.Text);
+
+  Description:= ParamList.Values['ItemMatrlDesc'];
+
+  if ParamList.Values['ItemFamily'] <> '' then
+    Description := ParamList.Values['ItemFamily'] + ' ' + Description;
+
+  ParamList.Values['Description'] := Description;
+end;

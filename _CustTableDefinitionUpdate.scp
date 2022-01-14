@@ -1,0 +1,115 @@
+//HeaderImportExport-->
+//SiteId=0
+//Enterprise=True
+//ScriptType=1
+//ScriptGroup=Maintenance
+//HeaderImportExport<--
+function GetTableDefinition(TableName: string): TAdoQuery;
+begin
+  Result := TAdoQuery.Create(nil);
+  Result.Connection := Fnc.DBConnection;
+               
+  Result.Sql.Add('Select *');
+  Result.Sql.Add('From   Information_Schema.Columns');
+  Result.Sql.Add('Where  Table_Name = ' + QuotedStr(TableName));
+                              
+  Result.Active := True;
+end;
+                                                                    
+function CheckIfTableExists(TableName: string): boolean;
+var
+  aQry: TAdoQuery;
+begin                    
+  aQry := TAdoQuery.Create(nil);   
+  aQry.Connection := Fnc.DBConnection;
+  
+  aQry.Sql.Add('Select * From sysobjects Where sysobjects.xtype = ' + QuotedStr('U'));
+  
+  aQry.Active := True;
+  
+  Result := aQry.Locate('Name', TableName, SetOf([loCaseInsensitive]));
+  
+  aQry.Active := False;
+  aQry.Free; 
+end;
+
+procedure UpdateTableDefinition(TableName: string);
+var
+  FieldName: string;                    
+  TableDef: TAdoQuery;             
+
+  updSql: string;                     
+  updQuery: TAdoQuery;
+begin                               
+  if not CheckIfTableExists(TableName) then
+    exit;
+
+  updQuery := TAdoQuery.Create(nil);
+  updQuery.Connection := Fnc.DBConnection;
+
+  TableDef := GetTableDefinition(TableName);
+
+  TableDef.First;
+
+  while not TableDef.Eof do
+  begin
+    FieldName := LowerCase(TableDef.FieldByName('Column_Name').AsString);
+
+    if (TableDef.FieldByName('Ordinal_Position').AsInteger > 1) and
+       (LowerCase(FieldName) <> 'jobid') and (LowerCase(FieldName) <> 'recid') then
+    begin
+
+      if TableDef.FieldByName('Is_Nullable').AsString = 'NO' then
+      begin
+        updSql := '';
+
+        if TableDef.FieldByName('Data_Type').AsString = 'numeric' then
+          updSql := 'numeric(' + TableDef.FieldByName('Numeric_Precision').AsString
+                         + ',' + TableDef.FieldByName('Numeric_Scale').AsString
+                         + ') null';
+
+        if TableDef.FieldByName('Data_Type').AsString = 'bit' then
+          updSql := 'bit null';
+
+        if TableDef.FieldByName('Data_Type').AsString = 'nvarchar' then
+          updSql := 'nvarchar(' + TableDef.FieldByName('Character_Maximum_Length').AsString + ') null';
+
+        if updSql = '' then
+          showmessage(Format('Invalid conversion, Table: % s, Field: %s', [TableName, FieldName]))
+        else
+        begin
+          updSql := Format('Alter Table %s Alter Column [%s] %s', [TableName, FieldName, updSql]);
+//          showmessage(updSql);
+          Fnc.SqlExec(updQuery, updSql);
+        end;
+      end;
+
+    end;
+
+    TableDef.Next;
+  end;
+
+  TableDef.Active := True;
+  TableDef.Free;
+end;
+
+begin
+  Fnc.MouseBusy;
+                                
+  UpdateTableDefinition('Cust_JobDrillTools');
+  UpdateTableDefinition('Cust_JobErpBom');
+  UpdateTableDefinition('Cust_JobImpedanceCoupons');
+  UpdateTableDefinition('Cust_JobImpedanceModels_Polar');
+  UpdateTableDefinition('Cust_JobImpedanceModels_RLGC');
+  UpdateTableDefinition('Cust_JobLayerAttributes');
+  UpdateTableDefinition('Cust_JobLayers');
+  UpdateTableDefinition('Cust_JobPartAttributes');
+  UpdateTableDefinition('Cust_JobReqDetails');
+  UpdateTableDefinition('Cust_JobRequirements');
+  UpdateTableDefinition('Cust_JobSpecCapabilities');
+  UpdateTableDefinition('Cust_JobStackup');
+
+  Fnc.MouseNormal;
+
+  showmessage('Cust.Table update finished');
+end;

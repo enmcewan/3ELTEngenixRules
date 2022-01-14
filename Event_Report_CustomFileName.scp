@@ -1,0 +1,53 @@
+//HeaderImportExport-->
+//SiteId=0
+//Enterprise=True
+//ScriptType=1
+//ScriptGroup=Reports
+//HeaderImportExport<--
+procedure Report_CustomFileName(ParamList: TStringList);
+var
+  JobData: TStringList;
+  PdfName: string;
+  ReportFolder: string;
+
+begin
+//  showmessage(ParamList.Text);
+
+  JobData := Fnc.GetJobData;
+
+  //-- customize the name of the folder where to store the pdf
+
+  ReportFolder := ParamList.Values['ReportAttachmentDir'];
+  // add a '\ at the end if not done yet
+  ReportFolder := IncludeTrailingPathDelimiter(ReportFolder);
+
+  // If there is no Cust.Part assigned, dump everything in a dummy directory,
+  // else save the report in a directory by Cust.PartNum
+  if JobData.Values['PartNumberName']  = '' then
+    ReportFolder := ReportFolder + 'Dummy'
+  else
+    ReportFolder := ReportFolder + JobData.Values['PartNumberName'] + '_' + JobData.Values['PartRevision'];
+
+  // pass the adjusted folder back to Engenix, Engenix will create the folder if it does not exist
+  ParamList.Values['FilePath'] := ReportFolder;
+  
+  //ShowMessage(ReportFolder);
+
+  //-- customize the name of the pdf if required
+
+  // As there is no Cust Part assigned, use the deafult Engenix name
+  //if JobData.Values['PartNumberName']  <> '' then
+  //begin
+    PdfName := Format('%s_%s.pdf',
+                 [ParamList.Values['ReportName'],
+                  ParamList.Values['MfgPartName']]);
+                                                                         
+    ParamList.Values['FileName'] := PdfName;
+  //end;
+
+  JobData.Free;
+  
+  //showmessage(ParamList.Text);
+end;
+
+                                

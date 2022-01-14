@@ -1,0 +1,24 @@
+//HeaderImportExport-->
+//SiteId=0
+//Enterprise=True
+//ScriptType=1
+//ScriptGroup=Stackup
+//HeaderImportExport<--
+{
+  Script runs to set the Generic name for the MfgParts for Prepregs and Foils as
+  the 'Activate MfgParts for Prepreg' option is enabled.
+  
+  Script has to set a valid and unique value for:
+  
+           ParamList.Values['MfgPartName']
+                                                     
+The description for the MfgPart should set for the parameter:
+
+           ParamList.Values['MfgPartDesc']
+           
+  The MfgPartNames is a TStringlist with all the MfgPart names currently defined.           
+}
+procedure GenBomMfgPartNames_PrepregAndFoil(ParamList: TStringList; MfgPartNames: TStringList; tblLayup: TSysTable);
+begin                 
+  //          
+end;                        

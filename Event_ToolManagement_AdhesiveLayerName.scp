@@ -1,0 +1,23 @@
+//HeaderImportExport-->
+//SiteId=0
+//Enterprise=True
+//ScriptType=1
+//ScriptGroup=Stackup Image
+//HeaderImportExport<--
+{
+ParamList.Values['Layer']            : Layer where the comnponent are positioned on
+
+ParamList.Values['Type']             : Name/Construction of ECP
+ParamList.Values['EmbCompId']        : ID in the database table
+ParamList.Values['CavityFilling']    : CavatiFilling (cECPFillerPrepregResin, cECPFillerGapFiller)
+ParamList.Values['AdhesivePosition'] : Adhevise position (cECPAdhesiveRightLeft, cECPAdhesiveTopBottom)
+
+ToolTable : current defined tools            
+}
+procedure ToolManagement_AdhesiveLayerName(ParamList: TStringList; ToolTable: TSysTable);      
+begin                                 
+//  user code in here like:
+
+//  if ParamList.Values['AdhesivePosition'] = cECPAdhesiveTopBottom then                                                                      
+//    ParamList.Values['LayerAdhesive'] := ParamList.Values['Layer'] + '_' + ParamList.Values['Type'];
+end;                                                                                 

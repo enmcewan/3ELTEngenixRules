@@ -1,0 +1,69 @@
+//HeaderImportExport-->
+//SiteId=0
+//Enterprise=True
+//ScriptType=1
+//ScriptGroup=Quote
+//HeaderImportExport<--
+{
+  Script is triggered by user pushing the 'Import Component BOM' on the Components
+  tab in the Quote Module.
+
+  ParamList.Values['FileName']  User Selected Filename to import
+
+  tblQuoteErpComponents         Table with available components (see script Event_Quote_GetErpComponents)
+
+  tblQuoteComponentsTable       Data as displayed on the 'Components BOM' and 'Components Manual' section.
+
+  This script has to add/delete/update the data in the tblQuoteComponentsTable, following fields
+  are defined in the table:
+
+  - RecId          AutoIncrement field, do not touch in this script
+  - Seq            (optional) Sequence number to display the items in the grid
+  - Manual         False: item is displayed in 'Component BOM' section,
+                          record has to have a valid ErpMatrlId value
+                   True: item is displayed in the 'Component Manual' section
+  - ErplId         Unique identifier for the component in the Erp system (like Paradigm Data0017.RKey)
+  - Qty            Quantity
+  - Price          Price of the component
+
+  - Reference      (info) Reference with the component reeference on the drawing
+  - Manufacturer   (info) Manufacturer of the component
+  - PartNumber     (info) Erp PartNumber
+  - PartDescr      (info) Erp Description
+  - Package        (info) Package of the component (like: TO-92, SOT-223, TO-220, GBJ, ...)
+  - Type           (info) SMD, DNS, ....
+  - Comments       (info) Additional comments for the item
+                              
+  The (info) fields are free to use, only used to display in the Quote Component Module
+
+  If this script runs multiple times, on entering the script the table will hold
+  the data from the previous run, including all manual changes the user has made.
+  So most likely first action to do in the script is to (selective) delete the
+  existing data (sample procedure CleanupQuoteComponentsTable).
+
+  The script has to map the components in the input file to existing items in the
+  Erp system (tblQuoteErpComponents).
+  For items in the input file that can not be mapped to an Erp Component, leave the
+  'ErpMatrlId' blank and set the field 'Manual' = True
+}
+
+procedure CleanupQuoteComponentsTable(tblQuoteComponentsTable: TSysTable);
+begin
+{ option-1, delete all records
+
+  while not tblQuoteComponentsTable.isEmpty do
+    tblQuoteComponentsTable.Delete;
+
+}
+{ option-2, delete all the records linked to an existing Erp Component
+
+  while tblQuoteComponentsTable.Locate('Manual', False, []) do
+    tblQuoteComponentsTable.Delete;
+
+}
+end;
+
+ procedure Quote_ImportComponents(ParamList: TStringList; tblQuoteComponentsTable: TSysTable; tblQuoteErpComponents: TSysTable);
+begin
+
+end;

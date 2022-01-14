@@ -1,0 +1,540 @@
+//HeaderImportExport-->
+//SiteId=0
+//Enterprise=True
+//ScriptType=0
+//ScriptGroup=
+//HeaderImportExport<--
+const
+  cExcelFileName = 'C:\Users\Iain\OneDrive\Consulting\Customers\Hitachi HCS\Engenix Rules\CustTables\Desmear\2015 Update 01\Desmear Categorization_rev17 (Engenix) - r3.xls';
+  cExcelSheetName =  '18May' + '''' + '15 PTH only';
+
+  cCustomTableName = 'Desmear';
+
+  cInpColMin = 4;  // First data column in excel sheet, F4
+  cInpColMax = 35; // Last data column in excel sheet, F35
+
+  cType = 'Type';
+  cMaterial = 'Material';
+  cSeq = 'Seq';
+  cParameter = 'Parameter';
+  cCondition = 'Condition';
+
+  cPrefrixGroup = 'Data';
+
+var                                                                                                                                       
+  tblXRef: TSysTable;
+  TempQry: TAdoQuery;
+  FamilyQry: TAdoQuery;
+  FamilyIgnoreList: TStringList;
+  CustTablePtr: integer;
+
+function GetColName(Seq: integer): string;
+begin
+  Result := Format('%s_%d', [cPrefrixGroup, Seq]);
+end;
+                                                                         
+function GetQry(Sql: string): TAdoQuery;
+begin
+  Result := TAdoQuery.Create(nil);
+  Result.Connection := Fnc.DBConnection;
+  Result.Sql.Add(Sql);
+  Result.Active := True;
+end;
+
+procedure RunTempQry(Sql: string);
+begin
+  if not assigned(TempQry) then
+    TempQry := GetQry(Sql)
+  else
+  begin
+    TempQry.Active := False;
+    TempQry.Sql.Clear;
+    TempQry.Sql.Add(Sql);
+    TempQry.Active := True;
+  end;
+end;
+
+procedure ExecTempQry(Sql: string);
+begin
+  if not assigned(TempQry) then
+    TempQry := GetQry('Select * From Items Where ItemDatumId < 0');
+
+  TempQry.Active := False;
+  TempQry.Sql.Clear;
+  TempQry.Sql.Add(Sql);
+  TempQry.EXECSql;
+end;
+
+procedure CreatexRefTable;
+begin
+  tblxRef := Fnc.SysTableCreate('xRef');
+  Fnc.SysTableAddField(tblxRef, 'InpFieldName', 100, ftString);
+  Fnc.SysTableAddField(tblxRef, 'ItemFieldId', 0, ftInteger);
+end;
+
+procedure CheckCustTableFields(InpFieldName: string; FieldName: string; Size: integer; FieldType: TFieldType; Seq: integer; DefaultValue: string; FieldDescr: string);
+begin
+  RunTempQry(Format('Select * From ItemFields Where (FieldName=%s) and (ItemTypeId=%d)', [QuotedStr(FieldName), CustTablePtr]));
+
+  if not TempQry.IsEmpty then
+    TempQry.Edit
+  else
+  begin
+    TempQry.Append;
+    TempQry.FieldByName('FieldName').AsString := FieldName
+    TempQry.FieldByName('ItemTypeId').AsInteger := CustTablePtr;
+  end;
+
+  TempQry.FieldByName('ItemSize').AsInteger := Size;
+  TempQry.FieldByName('SysField').AsInteger := 0;
+  TempQry.FieldByName('DataType').AsInteger := FieldType;
+
+  if FieldDescr = '' then
+    TempQry.FieldByName('FieldDescr').AsString := FieldName
+  else
+    TempQry.FieldByName('FieldDescr').AsString := FieldDescr;
+
+  TempQry.FieldByName('DispSeq').AsInteger := Seq;
+  TempQry.FieldByName('DefaultValue').AsString := DefaultValue;
+  TempQry.Post;
+
+  tblxRef.Append;
+  tblxRef.FieldByName('InpFieldName').AsString := InpFieldName;
+  tblxRef.FieldByName('ItemFieldId').AsInteger := TempQry.FieldByName('ItemFieldId').AsInteger;
+  tblxRef.Post;
+
+  TempQry.Active := False;
+end;
+
+procedure CheckCustTableName(CustTableName: string);
+begin
+  tblxRef.Active := False;
+  tblxRef.Active := True;
+
+  RunTempQry(Format('Select * From ItemTypes Where ItemName=%s', [QuotedStr(CustTableName)]));
+
+  if TempQry.IsEmpty then
+  begin
+    TempQry.Append;
+    TempQry.FieldByName('ItemName').AsString := CustTableName;
+    TempQry.FieldByName('SysTable').AsInteger := 0;
+    TempQry.FieldByName('SiteId').AsInteger := 1;
+    TempQry.FieldByName('Enterprise').AsBoolean := False;
+    TempQry.FieldByName('AutoNumber').AsBoolean := True;
+    TempQry.Post;
+  end;
+
+  TempQry.First;
+  CustTablePtr := TempQry.FieldByName('ItemTypeId').AsInteger;
+
+  TempQry.Active := False;
+end;
+
+procedure CleanUpExistingData(qryItems: TAdoQuery);
+begin
+  qryItems.First;
+  while not qryItems.Eof do
+  begin
+    ExecTempQry('Delete ItemData Where ItemId=' + qryItems.FieldByName('ItemId').AsString);
+    qryItems.Next;
+  end;
+
+  while not qryItems.IsEmpty do
+  begin
+    qryItems.First;
+    qryItems.Delete;
+  end;
+end;
+
+procedure InsertData(TempQry: TAdoQuery; ItemId: integer; FieldName: string; FieldValue: string);
+begin
+  if tblxRef.Locate('InpFieldName', FieldName, SetOf([loCaseInsensitive])) then
+  begin
+    TempQry.Append;
+    TempQry.FieldByName('ItemDatumValue').AsString := Trim(FieldValue);
+    TempQry.FieldByName('ItemFieldId').AsString := tblxRef.FieldByName('ItemFieldId').AsInteger;
+    TempQry.FieldByName('ItemId').AsString := ItemId;
+    TempQry.Post
+  end;
+end;
+
+procedure InsertMaterial(qryItems: TAdoQuery; qryInput: TAdoQuery; CustTablePtr: integer; ID: integer; HeaderDesc: string; Material: string; Seq: integer; Parameter: string; Condition: string);
+var
+  i: integer;
+  FieldName: string;
+  FieldValue: string;
+  FieldValueSave: string;
+begin
+  qryItems.Append;
+  qryItems.FieldByName('ItemTypeId').AsInteger := CustTablePtr;
+  qryItems.FieldByName('ItemName').AsString := Format('%.3d',[ID]);
+  qryItems.Post;
+
+  RunTempQry(Format('Select * From ItemData Where ItemId=%d', [qryItems.FieldByName('ItemId').AsInteger]));
+
+  InsertData(TempQry, qryItems.FieldByName('ItemId').AsInteger, cType, HeaderDesc);
+  InsertData(TempQry, qryItems.FieldByName('ItemId').AsInteger, cMaterial, Material);
+  InsertData(TempQry, qryItems.FieldByName('ItemId').AsInteger, cSeq, IntToStr(Seq));
+  InsertData(TempQry, qryItems.FieldByName('ItemId').AsInteger, cParameter, Parameter);
+  InsertData(TempQry, qryItems.FieldByName('ItemId').AsInteger, cCondition, Condition);
+
+  FieldValue := '';
+  FieldValueSave := '';
+
+  for i := cInpColMin to cInpColMax do
+  begin
+    FieldName := Format('F%d', [i]);
+
+    FieldValue := Trim(qryInput.FieldByName(FieldName).AsString);
+    if FieldValue = '' then
+      FieldValue := FieldValueSave;
+
+    InsertData(TempQry, qryItems.FieldByName('ItemId').AsInteger, FieldName, FieldValue);
+
+    FieldValueSave := FieldValue;
+  end;
+end;
+
+procedure InsertHeader(qryItems: TAdoQuery; qryInput: TAdoQuery; CustTablePtr: integer; ID: integer; HeaderDesc: string);
+var
+  i, j: integer;
+  aString: string;
+  FieldName: string;
+
+  doBreak: boolean;
+  TempList: TStringList;
+  Suffix: string;
+begin
+  qryItems.Append;
+  qryItems.FieldByName('ItemTypeId').AsInteger := CustTablePtr;
+  qryItems.FieldByName('ItemName').AsString := Format('%.3d',[ID]);
+  qryItems.Post;
+
+  RunTempQry(Format('Select * From ItemData Where ItemId=%d', [qryItems.FieldByName('ItemId').AsInteger]));
+
+  InsertData(TempQry, qryItems.FieldByName('ItemId').AsInteger, cType, HeaderDesc);
+  InsertData(TempQry, qryItems.FieldByName('ItemId').AsInteger, cMaterial, '');
+  InsertData(TempQry, qryItems.FieldByName('ItemId').AsInteger, cSeq, IntToStr(ID));
+  InsertData(TempQry, qryItems.FieldByName('ItemId').AsInteger, cParameter, 'None');
+  InsertData(TempQry, qryItems.FieldByName('ItemId').AsInteger, cCondition, '');
+
+  TempList :=  TStringList.Create;
+
+  aString := '';
+  Suffix := '';
+
+  for i := cInpColMin to cInpColMax do
+  begin
+    FieldName := Format('F%d', [i]); // Input fieldname in Excel table
+
+    if ID <> 1 then
+    begin
+      Suffix := '';
+      aString := Trim(qryInput.FieldByName(FieldName).AsString);
+
+      if aString = '' then
+      begin
+        qryInput.Prior;
+        qryInput.Prior;
+
+        if (LowerCase(qryInput.FieldByName(FieldName).AsString) = 'oven baking') or
+           (LowerCase(qryInput.FieldByName(FieldName).AsString) = 'plasma') then
+          aString := Trim(qryInput.FieldByName(FieldName).AsString);
+
+        qryInput.Next;
+        qryInput.Next;
+      end;
+    end;
+
+    if ID = 1 then
+    begin
+      if qryInput.FieldByName(FieldName).AsString <> '' then
+      begin
+        Suffix := '';
+        aString := qryInput.FieldByName(FieldName).AsString;
+      end;
+
+      qryInput.Next;
+      doBreak := Trim(qryInput.FieldByName(FieldName).AsString) <> '';
+      qryInput.Prior;
+
+      if (LowerCase(aString) = 'oven baking') or (LowerCase(aString) = 'plasma') then
+        doBreak := True;
+
+      if StrToIntDef(TempLIst.Values[aString], -1) < 0 then
+        TempLIst.Values[aString] := 0;
+
+      if doBreak then
+      begin
+        j := StrToInt(TempLIst.Values[aString]) + 1;
+        TempLIst.Values[aString] := IntToStr(j);
+
+        if (LowerCase(aString) = 'oven baking') then
+        begin
+          case j of
+            2: Suffix := '2';
+          end;
+        end;
+
+        if (LowerCase(aString) = 'plasma') then
+        begin
+          case j of
+            2: Suffix := '2';
+          end;
+        end;
+
+        if LowerCase(aString) = 'dm2' then
+        begin
+          case j of
+            1: Suffix := '-1';
+            2: Suffix := '-2';
+          end;
+        end;
+
+        if LowerCase(aString) = 'hollmuller desmear' then
+        begin
+          case j of
+            1: Suffix := '2-1';
+            2: Suffix := '2-2';
+          end;
+        end;
+      end;
+    end;
+
+    InsertData(TempQry, qryItems.FieldByName('ItemId').AsInteger, FieldName, aString + Suffix);
+  end;
+
+  TempList.Free;
+end;
+
+function GetMaterialFamily(InpMaterial: string): string;
+var
+  i: integer;
+  aList: TStringList;
+  aFamily: string;
+  doDelete: boolean;
+  temp: string;
+begin
+  if not assigned(FamilyQry) then
+    FamilyQry := GetQry('Select * From MaterialsFamily');
+
+  InpMaterial := StringReplace(InpMaterial, ';', #13, SetOf([rfReplaceAll]));
+  InpMaterial := StringReplace(InpMaterial, ':', #13, SetOf([rfReplaceAll]));
+  InpMaterial := StringReplace(InpMaterial, '+', #13, SetOf([rfReplaceAll]));
+
+  aList := TStringList.Create;
+  aList.Text := InpMaterial;
+
+  for i := aList.Count - 1 downto 0 do
+  begin
+    aFamily := Trim(aList.Strings[i]);
+
+    doDelete := aFamily = '';
+    if not doDelete then
+      doDelete := not FamilyQry.Locate('Description', aFamily, SetOf([loCaseInsensitive]));
+
+    if doDelete then
+    begin
+
+      if aFamily <> '' then
+      begin
+        if not assigned(FamilyIgnoreList) then
+          FamilyIgnoreList := TStringList.Create;
+        FamilyIgnoreList.Add(aFamily);
+      end;
+
+      aList.Delete(i);
+    end;
+  end;
+
+  Result := '';
+
+  for i := 0 to aList.Count - 1 do
+  begin
+    if i > 0 then
+      Result := Result + ';';
+    Result := Result + aList.Strings[i];
+  end;
+
+  aList.Free;
+end;
+
+function GetFieldDesc(i: integer): string;
+var
+  Multiplier: integer;
+begin
+  Result := '';
+  Multiplier := 1;
+
+  while i > 0 do
+  begin
+    if i <= (Multiplier * 26) then
+    begin
+      Result := Result + Chr(i + 64);
+      i := 0;
+    end
+    else
+    begin
+      Result := Result + Chr(Multiplier + 64);
+      i := i - 26 * Multiplier;
+      Inc(Multiplier);
+    end;
+  end;
+end;
+
+procedure FillCustomTable(FileName: string; SheetName: string);
+var
+  i: integer;
+  j: integer;
+  InpFieldName: string;
+  qryItems: TAdoQuery;
+  qryInput: TAdoQuery;
+
+  ConnectionStr: string;
+
+  FieldId: integer;
+  Material: string;
+  Parameter: string;
+  Condition: string;
+begin
+  qryItems := GetQry(Format('Select * From Items Where ItemTypeId=%d', [CustTablePtr]));
+
+  CleanUpExistingData(qryItems);
+
+  ConnectionStr := Fnc.ExcelConnect(FileName, False, 1);
+
+  qryInput := TAdoQuery.Create(nil);
+  qryInput.ConnectionString := ConnectionStr;
+  qryInput.Sql.Add('Select * From [' + SheetName + '$]');
+  qryInput.Active := True;
+
+//  Fnc.OpenDataGrid(qryInput);
+
+// --- Fill the two header rows
+
+  qryInput.First;
+  qryInput.Next;
+  InsertHeader(qryItems, qryInput, CustTablePtr, 1, '1-Header');
+
+  qryInput.Next
+  qryInput.Next
+  InsertHeader(qryItems, qryInput, CustTablePtr, 2, '2-Header');
+
+// --- Fill the actual data rows
+
+  i := 2;
+  j := 0;
+  Material := '';
+  Parameter := '';
+  Condition := '';
+
+  // get to the first valid row with materials data
+  qryInput.First;
+
+  while not qryInput.Eof do
+  begin
+    if qryInput.FieldByName('F2').AsString <> '' then
+    begin
+      if pos('material', LowerCase(qryInput.FieldByName('F2').AsString)) = 0 then
+        break;
+    end;
+
+    qryInput.Next;
+  end;
+
+//  Fnc.OpenDataGrid(qryInput);
+
+  while not qryInput.Eof do
+  begin
+
+    Inc(j);
+
+    case j of
+      1: begin
+           Material := GetMaterialFamily(qryInput.FieldByName('F2').AsString);
+           Parameter := 'Thickness';
+           Condition := '0~=0.5';
+         end;
+      2: begin
+           Condition := '0.5~=4.0';
+         end;
+      3: begin
+           Condition := '4.0~Z';
+         end;
+    end;
+
+    if Material <> '' then
+    begin
+      Inc(i);
+      InsertMaterial(qryItems, qryInput, CustTablePtr, i, '3-Material', Material, j, Parameter, Condition);
+    end;
+
+    if j > 2 then
+      j := 0;
+
+    qryInput.Next;
+  end;
+
+  TempQry.Active := False;
+
+  qryItems.Active := False;
+  qryItems.Free;
+
+  qryInput.Active := False;
+  qryInput.Free;
+end;
+
+var
+  i: integer;
+begin
+  Fnc.MouseBusy;
+
+  TempQry := nil;
+  FamilyQry := nil;
+  FamilyIgnoreList := nil;
+  CustTablePtr := -1;
+  CreatexRefTable;
+
+  //--
+
+  CheckCustTableName(cCustomTableName);
+
+  CheckCustTableFields(cType, cType, 25, ftUnknown, 1, '1-Header;2-Header;3-Material', '');
+  CheckCustTableFields(cMaterial, cMaterial, 100, ftString, 2, '', '');
+  CheckCustTableFields(cSeq, cSeq, 0, ftInteger, 3, '', '');
+  CheckCustTableFields(cParameter, cParameter, 25, ftUnKnown, 4, 'Thickness;None', '');
+  CheckCustTableFields(cCondition, cCondition, 50, ftString, 5, '', '');
+
+  for i := cInpColMin to cInpColMax do
+    CheckCustTableFields(Format('F%d', [i]), GetColName(i - cInpColMin + 1), cInpColMax, ftString, i - cInpColMin + 6, '', GetFieldDesc(i));
+
+  FillCustomTable(cExcelFileName, cExcelSheetName);
+
+  //--
+
+  tblXRef.Active := False;
+  Fnc.SysTableDestroy(tblXRef);
+
+  if assigned(TempQry) then
+  begin
+    TempQry.Active := False;
+    TempQry.Free;
+  end;
+
+  if assigned(FamilyQry) then
+  begin
+    FamilyQry.Active := False;
+    FamilyQry.Free;
+  end;
+
+  Fnc.MouseNormal;
+
+  if assigned(FamilyIgnoreList) then
+  begin
+    FamilyIgnoreList.Sorted := True;
+    showmessage('Ingored Family:' + #13#13 + FamilyIgnoreList.Text);
+    FamilyIgnoreList.Free;
+  end;
+end;
+
+

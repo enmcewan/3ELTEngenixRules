@@ -1,0 +1,24 @@
+//HeaderImportExport-->
+//SiteId=0
+//Enterprise=True
+//ScriptType=1
+//ScriptGroup=Job Details Load / Save
+//HeaderImportExport<--
+var
+   ParamList: TStringList;
+begin
+   Fnc.MouseBusy;
+
+   // *** Start Cimnet Procedures
+
+   Fnc.TreeLoadSaveRegionalSettings('Load', false);
+
+   // Check Spec/Cap revision & load
+   ParamList := TStringList.Create;
+   ParamList.Add('Function=CheckRevision');
+   ParamList.Free;
+
+   // *** End Cimnet Procedure
+
+   Fnc.MouseNormal;
+end;

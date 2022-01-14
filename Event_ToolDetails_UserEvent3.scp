@@ -1,0 +1,12 @@
+//HeaderImportExport-->
+//SiteId=0
+//Enterprise=True
+//ScriptType=1
+//ScriptGroup=Layer Maintenance
+//HeaderImportExport<--
+procedure ToolDetailsUserEvent3(ToolDataSet: TSysTable; ParamList: TStringList);
+begin
+//  ShowMessage('ToolDetailsUserEvent3');
+//  ShowMessage(ParamList.Text);
+//  Fnc.OpenDataGrid(ToolDataSet, nil, nil, True);
+end;

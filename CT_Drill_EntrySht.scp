@@ -1,0 +1,151 @@
+//HeaderImportExport-->
+//SiteId=0
+//Enterprise=True
+//ScriptType=0
+//ScriptGroup=HCS
+//HeaderImportExport<--
+uses
+  CT_SearchLibrary;
+
+const
+  CncEs_ParamPrefix = 'Param_';
+  CncEs_CondPrefix = 'Cond_';
+  CncEs_CondFail = 'Fail';
+  CncEs_CondPass = 'Pass';
+
+function GetCNCEntrySheet_GetParamCondValue(aTable: TSysTable; Prefix: string; Indx: integer): string;
+var
+  FieldName: string;
+begin
+  Result := '';
+
+  FieldName := Prefix + IntToStr(Indx);
+
+  if assigned(aTable.FindField(FieldName)) then
+    Result := Trim(aTable.FieldByName(FieldName).AsString);
+end;
+
+function GetCNCEntrySheet_SearchTable(aTable: TSysTable; CellRef: string; var errMsg: string): string;
+var                           
+  i: integer;
+  iMax: integer;
+  bDone: boolean;
+  TestPassed: boolean;
+
+  CondValue: string;                              
+  ParamValue: string;
+begin
+  Result := '';                
+  errMsg := '';                      
+
+  iMax := 0;
+
+  // get the max number of Param/Cond pairs
+  for i := 0 to aTable.FieldCount - 1 do
+  begin
+    if pos(CncEs_ParamPrefix, aTable.Fields.Fields[i].FieldName) > 0 then
+      Inc(iMax);
+  end;
+
+  // Prepare the table
+  aTable.Filtered := False;
+  aTable.FilterOptions := SetOf([foCaseInsensitive]);
+  aTable.Filter := 'Name = ' + QuotedStr(CellRef + '*');
+  aTable.Filtered := True;
+                                                                    
+  aTable.SortOptions := SetOf([mtcoCaseInsensitive]);
+  aTable.SortFields := 'Name';
+  aTable.SortDefault;
+
+  aTable.First;                          
+  while not aTable.Eof do
+  begin
+    TestPassed := True;
+
+    for i := 1 to iMax do
+    begin 
+      bDone := False;
+
+      ParamValue := GetCNCEntrySheet_GetParamCondValue(aTable, CncEs_ParamPrefix, i);
+      CondValue := GetCNCEntrySheet_GetParamCondValue(aTable, CncEs_CondPrefix, i);
+
+      // check for empty slots                                     
+      if not bDone then
+        bDone := (ParamValue = '') and (CondValue = '');
+
+      // check for 'don't care' slots
+      if not bDone then
+        bDone := (ParamValue = '*') or (CondValue = '*');
+
+      if not bDone then                          
+      begin
+        TestPassed := CheckCondition(CondValue, ParamValue);
+
+        if not TestPassed then
+        begin
+          errMsg := errMsg + #13 + Format('Line: %s failed on Variable: %s Values: %s', [aTable.FieldByName('Name').AsString, ParamValue, CondValue]);
+          break;
+        end;
+      end;
+    end;
+
+    if TestPassed then
+    begin
+      Result := aTable.FieldByName('EntryMaterial').AsString;
+// for testing      Result := aTable.FieldByName('Name').AsString + ': ' + aTable.FieldByName('EntryMaterial').AsString;
+      break;
+    end;
+
+    aTable.Next;
+  end;
+
+  // cleanup
+  aTable.Filtered := False;
+  aTable.Filter := '';
+
+  aTable.SortFields := '';
+  aTable.SortDefault;
+end;
+
+function GetCNCEntrySheet(Sections: string): string;
+var
+  i: integer;
+  SectionList: TStringList;
+  errMsg: string;
+  CNCEntrySheetTable: TSysTable;
+begin
+  Result := '';
+  errMsg := '';
+
+  CNCEntrySheetTable := Fnc.SysTableGet('CNC_EntrySheet_A');
+
+
+  SectionList := TStringList.Create;
+  SectionList.Text := StringReplace(Sections, ';', #13, SetOf([rfReplaceAll]));
+
+  for i := 0 to SectionList.Count -1 do
+  begin
+    Result := GetCNCEntrySheet_SearchTable(CNCEntrySheetTable, SectionList.Strings[i], errMsg);
+    if Result <> '' then
+      break;
+  end;
+
+  if (Result = '') and (errMsg <> '') then
+    MessageDlg(errMsg, mtWarning, SetOf([mbCancel]), 0);
+
+  SectionList.Free;
+end;
+
+var
+  EntryMaterial: string;
+begin
+  //InitGlobalVariables;
+
+  EntryMaterial := GetCNCEntrySheet('m;n');
+
+  if EntryMaterial <> '' then
+    showmessage('EntryMaterial: ' + EntryMaterial);
+end;
+
+
+

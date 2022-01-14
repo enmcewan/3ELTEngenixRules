@@ -1,0 +1,80 @@
+//HeaderImportExport-->
+//SiteId=0
+//Enterprise=True
+//ScriptType=0
+//ScriptGroup=
+//HeaderImportExport<--
+uses
+  RouteFunctions;
+
+procedure updateJobAttribute(jbID : integer; att : string; attVal : variant);
+var
+  Qry : TADOQuery;
+
+begin
+  ShowMessage(IntToStr(jbID) + ' ' + att + ' ' + attVal);
+  Qry := TAdoQuery.Create(nil);
+  Qry.Connection := Fnc.DbConnection;
+  Qry.SQL.Clear;
+
+  Qry.SQL.Add('SELECT * from JobAnswers');
+  Qry.SQL.Add('WHERE JobID = ' + jbID + ' AND JobAttributeID = 7');
+  Qry.Open
+  //Fnc.OpenDataGrid(Qry);
+  Qry.first;
+                                    
+  if Qry.IsEmpty then //no record exists
+    // Do nothing. Can't think why this would happen
+    ShowMessage('Attribute does not exist for ' + IntToStr(jbID));
+  else
+  begin                               
+    Qry.Edit;
+    //Qry.FieldByName('JobAttributeID').AsInteger := 7;
+    //Qry.FieldByName('JobID').AsInteger := StrToInt(jbID);
+    Qry.FieldByName('EntryValue').AsString := AnsiLowerCase(attVal);
+    Qry.Post;
+  end;
+
+  Qry.Close;
+  Qry.Free;                         
+end;
+
+procedure getJobAnswers;
+var                
+  Qry : TADOQuery;
+  tbl : TSysTable;       
+
+  jobAttributes : TSysTable;
+                                        
+begin
+
+  Qry := TAdoQuery.Create(nil);     
+  Qry.Connection := Fnc.DbConnection;
+  Qry.SQL.Clear;
+
+  Qry.SQL.Add('SELECT * from CUST_JOBPARTATTRIBUTES ');
+  //Qry.SQL.Add('WHERE PARTTYPE = ' + QuotedStr('MFGTP') + ' AND ATTRIBUTENAME = ' + QuotedStr('LayupThickness') );
+  Qry.SQL.Add('WHERE ((PARTNAME LIKE ' + QuotedStr('SubAssembly x%') + ') or (PARTNAME LIKE ' + QuotedStr('%/ x') + ')) AND ')
+  Qry.SQL.Add('ATTRIBUTENAME = ' + QuotedStr('Mech_BlindVias') );
+  //Qry.SQL.Add(' ORDER BY ' + QuotedStr('JobID') );
+  Qry.SQL.SaveToFile('c:\temp\sql.txt');
+  Qry.Open;
+  Fnc.OpenDataGrid(Qry);        
+  Qry.First;
+
+  While not Qry.EOF do
+  begin
+    if Qry.FieldByName('VALUE').AsString = 'True' then
+      //ShowMessage('Found TL Sub with MBV');
+      updateJobAttribute(Qry.FieldByName('JobID').AsString, Qry.FieldByName('ATTRIBUTENAME').AsString, Qry.FieldByName('VALUE').AsString); 
+    Qry.Next;
+  end;
+
+  Qry.Close;
+  Qry.Free;
+
+end;
+
+begin
+  getJobAnswers;
+end;

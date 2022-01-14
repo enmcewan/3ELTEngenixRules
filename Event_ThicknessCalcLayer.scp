@@ -1,0 +1,119 @@
+//HeaderImportExport-->
+//SiteId=0
+//Enterprise=True
+//ScriptType=1
+//ScriptGroup=Plating
+//HeaderImportExport<--
+{
+  ---------------------------------------------------------------------------
+  ---> Script to calculate the actual thickness of the copper layer.     <---
+  ---------------------------------------------------------------------------
+  ParamList (all input):
+
+  - ParamList.Values['LayerName'] = Name of the layer
+  - ParamList.Values['MfgPartType'] = MfgPart type for this layer
+
+  ---------------------------------------------------------------------------
+  LayupParamTabl:
+
+  Table to be updated with the actual thickness of the layer
+  ---------------------------------------------------------------------------
+  tblDrillParam:
+
+  Additional details for each drill layer used on manufacturing this MfgPart.
+
+  ---------------------------------------------------------------------------
+  tblConductors:
+
+  Table with all the conductors as defined in the system
+
+  ---------------------------------------------------------------------------
+  tblSpec
+
+  Specs and Capabilities linked to the Job
+
+  ---------------------------------------------------------------------------
+}
+
+function GetThickness(tblConductors: TSysTable; CondType: string; CondCode: string): float;
+begin
+  Result := 0;
+
+  if not (CondCode = '') then
+  begin
+    if tblConductors.Locate('Type;Code', [CondType, CondCode],  SetOf([])) then
+      Result := tblConductors.FieldByName('Thickness').AsFloat;
+  end;
+end;
+
+procedure PostProcessThicknessValues(tblLayupParam: TSysTable);
+begin
+  if tblLayupParam.Locate('ActiveRecord', True,  SetOf([])) then
+  begin
+    tblLayupParam.Edit;
+
+    if tblLayupParam.FieldByName('LayupThckPlatingByUser').AsFloat = 0 then
+      tblLayupParam.FieldByName('LayupThckBasePlusPlating').AsFloat :=
+          tblLayupParam.FieldByName('LayupThckCu').AsFloat +
+          tblLayupParam.FieldByName('LayupThckPlating').AsFloat
+    else
+      tblLayupParam.FieldByName('LayupThckBasePlusPlating').AsFloat :=
+          tblLayupParam.FieldByName('LayupThckCu').AsFloat +
+          tblLayupParam.FieldByName('LayupThckPlatingByUser').AsFloat;
+
+    tblLayupParam.Post;
+  end;
+end;
+
+procedure InitThicknessValues(tblLayupParam: TSysTable; tblConductors: TSysTable);
+begin
+  if tblConductors.Filtered then
+  begin
+    tblConductors.Filtered := False;
+    tblConductors.Filter := '';
+  end;
+
+  if tblLayupParam.Locate('ActiveRecord', True,  SetOf([])) then
+  begin
+    tblLayupParam.Edit;
+
+    // Base Copper Calculation
+    tblLayupParam.FieldByName('LayupThckCu').AsFloat :=
+        GetThickness(tblConductors,'Copper', tblLayupParam.FieldByName('LayupCodeThckCu').AsString);
+
+    // Plating Calculation, or set the value by script
+    tblLayupParam.FieldByName('LayupThckPlating').AsFloat :=
+        GetThickness(tblConductors, 'Plating', tblLayupParam.FieldByName('LayupCodeThckPlating').AsString);
+
+    if not tblLayupParam.FieldByName('LayupThckDiffEtchOverride').AsBoolean then
+    begin
+      tblLayupParam.FieldByName('LayupThckDiffEtch').AsFloat :=
+        GetThickness(tblConductors, 'DiffEtch', tblLayupParam.FieldByName('LayupCodeThckDiffEtch').AsString);
+    end;
+
+    // Second Plating Calculation
+    tblLayupParam.FieldByName('LayupThckSecondPlating').AsFloat :=
+        GetThickness(tblConductors, 'Plating', tblLayupParam.FieldByName('LayupCodeThckSecondPlating').AsString);
+
+    // Nickel Calculation
+    tblLayupParam.FieldByName('LayupThckNi').AsFloat :=
+        GetThickness(tblConductors, 'Nickel', tblLayupParam.FieldByName('LayupCodeThckNi').AsString);
+
+    // Gold Calculation
+    tblLayupParam.FieldByName('LayupThckAu').AsFloat :=
+        GetThickness(tblConductors, 'Gold', tblLayupParam.FieldByName('LayupCodeThckAu').AsString);
+
+    // Silver Calculation
+    tblLayupParam.FieldByName('LayupThckAg').AsFloat :=
+        GetThickness(tblConductors, 'Silver', tblLayupParam.FieldByName('LayupCodeThckAg').AsString);
+
+    tblLayupParam.Post;
+  end;
+end;
+
+procedure ThicknessCalcLayer(ParamList: TStringList; tblLayupParam: TSysTable; tblDrillParam: TSysTable; tblConductors: TSysTable; tblSpec: TSysTable);
+begin
+  InitThicknessValues(tblLayupParam, tblConductors);
+
+  PostProcessThicknessValues(tblLayupParam);
+end;

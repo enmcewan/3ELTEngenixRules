@@ -1,0 +1,12 @@
+//HeaderImportExport-->
+//SiteId=0
+//Enterprise=True
+//ScriptType=1
+//ScriptGroup=Drill Module
+//HeaderImportExport<--
+procedure DrillModule_UserEvent1(ToolDataSet: TSysTable; ParamList: TStringList);
+begin
+//  ShowMessage('DrillModule_UserEvent1');
+//  ShowMessage(ParamList.Text);
+//  Fnc.OpenDataGrid(ToolDataSet, nil, nil, True);
+end;

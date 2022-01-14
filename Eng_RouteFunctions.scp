@@ -1,0 +1,778 @@
+//HeaderImportExport-->
+//SiteId=0
+//Enterprise=True
+//ScriptType=1
+//ScriptGroup=Library
+//HeaderImportExport<--
+uses                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 
+  Eng_DrillFunctions;
+
+{
+  New V2.0 release notes
+
+  ---------------------------------------------------------------------------------------------
+
+                                 
+  ---------------------------------------------------------------------------------------------
+
+  Fnc.SysStackupItemTypeCount(ItemType, ReturnLayerName, LayerCount, StringTop, StringBottom);
+                               
+  ItemType: string, input
+     --> predefined Cimnet ItemTypes
+                         
+  ReturnLayerName: boolean, input
+     --> return the text Top/Bot or the names of the layers
+
+  LayerCount: integer, output
+     --> number that this ItemType is in the current view
+
+  StringTop: string, output
+     --> indication if this itemtype is on the top ('Top' or LayerName)
+
+  StringBottom: string, output
+     --> indication if this itemtype is on the top ('Bot' or LayerName)
+               
+  Example: get the number and position for the SolderMask:
+
+  Fnc.SysStackupItemTypeCount(cStackupSolderMask, False, Engx_SMCount, ItemTop, ItemBottom);
+
+  ---------------------------------------------------------------------------------------------
+
+  Fnc.SysStackupGetBaseCopper(ItemDescCore, GetLabelField, CoreMatType, CoreThickness, CuWtTop, CuTop, CuWtBot, CuBot);
+
+  ItemDescCore: string, input
+     --> Description for core as you see in the Stackup, most likely 'Core'
+
+  GetLabelField: boolean, input;
+     --> True means that you get the value for the field 'Label' instead of the field 'Code' back
+         into the CuWtTop and CuWtBot fields. (for compatibilty of pre V2.0 versions)
+
+  CoreMatType: string, output
+     --> ItemFamily as seen in the stackup if there is a core
+
+  CoreThickness: double, output
+     --> thickness for the core as seen in the stackup if there is a core
+
+  CuWtTop: string, output
+     --> the 'copper' code/string as seen in the stackup for the linked toplayer
+
+  CuTop: double, output
+     --> the thickness from the conductors table using the CuWtTop
+
+  CuWtBot: string, output
+     --> the 'copper' code/string as seen in the stackup for the linked bottomlayer
+
+  CuBot: double, output
+     --> the thickness from the conductors table using the CuWtBot
+
+  Example similar to what pre-V2.0 standard is doing:
+
+  Fnc.SysStackupGetBaseCopper('Core', False, Engx_CoreMatType, Engx_CoreThickness, Engx_CuWtTop, Engx_CuTop, Engx_CuWtBot,
+
+Engx_CuBot);
+  ---------------------------------------------------------------------------------------------
+
+  aList := Fnc.SysStackupGetMaterialList(Scope, ExpandCombo, ItemNames, ColNames);
+
+  aList: TStringList, output
+     --> List with the values of the ColNames for the Items specified in ItemNames
+
+  Scope: integer, input
+     --> What do we want to include, relative to the MfgPart as the route is generetaed for
+
+  ExpandCombo: boolean, input
+     --> If True and a PP/Filler is encountered, the PP/Filler will be expanded to it's Prepregs
+         and the values for the prepregs will be returned
+
+  ItemNames: string, input
+     --> specify the names as you see in the Descr. column in the Stackup View. For including multiple
+     type of items, seperate them with a semi-colon. The name 'MfgPart' is a special one, in the list
+     the current MfgPart will be returned as '@@MfgPart', other MfgParts will be presented as '@MfgPart'
+
+  ColNames: string, input
+     --> The column names we what to be passed back. You can specify multiple column names, seperate
+     them with a semi-colon. For multiple columns, the return values will be passed back with a semi-colon
+     as separator.
+
+  Example, List the Family from the Stackup for PP/Filler, prepregs, Cores, etc, running it for a toplevel,
+           Include the MfgParts.
+
+  aList := Fnc.SysStackupGetMaterialList(0, True, 'PP/Filler;Core;MfgPart, 'Family');
+
+  aList.text could be like:
+
+  HTE6P
+  FR48
+  @MfgPart
+  FR48
+  @MfgPart
+  ....
+  ....
+
+  ---------------------------------------------------------------------------------------------
+
+  ItemValue :=  Fnc.SysGetItemAttrValue(AttrName, TopSw, ItemType, ItemSeq);
+
+  AttrName: string, input
+     --> the name of the attribute to retrieve
+
+  TopSw: boolean, input
+     --> Search for the Item on the top (True) or on the bottom (False)
+
+  ItemType: string, input
+     --> Specify the ItemType/LayerType to serach for, like:
+         cStackupSolderMask (SolderMask)
+         cStackupLedgend (Ledgend, SilkScreen)
+         cStackupDrill (Drill)
+
+  ItemSeq: integer, input
+    --> If there are multiple record for the same Itemtype, specify the sequence,
+        like for drill files, 1 = first drillfile, 2 = second, etc.
+
+  ItemValue: output, variant
+    --> This is the value for for the Attribute for the specified itemtype
+
+  ---------------------------------------------------------------------------------------------
+
+  ValueList := Fnc.SysGetItemAttrValueList(AttName, ItemType, Level);
+
+  AttrName: string, input
+     --> name of the attribute
+
+  ItemType: string, input
+     --> Type of layer/Item in the stackup to look for
+
+  Level: integer, input
+     --> scope, 0 = current MfgPart, 1 = including Sub-Assy's for this MfgPart, etc
+
+  ValueList: TStringList, output
+     --> list with values found
+
+  ---------------------------------------------------------------------------------------------
+
+}
+
+// Following global variables are updated by the System Scripts.
+var
+  Engx_CuTop: String;
+  Engx_CuBot: String;
+  Engx_SMSide: String;
+  Engx_LegendSide : String;
+  Engx_LegendCount: Integer;
+  Engx_SMCount    : Integer;
+  Engx_CoreThickness: float;
+  Engx_CoreMatType : String;
+  Engx_CuWtTop : string;
+  Engx_CuWtBot : string;
+  Engx_TotLayerCount: Int;
+
+  MfgItemValue,
+  MfgPartType : string;
+
+
+              
+/////////////////////////////////////////////////////////////////////
+////////  Following functions are for Scanning the Bom  /////////////
+/////////////////////////////////////////////////////////////////////
+
+procedure Engx_ScanDrill; // V2.0, No changed required
+begin
+  Engx_ViaMax := GetMaxDrillTool('via');
+  Engx_ViaMin := GetMinDrillTool('via');
+  Engx_PthMax := GetMaxDrillTool('plated');
+  Engx_PthMin := GetMinDrillTool('plated');
+  Engx_NptMax := GetMaxDrillTool('non_plated');
+  Engx_NptMin := GetMinDrillTool('non_plated');
+  Engx_DrlMax := GetMaxDrillTool('all');
+  Engx_DrlMin := GetMinDrillTool('all');
+end;
+
+procedure GetPartType; // V2.0, modified, completed
+var
+  TempStr: string;
+begin
+  TempStr := Fnc.SysGetAttrValue('ItemMatrlDesc');
+  MfgPartType := copy(TempStr, 1, 3);
+end;
+
+// Following function scans BOM of mfg. part on which route is generated.
+// Different procedures are called based on bom item.
+
+procedure  Engx_ScanBom;  // V2.0, modified, completed
+var
+  ItemTop: string;
+  ItemBottom: string;
+begin  // main
+  Engx_SMCount:= 0;
+  Engx_SMSide := '';
+  Engx_LegendCount := 0;
+  Engx_LegendSide  := '';
+
+  Engx_CuTop  := 0.0;
+  Engx_CuBot  := 0.0;
+  Engx_CoreThickness := 9999.99;
+  Engx_CoreMatType   := '';
+  Engx_CuWtTop := '';
+  Engx_CuWtBot := '';
+
+  // SolderMask
+  Fnc.SysStackupItemTypeCount(cStackupSolderMask, False, Engx_SMCount, ItemTop, ItemBottom);
+  Engx_SMSide := ItemTop + ItemBottom;
+                                                             
+  // SilkScreen
+  Fnc.SysStackupItemTypeCount(cStackupLegend, False, Engx_LegendCount, ItemTop, ItemBottom);
+  Engx_LegendSide := ItemTop + ItemBottom;
+
+  Fnc.SysStackupGetCoreData('Core', False, Engx_CoreMatType, Engx_CoreThickness, Engx_CuWtTop, Engx_CuTop, Engx_CuWtBot, Engx_CuBot);
+
+  //Engx_ScanDrill;
+end;
+
+procedure Engx_MfgPartLayerCount;    
+var
+  Dummy1: string;
+  Dummy2: string;
+begin
+  // Total layers included in the CurrentMfgPart + SubLevels
+  Fnc.SysStackupSetActiveView(99)
+  Fnc.SysStackupItemTypeCount(cStackupLayer, False, Engx_TotLayerCount, Dummy1, Dummy2); 
+  Fnc.SysStackupSetActiveView(0);
+end;
+                                           
+function Engx_TotalLayerList: TStringList; // V2.0, modified, completed
+var
+  aCount: integer;
+  TopLayers: string;                        
+  BottomLayers: string;
+begin
+  Fnc.SysStackupItemTypeCount(cStackupLayer, True, aCount, TopLayers, BottomLayers);
+                                               
+  Result := TStringList.Create;
+  Result.Text := TopLayers + BottomLayers;
+ // ShowMessage(aCount);
+end;
+
+function GetCoreTableList(ColName: string): TstringList; // V2.0, modified, completed
+begin
+  Result := Fnc.SysStackupGetMaterialList(99, False, 'Core', ColName);
+  //ShowMessage(Result.Text);
+end;
+
+function GetPrePregTableList(ColName: string): TstringList; // V2.0, modified, completed
+begin
+  // second parameter set so PP/Fillers are expanded into individual prepregs
+  Result := Fnc.SysStackupGetMaterialList(99, True, 'PP/Filler;Prepreg', ColName);
+  //ShowMessage(Result.Text);
+end;
+
+function SysGetAdjPrepregListCont(ColumnName: string): string; // V2.0, Needs change, not done yet
+var
+   PrepregTable: TSysTable;
+   PrepregIdStr: string;
+   PrepregId: integer;
+   ErrorMsg: string;
+begin
+  ShowMessage('Function: "SysGetAdjPrepregListCont" not supported anymore');
+  Result := '';
+end;
+
+function SysGetAdjPrepregList(InclTop: Boolean; InclBot: Boolean; ColName: string): TStringList; // V2.0, modified, completed
+var
+  TempList: TStringList;
+  Indx: integer;
+begin
+  Result := TStringList.Create;
+
+  TempList := Fnc.SysStackupGetMaterialList(-1, True, 'PP/Filler;Prepreg;MfgPart', ColName);
+
+  if InclTop then
+  begin
+    Indx := TempList.IndexOf('@@MfgPart') - 1;
+    while Indx > -1 do
+    begin
+      if TempList.Strings[Indx] = '@MfgPart' then
+        break;
+      Result.Insert(0, TempList.Strings[Indx]);
+      Dec(Indx);
+    end;
+  end;
+
+  if InclBot then
+  begin
+    Indx := TempList.IndexOf('@@MfgPart') + 1;
+    while Indx < TempList.Count do
+    begin
+      if TempList.Strings[Indx] = '@MfgPart' then
+        break;
+      Result.Add(TempList.Strings[Indx]);
+      Inc(Indx);
+    end;
+  end;
+
+  TempList.Free;
+end;
+
+function HasPolyimidePP: boolean; // V2.0, modified, completed
+var
+  PregList : TStringList;
+begin
+  Result := false;
+
+  PregList := SysGetAdjPrepregList(True, True, 'Family');
+  ShowMessage(PregList.text);
+  if PregList.IndexOf('Polyimide') then
+    Result := True
+  else
+    Result := False;
+                                     
+  PregList.Free;
+end;
+
+// Return True if core is found on top or bottom side of current sub assembly.
+function FoundCoreConstructionOnOutside : Boolean; // V2.0, Needs change, not done yet
+var
+  StackList : TstringList;
+begin
+  Result:= False;
+
+  StackList := Fnc.SysStackupGetMaterialList(99, False, 'Core;Foil', 'ItemDesc');
+
+  if StackList.Count > 0 then
+  begin
+    if (UpperCase(StackList.Strings[0]) = 'CORE') or
+       (UpperCase(StackList.Strings[StackList.Count - 1]) = 'CORE') then
+      Result := True;
+  end;                    
+
+  StackList.Free;
+end;
+
+function SysGetLayerAttr(AttrName: string; TopSw: boolean; StackupLayerType: string): variant; // V2.0, modified, completed
+begin
+  Result :=  Fnc.SysGetItemAttrValue(AttrName, TopSw, StackupLayerType, 1);
+end;
+
+function SysGetTopCuLayerAttr(AttrName: string ): string; // V2.0, modified, completed
+begin
+  Result :=  Fnc.SysGetItemAttrValue(AttrName, True, cStackupLayer, 1);
+end;
+
+function SysGetBottomCuLayerAttr(AttrName: string ): string; // V2.0, modified, completed
+begin
+  Result :=  Fnc.SysGetItemAttrValue(AttrName, False, cStackupLayer, 1);
+end;
+
+function SysGetTopSMAttr(AttrName: string; ItemSeq: Integer): string; // V2.0, modified, completed
+begin
+  Result :=  Fnc.SysGetItemAttrValue(AttrName, True, cStackupSolderMask, ItemSeq);
+end;
+
+function SysGetBottomSMAttr(AttrName: string; ItemSeq: Integer): string; // V2.0, modified, completed
+begin
+  Result :=  Fnc.SysGetItemAttrValue(AttrName, False, cStackupSolderMask, ItemSeq);
+end;
+
+function SysGetTopSSAttr(AttrName: string; ItemSeq: Integer): string; // V2.0, modified, completed
+begin
+  Result :=  Fnc.SysGetItemAttrValue(AttrName, True, cStackupLegend, ItemSeq);
+end;
+
+function SysGetBottomSSAttr(AttrName: string; ItemSeq: Integer): string; // V2.0, modified, completed
+begin
+  Result :=  Fnc.SysGetItemAttrValue(AttrName, False, cStackupLegend, ItemSeq);
+end;
+
+function SysGetTopSPAttr(AttrName: string; ItemSeq: Integer): string; // V2.0, modified, completed
+begin                                                     
+  Result :=  Fnc.SysGetItemAttrValue(AttrName, True, cStackupSolderPaste, ItemSeq);
+end;
+
+function SysGetBottomSPAttr(AttrName: string; ItemSeq: Integer): string; // V2.0, modified, completed
+begin
+  Result :=  Fnc.SysGetItemAttrValue(AttrName, False, cStackupSolderPaste, ItemSeq);
+end;
+
+// Function to get drill layer attributes
+//function SysGetDrillLayerAttrib(LayerAttr: string; ItemSeq: Integer): string; // V2.0, modified, completed 
+//begin
+//  Result :=  Fnc.SysGetItemAttrValue(AttrName, True, cStackupDrill, ItemSeq);
+//end;
+
+function FindBlindDrillInSub (BlindDrillLevel: integer): TStringList; // V2.0, modified, completed
+begin
+  MessageDlg('FindBlindDrillInSub (BlindDrillLevel: integer): TStringList' +
+             #13#13 + 'Not available in Engenix V2.0', mtError, SetOf(mbCancel), 0);
+end;
+
+function CheckBlindDrill(BlindDrillLevel: Integer): boolean; // V2.0, modified, completed
+var
+  ValueList: TStringList;                      
+  I: integer;
+begin
+  Result := False;              
+
+  ValueList := Fnc.SysGetItemAttrValueList('DrillDefID', cStackupDrill, BlindDrillLevel);
+  //ShowMessage(ValueList.Text);
+
+  for I := 0 to ValueList.Count - 1 do
+  begin
+    if LowerCase(ValueList.Strings[I]) = '2' then
+    begin
+      Result := True;
+      break; 
+    end;           
+  end;
+
+  ValueList.Free;
+end;  
+
+function CheckBuriedDrill(BuriedDrillLevel: integer): boolean; // V2.0, modified, completed
+var
+  ValueList: TStringList;
+  I: integer;
+begin
+  Result := False;
+
+  ValueList := Fnc.SysGetItemAttrValueList('ForceBlindVia', cStackupDrill, BuriedDrillLevel, false);
+  //ShowMessage(ValueList.Text);
+  for I := 0 to ValueList.Count - 1 do
+  begin
+    if LowerCase(ValueList.Strings[I]) = 'false' then
+    begin
+      Result := True;
+      break;
+    end;          
+  end;
+
+  ValueList.Free;
+end;
+
+function FoundOutsideDrillInSub: boolean;
+var
+  i: integer;
+  ParamList: TStringList;
+  TempList: TStringList;
+  CheckList: TStringList;
+  CheckLevel: integer;
+begin
+  Result := False;
+
+  // the function should return only true if the assembly has blind-holes
+  // before drilling on the current level.
+  // condition is that there shouls be no materials on the outside of the
+  // current assembly, and that the top and/or bottom MfgPart should have
+  // drill layers assigned.
+
+  ParamList := Fnc.SysGetItemAttrValueList(
+                  'ItemType;ItemLevel',
+                  cStackupMfgTopLevel + ';' +
+                     cStackupMfgSubAssy + ';' +
+                     cStackupMfgSubLevel + ';' +
+                     cStackupGenMatrl + ';' +
+                     cStackupDrill,
+                  1);
+
+  // Parse the data so we can later check the outer items to what type of build we have
+  CheckList := TStringList.Create;
+  TempList := TStringList.Create;
+
+  if ParamList.Count > 0 then
+  begin
+    // index 0 is the current MfgPart
+    TempList.Text := ParamList.Strings[0];
+    CheckLevel := StrToInt(TempList.Strings[1]) + 1;
+
+    // start with index 1, skip the current MfgPart
+    for i := 1 to ParamList.Count - 1 do
+    begin
+      TempList.Text := ParamList.Strings[i];
+
+      // on this level we have to check for drill layers
+      if StrToInt(TempList.Strings[1]) > CheckLevel then
+      begin
+        if (TempList.Strings[0] = cStackupDrill) then
+          CheckList.Add(cStackupDrill);
+      end;
+
+      // on this level we have to check for material
+      if StrToInt(TempList.Strings[1]) = CheckLevel then
+      begin
+        if (TempList.Strings[0] = cStackupGenMatrl) then
+          CheckList.Add(cStackupGenMatrl);
+      end;
+    end;
+  end;
+
+  if CheckList.Count > 0 then
+  begin
+    if (CheckList.Strings[0] = cStackupDrill) or
+       (CheckList.Strings[CheckList.Count - 1] = cStackupDrill) then
+      Result := True;
+  end;
+
+//  if Result then
+//    showmessage('--> True' + #13#13 + CheckList.Text)
+//  else
+//    showmessage('--> False' + #13#13 + CheckList.Text);
+
+  CheckList.Free;
+  TempList.Free;
+  ParamList.Free;
+end;
+
+///////////////////////////////////////////////////////
+// Updates attribute Cust_Code with Customer's ERP code.
+function Eng_CustCode : string; // V2.0, No changed required
+var
+   Query: TAdoQuery;
+   Cust_Code : String;
+begin
+   // Create a Query Object to retrieve general data from datastore
+   Query := TADOQuery.Create(nil);
+
+   // Connect to the DataStore Database
+   Query.Connection := Fnc.DbConnection;
+
+   // Read the JobDetails into the Query
+   Query.SQL.Clear;
+
+   // Read the Customer's name into the Query
+   Query.SQL.Clear;
+   Query.SQL.Add('Select CustomerLinks.CustomerERPCode');
+   Query.SQL.Add('FROM   CustomerLinks INNER JOIN');
+   Query.SQL.Add('Jobs ON CustomerLinks.CustomerID = Jobs.CustomerID');
+   Query.SQL.Add('where JobId=' + IntToStr(Fnc.JobId));
+   Query.Open;
+
+   // See what's included in the Query
+   //Fnc.OpenDataGrid(Query, nil, nil, true);
+
+   // retrieve the required from the Query
+   result := Query.FieldByName('CustomerERPCode').AsString;
+   if (result = '') then
+      result := 'XXXXX';                
+
+   // Cleaup
+   Query.Close;
+   Query.Free;
+end;
+
+function Eng_PartNumber : string; // V2.0, No changed required
+var
+   Query: TAdoQuery;
+   Part : String;
+   JobPartID: integer;
+begin
+   // Create a Query Object to retrieve general data from datastore
+   Query := TADOQuery.Create(nil);
+   // Connect to the DataStore Database
+   Query.Connection := Fnc.DbConnection;
+   // Read the Customer's name into the Query
+   Query.SQL.Clear;
+   Query.SQL.ADD('SELECT PartNumberID FROM Jobs WHERE JobID = ' + IntToStr(Fnc.JobId));
+   Query.Open;
+   JobPartID := Query.FieldByName('PartNumberID').AsInteger;
+   Query.Close;
+   Query.SQL.Clear;
+   Query.SQL.Add('Select PartNumbers.PartNumberName');
+   Query.SQL.Add('FROM   PartNumbers INNER JOIN');
+   Query.SQL.Add('Jobs ON PartNumbers.PartNumberID = Jobs.PartNumberID');
+   Query.SQL.Add('where PartNumbers.PartNumberID = ' + IntToStr(JobPartID));
+   Query.Open;
+
+   result := Query.FieldByName('PartNumberName').AsString;
+   if (result = '') then
+      result := 'XXXXX';
+
+   // Cleaup
+   Query.Close;
+   Query.Free;
+end;
+
+function Eng_PartDesc : string; // 408 Paradigm Part Number Coding - Intneral pArt Number
+var
+   Query: TAdoQuery;
+   Part : String;
+   JobPartID: integer;
+begin
+   // Create a Query Object to retrieve general data from datastore
+   Query := TADOQuery.Create(nil);
+   // Connect to the DataStore Database
+   Query.Connection := Fnc.DbConnection;
+   // Read the Customer's name into the Query
+   Query.SQL.Clear;
+   Query.SQL.ADD('SELECT PartNumberID FROM Jobs WHERE JobID = ' + IntToStr(Fnc.JobId));
+   Query.Open;
+   JobPartID := Query.FieldByName('PartNumberID').AsInteger;
+   Query.Close;
+   Query.SQL.Clear;
+   Query.SQL.Add('Select PartNumbers.PartDescription');
+   Query.SQL.Add('FROM   PartNumbers INNER JOIN');
+   Query.SQL.Add('Jobs ON PartNumbers.PartNumberID = Jobs.PartNumberID');
+   Query.SQL.Add('where PartNumbers.PartNumberID = ' + IntToStr(JobPartID));
+   Query.Open;
+
+   result := Query.FieldByName('PartDescription').AsString;
+   if (result = '') then
+      result := 'XXXXX';
+
+   // Cleaup
+   Query.Close;
+   Query.Free;
+end;
+                                                                                                    
+function Eng_PartRev : string; // V2.0, No changed required
+var
+   Query: TAdoQuery;
+   Rev : String;
+   JobPartID: integer;
+begin
+   // Create a Query Object to retrieve general data from datastore
+   Query := TADOQuery.Create(nil);
+   // Connect to the DataStore Database
+   Query.Connection := Fnc.DbConnection;
+   // Read the Customer's name into the Query
+   Query.SQL.Clear;
+   Query.SQL.ADD('SELECT PartNumberID FROM Jobs WHERE JobID = ' + IntToStr(Fnc.JobId));
+   Query.Open;
+   JobPartID := Query.FieldByName('PartNumberID').AsInteger;
+   Query.Close;
+   Query.SQL.Clear;
+   Query.SQL.Add('Select PartNumbers.PartRevision');
+   Query.SQL.Add('FROM   PartNumbers INNER JOIN');
+   Query.SQL.Add('Jobs ON PartNumbers.PartNumberID = Jobs.PartNumberID');
+   Query.SQL.Add('where PartNumbers.PartNumberID = ' + IntToStr(JobPartID));
+   Query.Open;
+
+   result := Query.FieldByName('PartRevision').AsString;
+   if (result = '') then
+      result := 'XXXXX';
+
+   // Cleaup
+   Query.Close;
+   Query.Free;
+end;
+
+// Call this function to get JobName (string) as return value.
+// Used by quoteImport Script.
+function Eng_JobName : string; // V2.0, No changed required
+var
+   Query: TAdoQuery;
+begin
+   // Create a Query Object to retrieve general data from datastore
+   Query := TADOQuery.Create(nil);
+
+   // Connect to the DataStore Database
+   Query.Connection := Fnc.DbConnection;
+
+   // Read the JobDetails into the Query
+   Query.SQL.Clear;
+
+   // Read the Customer's name into the Query
+   Query.SQL.Clear;
+   Query.SQL.Add('Select Jobs.JobID, Jobs.JobName');
+   Query.SQL.Add('FROM   Jobs');
+   Query.SQL.Add('where JobId=' + IntToStr(Fnc.JobId));
+   Query.Open;
+
+   // See what's included in the Query
+   //Fnc.OpenDataGrid(Query, nil, nil, true);
+
+   // retrieve the required from the Query
+   result := Query.FieldByName('JobName').AsString;
+
+   if (result = '') then
+     begin
+      result := 'XXXXX';
+      Showmessage ('Job Name could not be found');
+     end;
+      //showmessage (result ); // display finding.
+
+   // Cleaup
+   Query.Close;
+   Query.Free;                            
+end;
+
+// Call this function to get JobStatus (string) as return value.
+function Eng_JobStatus : string; // V2.0, No changed required
+var
+   Query: TAdoQuery;
+begin
+   // Create a Query Object to retrieve general data from datastore
+   Query := TADOQuery.Create(nil);
+   Query.Connection := Fnc.DbConnection;
+   Query.SQL.Clear;
+
+   // Read the Customer's name into the Query
+   Query.SQL.Clear;
+   Query.SQL.Add('Select JobStatuses.StatusName');
+   Query.SQL.Add('FROM   JobStatuses INNER JOIN');
+   Query.SQL.Add('Jobs ON JobStatuses.JobStatusId = Jobs.JobStatusId');
+   Query.SQL.Add('where JobId=' + IntToStr(Fnc.JobId));
+   Query.Open;
+
+
+   // See what's included in the Query
+   //Fnc.OpenDataGrid(Query, nil, nil, true);
+
+   // retrieve the required from the Query
+   result := Query.FieldByName('StatusName').AsString;
+
+   if (result = '') then
+     begin
+      result := 'XXXXX';
+      Showmessage ('Job Status could not be found');
+     end;
+  //showmessage (result ); // display finding.
+
+   // Cleaup
+   Query.Close;
+   Query.Free;
+end; 
+
+// Call this function to Attach PCB Fab stackup to mfg part.
+function Eng_AttachFiles : string; // V2.0, No changed required
+var
+   Query: TAdoQuery;
+   MfgFlag: string;
+begin
+   MfgFlag := Fnc.SysGetAttrValue('GenBOMItemValue');
+
+   // Connect to database and attach files automatically
+   Query := TADOQuery.Create(nil);
+   Query.Connection := Fnc.DbConnection;
+   Query.SQL.Clear;
+
+   // Read the Customer's name into the Query
+   Query.SQL.Clear;
+   Query.SQL.Add('Select *');
+   Query.SQL.Add('FROM   FileAttachments');
+   Query.SQL.Add('where LinkId=' + IntToStr(Fnc.JobId));
+   Query.SQL.Add('and MfgPartName=' + QuotedStr(MfgFlag));
+   Query.Open;
+
+   // See what's included in the Query
+   //Fnc.OpenDataGrid(Query, nil, nil, true);
+
+   With Query do
+   begin
+     first;
+     if Eof then
+     begin
+       Query.Append;
+       Query.FieldByName('FileName').AsString := '\\sylvester\paradigm\Csi\Attached Documents\'+ Eng_JobName +'.doc';
+       Query.FieldByName('FileDescription').AsString := 'Stackup';
+       Query.FieldByName('LinkID').AsString := Fnc.JobId;
+       Query.FieldByName('LinkType').AsInteger := 1;
+       Query.FieldByName('MfgPartName').AsString := MfgFlag;
+       Query.FieldByName('SaveERP').AsBoolean := True;
+       Query.FieldByName('PrintERP').AsBoolean := True;
+       Query.Post;
+     end;
+   end;
+
+   // Cleaup
+   Query.Close;
+   Query.Free;
+
+end

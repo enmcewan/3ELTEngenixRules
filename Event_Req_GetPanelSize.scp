@@ -1,0 +1,55 @@
+//HeaderImportExport-->
+//SiteId=0
+//Enterprise=True
+//ScriptType=1
+//ScriptGroup=Requirements
+//HeaderImportExport<--
+procedure GetPanelSizeOptions(ParamList: TStringList);
+begin
+{ Procedure is called at startup of the stackup dialog.
+  If you do not do any processing, the options will be
+  loaded from the "PanelSizes" custom Table. Usefull
+  option would be loading the same values in here as
+  shown in a drop-down for panelsizes in the Attrbite Grid }
+
+{ Example how to define the options for the drop-down list:
+
+  ParamList.Add('10 + 10');
+  ParamList.Add('10 + 12');
+  ParamList.Add('10 + 14');
+}
+end;
+
+procedure ParsePanelSizeOptions(ParamList: TStringList);
+begin
+{ Procedure will be called if the user makes hiw selection
+  from the drop-down list. If you setup the options for the
+  drop-donw using '*' or 'x' as seperator like "10 * 12"
+  you do not have to do any processing at all, parsing that
+  type of string is standard implemented in Engenix
+
+
+{ Example for parsing other type of format :
+
+  case ParamList.Values['PanelSize'] of
+
+    '10 + 10':
+      begin
+        ParamList.Add('PanelLength=10');
+        ParamList.Add('PanelWidth=10');
+      end;
+
+    '10 + 12':
+      begin
+        ParamList.Add('PanelLength=10');
+        ParamList.Add('PanelWidth=12');
+      end;
+
+    '10 + 14':
+      begin
+        ParamList.Add('PanelLength=10');
+        ParamList.Add('PanelWidth=14');
+      end;
+  end;
+}
+end;

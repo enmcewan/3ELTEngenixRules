@@ -1,0 +1,26 @@
+//HeaderImportExport-->
+//SiteId=0
+//Enterprise=True
+//ScriptType=1
+//ScriptGroup=Drill Module
+//HeaderImportExport<--
+procedure AddFieldDef(tblFieldDef: TSysTable; KeyValue: string; FieldName: string; UpdateEnabled: Boolean; isVisible: boolean; DropDownValues: string);
+begin
+  tblFieldDef.Append;
+  tblFieldDef.FieldByName('KeyFieldValue').AsString := KeyValue;
+  tblFieldDef.FieldByName('FieldName').AsString := FieldName;
+  tblFieldDef.FieldByName('UpdateEnabled').AsBoolean := UpdateEnabled;
+  tblFieldDef.FieldByName('Visible').AsBoolean := isVisible;
+  tblFieldDef.FieldByName('DropDownValues').AsString := DropDownValues;
+  tblFieldDef.Post;
+end;
+
+procedure DrillModule_FieldDefinition(ParamList: TStringList; tblFieldDef: TSysTable);
+begin
+
+  // assign the fieldname in the drill details table that drives the various definitions
+//  ParamList.Values['KeyField'] := '';
+
+  // now assign what fields should be visible for the value of the keyfield
+//  AddFieldDef(tblFieldDef, 'A;B;CF;EOL;ET;LR;PF;V;VF;Slot', 'DrillModule_TestBoolean', True, True, '');
+end;

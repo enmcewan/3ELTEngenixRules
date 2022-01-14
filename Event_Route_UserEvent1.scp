@@ -1,0 +1,11 @@
+//HeaderImportExport-->
+//SiteId=0
+//Enterprise=True
+//ScriptType=1
+//ScriptGroup=Route Gen/Regen
+//HeaderImportExport<--
+procedure RouteUserEvent1(ParamList: TStringList);
+begin
+  Fnc.ShowReport('Template_Traveler', '', ParamList.Values['MfgPartName']);
+end;
+

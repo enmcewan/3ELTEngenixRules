@@ -1,0 +1,26 @@
+//HeaderImportExport-->
+//SiteId=0
+//Enterprise=True
+//ScriptType=1
+//ScriptGroup=Stackup
+//HeaderImportExport<--
+?{
+  Script is called to create the name/description for the Stiffener Mfg.Parts
+
+  - ParamList holds parameters of the stiffener.
+
+    ParamList.Values['RecId'] = unique identifier for this stiffener, can be used in
+    Fnc.SysGetStiffener_Header(RecId, '') or Fnc.SysGetStiffener_Detail(RecId, '')
+    to get the header or materials for this stiffener.
+
+  The script must update the following variables
+
+  - ParamList.Values['MfgPartName'] := must be a unique Mfg.Part name
+                                      (check MfgPartList for existing Mfg.Part names)
+  - ParamList.Values['MfgPartDesc'] := optional description for the Mfg.Part
+}
+procedure GenBomMfgPartNames_Stiffener(ParamList: TStringList; MfgPartList: TStringList);
+begin
+  // custom code
+end;
+                     

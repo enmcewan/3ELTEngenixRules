@@ -1,0 +1,110 @@
+//HeaderImportExport-->
+//SiteId=0
+//Enterprise=True
+//ScriptType=1
+//ScriptGroup=Template
+//HeaderImportExport<--
+const
+  CRLF = #10#13;
+
+// IfNotEmpty will return the contents of ReturnString if TestString is not empty.
+//  Usefull for omitting information if values are not filled in.
+function IfNotEmpty(TestString : string; ReturnString : string): string;
+begin
+  Result := '';
+
+  if Trim(TestString) <> '' then
+    Result := ReturnString;
+end;
+
+// IfNotEmptyElse will return the contents of ReturnString if TestString is not empty.
+//  If TestString is empty, then it will return ElseReturnString.
+//  Usefull for omitting supplying default if values are not filled in.
+function IfNotEmptyElse(TestString : string; ReturnString : string; ElseReturnString : string): string;
+begin
+  Result := '';
+
+  if Trim(TestString) <> '' then
+    Result := ReturnString
+  else
+    Result := ElseReturnString;
+end;                                                                      
+
+// this is an example of a parameterless function.  If you are having problems with
+// whitespace (and CRLF's, you can append them here if you wish or ensure the template
+// includes the whitespace as necessary.
+function SendMyName : string;
+begin
+  Result := 'Joe Engenixuser' + CRLF
+end;
+
+// formatting portions of the specification details identically to the pre-template
+// versions is somewhat complex...so we will do that in a script function instead
+// of trying to do it in the template itself.
+function FormatSpecificationDetails(ToleranceType : integer;
+                                    DataType : integer;
+                                    IntegerSpecialHandlingValue : integer;
+                                    IntegerSpecialHandlingValueIsNull : boolean;
+                                    IntegerLowYieldValue : integer;
+                                    IntegerLowYieldValueIsNull : boolean;
+                                    FloatSpecialHandlingValue : double;
+                                    FloatSpecialHandlingValueIsNull : boolean;
+                                    FloatLowYieldValue : double;
+                                    FloatLowYieldValueIsNull : boolean;
+                                    MemoEntryValue : string;
+                                    TolerancePlus : float;
+                                    ToleranceMinus : float) : string;
+var
+  TempStr : string;
+  SpecialHandling : string;
+  LowYield : string;
+begin
+  SpecialHandling := '';
+  LowYield := '';
+
+  case ToleranceType of
+    1:
+      begin
+        if (DataType = Ord(ftInteger)) then
+        begin
+          if (not IntegerSpecialHandlingValueIsNull) then
+            SpecialHandling := ' : Special Handling > ' + IntegerSpecialHandlingValue;
+
+          if (not IntegerLowYieldValueIsNull) then
+            LowYield := ' : Low Yield > ' + IntegerLowYieldValue;
+        end
+        else if (DataType = Ord(ftFloat)) then
+        begin
+          if (not FloatSpecialHandlingValueIsNull) then
+            SpecialHandling := ' : Special Handling > ' + FloatSpecialHandlingValue;
+
+          if (not FloatLowYieldValueIsNull) then
+            LowYield := ' : Low Yield > ' + FloatLowYieldValue;
+        end;
+
+        TempStr := 'Method: Attribute Value >= ' + Trim(MemoEntryValue) + SpecialHandling + LowYield;
+
+      end;
+    2: TempStr := 'Method: Attribute Value > ' + Trim(MemoEntryValue);
+    3: TempStr := 'Method: Attribute Value <= ' + Trim(MemoEntryValue);
+    4: TempStr := 'Method: Attribute Value < ' + Trim(MemoEntryValue);
+    5: TempStr := 'Method: Attribute Value = ' + Trim(MemoEntryValue);
+    6: TempStr := 'Method: Attribute Value = ' + Trim(MemoEntryValue) +
+        ' + ' + FloatToStr(TolerancePlus) +
+        ' / - ' + FloatToStr(ToleranceMinus);
+    7: TempStr := 'Method: Attribute Value = ' + Trim(MemoEntryValue) +
+        ' + ' + FloatToStr(TolerancePlus) + ' %' +
+        ' / - ' + FloatToStr(ToleranceMinus) + ' %';
+    10: TempStr := 'MaxValue: ' + TolerancePlus +
+                   ' MinValue: ' + ToleranceMinus;
+  else
+    TempStr := 'Method: Just Information: ' +
+               ' SpecValue: ' + Trim(MemoEntryValue) +
+               ' MaxValue: ' + TolerancePlus +
+               ' MinValue: ' + ToleranceMinus;
+  end;
+
+  Result := TempStr;
+  
+
+end;

@@ -1,0 +1,136 @@
+//HeaderImportExport-->
+//SiteId=0
+//Enterprise=True
+//ScriptType=1
+//ScriptGroup=Impedance
+//HeaderImportExport<--
+// Purpose:  In this script you can use your own logic to create Coupons and tie them
+//           to the appropriate impedance models.  The script should fully populate
+//           the SysImpedanceCoupons table (note that it may already contain records)
+//           and then populate the CouponID field in the applicable Impedance model
+//           tables.
+//
+//
+// The following tables are available:
+//
+//  FNC.SysPolarImpedanceModels - limited editing capability.  Only CouponID and TestLineLength fields should be edited.
+//  FNC.SysRLGCImpedanceModels  - limited editing capability.  Only CouponID and TestLineLength fields should be edited.
+//     Any length values in the Impedance Tables are in the Impedance Base Unit during the execution of this script.
+//
+//  FNC.SysImpedanceCoupons - Full editing capability.  Will have existing items pre-populated.
+//  FNC.SysCouponTypes - Read Only
+//
+//  DO NOT CLOSE ANY OF THESE TABLES.
+//    - If you want to clear out the records in a table, use .EmptyTable
+//
+// The following string is available:
+//
+//  FNC.SysImpedanceCouponVersion - editable.
+
+/////////////////////////////////////////////////////////////////////////////////
+function GetNextCouponName(TakenNames: string; SuggestedName: string; Prefix: string) : string;
+begin
+{
+  Customer can define the names of the new coupon by script, TakenNames are the
+  names already used.
+}
+  Result := '';
+end;
+/////////////////////////////////////////////////////////////////////////////////
+
+
+begin
+(*
+  // example code will create first remove any existing coupons and ties to
+  // impedance records.  Then 2 Coupons (both of the first CouponType) will
+  // be created and then the first Coupon will be attached to any Polar
+  // impedance models and the second coupon will be attached to any RLGC Models.
+
+  Fnc.SysImpedanceCouponVersion := Fnc.SysImpedanceCouponVersion + '1';
+
+  // clear any existing links to coupons in Polar models
+  Fnc.SysPolarImpedanceModels.First;
+  while not Fnc.SysPolarImpedanceModels.EOF do
+  begin
+    Fnc.SysPolarImpedanceModels.Edit;
+    Fnc.SysPolarImpedanceModels.FieldByName('CouponID').AsInteger := -1;
+    Fnc.SysPolarImpedanceModels.Post;
+    Fnc.SysPolarImpedanceModels.Next;
+  end;
+
+  // clear any existing links to coupons in RLGC models
+  Fnc.SysRLGCImpedanceModels.First;
+  while not Fnc.SysRLGCImpedanceModels.EOF do
+  begin
+    Fnc.SysRLGCImpedanceModels.Edit;
+    Fnc.SysRLGCImpedanceModels.FieldByName('CouponID').AsInteger := -1;
+    Fnc.SysRLGCImpedanceModels.Post;
+    Fnc.SysRLGCImpedanceModels.Next;
+  end;
+
+  // clear entries from SysImpedanceCoupons
+  Fnc.SysImpedanceCoupons.EmptyTable;
+
+  // now create 2 Coupon records...
+  if Fnc.SysCouponTypes.RecordCount > 0 then
+  begin
+    Fnc.SysCouponTypes.First;
+
+    Fnc.SysImpedanceCoupons.Append;
+    // RecID field is autoincremented...
+    Fnc.SysImpedanceCoupons.FieldByName('Sequence').AsInteger := 1;
+    Fnc.SysImpedanceCoupons.FieldByName('CouponCode').AsString := Format('Coupon-%d', [Fnc.SysImpedanceCoupons.FieldByName('Sequence').AsInteger]);
+    Fnc.SysImpedanceCoupons.FieldByName('CouponTypeID').AsInteger := Fnc.SysCouponTypes.FieldByName('CouponTypeID').AsInteger;
+    Fnc.SysImpedanceCoupons.FieldByName('CouponLocation').AsString := 'Panel';  // 'Panel' or 'Array'
+    Fnc.SysImpedanceCoupons.FieldByName('IsCoplanar').AsBoolean := False;
+    Fnc.SysImpedanceCoupons.FieldByName('CouponLength').AsFloat := Fnc.SysCouponTypes.FieldByName('CouponDefaultLength').AsFloat;
+    Fnc.SysImpedanceCoupons.FieldByName('CouponWidth').AsFloat := Fnc.SysCouponTypes.FieldByName('CouponDefaultWidth').AsFloat;
+    Fnc.SysImpedanceCoupons.FieldByName('FileAttachment').AsString := '';
+    Fnc.SysImpedanceCoupons.Post;
+
+    Fnc.SysImpedanceCoupons.Append;
+    // RecID field is autoincremented...
+    Fnc.SysImpedanceCoupons.FieldByName('Sequence').AsInteger := 2;
+    Fnc.SysImpedanceCoupons.FieldByName('CouponCode').AsString := Format('Coupon-%d', [Fnc.SysImpedanceCoupons.FieldByName('Sequence').AsInteger]);
+    Fnc.SysImpedanceCoupons.FieldByName('CouponTypeID').AsInteger := Fnc.SysCouponTypes.FieldByName('CouponTypeID').AsInteger;
+    Fnc.SysImpedanceCoupons.FieldByName('CouponLocation').AsString := 'Array';  // 'Panel' or 'Array'
+    Fnc.SysImpedanceCoupons.FieldByName('IsCoplanar').AsBoolean := True;
+    Fnc.SysImpedanceCoupons.FieldByName('CouponLength').AsFloat := Fnc.SysCouponTypes.FieldByName('CouponDefaultLength').AsFloat;
+    Fnc.SysImpedanceCoupons.FieldByName('CouponWidth').AsFloat := Fnc.SysCouponTypes.FieldByName('CouponDefaultWidth').AsFloat;
+    Fnc.SysImpedanceCoupons.FieldByName('FileAttachment').AsString := '';
+    Fnc.SysImpedanceCoupons.Post;
+
+    // now add the first impedance coupon to any Polar records...
+    Fnc.SysImpedanceCoupons.First;
+
+    Fnc.SysPolarImpedanceModels.First;
+    while not Fnc.SysPolarImpedanceModels.EOF do
+    begin
+      Fnc.SysPolarImpedanceModels.Edit;
+      Fnc.SysPolarImpedanceModels.FieldByName('CouponID').AsInteger := Fnc.SysImpedanceCoupons.FieldByName('RecID').AsInteger;
+      Fnc.SysPolarImpedanceModels.FieldByName('TestLineLength').AsFloat := 1.5;
+      Fnc.SysPolarImpedanceModels.Post;
+
+      Fnc.SysPolarImpedanceModels.Next;
+    end;
+
+    // move to the 2nd coupon and repeat for the RLGC Models...
+    Fnc.SysImpedanceCoupons.Next;
+
+    Fnc.SysRLGCImpedanceModels.First;
+    while not Fnc.SysRLGCImpedanceModels.EOF do
+    begin
+      Fnc.SysRLGCImpedanceModels.Edit;
+      Fnc.SysRLGCImpedanceModels.FieldByName('CouponID').AsInteger := Fnc.SysImpedanceCoupons.FieldByName('RecID').AsInteger;
+      Fnc.SysRLGCImpedanceModels.FieldByName('TestLineLength').AsFloat := 2.5;
+      Fnc.SysRLGCImpedanceModels.Post;
+
+      Fnc.SysRLGCImpedanceModels.Next;
+    end;
+  end
+  else
+  begin
+    ShowMessage('No Coupon Types are defined. Cannot run Impedance Coupon Create script.');
+  end;
+*)
+end;

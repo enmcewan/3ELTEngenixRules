@@ -1,0 +1,433 @@
+//HeaderImportExport-->
+//SiteId=0
+//Enterprise=True
+//ScriptType=1
+//ScriptGroup=Materials
+//HeaderImportExport<--
+{ Template script to generate a Where-Used list
+
+- Installation
+
+Enable a custom toolbar button in the Stack-up dialog, and call
+the procdure: RunWhereUsedList
+
+Most of the custimization has to be done in the procedures:
+
+- ShowJob
+
+Script what you want to do with the jobs included in the where-used
+list, just view a report that you can print, or change the job status, etc
+
+- ProcessJobs & UpdateJobs
+
+These procedures are templates of active changing the jobstatus, or
+sending Emails to the Engineers who processed the job.
+}
+
+function CheckForCustErpBomTable: boolean;
+var
+  aQuery: TAdoQuery;
+begin
+  aQuery := TAdoQuery.Create(nil);
+  aQuery.Connection := Fnc.DbConnection;
+  aQuery.SQL.Clear;
+
+  aQuery.SQL.Add('IF EXISTS');
+  aQuery.SQL.Add('   (SELECT 1 FROM INFORMATION_SCHEMA.TABLES');
+  aQuery.SQL.Add('   WHERE TABLE_TYPE=''BASE TABLE''');
+  aQuery.SQL.Add('     AND TABLE_NAME = N''Cust_JobErpBom'')');
+  aQuery.SQL.Add('  SELECT 1 AS RESULT');
+  aQuery.SQL.Add('ELSE');
+  aQuery.SQL.Add('  SELECT 0 AS RESULT');
+  aQuery.Open;
+
+  // if the table does not exist, then create the base definition
+  Result := aQuery.FieldByName('RESULT').AsInteger = 1;
+
+  aQuery.Close;
+  aQuery.Free;
+
+  if not Result then
+    MessageDlg('The mandatory "Cust_JobErpBom" table is missing', mtWarning, SetOf(mbCancel), 0);
+end;
+
+//---- Section to get the list of Generic Material
+
+function GetErpMaterials: TSysTable;
+var
+  i: integer;
+  aQry: TAdoQuery;
+begin
+  aQry := TAdoQuery.Create(nil);
+  aQry.Connection := Fnc.DBConnection;
+
+  aQry.Sql.Add(
+    ' SELECT' +
+    '   mt.Description as Type,' +
+    '   mf.Description as Family,' +
+    '   m.Description as Description,' +
+    '   m.MaterialsId' +
+    ' FROM' +
+    '   Materials m' +
+    '   LEFT JOIN MaterialsType mt ON (m.MaterialsTypeId=mt.MaterialsTypeId)' +
+    '   LEFT JOIN MaterialsFamily mf ON (m.MaterialsFamilyId=mf.MaterialsFamilyId)');
+
+  aQry.Active := True;
+
+  Result := Fnc.SysTableCreate('MaterialTable');
+  Fnc.SysDBQueryToMemTableStruc(aQry, Result);
+  Fnc.SysTableAddField(Result, 'Check', 0, ftBoolean);
+  Fnc.SysTableAddField(Result, 'RecId', 0, ftAutoInc);
+
+  Result.LoadFromDataSet(aQry,  SetOf([]));
+
+  //all fields Read-Only, except the 'Check' field
+  for i := 0 to Result.FieldCount - 1 do
+    Result.Fields.Fields[i].ReadOnly := True;
+  Result.FieldByName('Check').ReadOnly := False;
+
+  aQry.Active := False;
+  aQry.Free;
+end;
+
+//---- Show the Gen. Materials to the user, user has to flag what materials to include in the Where User List
+
+function GetMaterials: TSysTable;
+var
+  ParamList: TStringList;
+begin
+  Result := GetErpMaterials;
+
+  ParamList := TStringList.Create;
+
+  ParamList.Add('KeyField=RecId');
+  ParamList.Add('Hide=MaterialsId');
+  ParamList.Add('Hide=RecId');
+
+  ParamList.Add('Indicator=True');
+  ParamList.Add('Filter=True');
+
+  ParamList.Add('Caption=Materials Where Used List Selection');
+
+  ParamList.Add('LoadSettings=WhereUsed_Materials');
+  ParamList.Add('SHOWEXPORTTOCSV=True');
+
+  if not( Fnc.OpenDataGrid(Result, ParamList, nil, False) = 1) then
+  begin
+    while Result.Locate('Check', True,  SetOf([])) do
+    begin
+      Result.Edit;
+      Result.FieldByName('Checked').AsBoolean := False;
+      Result.Post;
+    end;
+  end;
+
+  ParamList.Free;
+end;
+
+//---- Create the table to show the results to the user
+
+function CreateWhereUsedTable: TSysTable;
+begin
+  Result := Fnc.SysTableCreate('WhereUsed');
+  Fnc.SysTableAddField(Result, 'RecId', 0, ftAutoInc);
+
+  Fnc.SysTableAddField(Result, 'Process', 0, ftBoolean);
+
+  Fnc.SysTableAddField(Result, 'JobId', 0, ftInteger);
+  Fnc.SysTableAddField(Result, 'JobName', 50, ftString);
+  Fnc.SysTableAddField(Result, 'JobRev', 10, ftString);
+
+  Fnc.SysTableAddField(Result, 'PartNumber', 50, ftString);
+  Fnc.SysTableAddField(Result, 'PartRev', 50, ftString);
+  Fnc.SysTableAddField(Result, 'PartDesc', 50, ftString);
+
+  Fnc.SysTableAddField(Result, 'Customer', 50, ftString);
+
+  Fnc.SysTableAddField(Result, 'MatrlId', 0, ftInteger);
+  Fnc.SysTableAddField(Result, 'MatrlType', 50, ftString);
+  Fnc.SysTableAddField(Result, 'MatrlFamily', 50, ftString);
+  Fnc.SysTableAddField(Result, 'MatrlDesc', 50, ftString);
+
+  Fnc.SysTableAddField(Result, 'ErpMatrlNum', 50, ftString);
+  Fnc.SysTableAddField(Result, 'ErpMatrlDesc', 100, ftString);
+
+  Fnc.SysTableAddField(Result, 'UserName', 50, ftString);
+  Fnc.SysTableAddField(Result, 'UserEMail', 50, ftString);
+
+  Result.Active := True;
+end;
+
+//---- Search the database for jobs that use the generic material
+
+procedure GetWhereUsedList(aQry: TAdoQuery; MaterialsId: String);
+begin
+  aQry.Active := False;
+  aQry.Sql.Clear;
+  aQry.Sql.Add(
+      ' SELECT DISTINCT' +
+      '   jeb.JobId, jeb.RecIdMaterial, jeb.GenMatrlType,' +
+      '   jeb.GenMatrlFamily, jeb.GenMatrlDesc, jeb.ErpMatrlNum,' +
+      '   jeb.ErpMatrlDesc, j.JobName, j.Revision, c.CustomerName,' +
+      '   p.PartNumberName, p.PartRevision, p.PartDescription,' +
+      '   u.UserName, u.EmailUserName' +
+      ' FROM' +
+      '   Cust_JobErpBom jeb' +
+      '   LEFT JOIN Jobs j ON (j.JobId=jeb.JobId)' +
+      '   LEFT JOIN Customers c ON (c.CustomerId=j.CustomerId)' +
+      '   LEFT JOIN PartNumbers p ON (p.PartNumberId=j.PartNumberId)' +
+      '   LEFT JOIN Users u ON (u.UserId=j.UserId)' +
+      ' WHERE' +
+      '   jeb.GenMatrlPntr = ' + MaterialsId);
+  aQry.Active := True;
+end;
+
+//---- Populate the compressed Where-Used table
+
+function SearchForJobs(MatrlTable: TSysTable): TSysTable;
+var
+  qryUsed: TAdoQuery;
+begin
+  Result := CreateWhereUsedTable;
+
+  qryUsed := TAdoQuery.Create(nil);
+  qryUsed.Connection := Fnc.DBConnection;
+
+  MatrlTable.First;
+  while not MatrlTable.Eof do
+  begin
+    GetWhereUsedList(qryUsed, MatrlTable.FieldByName('MaterialsId').AsString);
+
+    qryUsed.First;
+
+    while not qryUsed.Eof do
+    begin
+
+      if not Result.Locate(
+                 'JobId;ErpMatrlNum',
+                 [
+                     qryUsed.FieldByName('JobId').AsInteger,
+                     qryUsed.FieldByName('ErpMatrlNum').AsString],
+                 SetOf(loCaseInsensitive)) then
+      begin
+        Result.Append;
+
+        Result.FieldByName('Process').AsBoolean := True;
+        Result.FieldByName('JobId').AsInteger := qryUsed.FieldByName('JobId').AsInteger;
+        Result.FieldByName('JobName').AsString := qryUsed.FieldByName('JobName').AsString;
+        Result.FieldByName('JobRev').AsString := qryUsed.FieldByName('Revision').AsString;
+        Result.FieldByName('PartNumber').AsString := qryUsed.FieldByName('PartNumberName').AsString;
+        Result.FieldByName('PartRev').AsString := qryUsed.FieldByName('PartRevision').AsString;
+        Result.FieldByName('PartDesc').AsString := qryUsed.FieldByName('PartDescription').AsString;
+        Result.FieldByName('Customer').AsString := qryUsed.FieldByName('CustomerName').AsString;
+        Result.FieldByName('MatrlId').AsInteger := qryUsed.FieldByName('RecIdMaterial').AsInteger;
+        Result.FieldByName('MatrlType').AsString := qryUsed.FieldByName('GenMatrlType').AsString;
+        Result.FieldByName('MatrlFamily').AsString := qryUsed.FieldByName('GenMatrlFamily').AsString;
+        Result.FieldByName('MatrlDesc').AsString := qryUsed.FieldByName('GenMatrlDesc').AsString;
+        Result.FieldByName('ErpMatrlNum').AsString := qryUsed.FieldByName('ErpMatrlNum').AsString;
+        Result.FieldByName('ErpMatrlDesc').AsString := qryUsed.FieldByName('ErpMatrlDesc').AsString;
+        Result.FieldByName('UserName').AsString := qryUsed.FieldByName('UserName').AsString;
+        Result.FieldByName('UserEMail').AsString := qryUsed.FieldByName('EmailUserName').AsString;
+
+        Result.Post;
+      end;
+
+      qryUsed.Next;
+    end;
+
+    MatrlTable.Next;
+  end;
+
+  qryUsed.Active := False;
+  qryUsed.Free;
+end;
+
+//---- Process the jobs as flagged by the user
+
+procedure UpdateJobs(var JobId: integer; var JournalMsg: string; var EMailMsg: string; var UserEMail);
+var
+  aQry: TAdoQuery;
+  msgList: TStringList;
+  toList: TStringList;
+  ccList: TStringList;
+begin
+  if JobId < 0 then
+    exit;
+
+{
+  // Update the Job Status - ???? is the Id of the new status
+
+  aQry := TAdoQuery.Create(nil);
+  aQry.Connection := Fnc.DBConnection;
+  aQry.Sql.Text := 'UPDATE Jobs SET JobStatusId = ' + ???? + ' WHERE JobId = ' + IntToStr(JobId);
+  aQry.ExecSql;
+  aQry.Free;
+}
+
+{
+  // insert a JobJournal Message
+
+  Fnc.JobJournalUpdate(JobId, JournalMsg, 'Normal', 'Material Verification');
+}
+
+{
+  // Push an EMail to the engineer that processed the job
+
+  if not (UserEMail = '') then
+  begin
+    toList := TStringList.Create;
+    toList.Text := UserEMail;
+
+    ccList := TStringList.Create;
+
+    msgList := TStringList.Create;
+    msgList.Text := EMailMsg;
+
+    Fnc.SendMail('Engenix Material Verification', msgList, toList, ccList);
+
+    toList.Free;
+    ccList.Free;
+    msfList.Free;
+  end;
+}
+
+  JobId := -1;
+  JournalMsg := '';
+  EMailMsg := '';
+  UserEMail := '';
+end;
+
+//---- Loop the table, prepare the messages, etc, and finally call the procedure to update the database
+
+procedure ProcessJobs(WhereUsedTable: TSysTable);
+var
+  LastJobId: integer;
+  JournalMsg: string;
+  EMailMsg: string;
+  UserEMail: string;
+begin
+  LastJobId := -1;
+  JournalMsg := '';
+  EMailMsg := '';
+  UserEMail := '';
+
+  WhereUsedTable.First;
+  while not WhereUsedTable.Eof do
+  begin
+    if not (WhereUsedTable.FieldByName('JobId').AsInteger = LastJobId) then
+      UpdateJobs(LastJobId, JournalMsg, EMailMsg, UserEMail);
+
+    LastJobId := WhereUsedTable.FieldByName('JobId').AsInteger;
+    UserEMail := WhereUsedTable.FieldByName('UserEMail').AsString;
+
+    if EMailMsg = '' then
+      EMailMsg := 'Job: ' + WhereUsedTable.FieldByName('JobName').AsString + #13 +
+                  'Rev: ' + WhereUsedTable.FieldByName('JobRev').AsString + #13 + #13 +
+                  'Part: ' + WhereUsedTable.FieldByName('PartNumber').AsString + #13 +
+                  'Rev: ' + WhereUsedTable.FieldByName('PartRev').AsString + #13 +
+                  'Desc: ' + WhereUsedTable.FieldByName('PartDesc').AsString + #13 + #13 +
+                  'Requires Material Verification for';
+
+    EMailMsg := EMailMsg + #13 +
+                WhereUsedTable.FieldByName('MatrlType').AsString  + ', ' +
+                WhereUsedTable.FieldByName('MatrlFamily').AsString + ', ' +
+                WhereUsedTable.FieldByName('MatrlDesc').AsString;
+
+    if not (JournalMsg = '') then
+      JournalMsg := JournalMsg + #13;
+    JournalMsg := JournalMsg + 'Material Verification: ' +
+              WhereUsedTable.FieldByName('MatrlType').AsString + ', ' +
+              WhereUsedTable.FieldByName('MatrlFamily').AsString + ', ' +
+              WhereUsedTable.FieldByName('MatrlDesc').AsString;
+
+    WhereUsedTable.Next;
+  end;
+
+  // process the last one
+  UpdateJobs(LastJobId, JournalMsg, EMailMsg, UserEMail);
+end;
+
+procedure ShowJobs(WhereUsedTable: TSysTable);
+var
+  i: integer;
+  ParamList: TStringList;
+begin
+  for i := 0 to WhereUsedTable.FieldCount - 1 do
+    WhereUsedTable.Fields.Fields[i].ReadOnly := True;
+  WhereUsedTable.FieldByName('Process').ReadOnly := False;
+
+  ParamList := TStringList.Create;
+
+  ParamList.Add('KeyField=RecId');
+  ParamList.Add('Hide=RecId');
+  ParamList.Add('Hide=JobId');
+  ParamList.Add('Hide=MatrlId');
+
+  ParamList.Add('Indicator=True');
+  ParamList.Add('Caption=Select Jobs to be flagged');
+
+  ParamList.Add('SHOWEXPORTTOCSV=True');
+
+  if Fnc.OpenDataGrid(WhereUsedTable, ParamList, nil, False) = 1 then
+  begin
+    WhereUsedTable.Filter := 'Process=True';
+    WhereUsedTable.Filtered := True;
+    // based on customer requirements we can process the selected jobs
+
+    {
+    //- change job-status, send Emails, etc, etc
+    ProcessJobs(WhereUsedTable);
+    }
+
+    //- View the data in a Report, the script has to run in the Stackup dialog to view a report
+    WhereUsedTable.SortFields := 'JobName;JobRev;MatrlType;MatrlFamily;MatrlDesc';
+    WhereUsedTable.SortDefault;
+    Fnc.ShowReport('Template_WhereUsed', '', '', False, WhereUsedTable);
+
+    WhereUsedTable.Filtered := False;
+    WhereUsedTable.Filter := '';
+  end;
+
+  ParamList.Free;
+end;
+
+procedure RunWhereUsedList;
+var
+  MatrlTable: TSysTable;
+  WhereUsedTable: TSysTable;
+begin
+  MatrlTable := nil;
+  WhereUsedTable := nil;
+
+  if CheckForCustErpBomTable then
+  begin
+    MatrlTable := GetMaterials;
+
+    MatrlTable.Filter := 'Check=True';
+    MatrlTable.Filtered := True;
+
+    if MatrlTable.RecordCount < 1 then
+      MessageDlg('No material selected', mtInformation, SetOf(mbCancel), 0)
+    else
+    begin
+      WhereUsedTable := SearchForJobs(MatrlTable);
+
+      if WhereUsedTable.RecordCount < 1 then
+        MessageDlg('Material(s) not used in stack-up', mtInformation, SetOf(mbOk), 0)
+      else
+        ShowJobs(WhereUsedTable);
+    end;
+  end;
+
+  if assigned(MatrlTable) then
+  begin
+    MatrlTable.Active := False;
+    Fnc.SysTableDestroy(MatrlTable);
+  end;
+
+  if assigned(WhereUsedTable) then
+  begin
+    WhereUsedTable.Active := False;
+    Fnc.SysTableDestroy(WhereUsedTable);
+  end;
+end;

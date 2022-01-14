@@ -1,0 +1,146 @@
+//HeaderImportExport-->
+//SiteId=0
+//Enterprise=True
+//ScriptType=0
+//ScriptGroup=HCS
+//HeaderImportExport<--
+function GetGapHeader: TAdoQuery;
+begin
+  Result := TAdoQuery.Create(nil);
+  Result.Connection := Fnc.DBConnection;
+  Result.Sql.Add('Select    MF.Description as Family');
+  Result.Sql.Add('         ,MGH.*');
+  Result.Sql.Add('From      MaterialsGapHeader as MGH');
+  Result.Sql.Add('Left Join MaterialsFamily as MF On (MF.MaterialsFamilyId=MGH.MaterialsFamilyId)');
+  Result.Sql.Add('Order By  MaterialsGapHeaderId');
+  Result.Active := True;
+end;
+                                
+function GetGapDetails: TAdoQuery;
+begin
+  Result := TAdoQuery.Create(nil);
+  Result.Connection := Fnc.DBConnection;
+  Result.Sql.Add('Select    M.Description as MatrlDesc');
+  Result.Sql.Add('         ,M.MaterialsTypeId');
+  Result.Sql.Add('         ,MF.Description as MatrlFamily');
+  Result.Sql.Add('         ,MGD.*');
+  Result.Sql.Add('From      MaterialsGapDetail as MGD');
+  Result.Sql.Add('Left Join Materials as M On (M.MaterialsID=MGD.MaterialsId)');
+  Result.Sql.Add('Left Join MaterialsFamily as MF On (MF.MaterialsFamilyId=M.MaterialsFamilyId)');
+  Result.Sql.Add('Order By  MaterialsGapHeaderId, GapDetailSeq');
+  Result.Active := True;
+end;
+
+function GetResultTable: TSysTable;
+begin
+  Result := Fnc.SysTableCreate('GapCheck');
+  Fnc.SysTableAddField(Result, 'RecId', 0, ftAutoInc);
+  Fnc.SysTableAddField(Result, 'Family', 50, ftString);
+  Fnc.SysTableAddField(Result, 'GapName', 50, ftString);
+  Fnc.SysTableAddField(Result, 'ErrMsg', 1024, ftString);
+  Result.Active := True;
+end;
+
+procedure AddToMsg(var errMsg: streing; Msg: string);
+begin
+  if Msg <> '' then
+  begin
+    if errMsg <> '' then
+      errMsg := errMsg + ' # ';
+    errMsg := errMsg + Msg;
+  end;
+end;
+
+procedure CheckPPFIllerDefinition(GapHeader: TAdoQuery; GapDetails: TAdoQuery; CompareResult: TSysTable);
+var
+  errMsg: string;
+  GapDesc: string;
+begin
+  GapHeader.First;
+  GapDetails.First;
+
+  while not GapHeader.Eof do
+  begin
+    errMsg := '';
+    GapDesc := '';
+
+    while not GapDetails.Eof do
+    begin
+      if GapDetails.FieldByName('MaterialsGapHeaderId').AsInteger > GapHeader.FieldByName('MaterialsGapHeaderId').AsInteger then
+        break;
+
+      if GapDetails.FieldByName('MaterialsGapHeaderId').AsInteger = GapHeader.FieldByName('MaterialsGapHeaderId').AsInteger then
+      begin
+        if GapDesc <> '' then
+          GapDesc := GapDesc +'/';
+        GapDesc := GapDesc + GapDetails.FieldByName('MatrlDesc').AsString;
+
+        if GapDetails.FieldByName('MatrlFamily').AsString <> GapHeader.FieldByName('Family').AsString then
+          AddToMsg(errMsg, 'Header/Details Family Mismatch: ' + GapDetails.FieldByName('MatrlFamily').AsString);
+
+        if GapDetails.FieldByName('MaterialsTypeId').AsInteger <> 3 then
+          AddToMsg(errMsg, 'None-Prepreg in details: ' + GapDetails.FieldByName('MatrlDesc').AsString);
+      end;
+
+      GapDetails.Next;
+    end;
+
+    if GapDesc <> GapHeader.FieldByName('Description').AsString then
+    begin
+      if GapDesc = '' then
+        AddToMsg(errMsg, 'No Prepregs linked to the Header')
+      else
+        AddToMsg(errMsg, 'Name Mismatch: ' + GapDesc);
+    end;
+
+    if errMsg <> '' then
+    begin
+      CompareResult.Append;
+      CompareResult.FieldByName('Family').AsString := GapHeader.FieldByName('Family').AsString;
+      CompareResult.FieldByName('GapName').AsString := GapHeader.FieldByName('Description').AsString;
+      CompareResult.FieldByName('ErrMsg').AsString := errMsg;
+      CompareResult.Post;
+    end;
+
+    GapHeader.Next;
+  end;
+end;
+
+procedure DoCheckPPFiller;
+var  
+  ParamList: TStringList;
+  GapHeader: TAdoQuery;
+  GapDetails: TAdoQuery;
+  CompareResult: TSysTable;
+begin                             
+  Fnc.MouseBusy;
+
+  GapHeader := GetGapHeader;
+//  Fnc.OpenDataGrid(GapHeader);
+
+  GapDetails := GetGapDetails;
+//  Fnc.OpenDataGrid(GapDetails);
+
+  CompareResult := GetResultTable;
+
+  CheckPPFIllerDefinition(GapHeader, GapDetails, CompareResult);
+
+  Fnc.MouseNormal;
+
+  ParamList := TStringList.Create;
+  ParamList.Add('ShowExportToCsv=True');
+  ParamList.Add('Hide=RecId');
+  Fnc.OpenDataGrid(CompareResult, ParamList);
+
+  CompareResult.Active := False;
+  Fnc.SysTableDestroy(CompareResult);
+  ParamList.Free;
+
+  GapDetails.Active := False;
+  GapDetails.Free;
+
+  GapHeader.Active := False;
+  GapHeader.Free;
+end;
+
+

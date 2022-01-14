@@ -1,0 +1,50 @@
+//HeaderImportExport-->
+//SiteId=0
+//Enterprise=True
+//ScriptType=0
+//ScriptGroup=
+//HeaderImportExport<--
+var
+  i: integer;
+  qryFileAttch: TAdoQuery
+begin
+  // do NOT sort on FileName, else positioning will in the update will get out of sync
+  qryFileAttch := Fnc.SqlRunNew('Select * From FileAttachments');
+
+//  Fnc.OpenDataGrid(qryFileAttch);            
+
+  Fnc.MouseBusy;
+
+  i := 0;
+
+  qryFileAttch.First;
+
+  while not qryFileAttch.Eof do
+  begin
+
+    if pos('\\engenix1', LowerCase(qryFileAttch.FieldByName('FileName').AsString)) > 0 then
+    begin
+
+      qryFileAttch.Edit;
+      qryFileAttch.FieldByName('FileName').AsString := StringReplace(qryFileAttch.FieldByName('FileName').AsString, '\\engenix1', '\\engenix2', SetOf([rfIgnoreCase]));
+      qryFileAttch.Post;
+                                           
+      //qryFileAttch.Post;
+
+      Inc(i);
+
+//   -->> for testing, exit the loop after 5 updates
+      //if i > 20000 then
+      //  break; 
+    end;
+
+    qryFileAttch.Next;
+  end;
+
+  Fnc.MouseNormal;
+
+  Fnc.OpenDataGrid(qryFileAttch);
+
+  qryFileAttch.Active := False;
+  qryFileAttch.Free;
+end;                                                       

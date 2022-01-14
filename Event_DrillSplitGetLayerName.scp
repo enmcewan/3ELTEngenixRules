@@ -1,0 +1,10 @@
+//HeaderImportExport-->
+//SiteId=0
+//Enterprise=True
+//ScriptType=1
+//ScriptGroup=Create / Edit Layers
+//HeaderImportExport<--
+procedure DrillSplitGetLayerName(ParamList: TStringList);
+begin
+  ParamList.Values['LayerName'] := Format('Drill_%s_%s', [ParamList.Values['StartIndx'], ParamList.Values['EndIndx']]);
+end;

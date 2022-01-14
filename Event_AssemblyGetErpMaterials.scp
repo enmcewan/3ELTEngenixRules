@@ -1,0 +1,100 @@
+//HeaderImportExport-->
+//SiteId=0
+//Enterprise=True
+//ScriptType=1
+//ScriptGroup=Assembly
+//HeaderImportExport<--
+{
+  Script runs in the Assembly module to fetch the specific Assembly materials
+  from the ERP system. This script can be setup similar as the BomConvGetErpMaterials
+  script.
+
+  The following fields are mandatory:
+  
+  Fnc.SysTableAddField(ErpAssemblyMaterialsTable, 'ErpId', 25, FtString, False);     // Mandatory
+  Fnc.SysTableAddField(ErpAssemblyMaterialsTable, 'Group', 20, FtString, False);     // Mandatory
+  Fnc.SysTableAddField(ErpAssemblyMaterialsTable, 'Item', 50, FtString, False);      // Mandatory
+  Fnc.SysTableAddField(ErpAssemblyMaterialsTable, 'Value', 50, FtString, False);     // Mandatory
+  Fnc.SysTableAddField(ErpAssemblyMaterialsTable, 'UOM', 10, FtString, False);       // Mandatory 
+}
+procedure AssemblyGetErpMaterials(ErpAssemblyMaterialsTable: TSysTable);
+var
+  SqlStr: string;
+  InvTable: TSysTable;
+begin
+{
+  // Get the basic Inventory data from Paradigm
+  SqlStr := 'SELECT' +
+            ' CAST(Data0017.RKey AS Integer) as ErpId' +
+            ' ,Data0017.Inv_Part_Number as InvPartNum' +
+            ' ,Data0017.Inv_Part_Description as InvPartDesc' +
+            ' ,Data0017.Quan_On_Hand as OnHand' +                                               
+            ' ,Data0017.Quan_Allocated as Allocated' +          
+            ' ,Data0017.Quan_On_Order as OnOrder' +
+            ' ,Data0017.Quan_In_Insp as InInspection' +
+            ' ,Data0017.Alternate_Part_Ptr as AltErpId' +                                   
+            ' ,Data0002.Unit_Code as UOM' +
+            ' ,Data0008.Prod_Code as ProdCode' +
+            ' FROM Data0017, Data0002, Data0008' +
+            ' WHERE' +
+            ' Data0017.P_M = ' + QuotedStr('P') +
+            ' and Data0002.RKey = Data0017.Stock_Unit_Ptr' +
+            ' and Data0008.RKey = Data0017.Prod_Code_Sell_Ptr' +
+            ' ORDER BY Data0017.Inv_Part_Number';
+                                 
+  InvTable  := Fnc.AstaExecuteSql(SqlStr);                           
+                                         
+  Fnc.SysTableAddField(ErpAssemblyMaterialsTable, 'ErpId', 25, FtString, False);     // Mandatory
+  Fnc.SysTableAddField(ErpAssemblyMaterialsTable, 'Group', 20, FtString, False);     // Mandatory
+  Fnc.SysTableAddField(ErpAssemblyMaterialsTable, 'Item', 50, FtString, False);      // Mandatory
+  Fnc.SysTableAddField(ErpAssemblyMaterialsTable, 'Value', 50, FtString, False);     // Mandatory
+  Fnc.SysTableAddField(ErpAssemblyMaterialsTable, 'UOM', 10, FtString, False);       // Mandatory
+  Fnc.SysTableAddField(ErpAssemblyMaterialsTable, 'FreeQuantity', 0, FtFloat, False);// User defined
+  Fnc.SysTableAddField(ErpAssemblyMaterialsTable, 'AltErpId', 25, FtString, False);  // User defined 
+  Fnc.SysTableAddField(ErpAssemblyMaterialsTable, 'Std_Cost', 0, FtFloat, False);    // User defined
+  Fnc.SysTableAddField(ErpAssemblyMaterialsTable, 'OnHand', 0, FtFloat, False);      // User defined
+  Fnc.SysTableAddField(ErpAssemblyMaterialsTable, 'Allocated', 0, FtFloat, False);   // User defined
+  Fnc.SysTableAddField(ErpAssemblyMaterialsTable, 'OnOrder', 0, FtFloat, False);     // User defined
+  Fnc.SysTableAddField(ErpAssemblyMaterialsTable, 'Inspection', 0, FtFloat, False);  // User defined
+
+  ErpAssemblyMaterialsTable.Fields.FieldByName('ErpId').Visible := False;
+  ErpAssemblyMaterialsTable.Fields.FieldByName('AltErpId').Visible := False;
+  ErpAssemblyMaterialsTable.Fields.FieldByName('Item').DisplayLabel := 'Inv.Part.Num';
+  ErpAssemblyMaterialsTable.Fields.FieldByName('Value').DisplayLabel := 'Inv.Part.Desc';
+
+  ErpAssemblyMaterialsTable.Open;
+
+  if not (InvTable = nil) then
+  begin
+    InvTable.First;
+    while not InvTable.Eof do
+    begin
+      ErpAssemblyMaterialsTable.Append;
+      ErpAssemblyMaterialsTable.FieldByName('ErpId').AsString := InvTable.FieldByName('ErpId').AsString;
+      ErpAssemblyMaterialsTable.FieldByName('Group').AsString := InvTable.FieldByName('ProdCode').AsString;
+      ErpAssemblyMaterialsTable.FieldByName('Item').AsString := InvTable.FieldByName('InvPartNum').AsString;
+      ErpAssemblyMaterialsTable.FieldByName('Value').AsString := InvTable.FieldByName('InvPartDesc').AsString;
+      ErpAssemblyMaterialsTable.FieldByName('AltErpId').AsString := InvTable.FieldByName('AltErpId').AsString;
+      ErpAssemblyMaterialsTable.FieldByName('UOM').AsString := InvTable.FieldByName('UOM').AsString;
+      ErpAssemblyMaterialsTable.FieldByName('FreeQuantity').AsFloat :=
+                       InvTable.FieldByName('OnHand').AsFloat -
+                       InvTable.FieldByName('Allocated').AsFloat;
+      ErpAssemblyMaterialsTable.FieldByName('OnHand').AsFloat := InvTable.FieldByName('OnHand').AsFloat;
+      ErpAssemblyMaterialsTable.FieldByName('Allocated').AsFloat := InvTable.FieldByName('Allocated').AsFloat;
+      ErpAssemblyMaterialsTable.FieldByName('OnOrder').AsFloat := InvTable.FieldByName('OnOrder').AsFloat;
+      ErpAssemblyMaterialsTable.FieldByName('Inspection').AsFloat := InvTable.FieldByName('InInspection').AsFloat;
+
+      ErpAssemblyMaterialsTable.Post;     
+      
+      InvTable.Next;
+    end;
+  end;
+
+  if not (InvTable = nil) then
+  begin
+     InvTable.Close;
+     Fnc.SysTableDestroy(InvTable);
+  end;
+}
+end;
+

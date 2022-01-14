@@ -1,0 +1,285 @@
+//HeaderImportExport-->
+//SiteId=0
+//Enterprise=True
+//ScriptType=0
+//ScriptGroup=
+//HeaderImportExport<--
+const
+  cMaterialsTypeId_Prepreg = 3;   // MaterialsType.MaterialsTypeId, Prepreg
+  cMaterialsTypeId_PP_FIller = 4; // MaterialsType.MaterialsTypeId, PP/Filler
+
+  c1GHzId = 1;  // MaterialFrequency.FrequencyID,  1 GHz
+  c5GHzId = 2;  // MaterialFrequency.FrequencyID,  5 GHz
+  c10GHzId = 3; // MaterialFrequency.FrequencyID, 10 GHz
+
+var
+  genQry: TAdoQuery;
+  qryFamily: TAdoQuery;
+  tblMaterials: TAdoQuery;
+  qryIESBom: TAdoQuery;
+  tblLookup: TAdoQuery;
+  qryGapHeader: TAdoQuery;
+  qryGapDetail: TAdoQuery;
+
+function GetEngenixQry(sql: string): TAdoQuery;
+begin
+  Result := TAdoQuery.Create(nil);
+  Result.Connection := Fnc.DBConnection;
+  Result.Sql.Text := sql;                                                            
+  Result.Active := True;
+end;
+
+function GetEngenixTbl(sql: string): TSysTable;
+begin
+  genQry.Active := False;
+  genQry.Sql.Text := sql;
+  genQry.Active := True;
+
+  Result := Fnc.SysTableCreate('myTable');
+  Fnc.SysDBQueryToMemTableStruc(genQry, Result);
+  Fnc.SysCloneSysTableData(genQry, Result);
+
+  genQry.Active := False;
+end;
+
+function GetIESBom: TAdoQuery;
+begin
+  Result := TAdoQuery.Create(nil);
+  Result.Connection := Fnc.DBConnection;
+  Result.Sql.Add('Select   RKey, PARENT_PTR, LAYUP_SEQ, Type, Cnv_MaterialsId');
+//  Result.Sql.Add('Select Top 5000 RKey, PARENT_PTR, LAYUP_SEQ, Type, Cnv_MaterialsId');
+  Result.Sql.Add('From     PDMIESStackup');
+  Result.Sql.Add('Order By PARENT_PTR, LAYUP_SEQ');
+  Result.Active := True;
+end;
+
+function GetFamilyId(Family: string): integer;
+begin
+  Result := -1;
+
+  if qryFamily.Locate('Description', Family, SetOf([loCaseInsensitive])) then
+    Result := qryFamily.FieldByName('MaterialsFamilyId').AsInteger;
+end;
+
+procedure PrepareGapHeaderSql(FamilyId: integer; Description: string);
+begin
+  qryGapHeader.Active := False;
+  qryGapHeader.Sql.Text := ' Select * From MaterialsGapHeader'
+                  + Format(' Where  (MaterialsTypeId = %d)', [cMaterialsTypeId_PP_FIller])
+                  + Format('   and  (MaterialsFamilyId = %d)', [FamilyId])
+                  + Format('   and  (Description = %s)', [QuotedStr(Description)]);
+  qryGapHeader.Active := True;
+end;
+
+function ReverseGapDoesExists(aList: TStringList): boolean;
+var
+  i: integer;
+  FamilyId: integer;
+  Description: integer;
+begin
+  Result := False;
+  Description := '';
+
+  for i := aList.Count - 1 downto 0 do
+  begin
+    tblMaterials.Locate('MaterialsId', aList.Strings[i], SetOf([]));
+
+    if Description <> '' then
+      Description := Description + '/' + tblMaterials.FieldByName('Description').AsString
+    else
+    begin
+      Description := tblMaterials.FieldByName('Description').AsString;
+      FamilyId := tblMaterials.FieldByName('MaterialsFamilyId').AsInteger
+    end;
+  end;
+
+  PrepareGapHeaderSql(FamilyId, Description);
+
+  Result := not qryGapHeader.IsEmpty;
+
+  qryGapHeader.Active := False;
+end;
+
+procedure InsertPPFiller(aList: TStringList);
+var
+  i: integer;
+  Description: string;
+  FamilyId: integer;
+  Thickness: double;
+  GlassThickness: double;
+begin
+  if aList.Count < 1 then
+    exit; // nothing to insert
+
+  if aList.Count > 1 then
+  begin
+    if ReverseGapDoesExists(aList) then
+    begin
+      aList.Clear;
+      exit;
+    end;
+  end;
+
+  Description := '';
+  Thickness := 0.0;
+  GlassThickness := 0.0;
+
+  // create the name of the PP/Filler
+  for i := 0 to aList.Count - 1 do
+  begin
+    tblMaterials.Locate('MaterialsId', aList.Strings[i], SetOf([]));
+
+    if i < 1 then
+      FamilyId := tblMaterials.FieldByName('MaterialsFamilyId').AsInteger
+    else
+      Description := Description + '/';
+
+    Description := Description + tblMaterials.FieldByName('Description').AsString;
+    Thickness := Thickness + tblMaterials.FieldByName('ThicknessAfterPressing').AsFloat;
+    GlassThickness := GlassThickness + tblMaterials.FieldByName('GlassThickness').AsFloat;
+  end;
+
+  PrepareGapHeaderSql(FamilyId, Description);
+
+  if qryGapHeader.IsEmpty then
+  begin
+    qryGapHeader.Append;
+    qryGapHeader.FieldByName('MaterialsTypeId').AsInteger := cMaterialsTypeId_PP_FIller;
+    qryGapHeader.FieldByName('MaterialsFamilyId').AsInteger := FamilyId;
+    qryGapHeader.FieldByName('Description').AsString := Description;
+    qryGapHeader.FieldByName('ThicknessAfterPressing').AsFloat := Thickness;
+    qryGapHeader.FieldByName('Ply').AsInteger := aList.Count;
+    qryGapHeader.FieldByName('GlassThickness').AsFloat := GlassThickness;
+    qryGapHeader.FieldByName('Active').AsBoolean := True;
+    qryGapHeader.Post;
+
+    qryGapDetail.Active := False;
+    qryGapdetail.Sql.Text := ' Select *'
+                            + ' From MaterialsGapDetail'
+                            + ' Where MaterialsGapHeaderId = ' + qryGapHeader.FieldByName('MaterialsGapHeaderId').AsString;
+    qryGapDetail.Active := True;
+
+    for i := 0 to aList.Count - 1 do
+    begin
+      qryGapDetail.Append;
+      qryGapDetail.FieldByName('MaterialsGapHeaderId').AsInteger := qryGapHeader.FieldByName('MaterialsGapHeaderId').AsInteger;
+      qryGapDetail.FieldByName('MaterialsId').AsString := aList.Strings[i];
+      qryGapDetail.FieldByName('GapDetailSeq').AsInteger := i + 1;
+      qryGapDetail.Post;
+    end;
+  end;
+
+  qryGapDetail.Active := False;
+  qryGapHeader.Active := False;
+
+  aList.Clear;
+end;
+
+procedure InsertPPFillerForSinglePrepreg;
+var
+  aList: TStringLIst;
+  SaveMaterialsId: integer;
+begin
+  aList := TStringList.Create;
+
+  tblMaterials.First;
+  while not tblMaterials.Eof do
+  begin
+    SaveMaterialsId := tblMaterials.FieldByName('MaterialsId').AsInteger;
+
+    aList.Add(tblMaterials.FieldByName('MaterialsId').AsString);
+
+    InsertPPFiller(aList);
+
+    if tblMaterials.FieldByName('MaterialsId').AsInteger <> SaveMaterialsId then
+      tblMaterials.Locate('MaterialsId', SaveMaterialsId, SetOf([]));
+
+    tblMaterials.Next;
+  end;
+
+  aList.Free;
+end;
+
+procedure InsertPPFillerFromParadigm;
+var
+  aList: TStringList;
+  Parent_Ptr: integer;
+  FamilyId: integer;
+begin
+  aList := TStringList.Create;
+  Parent_Ptr := -1;
+
+  qryIESBom.First;
+  while not qryIESBom.Eof do
+  begin
+    // there is some invalid data in the input table
+    if (qryIESBom.FieldByName('RKey').AsInteger > 0) then
+    begin
+
+      if (Parent_Ptr <> qryIESBom.FieldByName('Parent_Ptr').AsInteger) or
+         (qryIESBom.FieldByName('Type').AsString <> 'P') or
+         (qryIESBom.FieldByName('Cnv_MaterialsId').IsNull) or
+         (qryIESBom.FieldByName('Cnv_MaterialsId').AsInteger < 1) then
+      begin
+        InsertPPFiller(aList);
+        Parent_Ptr := qryIESBom.FieldByName('Parent_Ptr').AsInteger;
+      end;
+
+      if qryIESBom.FieldByName('Cnv_MaterialsId').AsInteger > 0 then
+        aList.Add(qryIESBom.FieldByName('Cnv_MaterialsId').AsString);
+    end;
+
+    qryIESBom.Next;
+  end;
+
+  // and process the last one
+  InsertPPFiller(aList);
+
+  aList.Free;
+end;
+
+var
+  aMsg: string;
+begin
+  aMsg := 'Did you define Frequencies and checked the Frequency and MaterialType pointers in this script?';
+  if not (MessageDlg(aMsg, mtConfirmation, SetOf([mbOk, mbCancel]), 0) = mrOk) then
+    Exit;
+
+  Fnc.MouseBusy;
+
+  // just need the object created
+  genQry := GetEngenixQry('Select * From MaterialsFamily Where MaterialsFamilyId < 0');
+
+  qryFamily := GetEngenixQry('Select * From MaterialsFamily');
+  tblMaterials := GetEngenixTbl(Format('Select * From Materials Where MaterialsTypeId=%d', [cMaterialsTypeId_Prepreg]));
+  qryIESBom := GetIESBom;
+  qryGapHeader := GetEngenixQry('Select * From MaterialsGapHeader Where MaterialsGapHeaderId < 0');
+  qryGapDetail := GetEngenixQry('Select * From MaterialsGapDetail Where MaterialsGapHeaderId < 0');
+
+
+  InsertPPFillerForSinglePrepreg;
+  InsertPPFillerFromParadigm;
+
+  genQry.Active := False;
+  genQry.Free;
+
+  qryFamily.Active := False;
+  qryFamily.Free;
+
+  Fnc.SysTableDestroy(tblMaterials);
+
+  qryIESBom.Active := False;
+  qryIESBom.Free;
+
+  qryGapHeader.Active := False;
+  qryGapHeader.Free;
+
+  qryGapDetail.Active := False;
+  qryGapDetail.Free;
+
+  Fnc.MouseNormal;
+
+  aMsg := 'Generating PP/Filler Finished';
+  MessageDlg(aMsg, mtInformation, SetOf([mbOk]), 0);
+end;
+

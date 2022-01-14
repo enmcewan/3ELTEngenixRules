@@ -1,0 +1,10 @@
+//HeaderImportExport-->
+//SiteId=0
+//Enterprise=True
+//ScriptType=1
+//ScriptGroup=BOM Conversion
+//HeaderImportExport<--
+procedure BomConvPostSummary(ParamList: TStringList; UserTable: TSysTable; ErpBom: TSysTable; ErpMaterials: TSysTable);
+begin
+  // Custom Script
+end;

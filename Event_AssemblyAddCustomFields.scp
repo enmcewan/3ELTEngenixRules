@@ -1,0 +1,43 @@
+//HeaderImportExport-->
+//SiteId=0
+//Enterprise=True
+//ScriptType=1
+//ScriptGroup=Assembly
+//HeaderImportExport<--
+{
+Format of the items in the FieldList:
+
+FieldName;FieldType;FieldSize;FieldCaption;FieldReadOnly
+
+FieldName (mandatory): name of the field in de internal table
+
+FieldType (mandatory): valid options for FieldType:                                          
+  ftFloat
+  ftInteger
+  ftBoolean
+  ftMemo
+  ftString
+
+FieldSize
+  Specified value only used for fieldtype = ftString, for other fieldtypes specify a '0'               
+
+FieldCaption                              
+  By default the column header is the same as the fieldname, specify only a value  
+  as the column header needs to be different.
+             
+FieldReadOnly
+  By default the fields are read/write. Specify 'True' as the field should be ReadOnly
+                                            
+Example:
+                                               
+  FieldList.Add('myField1;ftString;10;Field1-Header';True);
+  FieldList.Add('myField2;ftString;1';;True);                        
+  FieldList.Add('myField2;ftString;1');
+  FieldList.Add('myField3;ftBoolean');
+
+==> If you make changes to this script, you have to close/re-open the Stack-up dialog
+}
+procedure AssemblyAddCustomFields(FieldList: TStringList);
+begin
+  //
+end;

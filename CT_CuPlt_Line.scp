@@ -1,0 +1,168 @@
+//HeaderImportExport-->
+//SiteId=0
+//Enterprise=True
+//ScriptType=0
+//ScriptGroup=HCS
+//HeaderImportExport<--
+uses
+  CT_SearchLibrary,
+  RouteFunctions;
+
+const
+  // have these names defined in lowercases
+  cPlatingCond_SeqNo = 'seq_no';
+  cCuPlating_TypeHeader = '1-Header';
+  cCuPlating_Condition = '3-Condition';
+
+function GetCopperPlatingValidLines(CuPlating_Line: TSysTable; LineList: TStringList; var errMsg): boolean;
+var
+  i: integer;
+  FieldName: string;
+  LineName: string;
+begin
+  LineList.Clear;
+
+  if CuPlating_Line.Locate('Type;Condition', ([cCuPlating_TypeHeader, 'Seq_No']), SetOf([loCaseInsensitive])) then
+    GetFieldNameBySequence(CuPlating_Line, LineList, 'Line');
+
+  for i := LineList.Count - 1 downto 0 do
+  begin
+    FieldName := LineList.Strings[i];
+
+    CuPlating_Line.First;
+
+    while not CuPlating_Line.Eof do               
+    begin
+
+      if LowerCase(CuPlating_Line.FieldByName('Type').AsString) = LowerCase(cCuPlating_Condition) then
+      begin
+
+        if not CheckCondition(CuPlating_Line.FieldByName(FieldName).AsString, CuPlating_Line.FieldByName('Condition').AsString) then
+        begin
+          LineName := CheckCondition_GetLineName(CuPlating_Line, FieldName, 'Type;Condition', [cCuPlating_TypeHeader, 'Line_Name']);
+
+          if errMsg <> '' then
+            errMsg := errMsg + #13;
+          errMsg := errMsg + Format('Line: %s failed on Variable: %s Values: %s', [LineName, CuPlating_Line.FieldByName('Condition').AsString, CuPlating_Line.FieldByName(FieldName).AsString]);
+
+          LineList.Delete(i);
+
+          break;
+        end;
+
+      end;
+
+      CuPlating_Line.Next;
+    end;
+  end;
+
+  Result := LineList.Count > 0;
+end;
+
+procedure GetCopperPlating_Line(var Plating_Line_Selected: string; var Plating_Line_Alternative: string);
+var
+  bCont: boolean;
+
+  i, j: integer;
+  LineList: TStringList;
+
+  FieldName: string;
+
+  errMsg: string;
+
+  CuPlating_Line: TSysTable;
+  Thickness : float;
+begin
+  errMsg := '';
+
+  Plating_Line_Selected := '';
+  Plating_Line_Alternative := '';
+
+  CuPlating_Line := Fnc.CustomTableGet('CuPlating_Line');
+
+  CuPlating_Line.Filtered := False;
+  CuPlating_Line.Filter := '';
+
+  LineList := TStringList.Create;
+
+  bCont := True;
+
+  if Fnc.SysGetAttrValue('LayerCount') > 2 then // 2 Layer Fixes
+    Thickness := Fnc.SysGetAttrValue('Press_Thickness')
+  else
+    Thickness := DSThicknessB4Plating;
+
+  if not Fnc.SysGetAttrValue('CuFilledVias') then
+  begin
+    bCont := GetCopperPlatingValidLines(CuPlating_Line, LineList, errMsg);
+  end
+  else
+  begin
+    bCont := (Thickness >= 0.1) and
+             (Thickness <= 2) and
+             (Fnc.SysGetAttrValue('ConfMask_Size') <= 100) and
+             (Fnc.SysGetAttrValue('Blind_AspectRatio') <= 0.8);
+
+    if bCont then
+      LineList.Add('LineE');
+    else
+      errMsg := 'Error: Condition not meet for FILL VIA PLATING LINE(BT<=2|CMK<=100|VALUE_BL<=0.8)'
+        + #13 + '[' + FloatToStr(Fnc.SysGetAttrValue('Press_Thickness')) + ' | ' + FloatToStr(Fnc.SysGetAttrValue('ConfMask_Size')) + ' | ' + FloatToStr(Fnc.SysGetAttrValue('Blind_AspectRatio')) + '].'
+        + #13 + 'PLS DISCUSS WITH PE.';
+  end;
+
+  if bCont then
+  begin
+    bCont := CuPlating_Line.Locate('Type;Condition', ([cCuPlating_TypeHeader, 'Line_Name']), SetOf([loCaseInsensitive]));
+
+    if bCont then
+    begin
+
+      for i := 0 to LineList.Count - 1 do
+      begin
+
+        FieldName := LineList.Strings[i];
+
+        if Plating_Line_Selected = '' then
+          Plating_Line_Selected := CuPlating_Line.FieldByName(FieldName).AsString;
+
+        if (Plating_Line_Alternative <> '') then
+          Plating_Line_Alternative := Plating_Line_Alternative + '/';
+        Plating_Line_Alternative := Plating_Line_Alternative + CuPlating_Line.FieldByName(FieldName).AsString;
+      end;
+
+    end;
+  end;
+
+  if Plating_Line_Selected = '' then
+    Plating_Line_Selected := 'NO_PLATING_LINE';
+
+  if CustCode_Rule('Customer') = 'FA' then
+  begin
+    if ((Plating_Line_Selected <> 'MCP') and (Eng_JobType = 'Sample')) then
+      ShowMessage('Warning!: FYI, Fanuc model but ' + Plating_Line_Selected + ' line selected, script will set it to MCP1 line');
+
+    Plating_Line_Selected := 'MCP';
+
+  end;
+
+  if not bCont then
+    MessageDlg(errMsg, mtWarning, SetOf([mbCancel]), 0);
+end;
+
+var
+  Plating_Line_Selected: string;
+  Plating_Line_Alternative: string;
+begin
+  InitGlobalVariables;
+
+  Plating_Line_Selected := '';
+  Plating_Line_Alternative := '';
+
+  GetCopperPlating_Line(Plating_Line_Selected, Plating_Line_Alternative);
+
+  showmessage('Plating_Line_Selected: ' + Plating_Line_Selected + #13#13 +
+              'Step_Plating_Line_Alternative: ' + Plating_Line_Alternative);
+end;
+
+

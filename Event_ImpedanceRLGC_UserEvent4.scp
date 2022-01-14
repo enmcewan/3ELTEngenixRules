@@ -1,0 +1,11 @@
+//HeaderImportExport-->
+//SiteId=0
+//Enterprise=True
+//ScriptType=1
+//ScriptGroup=Impedance RLGC
+//HeaderImportExport<--
+{ ParamList for futhur use }
+procedure ImpedanceRLGC_UserEvent4(ParamList: TStringList);
+begin
+  //
+end;

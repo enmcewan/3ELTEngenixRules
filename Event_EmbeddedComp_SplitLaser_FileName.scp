@@ -1,0 +1,35 @@
+//HeaderImportExport-->
+//SiteId=0
+//Enterprise=True
+//ScriptType=1
+//ScriptGroup=Embedded Component
+//HeaderImportExport<--
+{
+== Input
+
+- ParamList.Values['MaterialDesc'] := MaterialDesc;
+
+Name of the matersial as set in the Event_EmbeddedComp_SplitLaser_MatrlDesc script
+
+- ParamList.Values['MaterialPos']
+
+position of material in the pile, grouped on description as set in the
+Event_EmbeddedComp_SplitLaser_MatrlDesc script
+                               
+ == Output
+  
+- ParamList.Values['LayerName']
+
+Name of the drill layer
+
+- ParamList.Values['LayerTypeId'] 
+
+Drill Type Id of the drill layer, used to init the properties of the layes. Can
+be found in the Configuration Manager -> System Settings -> Drill Types ->
+tab 'Drill Types' -> column 'Id'
+      
+}
+
+procedure EmbeddedComp_SplitLaser_FileName(ParamList: TStringList);
+begin
+end;              

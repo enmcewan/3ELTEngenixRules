@@ -1,0 +1,38 @@
+//HeaderImportExport-->
+//SiteId=0
+//Enterprise=True
+//ScriptType=0
+//ScriptGroup=HCS
+//HeaderImportExport<--
+uses
+  Event_RouteGenLibrary, //Route System Scripts
+  Eng_RouteFunctions,    //Route System Functions
+  RouteFunctions;
+
+procedure InnerLayerPE;
+begin
+  //ShowMessage('Print and Etch Inners');
+  //Both Inner & Dummy Cores get Exposure & DES Steps
+  //Sub-Assembly Rules Done with Outer Layers
+  
+  if ( SandwichCore ) and ( not Fnc.SysGetAttrValueTopLevel('Alt_PEP_Process') ) then  // 1229 New PEP Flow   // 1470                                            
+    SysRouteInsertStepExt('NC_Drill_PEP_IL', 'NC_Drill_PEP_IL01');
+
+  SysRouteInsertStepExt('IL_Exposure', 'IL_Exposure01');
+  SysRouteInsertStepExt('IL_DES', 'IL_DES01');
+
+  if Fnc.SysGetAttrValue('MfgPartType') = 'Inn' then
+  begin
+    if (( CoreGetsHiPot = true ) or ( Fnc.SysGetAttrValue('HiPotTest') = true )) then
+      SysRouteInsertStepExt('HiPotTest', 'HiPotTest01');
+                      
+    SysRouteInsertStepExt('IL_AOI', 'IL_AOI01');
+    
+    {if ( SandwichCore ) and ( not Fnc.SysGetAttrValueTopLevel('Alt_PEP_Process') ) then  // 1229 New PEP Flow   // 1470
+    begin                                             
+      SysRouteInsertStepExt('IL_PEP', 'IL_PEP01');
+      SysRouteInsertStepExt('IL_SSP', 'IL_SSP01'); 
+    end;}
+    
+  end;
+end;

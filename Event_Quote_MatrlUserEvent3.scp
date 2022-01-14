@@ -1,0 +1,11 @@
+//HeaderImportExport-->
+//SiteId=0
+//Enterprise=True
+//ScriptType=1
+//ScriptGroup=Quote
+//HeaderImportExport<--
+{ ParamList is for future use }
+procedure Quote_MatrlUserEvent3(ParamList: TStingList);
+begin
+//
+end;

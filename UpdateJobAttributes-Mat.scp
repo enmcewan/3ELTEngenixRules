@@ -1,0 +1,98 @@
+//HeaderImportExport-->
+//SiteId=0
+//Enterprise=True
+//ScriptType=0
+//ScriptGroup=
+//HeaderImportExport<--
+uses
+  RouteFunctions;
+
+procedure updateJobAttribute(jbID : integer; attVal : string);
+var
+  Qry : TADOQuery;
+begin
+  //ShowMessage(IntToStr(jbID) + ' ' + att + ' ' + attVal);
+  Qry := TAdoQuery.Create(nil);
+  Qry.Connection := Fnc.DbConnection;
+  Qry.SQL.Clear;
+
+  Qry.SQL.Add('SELECT * from JobAnswers');
+  Qry.SQL.Add('WHERE JobID = ' + jbID + ' AND JobAttributeID = 31');
+  Qry.Open
+  //Fnc.OpenDataGrid(Qry);
+  Qry.first;
+
+  if Qry.IsEmpty then //no record exists
+  begin
+    Qry.Append;
+    Qry.FieldByName('JobAttributeID').AsInteger := 31;
+    Qry.FieldByName('JobID').AsInteger := jbID;
+    Qry.FieldByName('EntryValue').AsString := attVal;
+    Qry.Post;
+  end
+  else
+  begin
+    Qry.Edit;
+    Qry.FieldByName('JobAttributeID').AsInteger := 31;
+    Qry.FieldByName('JobID').AsInteger := jbID;
+    Qry.FieldByName('EntryValue').AsString := attVal;
+    Qry.Post;
+  end;
+
+  Qry.Close;
+  Qry.Free;
+end;
+
+procedure getJobAnswers;
+var
+  Qry : TADOQuery;
+  currentJob : integer;
+  material : string;
+
+begin
+  currentJob := 0;
+  material := '';
+
+  Qry := TAdoQuery.Create(nil);
+  Qry.Connection := Fnc.DbConnection;
+  Qry.SQL.Clear;
+
+  Qry.SQL.Add('SELECT * from CUST_JOBPARTATTRIBUTES ');
+  Qry.SQL.Add('WHERE PARTTYPE = ' + QuotedStr('MFGTP') + ' AND ATTRIBUTENAME LIKE ' + QuotedStr('%mat') );
+  Qry.SQL.Add(' ORDER BY JobID, ATTRIBUTEID' );
+  Qry.Open;
+  //Fnc.OpenDataGrid(Qry);
+  Qry.First;
+  currentJob := Qry.FieldByName('JobID').AsInteger;
+  While not Qry.EOF do
+  begin
+
+    if Qry.FieldByName('ATTRIBUTEID').AsInteger = 576 then
+      material := Qry.FieldByName('VALUE').AsString;
+
+    Qry.Next;
+
+    if Qry.FieldByName('JobID').AsInteger = currentJob then
+    begin
+      if Qry.FieldByName('ATTRIBUTEID').AsInteger = 577 then
+      begin
+        if Qry.FieldByName('VALUE').AsString <> material then
+          material := material + '/' + Qry.FieldByName('VALUE').AsString;
+
+        //ShowMessage(material);
+        updateJobAttribute(Qry.FieldByName('JobID').AsString, material);
+      end;
+    end;
+
+    Qry.Next;
+    currentJob := Qry.FieldByName('JobID').AsInteger;
+  end;
+
+  Qry.Close;
+  Qry.Free;
+
+end;
+
+begin
+  getJobAnswers;
+end;

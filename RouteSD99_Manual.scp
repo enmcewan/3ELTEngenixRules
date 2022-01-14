@@ -1,0 +1,1056 @@
+//HeaderImportExport-->
+//SiteId=0
+//Enterprise=True
+//ScriptType=0
+//ScriptGroup=HCS
+//HeaderImportExport<--
+uses
+  Event_RouteGenLibrary, Eng_RouteFunctions,
+  RouteFunctions;
+  
+procedure Scale_Meas_SD;
+begin
+  SysRouteInsDepartment('Erp', 'EXPSM-A', '');
+  SysRouteInsWorkCenter('Erp', 'EXPSM-A', ''); 
+end;
+ 
+procedure OL_Photo_L3_SD;
+begin
+  SysRouteInsDepartment('Erp', 'EXPOL-A', '');
+  SysRouteInsWorkCenter('Erp', 'EXPOL-A3', ''); 
+end;
+                                                                                                                      
+procedure OL_Photo_L4_SD;
+begin
+  SysRouteInsDepartment('Erp', 'EXPOL-A', '');
+  SysRouteInsWorkCenter('Erp', 'EXPOL-A4', '');                                                          
+end;
+
+procedure OL_Photo_L5_SD;                                                                                            
+begin
+  SysRouteInsDepartment('Erp', 'EXPOL-A', '');                                                                                        
+  SysRouteInsWorkCenter('Erp', 'EXPOL-A5', '');                                                                                      
+end;
+
+procedure OL_Photo_L6_SD;                                                                                                                      
+begin                                                                                                 
+  SysRouteInsDepartment('Erp', 'EXPOL-A', '');                                                                
+  SysRouteInsWorkCenter('Erp', 'EXPOL-A6', '');                                                                     
+end;                                                                                                
+                                                                                                                                               
+procedure OL_Photo_Ledia_SD;                                                                       
+begin                                                                                                              
+  SysRouteInsDepartment('Erp', 'EXPOL-A', '');                                                         
+  SysRouteInsWorkCenter('Erp', 'EXPOL-A7', '');                                                 
+end;                                                          
+
+procedure Electrolytic_Cu_MCP_SD;
+begin
+  SysRouteInsDepartment('Erp', 'COPPL-E', '');
+  SysRouteInsWorkCenter('Erp', 'COPPL-E', '');                                 
+end;
+
+procedure Electrolytic_Cu_PAL3_SD;
+begin
+  SysRouteInsDepartment('Erp', 'COPPL-B', '');
+  SysRouteInsWorkCenter('Erp', 'COPPL-B', '');
+end;
+
+procedure Electrolytic_Cu_PAL4_SD; 
+begin
+  SysRouteInsDepartment('Erp', 'COPPL-C', '');
+  SysRouteInsWorkCenter('Erp', 'COPPL-C1', '');
+end;
+
+procedure Electrolytic_Cu_PAL5_SD; 
+begin
+  SysRouteInsDepartment('Erp', 'COPPL-C', '');
+  SysRouteInsWorkCenter('Erp', 'COPPL-C2', '');
+end;
+
+procedure Electrolytic_Cu_PAL6_SD; 
+begin
+  SysRouteInsDepartment('Erp', 'COPPL-C', '');
+  SysRouteInsWorkCenter('Erp', 'COPPL-C22', '');
+end; 
+                                            
+procedure Electrolytic_Cu_FillVia_SD;
+begin
+  SysRouteInsDepartment('Erp', 'COPPL-F', '');
+  SysRouteInsWorkCenter('Erp', 'COPPL-F', '');
+end;
+                                                                                                      
+procedure ResSprayCoat_Man_SD;
+begin
+  SysRouteInsDepartment('Erp', 'RESCO-B', '');
+  SysRouteInsWorkCenter('Erp', 'RESCO-B', '');  
+end;                                                                                                              
+
+procedure Pulse_Bond_SD
+begin
+  SysRouteInsDepartment('Erp', 'PBOOK-A', '');                 
+  SysRouteInsWorkCenter('Erp', 'PBOOK-H0', '');
+  Fnc.SysSetAttrValue('Pin_Lam', false);
+end;                                                                          
+
+procedure Taping_SD
+begin
+  SysRouteInsDepartment('Erp', 'TAPNG-A', '');  
+  SysRouteInsWorkCenter('Erp', 'TAPNG-A', ''); 
+end;               
+
+procedure Hole_Check_CNC_SD
+begin                                                                   
+  SysRouteInsDepartment('Erp', 'HOLCD-A', '');  
+  SysRouteInsWorkCenter('Erp', 'HOLCD-A0', ''); 
+end;
+
+procedure Clean_Room_Oven_SD
+begin                                                                   
+  SysRouteInsDepartment('Erp', 'EXPOV-A', '');  
+  SysRouteInsWorkCenter('Erp', 'EXPOV-A0', ''); 
+end;
+
+procedure Man_DF_Lamination_SD
+begin                                                                   
+  SysRouteInsDepartment('Erp', 'EXPLM-A', '');  
+  SysRouteInsWorkCenter('Erp', 'EXPLM-A0', ''); 
+end;
+
+procedure Alkaline_Rinse_SD         
+begin                                                                   
+  SysRouteInsDepartment('Erp', 'ARINS-A', '');  
+  SysRouteInsWorkCenter('Erp', 'ARINS-A0', ''); 
+end;
+
+procedure Insp_BB_Master_SD         
+begin                                                                   
+  SysRouteInsDepartment('Erp', 'FIMCS-A', '');  
+  SysRouteInsWorkCenter('Erp', 'FIMCS-A0', ''); 
+end;
+
+procedure Insp_AVI_SD         
+begin                                                                                                    
+  SysRouteInsDepartment('Erp', 'FIMCS-A', '');  
+  SysRouteInsWorkCenter('Erp', 'FIMCS-B0', ''); 
+end;                                          
+                  
+procedure DOT_Pin_Marking_SD         
+begin                                                                   
+  SysRouteInsDepartment('Erp', 'FINSN-A', '');  
+  SysRouteInsWorkCenter('Erp', 'FINSN-A0', ''); 
+end;
+
+procedure ResistExp_Man_SD;
+begin
+  SysRouteInsDepartment('Erp', 'REEXP-A', '');
+  SysRouteInsWorkCenter('Erp', 'REEXP-A0', '');
+end;
+
+procedure ResistExp_LDI_Man_SD;
+begin
+  SysRouteInsDepartment('Erp', 'REEXP-A', '');
+  SysRouteInsWorkCenter('Erp', 'REEXP-A05', '');
+end;
+
+procedure TwoDBarcode_Man_SD;
+begin
+  SysRouteInsDepartment('Erp', 'LAS2D-A', '');
+  SysRouteInsWorkCenter('Erp', 'LAS2D-A0', '');
+end;
+   
+procedure Semi_Cure_WetRes_SD;                                                                 
+begin
+  SysRouteInsDepartment('Erp', 'REOVN-A', '');
+  SysRouteInsWorkCenter('Erp', 'REOVN-C0', '');
+end;   
+
+procedure Core_Build_Buffing_SD;     // Herole added on 21-Jul-2018
+begin
+  SysRouteInsDepartment('Erp', 'EPBUF-A', '');
+  SysRouteInsWorkCenter('Erp', 'EPBUF-A', '');
+  SysRouteInsAddlParameter('Erp', '1st Buffing Spec', Fnc.SysGetAttrValue('CoreBuild_CuThin_1stBuff'), '', '', false, '', '', '');
+end;
+
+procedure NC_Drill_PEP_SD;     // Herole added on 21-Jul-2018
+begin
+  SysRouteInsDepartment('Erp', 'DRILL-E', '');
+  SysRouteInsWorkCenter('Erp', 'DRILL-E', '');
+  SysRouteInsAddlParameter('Erp', 'Stack Height', Fnc.SysGetAttrValue('Stack_Hgt'), '', '', false, '', '', '');
+  SysRouteInsAddlParameter('Erp', 'Entry Sheet Material', 'Aluminum', '', '', false, '', '', '');  
+  SysRouteInsAddlParameter('Erp', 'Material Tg', Fnc.SysGetAttrValue('TG_Class'), '', '', false, '', '', '');
+  SysRouteInsAddlParameter('Erp', 'Thickness', FormatFloat('0.000', Fnc.SysGetAttrValue('LayupThickness')), '', '', false, '', '', '');
+  SysRouteInsAddlParameter('Erp', 'Drill Side', Fnc.SysGetAttrValue('Drill_Side'), '', '', false, '', '', '');
+end;     
+
+procedure Photo_L4_SD;     // herole added on 23-Jul-2018                                                                     
+begin                                                                                                                             
+  SysRouteInsDepartment('Erp', 'EXPOL-A', '');
+  SysRouteInsWorkCenter('Erp', 'EXPOL-A4', '');
+  SysRouteInsAddlParameter('Erp', 'Alternative Line','L4', '', '', false, '', '', '');                              
+  SysRouteInsAddlParameter('Erp', 'Photo Type','Pattern Formation', '', '', false, '', '', '');
+  SysRouteInsAddlParameter('Erp', 'Blown Width',Fnc.SysGetAttrValue('Line_Width_Blown'), '', '', false, '', '', '');
+  SysRouteInsAddlParameter('Erp', 'Blown Gap',Fnc.SysGetAttrValue('Air_Gap_Blown'), '', '', false, '', '', ''); 
+  SysRouteInsAddlParameter('Erp', 'Land Area',Fnc.SysGetAttrValue('Land_Area'), '', '', false, '', '', ''); 
+  SysRouteInsAddlParameter('Erp', 'Annular', Fnc.SysGetAttrValue('Annular'),'', '', false, '', '', ''); 
+  SysRouteInsAddlParameter('Erp', 'Design Thickness', FormatFloat('0.000', Fnc.SysGetAttrValue('LayupThickness')),'', '', false, '', '', '');
+  SysRouteInsAddlParameter('Erp', 'Min Hole Size NP', Fnc.SysGetAttrValue('Min_Drill_Size_NP'),'', '', false, '', '', '');
+  SysRouteInsAddlParameter('Erp', 'Max Hole Size', Fnc.SysGetAttrValue('Max_Hole_Size'),'', '', false, '', '', '');  
+  SysRouteInsAddlParameter('Erp', 'Max P-Hole Size', Fnc.SysGetAttrValue('Max_PHole_Size'),'', '', false, '', '', '');  
+  SysRouteInsAddlParameter('Erp', 'Pre-preg Material', Fnc.SysGetAttrValue('PPGMat'),'', '', false, '', '', '');  
+  SysRouteInsAddlParameter('Erp', 'Core Material', Fnc.SysGetAttrValue('CoreMat'),'', '', false, '', '', '');  
+  SysRouteInsAddlParameter('Erp', 'Panel Size', Fnc.SysGetAttrValue('Panel_Size'),'', '', false, '', '', '');  
+  end;          
+                                                                           
+procedure Hole_Analyzer_SD;     // Herole added on 24-Jul-2018                                                            
+begin
+  SysRouteInsDepartment('Erp', 'HOLAN-A', '');
+  SysRouteInsWorkCenter('Erp', 'HOLAN-A0', '');                                                                  
+end;   
+
+procedure Primary_Plug_Formation_SD;     // Herole added on 25-Jul-2018                                                            
+begin
+  SysRouteInsDepartment('Erp', 'RESCO-A', '');                                   
+  SysRouteInsWorkCenter('Erp', 'RESCO-A0', ''); 
+  SysRouteInsAddlParameter('Erp', 'Process','Step Below', '', '', false, '', '', '');              
+  SysRouteInsAddlParameter('Erp', 'Step 1','Semi-Cure', '', '', false, '', '', '');   
+  SysRouteInsAddlParameter('Erp', 'Step 2','Exposure', '', '', false, '', '', '');  
+  SysRouteInsAddlParameter('Erp', 'Step 3','Develop', '', '', false, '', '', '');
+end;     
+
+procedure Primary_Plug_Cure_SD;     // Herole added on 25-Jul-2018                                                            
+begin
+  SysRouteInsDepartment('Erp', 'STCUR-A', '');                                   
+  SysRouteInsWorkCenter('Erp', 'STCUR-A', ''); 
+end;    
+                                                                                                            
+procedure Visual_Inspection_SD;     // Herole added on 25-Jul-2018                                                            
+begin
+  SysRouteInsDepartment('Erp', 'FINVS-A', '');                                   
+  SysRouteInsWorkCenter('Erp', 'FINVS-A', '');                                       
+  SysRouteInsInstruction('Erp', 'FINVS002', '')                      
+end;  
+                                                                               
+procedure ENEPIG_Man_SD;     // Herole added on 26-Jul-2018                                                            
+begin
+  SysRouteInsDepartment('Erp', 'AUPIG-A', '');                                   
+  SysRouteInsWorkCenter('Erp', 'AUPIG-A', ''); 
+  SysRouteInsAddlParameter('Erp', 'Type', Fnc.SysGetAttrValue('Board_Finish'), '', '', false, '', '', '');  
+  SysRouteInsAddlParameter('Erp', 'Note', 'Use ENEPIG Bath', '', '', false, '', '', '');   
+  SysRouteInsAddlParameter('Erp', 'Area 2', Fnc.SysGetAttrValue('Sel_Gold_Area2'), '', '', false, '', '', '');
+  SysRouteInsAddlParameter('Erp', 'Au Spec 2', Fnc.SysGetAttrValue('Sel_Gold_AuSpec2'), '', '', false, '', '', '');
+  SysRouteInsAddlParameter('Erp', 'Ni Spec 2', Fnc.SysGetAttrValue('Sel_Gold_NiSpec2'), '', '', false, '', '', '');
+  SysRouteInsAddlParameter('Erp', 'Palladium', Fnc.SysGetAttrValue('Palladium_Spec'), '', '', false, '', '', '');                                                                      
+end;    
+        
+procedure PAL4_Man_SD;     // Herole added on 26-Jul-2018                                                            
+begin
+  SysRouteInsDepartment('Erp', 'COPPL-C', '');                                   
+  SysRouteInsWorkCenter('Erp', 'COPPL-C1', '');                    
+  SysRouteInsAddlParameter('Erp', 'Plating Line', 'PAL4', '', '', false, '', '', '');   
+  SysRouteInsAddlParameter('Erp', 'Thickness Before Plate', Fnc.SysGetAttrValue('Press_Thickness'), '', '', false, '', '', '');
+  SysRouteInsAddlParameter('Erp', '2nd DE Cu Thickness', Fnc.SysGetAttrValue('User_DE_Cu_Thk_2'), '', '', false, '', '', ''); 
+  SysRouteInsAddlParameter('Erp', '2nd Min Drill Size', Fnc.SysGetAttrValue('Min_Drill_Size_2'), '', '', false, '', '', '');
+  SysRouteInsAddlParameter('Erp', 'Ave Min PTH', Fnc.SysGetAttrValue('Ave_Min_Th_2'), '', '', false, '', '', '');    
+  SysRouteInsAddlParameter('Erp', 'Abs Min PTH', Fnc.SysGetAttrValue('Abs_Min_Th_2'), '', '', false, '', '', '');  
+  SysRouteInsAddlParameter('Erp', '2nd PTH Aspect Ratio', Fnc.SysGetAttrValue('Aspect_Ratio_Val_2'), '', '', false, '', '', '');  
+  SysRouteInsAddlParameter('Erp', '2nd PTH Cu Plate Area', Fnc.SysGetAttrValue('PTH_CuPlt_Area_2'), '', '', false, '', '', '');    
+  SysRouteInsAddlParameter('Erp', '2nd Cu Ratio', Fnc.SysGetAttrValue('Cu_Ratio_2'), '', '', false, '', '', '');  
+  SysRouteInsInstruction('Erp', 'COPPL001', '') 
+  SysRouteInsInstruction('Erp', '2NC_CUPLT2', '')
+end;   
+
+procedure Epoxy_Plug_B_Man_SD;     // Herole added on 1-Aug-2018                                                            
+begin
+  SysRouteInsDepartment('Erp', 'EPXPL-A', '');                                   
+  SysRouteInsWorkCenter('Erp', 'EPXPL-B0', ''); 
+  SysRouteInsAddlParameter('Erp', 'Plug Ink', Fnc.SysGetAttrValue('EpoxyPlugInk'), '', '', false, '', '', '');   
+  SysRouteInsAddlParameter('Erp', 'Top B Layer', Fnc.SysGetAttrValue('TopLayer'), '', '', false, '', '', '');                                                                   
+end;  
+
+procedure Photo_Ledia_Manual_SD;     // herole added on 23-Jul-2018  // Updated on 2-Aug-18                                                                   
+begin                                                                                                                             
+  SysRouteInsDepartment('Erp', 'EXPOL-A', '');
+  SysRouteInsWorkCenter('Erp', 'EXPOL-A7', '');
+  SysRouteInsAddlParameter('Erp', 'Alternative Line','Ledia', '', '', false, '', '', '');                              
+  SysRouteInsAddlParameter('Erp', 'Photo Type','Pattern Formation', '', '', false, '', '', '');
+  SysRouteInsAddlParameter('Erp', 'Blown Width',Fnc.SysGetAttrValue('Line_Width_Blown'), '', '', false, '', '', '');
+  SysRouteInsAddlParameter('Erp', 'Blown Gap',Fnc.SysGetAttrValue('Air_Gap_Blown'), '', '', false, '', '', ''); 
+  SysRouteInsAddlParameter('Erp', 'Land Area',Fnc.SysGetAttrValue('Land_Area'), '', '', false, '', '', ''); 
+  SysRouteInsAddlParameter('Erp', 'Annular', Fnc.SysGetAttrValue('Annular'),'', '', false, '', '', ''); 
+  SysRouteInsAddlParameter('Erp', 'Min Hole Size', Fnc.SysGetAttrValue('Min_Drill_Size'),'', '', false, '', '', '');
+  SysRouteInsAddlParameter('Erp', 'Design Thickness', FormatFloat('0.000', Fnc.SysGetAttrValue('LayupThickness')),'', '', false, '', '', '');
+  SysRouteInsAddlParameter('Erp', 'Min Hole Size NP', Fnc.SysGetAttrValue('Min_Drill_Size_NP'),'', '', false, '', '', '');
+  SysRouteInsAddlParameter('Erp', 'Max Hole Size', Fnc.SysGetAttrValue('Max_Hole_Size'),'', '', false, '', '', '');  
+  SysRouteInsAddlParameter('Erp', 'Max P-Hole Size', Fnc.SysGetAttrValue('Max_PHole_Size'),'', '', false, '', '', ''); 
+  SysRouteInsAddlParameter('Erp', 'Max Slot Length', Fnc.SysGetAttrValue('Slot_Length_PTH'),'', '', false, '', '', ''); 
+  SysRouteInsAddlParameter('Erp', 'Board Type', 'MLB','', '', false, '', '', '');                                        
+  SysRouteInsAddlParameter('Erp', 'Pre-preg Material', Fnc.SysGetAttrValue('PPGMat'),'', '', false, '', '', '');  
+  SysRouteInsAddlParameter('Erp', 'Core Material', Fnc.SysGetAttrValue('CoreMat'),'', '', false, '', '', '');  
+  SysRouteInsAddlParameter('Erp', 'Panel Size', Fnc.SysGetAttrValue('Panel_Size'),'', '', false, '', '', '');  
+  end;     
+  
+procedure Milling_Vcut_B_Man_SD;     // Herole added on 1-Aug-2018                                                            
+begin                                                                                          
+  SysRouteInsDepartment('Erp', 'ROUTE-A', '');                                   
+  SysRouteInsWorkCenter('Erp', 'ROUTE-D0', '');                                                                                          
+  SysRouteInsAddlParameter('Erp', 'V-Cut Type', 'Milling V-Cut B', '', '', false, '', '', '');   
+  SysRouteInsAddlParameter('Erp', 'Remark', 'Use 30° V Groove Milling Bit', '', '', false, '', '', '');                                                                   
+end;    
+
+procedure Milling_Vcut_A_Man_SD;     // Herole added on 1-Aug-2018                                                            
+begin                                                                                  
+  SysRouteInsDepartment('Erp', 'ROUTE-A', '');                                   
+  SysRouteInsWorkCenter('Erp', 'ROUTE-D0', ''); 
+  SysRouteInsAddlParameter('Erp', 'V-Cut Type', 'Milling V-Cut A', '', '', false, '', '', '');   
+  SysRouteInsAddlParameter('Erp', 'Remark', 'Use 30° V Groove Milling Bit', '', '', false, '', '', '');                                                                   
+end;      
+
+procedure Pri_Plug_Buff_Man_SD;     // Herole added on 2-Aug-2018                                                            
+begin
+  SysRouteInsDepartment('Erp', 'EPBUF-A', '');                                   
+  SysRouteInsWorkCenter('Erp', 'EPBUF-A', '');   
+  SysRouteInsAddlParameter('Erp', 'Buffing Spec', Fnc.SysGetAttrValue('PrimaryPlug_CuThin_1stBuff'),'', '', false, '', '', ''); 
+  SysRouteInsInstruction('Erp', 'COPPL001', '')                                                             
+end;    
+
+procedure ResSprayCoat_Man2_SD;     // Herole added on 2-Aug-2018                   
+begin
+  SysRouteInsDepartment('Erp', 'RESCO-B', '');
+  SysRouteInsWorkCenter('Erp', 'RESCO-B', ''); 
+  SysRouteInsAddlParameter('Erp', 'Resist Ink', 'PSR2000-SP300HFM', '', '', false, '', '', '');  
+  SysRouteInsAddlParameter('Erp', 'Min Resist Clearance', Fnc.SysGetAttrValue('Min_Res_Cl'), '', '', false, '', '', ''); 
+  SysRouteInsAddlParameter('Erp', 'Min Resist Thickness', Fnc.SysGetAttrValue('Min_Res_Th'), '', '', false, '', '', '');
+  SysRouteInsAddlParameter('Erp', 'Max Resist Thickness', Fnc.SysGetAttrValue('Max_Res_Th'), '', '', false, '', '', '');
+  SysRouteInsAddlParameter('Erp', 'Min Resist Partition', Fnc.SysGetAttrValue('Min_Res_Pa'), '', '', false, '', '', ''); 
+  SysRouteInsAddlParameter('Erp', 'Smudges', 'Not Allowed', '', '', false, '', '', '');    
+  SysRouteInsAddlParameter('Erp', 'Exposed Cu', 'Not Allowed', '', '', false, '', '', '');
+  SysRouteInsAddlParameter('Erp', 'Cu Thickness', Fnc.SysGetAttrValue('Ave_Fin_Th'), '', '', false, '', '', '');  
+  SysRouteInsAddlParameter('Erp', 'Board Thickness', Fnc.SysGetAttrValue('LayupThickness'), '', '', false, '', '', ''); 
+  SysRouteInsAddlParameter('Erp', 'Panel Size', Fnc.SysGetAttrValue('Panel_Size'), '', '', false, '', '', '');  
+  SysRouteInsInstruction('Erp', 'RESIS001', '') 
+end;   
+
+procedure Reflow_Man_SD;     // Herole added on 14-Aug-2018                                                            
+begin
+  SysRouteInsDepartment('Erp', 'RFLOW-A', '');                                                                                             
+  SysRouteInsWorkCenter('Erp', 'RFLOW-A', '');                                                            
+end;                                                                                           
+                                                                                                                                         
+procedure Fill_Via_NONC_Man_SD;     // Herole added on 16-Aug-2018
+begin
+  SysRouteInsDepartment('Erp', 'COPPL-F', '');                                   
+  SysRouteInsWorkCenter('Erp', 'COPPL-F', '');                    
+  SysRouteInsAddlParameter('Erp', 'Plating Line', 'FILL_VIA', '', '', false, '', '', '');   
+  SysRouteInsAddlParameter('Erp', 'Via Type', 'Blind', '', '', false, '', '', '');   
+  SysRouteInsAddlParameter('Erp', 'Ave Min Blind', Fnc.SysGetAttrValue('Ave_Min_Bl'), '', '', false, '', '', '');    
+  SysRouteInsAddlParameter('Erp', 'Abs Min Blind', Fnc.SysGetAttrValue('Abs_Min_Bl'), '', '', false, '', '', '');  
+  SysRouteInsAddlParameter('Erp', 'Aspect Ratio Blind', Fnc.SysGetAttrValue('Blind_AspectRatio'), '', '', false, '', '', '');  
+  SysRouteInsAddlParameter('Erp', 'Depth Blind', Fnc.SysGetAttrValue('Blind_Via_Depth'), '', '', false, '', '', '');    
+  SysRouteInsAddlParameter('Erp', 'Conf. Mask Size', Fnc.SysGetAttrValue('ConfMask_Size'), '', '', false, '', '', '');   
+  SysRouteInsAddlParameter('Erp', 'Thickness Before Plate', Fnc.SysGetAttrValue('Press_Thickness'), '', '', false, '', '', '');
+  SysRouteInsAddlParameter('Erp', 'DE Cu Thickness', Fnc.SysGetAttrValue('User_DE_Cu_Thk'), '', '', false, '', '', '');  
+  SysRouteInsInstruction('Erp', 'COPPL001', '')      
+end;    
+
+procedure KK_Drill597_Man_SD;     // Herole added on 16-Aug-2018
+begin
+  SysRouteInsDepartment('Erp', 'KKDRI-B', '');                                                               
+  SysRouteInsWorkCenter('Erp', 'KKDRI-B', '');  
+  SysRouteInsAddlParameter('Erp', 'KK Distance', '597', '', '', false, '', '', '');  
+end;         
+
+procedure NC_Drill_Man_SD;     // Herole added on 16-Aug-2018
+begin
+  SysRouteInsDepartment('Erp', 'DRILL-E', '');
+  SysRouteInsWorkCenter('Erp', 'DRILL-E', '');
+  SysRouteInsAddlParameter('Erp', 'Stack Height', Fnc.SysGetAttrValue('Stack_Hgt'), '', '', false, '', '', ''); 
+  SysRouteInsAddlParameter('Erp', 'Flute Length', Fnc.SysGetAttrValue('Flute_Len'), '', '', false, '', '', '');
+  SysRouteInsAddlParameter('Erp', 'Min Drill Size', Fnc.SysGetAttrValue('Min_Drill_Size'), '', '', false, '', '', '');
+  SysRouteInsAddlParameter('Erp', 'Entry Sheet Material', Fnc.SysGetAttrValue('Drill_Entry_Sht'), '', '', false, '', '', '');
+  SysRouteInsAddlParameter('Erp', 'Material Tg', Fnc.SysGetAttrValue('TG_Class'), '', '', false, '', '', '');
+  SysRouteInsAddlParameter('Erp', 'Thickness', FormatFloat('0.000', Fnc.SysGetAttrValue('LayupThickness')), '', '', false, '', '', '');  
+  SysRouteInsAddlParameter('Erp', 'Drill Side', 'Side B Top', '', '', false, '', '', '');
+end;
+
+procedure IL_LDI_Man_SD;     // Herole added on 16-Aug-2018                                                            
+begin
+  SysRouteInsDepartment('Erp', 'EXPIL-K', '');
+  SysRouteInsWorkCenter('Erp', 'EXPIL-K', '');                             
+  SysRouteInsAddlParameter('Erp', 'Photo Type','Pattern Formation', '', '', false, '', '', '');
+  SysRouteInsAddlParameter('Erp', 'Blown Width',Fnc.SysGetAttrValue('Line_Width_Blown'), '', '', false, '', '', '');
+  SysRouteInsAddlParameter('Erp', 'Blown Gap',Fnc.SysGetAttrValue('Air_Gap_Blown'), '', '', false, '', '', ''); 
+  SysRouteInsAddlParameter('Erp', 'Land Area',Fnc.SysGetAttrValue('Land_Area'), '', '', false, '', '', ''); 
+  SysRouteInsAddlParameter('Erp', 'Annular', Fnc.SysGetAttrValue('Annular'),'', '', false, '', '', ''); 
+  SysRouteInsAddlParameter('Erp', 'Min Hole Size', Fnc.SysGetAttrValue('Min_Drill_Size'),'', '', false, '', '', '');
+  SysRouteInsAddlParameter('Erp', 'Design Thickness', FormatFloat('0.000', Fnc.SysGetAttrValue('LayupThickness')),'', '', false, '', '', '');
+  SysRouteInsAddlParameter('Erp', 'Max Hole Size', Fnc.SysGetAttrValue('Max_Hole_Size'),'', '', false, '', '', '');  
+  SysRouteInsAddlParameter('Erp', 'Max P-Hole Size', Fnc.SysGetAttrValue('Max_PHole_Size'),'', '', false, '', '', ''); 
+  SysRouteInsAddlParameter('Erp', 'Max Slot Length', Fnc.SysGetAttrValue('Slot_Length_PTH'),'', '', false, '', '', ''); 
+  SysRouteInsAddlParameter('Erp', 'Board Type', 'MLB','', '', false, '', '', '');                                        
+  SysRouteInsAddlParameter('Erp', 'Pre-preg Material', Fnc.SysGetAttrValue('PPGMat'),'', '', false, '', '', '');  
+  SysRouteInsAddlParameter('Erp', 'Core Material', Fnc.SysGetAttrValue('CoreMat'),'', '', false, '', '', '');  
+  SysRouteInsAddlParameter('Erp', 'Panel Size', Fnc.SysGetAttrValue('Panel_Size'),'', '', false, '', '', '');  
+end;     
+
+procedure IL_DES_Man_SD;     // Herole added on 16-Aug-2018                                                            
+begin
+  SysRouteInsDepartment('Erp', 'DESIL-A', '');                                                            
+  SysRouteInsWorkCenter('Erp', 'DESIL-A', '');  
+  SysRouteInsAddlParameter('Erp', 'Dynamic', Fnc.SysGetAttrValue('DynamicEtch'),'', '', false, '', '', '');   
+end;     
+       
+procedure IL_AOI_Man_SD;     // Herole added on 16-Aug-2018                                                            
+begin                                                                                                             
+  SysRouteInsDepartment('Erp', 'INSIL-A', '');                                                            
+  SysRouteInsWorkCenter('Erp', 'INSIL-A', '');  
+  SysRouteInsAddlParameter('Erp', 'Thickness', FormatFloat('0.000',Fnc.SysGetAttrValue('LayupThickness')),'', '', false, '', '', '');   
+  SysRouteInsAddlParameter('Erp', 'Annular', Fnc.SysGetAttrValue('Annular'),'', '', false, '', '', '');                            
+  SysRouteInsAddlParameter('Erp', 'Land Area', Fnc.SysGetAttrValue('Land_Area'),'', '', false, '', '', '');   
+  SysRouteInsAddlParameter('Erp', 'Line Width', Fnc.SysGetAttrValue('Line_Width'),'', '', false, '', '', ''); 
+  SysRouteInsAddlParameter('Erp', 'Min Gap', Fnc.SysGetAttrValue('Air_Gap'),'', '', false, '', '', '');  
+  SysRouteInsInstruction('Erp', 'INSOL002', '')   
+end;  
+
+procedure ResScreenBNDG_Man2_SD;     // Herole added on 17-Aug-2018                   
+begin
+  SysRouteInsDepartment('Erp', 'RESCO-C', '');                                                                                         
+  SysRouteInsWorkCenter('Erp', 'RESCO-C', ''); 
+  SysRouteInsAddlParameter('Erp', 'Resist Ink', 'PSR4000-BNDG', '', '', false, '', '', '');                                           
+  SysRouteInsAddlParameter('Erp', 'Min Resist Clearance', Fnc.SysGetAttrValue('Min_Res_Cl'), '', '', false, '', '', ''); 
+  SysRouteInsAddlParameter('Erp', 'Min Resist Thickness', Fnc.SysGetAttrValue('Min_Res_Th'), '', '', false, '', '', '');
+  SysRouteInsAddlParameter('Erp', 'Max Resist Thickness', Fnc.SysGetAttrValue('Max_Res_Th'), '', '', false, '', '', '');
+  SysRouteInsAddlParameter('Erp', 'Min Resist Partition', Fnc.SysGetAttrValue('Min_Res_Pa'), '', '', false, '', '', ''); 
+  SysRouteInsAddlParameter('Erp', 'Smudges', 'Not Allowed', '', '', false, '', '', '');    
+  SysRouteInsAddlParameter('Erp', 'Exposed Cu', 'Not Allowed', '', '', false, '', '', '');
+  SysRouteInsAddlParameter('Erp', 'Cu Thickness', Fnc.SysGetAttrValue('Ave_Fin_Th'), '', '', false, '', '', '');            
+  SysRouteInsAddlParameter('Erp', 'Board Thickness', Fnc.SysGetAttrValue('LayupThickness'), '', '', false, '', '', ''); 
+  SysRouteInsAddlParameter('Erp', 'Panel Size', Fnc.SysGetAttrValue('Panel_Size'), '', '', false, '', '', '');  
+end;                        
+
+procedure Dewarp_Man_SD;     // Herole added on 24-Aug-2018                                                            
+begin
+  SysRouteInsDepartment('Erp', 'DEWRP-A', '');                                                            
+  SysRouteInsWorkCenter('Erp', 'DEWRP-A', '');  
+end;            
+
+procedure Milling_Pre_Route_Man_SD;     // Herole added on 27-Aug-2018                                                            
+begin
+  SysRouteInsDepartment('Erp', 'ROUTE-D0', '');                                                            
+  SysRouteInsWorkCenter('Erp', 'ROUTE-D0', '');
+  SysRouteInsInstruction('Erp', 'ROUTE001', '')     
+end;        
+
+procedure Hist_Line_Man_SD;     // Herole added on 31-Aug-2018                                                            
+begin
+  SysRouteInsDepartment('Erp', 'HISTL-A', '');                                                            
+  SysRouteInsWorkCenter('Erp', 'HISTL-A', '');                                
+end;  
+
+procedure MicroEtch_Blank_Man_SD;     // Herole added on 31-Aug-2018                                                            
+begin
+  SysRouteInsDepartment('Erp', 'METCH-A', '');                                                            
+  SysRouteInsWorkCenter('Erp', 'METCH-A', '');                             
+end;     
+
+procedure Photo_NONC_Manual_SD;     // herole added on 31-Jul-2018 - For sublam model with No NC
+begin                                                                                                                             
+  SysRouteInsDepartment('Erp', 'EXPOL-A', '');
+  SysRouteInsWorkCenter('Erp', 'EXPOL-A3', '');
+  SysRouteInsAddlParameter('Erp', 'Alternative Line','L3/L5/L6', '', '', false, '', '', '');                              
+  SysRouteInsAddlParameter('Erp', 'Photo Type','Pattern Formation', '', '', false, '', '', '');
+  SysRouteInsAddlParameter('Erp', 'Blown Width',Fnc.SysGetAttrValue('Line_Width_Blown'), '', '', false, '', '', '');
+  SysRouteInsAddlParameter('Erp', 'Blown Gap',Fnc.SysGetAttrValue('Air_Gap_Blown'), '', '', false, '', '', ''); 
+  SysRouteInsAddlParameter('Erp', 'Land Area',Fnc.SysGetAttrValue('Land_Area'), '', '', false, '', '', ''); 
+  SysRouteInsAddlParameter('Erp', 'Annular', Fnc.SysGetAttrValue('Annular'),'', '', false, '', '', ''); 
+  SysRouteInsAddlParameter('Erp', 'Design Thickness', FormatFloat('0.000', Fnc.SysGetAttrValue('LayupThickness')),'', '', false, '', '', '');                                        
+  SysRouteInsAddlParameter('Erp', 'Pre-preg Material', Fnc.SysGetAttrValue('PPGMat'),'', '', false, '', '', '');  
+  SysRouteInsAddlParameter('Erp', 'Core Material', Fnc.SysGetAttrValue('CoreMat'),'', '', false, '', '', '');  
+  SysRouteInsAddlParameter('Erp', 'Panel Size', Fnc.SysGetAttrValue('Panel_Size'),'', '', false, '', '', '');  
+  end;   
+  
+procedure PEP_Man_SD;     // Herole added on 26-Sep-2018                                                            
+begin
+  SysRouteInsDepartment('Erp', 'PEPOL-A', '');                                                            
+  SysRouteInsWorkCenter('Erp', 'PEPOL-A', '');
+  SysRouteInsInstruction('Erp', 'PEPOL011', '')                                                          
+end; 
+
+procedure SmartScope_PEP_Man_SD;     // Herole added on 26-Sep-2018
+begin
+  SysRouteInsDepartment('Erp', 'EXPSM-A', '');                                                            
+  SysRouteInsWorkCenter('Erp', 'EXPSM-A', '');
+  SysRouteInsInstruction('Erp', 'EXPSM012', '')   
+  SysRouteInsAddlParameter('Erp', 'Panel Size',Fnc.SysGetAttrValue('Panel_Size'), '', '', false, '', '', ''); 
+end;                
+
+
+procedure Desmear_Buff_TU933_Man_SD;     // Herole added on 28-Sep-2018                   
+begin
+  SysRouteInsDepartment('Erp', 'DMEAR-C0', '');                                                                                         
+  SysRouteInsWorkCenter('Erp', 'DMEAR-C0', ''); 
+  SysRouteInsAddlParameter('Erp', 'Pre-preg Material', 'TU-933', '', '', false, '', '', '');                                           
+  SysRouteInsAddlParameter('Erp', 'Core Material', 'TU-933', '', '', false, '', '', ''); 
+  SysRouteInsAddlParameter('Erp', 'Thickness', FormatFloat('0.000',Fnc.SysGetAttrValue('LayupThickness')), '', '', false, '', '', ''); 
+  SysRouteInsAddlParameter('Erp', 'Buffing', '1.7m/min', '', '', false, '', '', '');
+  SysRouteInsAddlParameter('Erp', 'HP Rinse', 'OFF', '', '', false, '', '', ''); 
+  SysRouteInsAddlParameter('Erp', 'Sweller', 'OFF', '', '', false, '', '', '');    
+  SysRouteInsAddlParameter('Erp', 'Promoter / Neutralizer', 'OFF', '', '', false, '', '', '');
+  SysRouteInsAddlParameter('Erp', 'Rinse and Dry', 'OFF', '', '', false, '', '', '');            
+end;   
+
+procedure Vertical_Desmear_Man_SD;     // Herole added on 28-Sep-2018                                                            
+begin
+  SysRouteInsDepartment('Erp', 'DMEAR-V01', '');                                                            
+  SysRouteInsWorkCenter('Erp', 'DMEAR-V01', '');                               
+end;      
+
+procedure DI_Water_Thin_Man_SD;     // Herole added on 1-Oct-2018                                                            
+begin
+  SysRouteInsDepartment('Erp', 'WASHD-A', '');                                                            
+  SysRouteInsWorkCenter('Erp', 'WASHD-A', '');
+  SysRouteInsInstruction('Erp', 'WASHD001', '') 
+end;      
+
+procedure Developing_Man_SD;     // Herole added on 10-Oct-2018                                                            
+begin
+  SysRouteInsDepartment('Erp', 'AUDEV-A', '');                                                            
+  SysRouteInsWorkCenter('Erp', 'AUDEV-A', ''); 
+end;   
+                                                                                                                                      
+procedure Cu_Thinning_Man_SD;     // Herole added on 22-Oct-2018                                                            
+begin
+  SysRouteInsDepartment('Erp', 'EPBUF-A', '');                                                            
+  SysRouteInsWorkCenter('Erp', 'EPBUF-A', '');                                                                        
+end;                                                                                               
+
+procedure Epoxy_B_Man_SD;     // Herole added on 22-Oct-2018                   
+begin
+  SysRouteInsDepartment('Erp', 'EPXPL-A', '');                                                                                         
+  SysRouteInsWorkCenter('Erp', 'EPXPL-B0', ''); 
+  SysRouteInsAddlParameter('Erp', 'Plug Ink', 'TAIYO THP100DX1', '', '', false, '', '', '');                                           
+  SysRouteInsAddlParameter('Erp', 'Top B Layer', Fnc.SysGetAttrValue('TopLayer'),'', '', false, '', '', '');          
+end;   
+
+procedure Epoxy_A_Man_SD;     // Herole added on 22-Oct-2018                   
+begin
+  SysRouteInsDepartment('Erp', 'EPXPL-A', '');                                                                                         
+  SysRouteInsWorkCenter('Erp', 'EPXPL-B0', ''); 
+  SysRouteInsAddlParameter('Erp', 'Plug Ink', 'TAIYO THP100DX1', '', '', false, '', '', '');                                           
+  SysRouteInsAddlParameter('Erp', 'Bottom A Layer', Fnc.SysGetAttrValue('BotLayer'),'', '', false, '', '', '');          
+end;                     
+                                                                                                                                   
+procedure Secondary_Plug_Man_SD;     // Herole added on 24-Oct-2018                                                            
+begin                     
+  SysRouteInsDepartment('Erp', 'SCRSP-A', '');                                                            
+  SysRouteInsWorkCenter('Erp', 'SCRSP-A0', ''); 
+end;     
+
+procedure Pre_Route_Man_SD;     // Herole added on 24-Oct-2018                                                            
+begin                                                                                                           
+  SysRouteInsDepartment('Erp', 'ROUTE-A', '');                                                            
+  SysRouteInsWorkCenter('Erp', 'ROUTE-D0', '');                                                                  
+  SysRouteInsInstruction('Erp', 'ROUTE001', '') 
+end;                                                                                                  
+
+procedure KK_Blank_Man_SD;     // Herole added on 26-Oct-2018                                                            
+begin                     
+  SysRouteInsDepartment('Erp', 'KKDRI-B', '');                                                            
+  SysRouteInsWorkCenter('Erp', 'KKDRI-B', ''); 
+end;    
+
+procedure Strike_PAL4_Man_SD;     // Herole added on 26-Oct-2018                   
+begin
+  SysRouteInsDepartment('Erp', 'COPPL-C', '');                                                                                         
+  SysRouteInsWorkCenter('Erp', 'COPPL-C1', ''); 
+  SysRouteInsAddlParameter('Erp', 'Plating Line', 'PAL4', '', '', false, '', '', '');                                                  
+end;     
+
+procedure Strike_PAL6_Man_SD;     // Herole added on 26-Oct-2018                   
+begin
+  SysRouteInsDepartment('Erp', 'COPPL-C', '');                                                                                         
+  SysRouteInsWorkCenter('Erp', 'COPPL-C1', ''); 
+  SysRouteInsAddlParameter('Erp', 'Plating Line', 'PAL6', '', '', false, '', '', '');                                                  
+end;          
+
+procedure IL_AOI_Blank_Man_SD;     // Herole added on 30-Oct-2018                                                            
+begin                                                                                                             
+  SysRouteInsDepartment('Erp', 'INSIL-A', '');                                                            
+  SysRouteInsWorkCenter('Erp', 'INSIL-A', '');                                                   
+  SysRouteInsInstruction('Erp', 'INSOL002', '')   
+end;      
+
+procedure VELCP_V2_Man_SD;     // Herole added on 30-Oct-2018                   
+begin
+  SysRouteInsDepartment('Erp', 'METAL-C', '');                                                                                         
+  SysRouteInsWorkCenter('Erp', 'METAL-C', ''); 
+  SysRouteInsAddlParameter('Erp', 'VELCP Line', 'V2 only', '', '', false, '', '', '');                                           
+  SysRouteInsAddlParameter('Erp', 'Pre-preg Material', Fnc.SysGetAttrValue('PPGMat'),'', '', false, '', '', '');   
+  SysRouteInsAddlParameter('Erp', 'Core Material', Fnc.SysGetAttrValue('CoreMat'),'', '', false, '', '', '');  
+  SysRouteInsAddlParameter('Erp', 'Thickness', FormatFloat('0.000',Fnc.SysGetAttrValue('Press_Thickness')), '', '', false, '', '', ''); 
+  SysRouteInsAddlParameter('Erp', 'Min Drill Size', Fnc.SysGetAttrValue('Min_Drill_Size'),'', '', false, '', '', '');
+end;    
+
+procedure ResScreen_BNPUR_Man_SD;     // Herole added on 7-Nov-2018                   
+begin
+  SysRouteInsDepartment('Erp', 'RESCO-C', '');                                                                                         
+  SysRouteInsWorkCenter('Erp', 'RESCO-C', ''); 
+  SysRouteInsAddlParameter('Erp', 'Resist Ink', 'PSR4000-BN(PUR)', '', '', false, '', '', '');                                           
+  SysRouteInsAddlParameter('Erp', 'Min Resist Clearance', Fnc.SysGetAttrValue('Min_Res_Cl'), '', '', false, '', '', ''); 
+  SysRouteInsAddlParameter('Erp', 'Min Resist Thickness', Fnc.SysGetAttrValue('Min_Res_Th'), '', '', false, '', '', '');
+  SysRouteInsAddlParameter('Erp', 'Max Resist Thickness', Fnc.SysGetAttrValue('Max_Res_Th'), '', '', false, '', '', '');
+  SysRouteInsAddlParameter('Erp', 'Min Resist Partition', Fnc.SysGetAttrValue('Min_Res_Pa'), '', '', false, '', '', ''); 
+  SysRouteInsAddlParameter('Erp', 'Smudges', 'Not Allowed', '', '', false, '', '', '');    
+  SysRouteInsAddlParameter('Erp', 'Exposed Cu', 'Not Allowed', '', '', false, '', '', '');
+  SysRouteInsAddlParameter('Erp', 'Cu Thickness', Fnc.SysGetAttrValue('Ave_Fin_Th'), '', '', false, '', '', '');            
+  SysRouteInsAddlParameter('Erp', 'Board Thickness', Fnc.SysGetAttrValue('LayupThickness'), '', '', false, '', '', ''); 
+  SysRouteInsAddlParameter('Erp', 'Panel Size', Fnc.SysGetAttrValue('Panel_Size'), '', '', false, '', '', '');  
+end;   
+
+procedure IL_Shearing_Man_SD;     // Herole added on 16-Nov-2018                                                            
+begin                                                                                                             
+  SysRouteInsDepartment('Erp', 'FINIL-A', '');                                                            
+  SysRouteInsWorkCenter('Erp', 'FINIL-A', '');                                                      
+end;     
+
+procedure NC_Drill_PEP_SANDWICH_SD;     // Herole added on 30-Nov-2018
+begin
+  SysRouteInsDepartment('Erp', 'DRILL-E', '');
+  SysRouteInsWorkCenter('Erp', 'DRILL-E', '');
+  SysRouteInsAddlParameter('Erp', 'Stack Height', Fnc.SysGetAttrValue('Stack_Hgt'), '', '', false, '', '', ''); 
+  SysRouteInsAddlParameter('Erp', 'Entry Sheet Material', 'Aluminum', '', '', false, '', '', '');  
+  SysRouteInsAddlParameter('Erp', 'Material Tg', Fnc.SysGetAttrValue('TG_Class'), '', '', false, '', '', ''); 
+  SysRouteInsAddlParameter('Erp', 'Thickness', FormatFloat('0.000', Fnc.SysGetAttrValue('LayupThickness')), '', '', false, '', '', '');  
+  SysRouteInsAddlParameter('Erp', 'Drill Side', Fnc.SysGetAttrValue('Drill_Side'), '', '', false, '', '', '');
+  SysRouteInsInstruction('Erp', 'DRILL123', '')
+end;      
+
+procedure Routing_Man_SD;     // Herole added on 3-Dec-2018                                                            
+begin                                                                                                             
+  SysRouteInsDepartment('Erp', 'ROUTE-A', '');                                                            
+  SysRouteInsWorkCenter('Erp', 'ROUTE-A', '');   
+end;      
+
+procedure ResScreen_S70VPUR_Man_SD;     // Herole added on 11-Dec-2018                   
+begin
+  SysRouteInsDepartment('Erp', 'RESCO-C', '');                                                                                         
+  SysRouteInsWorkCenter('Erp', 'RESCO-C', ''); 
+  SysRouteInsAddlParameter('Erp', 'Resist Ink', 'Greentec 600AA S70V(PUR)', '', '', false, '', '', '');                                           
+  SysRouteInsAddlParameter('Erp', 'Min Resist Clearance', Fnc.SysGetAttrValue('Min_Res_Cl'), '', '', false, '', '', ''); 
+  SysRouteInsAddlParameter('Erp', 'Min Resist Thickness', Fnc.SysGetAttrValue('Min_Res_Th'), '', '', false, '', '', '');
+  SysRouteInsAddlParameter('Erp', 'Max Resist Thickness', Fnc.SysGetAttrValue('Max_Res_Th'), '', '', false, '', '', '');
+  SysRouteInsAddlParameter('Erp', 'Min Resist Partition', Fnc.SysGetAttrValue('Min_Res_Pa'), '', '', false, '', '', ''); 
+  SysRouteInsAddlParameter('Erp', 'Smudges', 'Not Allowed', '', '', false, '', '', '');    
+  SysRouteInsAddlParameter('Erp', 'Exposed Cu', 'Not Allowed', '', '', false, '', '', '');                     
+  SysRouteInsAddlParameter('Erp', 'Board Thickness', Fnc.SysGetAttrValue('LayupThickness'), '', '', false, '', '', ''); 
+  SysRouteInsAddlParameter('Erp', 'Panel Size', Fnc.SysGetAttrValue('Panel_Size'), '', '', false, '', '', '');  
+end;      
+
+procedure Photo_L6_Manual_SD;     // herole added on 13-Dec-2018                                                                    
+begin                                                                                                                             
+  SysRouteInsDepartment('Erp', 'EXPOL-A', '');
+  SysRouteInsWorkCenter('Erp', 'EXPOL-A6', '');                                                                                             
+  SysRouteInsAddlParameter('Erp', 'Photo Type','Pattern Formation', '', '', false, '', '', '');  
+  SysRouteInsAddlParameter('Erp', 'Blown Width',Fnc.SysGetAttrValue('Line_Width_Blown'), '', '', false, '', '', '');
+  SysRouteInsAddlParameter('Erp', 'Blown Gap',Fnc.SysGetAttrValue('Air_Gap_Blown'), '', '', false, '', '', ''); 
+  SysRouteInsAddlParameter('Erp', 'Land Area',Fnc.SysGetAttrValue('Land_Area'), '', '', false, '', '', '');                   
+  SysRouteInsAddlParameter('Erp', 'Annular', Fnc.SysGetAttrValue('Annular'),'', '', false, '', '', ''); 
+  SysRouteInsAddlParameter('Erp', 'Design Thickness', FormatFloat('0.000', Fnc.SysGetAttrValue('LayupThickness')),'', '', false, '', '', '');
+  SysRouteInsAddlParameter('Erp', 'Min Hole Size NP', Fnc.SysGetAttrValue('Min_Drill_Size_NP'),'', '', false, '', '', '');
+  SysRouteInsAddlParameter('Erp', 'Aspect Ratio', Fnc.SysGetAttrValue('Aspect_Ratio_Val'),'', '', false, '', '', ''); 
+  SysRouteInsAddlParameter('Erp', 'Max Hole Size', Fnc.SysGetAttrValue('Max_Hole_Size'),'', '', false, '', '', '');  
+  SysRouteInsAddlParameter('Erp', 'Max P-Hole Size', Fnc.SysGetAttrValue('Max_PHole_Size'),'', '', false, '', '', ''); 
+  SysRouteInsAddlParameter('Erp', 'Max Slot Length', Fnc.SysGetAttrValue('Slot_Length_PTH'),'', '', false, '', '', '');                                     
+  SysRouteInsAddlParameter('Erp', 'Pre-preg Material', Fnc.SysGetAttrValue('PPGMat'),'', '', false, '', '', '');  
+  SysRouteInsAddlParameter('Erp', 'Core Material', Fnc.SysGetAttrValue('CoreMat'),'', '', false, '', '', '');  
+  SysRouteInsAddlParameter('Erp', 'Panel Size', Fnc.SysGetAttrValue('Panel_Size'),'', '', false, '', '', '');  
+  end;  
+  
+  procedure OL_DES3_Man_SD;     // Herole added on 13-Dec-2018                                                            
+begin
+  SysRouteInsDepartment('Erp', 'DESOL-A', '');                                                            
+  SysRouteInsWorkCenter('Erp', 'DESOL-A2', '');  
+  SysRouteInsAddlParameter('Erp', 'Impedance', Fnc.SysGetAttrValue('Has_Impedance'),'', '', false, '', '', '');
+  SysRouteInsAddlParameter('Erp', 'Dynamic', Fnc.SysGetAttrValue('DynamicEtch'),'', '', false, '', '', '');   
+  SysRouteInsInstruction('Erp', 'DESOL022', '')
+end;         
+
+procedure Vertical_Des_TU933_Man_SD;     // Herole added on 20-Dec-2018                                                                  
+begin
+  SysRouteInsDepartment('Erp', 'DMEAR-V01', '');                                                            
+  SysRouteInsWorkCenter('Erp', 'DMEAR-V01', '');  
+  SysRouteInsAddlParameter('Erp', 'Sweller','5 min', '', '', false, '', '', ''); 
+  SysRouteInsAddlParameter('Erp', 'Permanganate','25 min', '', '', false, '', '', '');
+end;          
+
+procedure IL_AOI_1ST__Man_SD;     // Herole added on 16-Jan-2019                                                                  
+begin
+  SysRouteInsDepartment('Erp', 'ISSIL-A', '');                                                                    
+  SysRouteInsWorkCenter('Erp', 'ISSIL-A', '');  
+end;      
+
+procedure ScopeDrill_PEP_Man_SD;     // Herole added on 16-Mar-2019
+begin
+  SysRouteInsDepartment('Erp', 'SCPDR-A', '');
+  SysRouteInsWorkCenter('Erp', 'SCPDR-A', '');
+end;
+                                                                                                           
+procedure MCP_Man_SD;     // Herole added on 18-Apr-2019                                                            
+begin
+  SysRouteInsDepartment('Erp', 'COPPL-E', '');                                                        
+  SysRouteInsWorkCenter('Erp', 'COPPL-E', '');                    
+  SysRouteInsAddlParameter('Erp', 'Plating Line', 'MCP', '', '', false, '', '', '');      
+  SysRouteInsAddlParameter('Erp', 'Thickness Before Plate', Fnc.SysGetAttrValue('Press_Thickness'), '', '', false, '', '', '');
+  SysRouteInsAddlParameter('Erp', 'Min Drill Size', Fnc.SysGetAttrValue('Min_Drill_Size'), '', '', false, '', '', '');
+  SysRouteInsAddlParameter('Erp', 'Ave Min PTH', Fnc.SysGetAttrValue('Ave_Min_Th'), '', '', false, '', '', '');  
+  SysRouteInsAddlParameter('Erp', 'Abs Min PTH', Fnc.SysGetAttrValue('Abs_Min_Th'), '', '', false, '', '', '');    
+  SysRouteInsAddlParameter('Erp', 'Surface Plating Spec', Fnc.SysGetAttrValue('Surf_Plt_Spec'), '', '', false, '', '', '');  
+  SysRouteInsAddlParameter('Erp', 'PTH Aspect Ratio', Fnc.SysGetAttrValue('AspectRatio'), '', '', false, '', '', '');  
+  SysRouteInsAddlParameter('Erp', 'PTH Cu Plating Area', Fnc.SysGetAttrValue('PTH_CuPlt_Area'), '', '', false, '', '', '');  
+  SysRouteInsAddlParameter('Erp', 'Cu Ratio', Fnc.SysGetAttrValue('Cu_Ratio'), '', '', false, '', '', '');     
+  SysRouteInsAddlParameter('Erp', 'Min Surface Cu', Fnc.SysGetAttrValue('Min_Surf_Cu'), '', '', false, '', '', '');   
+  SysRouteInsAddlParameter('Erp', 'Max Surface Cu', Fnc.SysGetAttrValue('Max_Surf_Cu'), '', '', false, '', '', '');   
+  SysRouteInsAddlParameter('Erp', 'Application', Fnc.SysGetAttrValue('Application'), '', '', false, '', '', '');     
+  SysRouteInsInstruction('Erp', 'COPPL001', '') 
+end;    
+
+procedure VELCP_V1_V2_Man_SD;     // Herole added on 18-Apr-2019                   
+begin
+  SysRouteInsDepartment('Erp', 'METAL-C', '');                                                                                         
+  SysRouteInsWorkCenter('Erp', 'METAL-C', ''); 
+  SysRouteInsAddlParameter('Erp', 'VELCP Line', 'V1 or V2 only', '', '', false, '', '', '');                                           
+  SysRouteInsAddlParameter('Erp', 'Pre-preg Material', Fnc.SysGetAttrValue('PPGMat'),'', '', false, '', '', '');   
+  SysRouteInsAddlParameter('Erp', 'Core Material', Fnc.SysGetAttrValue('CoreMat'),'', '', false, '', '', '');  
+  SysRouteInsAddlParameter('Erp', 'Thickness', FormatFloat('0.000',Fnc.SysGetAttrValue('LayupThickness')), '', '', false, '', '', ''); 
+  SysRouteInsAddlParameter('Erp', 'Min Drill Size', Fnc.SysGetAttrValue('Min_Drill_Size'),'', '', false, '', '', '');
+end;   
+
+procedure Washing_Man_SD;     // Herole added on 3-May-2019                   
+begin
+  SysRouteInsDepartment('Erp', 'WASHS-A', '');                                                                                         
+  SysRouteInsWorkCenter('Erp', 'WASHS-B0', ''); 
+end;                                                                                                      
+
+procedure FI_ENIG_OSP_Man_SD;     // Herole added on 3-May-2019                   
+begin
+  SysRouteInsDepartment('Erp', 'FINAL-A', '');                                                                                         
+  SysRouteInsWorkCenter('Erp', 'FINAL-A', '');                                        
+  SysRouteInsAddlParameter('Erp', 'Marking-A', Fnc.SysGetAttrValue('Marking_A'),'', '', false, '', '', '');   
+  SysRouteInsAddlParameter('Erp', 'Marking-B', Fnc.SysGetAttrValue('Marking_B'),'', '', false, '', '', '');   
+  SysRouteInsAddlParameter('Erp', 'Capped Via', Fnc.SysGetAttrValue('CappedVia'), '', '', false, '', '', ''); 
+  SysRouteInsAddlParameter('Erp', 'Gold Type', 'ENIG','', '', false, '', '', '');
+  SysRouteInsAddlParameter('Erp', 'OSP Type', 'LEAD FREE WPF21 ORGNC','', '', false, '', '', '');
+end;             
+
+procedure ResSprayCoat_NOCuthick_SD;     // Herole added on 30-May-2019                            
+begin
+  SysRouteInsDepartment('Erp', 'RESCO-B', '');
+  SysRouteInsWorkCenter('Erp', 'RESCO-B', ''); 
+  SysRouteInsAddlParameter('Erp', 'Resist Ink', 'PSR2000-SP300HFM', '', '', false, '', '', '');  
+  SysRouteInsAddlParameter('Erp', 'Min Resist Clearance', Fnc.SysGetAttrValue('Min_Res_Cl'), '', '', false, '', '', ''); 
+  SysRouteInsAddlParameter('Erp', 'Min Resist Thickness', Fnc.SysGetAttrValue('Min_Res_Th'), '', '', false, '', '', '');
+  SysRouteInsAddlParameter('Erp', 'Max Resist Thickness', Fnc.SysGetAttrValue('Max_Res_Th'), '', '', false, '', '', '');
+  SysRouteInsAddlParameter('Erp', 'Min Resist Partition', Fnc.SysGetAttrValue('Min_Res_Pa'), '', '', false, '', '', ''); 
+  SysRouteInsAddlParameter('Erp', 'Smudges', 'Not Allowed', '', '', false, '', '', '');    
+  SysRouteInsAddlParameter('Erp', 'Exposed Cu', 'Not Allowed', '', '', false, '', '', '');
+  SysRouteInsAddlParameter('Erp', 'Board Thickness', Fnc.SysGetAttrValue('LayupThickness'), '', '', false, '', '', ''); 
+  SysRouteInsAddlParameter('Erp', 'Panel Size', Fnc.SysGetAttrValue('Panel_Size'), '', '', false, '', '', '');  
+  SysRouteInsInstruction('Erp', 'RESIS001', '')
+end;   
+
+procedure Photo_SelSilver_Man_SD;     // Herole added on 11-Jun-2019                   
+begin
+  SysRouteInsDepartment('Erp', 'EXPOL-A', '');                                                                                         
+  SysRouteInsWorkCenter('Erp', 'EXPOL-A', '');                                        
+  SysRouteInsAddlParameter('Erp', 'Photo Type', 'Selective Silver','', '', false, '', '', '');   
+  SysRouteInsAddlParameter('Erp', 'Photo Sequence', '3rd Photo','', '', false, '', '', '');   
+end;    
+
+procedure DryFilm_Strip_Man_SD;     // Herole added on 11-Jun-2019                   
+begin
+  SysRouteInsDepartment('Erp', 'AUSTR-A', '');                                                                                         
+  SysRouteInsWorkCenter('Erp', 'AUSTR-A', '');                                           
+end;    
+                                                                                 
+procedure SemiCure_Oven_Man_SD;     // Herole added on 25-Jul-2019                   
+begin
+  SysRouteInsDepartment('Erp', 'REOVN-A', '');                                                                                         
+  SysRouteInsWorkCenter('Erp', 'REOVN-A', '');                                           
+end;   
+
+procedure ResScreen_Man_SD;     // Herole added on 5-Aug-2019                   
+begin
+  SysRouteInsDepartment('Erp', 'RESCO-C', '');                                                                                         
+  SysRouteInsWorkCenter('Erp', 'RESCO-C', '');  
+  SysRouteInsAddlParameter('Erp', 'Cu Thickness', Fnc.SysGetAttrValue('Ave_Fin_Th'), '', '', false, '', '', '');            
+  SysRouteInsAddlParameter('Erp', 'Board Thickness', Fnc.SysGetAttrValue('LayupThickness'), '', '', false, '', '', ''); 
+  SysRouteInsAddlParameter('Erp', 'Panel Size', Fnc.SysGetAttrValue('Panel_Size'), '', '', false, '', '', '');
+end;
+
+procedure Plasma02_Man_SD;     // Herole added on 31-Oct-2019                   
+begin
+  SysRouteInsDepartment('Erp', 'PLASM-A', '');                                                                                         
+  SysRouteInsWorkCenter('Erp', 'PLASM-A0', '');  
+  SysRouteInsAddlParameter('Erp', 'Remark', 'Program 8', '', '', false, '', '', '');            
+end;      
+
+procedure Counterbore_A_Man_SD;     // Herole added on 13-Nov-2019                   
+begin
+  SysRouteInsDepartment('Erp', 'ROUTE-A', '');                                                                                         
+  SysRouteInsWorkCenter('Erp', 'ROUTE-D0', '');  
+  SysRouteInsAddlParameter('Erp', 'Drill Side', 'Side A', '', '', false, '', '', '');
+end;    
+
+procedure Fill_Via_FANC_Man_SD;     // Herole added on 13-Dec-2019
+begin
+  SysRouteInsDepartment('Erp', 'COPPL-F', '');                                   
+  SysRouteInsWorkCenter('Erp', 'COPPL-F', '');                    
+  SysRouteInsAddlParameter('Erp', 'Plating Line', 'FILL_VIA', '', '', false, '', '', '');    
+  SysRouteInsAddlParameter('Erp', 'Thickness Before Plate', Fnc.SysGetAttrValue('Press_Thickness'), '', '', false, '', '', '');
+  SysRouteInsAddlParameter('Erp', 'DE Cu Thickness', Fnc.SysGetAttrValue('User_DE_Cu_Thk'), '', '', false, '', '', '');  
+  SysRouteInsInstruction('Erp', 'COPPL001', '')      
+end;                                              
+
+procedure ScopeDrill_Man_SD;     // Herole added on 07-Jan-2020
+begin
+  SysRouteInsDepartment('Erp', 'SCPDR-A', '');                                   
+  SysRouteInsWorkCenter('Erp', 'SCPDR-A', '');                         
+end;       
+
+procedure Milling_A_Man_SD;     // Herole added on 13-Feb-2020                                                            
+begin
+  SysRouteInsDepartment('Erp', 'ROUTE-A', '');                                   
+  SysRouteInsWorkCenter('Erp', 'ROUTE-D0', '');  
+  SysRouteInsAddlParameter('Erp', 'Drill Side', 'Side A Bottom', '', '', false, '', '', '');
+end;     
+
+procedure Oxide_Man_SD;     // Herole added on 18-Feb-2020                                                            
+begin
+  SysRouteInsDepartment('Erp', 'OXDOL-B', '');                                   
+  SysRouteInsWorkCenter('Erp', 'OXDOL-D0', '');                         
+end;  
+
+procedure PreBake_Epoxy_Man_SD;     // Herole added on 21-Apr-2020                                                            
+begin
+  SysRouteInsDepartment('Erp', 'DMBAK-A', '');                                   
+  SysRouteInsWorkCenter('Erp', 'DMBAK-A', ''); 
+  SysRouteInsInstruction('Erp', 'DMBAK003', '')
+end;                  
+
+procedure Vertical_CAPPED_Man_SD;     // Herole added on 15-May-2020                                                            
+begin                                                                                              
+  SysRouteInsDepartment('Erp', 'DMEAR-V', '');                                   
+  SysRouteInsWorkCenter('Erp', 'DMEAR-V01', '');                    
+  SysRouteInsAddlParameter('Erp', 'Sweller', 'Off', '', '', false, '', '', '');    
+  SysRouteInsAddlParameter('Erp', 'Promoter', '5min', '', '', false, '', '', '');
+  SysRouteInsAddlParameter('Erp', 'Neutraliser', '7min', '', '', false, '', '', '');      
+end;             
+
+procedure Alkaline_Photo_Man_SD;     // herole added on 18-May-2020                                                                    
+begin                                                                                                                             
+  SysRouteInsDepartment('Erp', 'EXPOL-A', '');
+  SysRouteInsWorkCenter('Erp', 'EXPOL-A3', '');                                                                                             
+  SysRouteInsAddlParameter('Erp', 'Photo Type','Alkaline Pattern Etch', '', '', false, '', '', '');  
+  SysRouteInsAddlParameter('Erp', 'Blown Width',Fnc.SysGetAttrValue('Line_Width_Blown'), '', '', false, '', '', '');
+  SysRouteInsAddlParameter('Erp', 'Blown Gap',Fnc.SysGetAttrValue('Air_Gap_Blown'), '', '', false, '', '', ''); 
+  SysRouteInsAddlParameter('Erp', 'Land Area',Fnc.SysGetAttrValue('Land_Area'), '', '', false, '', '', '');                   
+  SysRouteInsAddlParameter('Erp', 'Annular', Fnc.SysGetAttrValue('Annular'),'', '', false, '', '', ''); 
+  SysRouteInsAddlParameter('Erp', 'Design Thickness', FormatFloat('0.000', Fnc.SysGetAttrValue('LayupThickness')),'', '', false, '', '', '');
+  SysRouteInsAddlParameter('Erp', 'Min Hole Size NP', Fnc.SysGetAttrValue('Min_Drill_Size_NP'),'', '', false, '', '', '');
+  SysRouteInsAddlParameter('Erp', 'Aspect Ratio', Fnc.SysGetAttrValue('Aspect_Ratio_Val'),'', '', false, '', '', ''); 
+  SysRouteInsAddlParameter('Erp', 'Max Hole Size', Fnc.SysGetAttrValue('Max_Hole_Size'),'', '', false, '', '', '');  
+  SysRouteInsAddlParameter('Erp', 'Max P-Hole Size', Fnc.SysGetAttrValue('Max_PHole_Size'),'', '', false, '', '', ''); 
+  SysRouteInsAddlParameter('Erp', 'Max Slot Length', Fnc.SysGetAttrValue('Slot_Length_PTH'),'', '', false, '', '', '');                                     
+  SysRouteInsAddlParameter('Erp', 'Pre-preg Material', Fnc.SysGetAttrValue('PPGMat'),'', '', false, '', '', '');  
+  SysRouteInsAddlParameter('Erp', 'Core Material', Fnc.SysGetAttrValue('CoreMat'),'', '', false, '', '', '');  
+  SysRouteInsAddlParameter('Erp', 'Panel Size', Fnc.SysGetAttrValue('Panel_Size'),'', '', false, '', '', '');  
+  end;   
+  
+procedure Alkaline_Developing_Man_SD;     // Herole added on 18-May-2020
+begin
+  SysRouteInsDepartment('Erp', 'AUDEV-A', '');                                   
+  SysRouteInsWorkCenter('Erp', 'AUDEV-A', '');  
+end;                                                                                                        
+
+procedure Alkaline_Etching_Man_SD;     // Herole added on 18-May-2020                                                            
+begin
+  SysRouteInsDepartment('Erp', 'AETCH=A', '');                                   
+  SysRouteInsWorkCenter('Erp', 'AETCH=A', '');  
+end;                                                                                                              
+
+procedure Alkaline_Stripping_Man_SD;     // Herole added on 18-May-2020                                                            
+begin
+  SysRouteInsDepartment('Erp', 'AUSTR-A', '');                                   
+  SysRouteInsWorkCenter('Erp', 'AUSTR-A', '');  
+end;        
+
+procedure NC_Drill_PEP_CORE_SD;     // Herole added on 27-May-2020
+begin
+  SysRouteInsDepartment('Erp', 'DRILL-E', '');
+  SysRouteInsWorkCenter('Erp', 'DRILL-E', '');
+  SysRouteInsAddlParameter('Erp', 'Entry Sheet Material', 'Aluminum', '', '', false, '', '', '');                                    
+end; 
+
+procedure Hot_Air_Man_SD;     // Herole added on 07-Aug-2020                                                            
+begin             
+  SysRouteInsDepartment('Erp', 'HALVL-B', '');
+  SysRouteInsWorkCenter('Erp', 'HALVL-B1', '');  
+  SysRouteInsAddlParameter('Erp', 'Board Finish', 'Lead Free HAL', '', '', false, '', '', '');
+  SysRouteInsAddlParameter('Erp', 'Min Thickness', '1~25', '', '', false, '', '', '');
+end;       
+
+procedure DM2_Buff_Man_SD;     // Herole added on 22-Aug-2020
+begin
+  SysRouteInsDepartment('Erp', 'DBURR-A', '');
+  SysRouteInsWorkCenter('Erp', 'DBURR-B0', '');  
+  SysRouteInsAddlParameter('Erp', 'Remarks', 'DM2 Buffing Only', '', '', false, '', '', '');
+end;
+
+procedure Hollmuller_Buff_Man_SD;     // Herole added on 10-Dec-2020                                                            
+begin             
+  SysRouteInsDepartment('Erp', 'DMEAR-A', '');                                                         
+  SysRouteInsWorkCenter('Erp', 'DMEAR-A0', '');  
+  SysRouteInsAddlParameter('Erp', 'Remarks', 'Buffing Only', '', '', false, '', '', '');
+end;
+
+procedure VELCP_V2CAPPED_Man_SD;     // Herole added on 19-Dec-2020                   
+begin
+  SysRouteInsDepartment('Erp', 'METAL-C', '');                                                                                         
+  SysRouteInsWorkCenter('Erp', 'METAL-C', '');                                           
+  SysRouteInsAddlParameter('Erp', 'VELCP Line', 'V2 only', '', '', false, '', '', '');                                            
+end;       
+
+procedure CoreBuild_Buff_Man_SD;     // Herole added on 07-Jan-2021                                                            
+begin
+  SysRouteInsDepartment('Erp', 'EPBUF-A', '');                                   
+  SysRouteInsWorkCenter('Erp', 'EPBUF-A', '');                    
+  SysRouteInsInstruction('Erp', 'EPBUF015', '') 
+  SysRouteInsAddlParameter('Erp', 'Buffing Spec', Fnc.SysGetAttrValue('CoreBuild_CuThin_1stBuff'), '', '', false, '', '', '');    
+end;   
+
+procedure Epoxy_A_SidebySide_Man_SD;     // Herole added on 12-Jan-2021                                                            
+begin
+  SysRouteInsDepartment('Erp', 'EPXPL-A', '');                                   
+  SysRouteInsWorkCenter('Erp', 'EPXPL-B0', '');   
+  SysRouteInsAddlParameter('Erp', 'Plug Ink', Fnc.SysGetAttrValue('EpoxyPlugInk'), '', '', false, '', '', ''); 
+  SysRouteInsAddlParameter('Erp', 'Plug to Non-plug', Fnc.SysGetAttrValue('EpoxyPlug_PlugToNonPlugSpacing'), '', '', false, '', '', '');   
+  SysRouteInsAddlParameter('Erp', 'Plugging Side', 'A side', '', '', false, '', '', '');    
+end;   
+
+procedure Epoxy_B_SidebySide_Man_SD;     // Herole added on 12-Jan-2021                                                            
+begin
+  SysRouteInsDepartment('Erp', 'EPXPL-A', '');                                   
+  SysRouteInsWorkCenter('Erp', 'EPXPL-B0', '');   
+  SysRouteInsAddlParameter('Erp', 'Plug Ink', Fnc.SysGetAttrValue('EpoxyPlugInk'), '', '', false, '', '', ''); 
+  SysRouteInsAddlParameter('Erp', 'Plug to Non-plug', Fnc.SysGetAttrValue('EpoxyPlug_PlugToNonPlugSpacing'), '', '', false, '', '', '');   
+  SysRouteInsAddlParameter('Erp', 'Plugging Side', 'B side', '', '', false, '', '', '');    
+end;        
+
+procedure VELCP_V2_2ndDrill_Man_SD;     // Herole added on 18-Jan-2021
+begin
+  SysRouteInsDepartment('Erp', 'METAL-C', '');                                                                                         
+  SysRouteInsWorkCenter('Erp', 'METAL-C', ''); 
+  SysRouteInsAddlParameter('Erp', 'VELCP Line', 'V2 only', '', '', false, '', '', '');                                           
+  SysRouteInsAddlParameter('Erp', 'Pre-preg Material', Fnc.SysGetAttrValue('PPGMat'),'', '', false, '', '', '');   
+  SysRouteInsAddlParameter('Erp', 'Core Material', Fnc.SysGetAttrValue('CoreMat'),'', '', false, '', '', '');  
+  SysRouteInsAddlParameter('Erp', 'Thickness', FormatFloat('0.000',Fnc.SysGetAttrValue('Press_Thickness')), '', '', false, '', '', ''); 
+  SysRouteInsAddlParameter('Erp', 'Min Drill Size', Fnc.SysGetAttrValue('Min_Drill_Size_2'),'', '', false, '', '', '');
+end;   
+
+procedure OL_Photo_Acidetch_Man_SD;     // herole added on 20-Jan-2021                                                                    
+begin                                                                                                                             
+  SysRouteInsDepartment('Erp', 'EXPOL-A', '');
+  SysRouteInsWorkCenter('Erp', 'EXPOL-A3', '');                                                                                             
+  SysRouteInsAddlParameter('Erp', 'Photo Type','Pattern Formation', '', '', false, '', '', '');  
+  SysRouteInsAddlParameter('Erp', 'Blown Width',Fnc.SysGetAttrValue('Line_Width_Blown'), '', '', false, '', '', '');
+  SysRouteInsAddlParameter('Erp', 'Blown Gap',Fnc.SysGetAttrValue('Air_Gap_Blown'), '', '', false, '', '', ''); 
+  SysRouteInsAddlParameter('Erp', 'Land Area',Fnc.SysGetAttrValue('Land_Area'), '', '', false, '', '', '');                   
+  SysRouteInsAddlParameter('Erp', 'Annular', Fnc.SysGetAttrValue('Annular'),'', '', false, '', '', ''); 
+  SysRouteInsAddlParameter('Erp', 'Design Thickness', FormatFloat('0.000', Fnc.SysGetAttrValue('LayupThickness')),'', '', false, '', '', '');
+  SysRouteInsAddlParameter('Erp', 'Min Hole Size NP', Fnc.SysGetAttrValue('Min_Drill_Size_NP'),'', '', false, '', '', '');
+  SysRouteInsAddlParameter('Erp', 'Aspect Ratio', Fnc.SysGetAttrValue('Aspect_Ratio_Val'),'', '', false, '', '', ''); 
+  SysRouteInsAddlParameter('Erp', 'Max Hole Size', Fnc.SysGetAttrValue('Max_Hole_Size'),'', '', false, '', '', '');  
+  SysRouteInsAddlParameter('Erp', 'Max P-Hole Size', Fnc.SysGetAttrValue('Max_PHole_Size'),'', '', false, '', '', ''); 
+  SysRouteInsAddlParameter('Erp', 'Max Slot Length', Fnc.SysGetAttrValue('Slot_Length_PTH'),'', '', false, '', '', '');                                     
+  SysRouteInsAddlParameter('Erp', 'Pre-preg Material', Fnc.SysGetAttrValue('PPGMat'),'', '', false, '', '', '');  
+  SysRouteInsAddlParameter('Erp', 'Core Material', Fnc.SysGetAttrValue('CoreMat'),'', '', false, '', '', '');  
+  SysRouteInsAddlParameter('Erp', 'Panel Size', Fnc.SysGetAttrValue('Panel_Size'),'', '', false, '', '', '');  
+  end;
+  
+procedure VELCP_V1V2CAPPED_Man_SD;     // Herole added on 07-Apr-2021
+begin
+  SysRouteInsDepartment('Erp', 'METAL-C', '');
+  SysRouteInsWorkCenter('Erp', 'METAL-C', '');
+  SysRouteInsAddlParameter('Erp', 'VELCP Line', 'V1 or V2', '', '', false, '', '', '');
+end;
+
+procedure Plasma_Man_SD;     // Herole added on 26-May-2021
+begin
+  SysRouteInsDepartment('Erp', 'PLASM-A', '');
+  SysRouteInsWorkCenter('Erp', 'PLASM-A0', '');
+end;
+
+procedure Screen_Print_SIT_Man_SD;     // Herole added on 16-Jun-2021
+begin
+  SysRouteInsDepartment('Erp', 'RESCO-C', '');                                                                                         
+  SysRouteInsWorkCenter('Erp', 'RESCO-C1', '');
+  SysRouteInsAddlParameter('Erp', 'Ink', 'GREENIA 660 G1800PI-I', '', '', false, '', '', '');
+  SysRouteInsAddlParameter('Erp', 'Remarks', 'Cover Leadline Only', '', '', false, '', '', '');
+end;
+
+procedure Resist_Stripping_Man_SD;     // Herole added on 16-Jun-2021
+begin
+  SysRouteInsDepartment('Erp', 'AUSTR-A', '');
+  SysRouteInsWorkCenter('Erp', 'AUSTR-A', '');
+end;
+
+procedure ResistExp_SIT_Ledia_Man_SD;     // Herole addded on 22-Jun-21
+begin
+  SysRouteInsDepartment('Erp', 'REEXP-A', '');
+  SysRouteInsWorkCenter('Erp', 'REEXP-A05', '');
+end;
+
+procedure UV_SIT_Man_SD;    // Herole added on 22-Jun-21
+begin
+  SysRouteInsDepartment('Erp', 'RESUV-A', '');
+  SysRouteInsWorkCenter('Erp', 'RESUV-A0', '');
+end;
+
+procedure Primary_Plug_Buffing_Man_SD;     // Herole added on 13-Jul-2021
+begin
+  SysRouteInsDepartment('Erp', 'EPBUF-A', '');
+  SysRouteInsWorkCenter('Erp', 'EPBUF-A', '');
+end;
+
+procedure NC_2ndDrill_Man_SD;     // Herole added on 04-Aug-2021
+begin
+  SysRouteInsDepartment('Erp', 'DRILL-E', '');
+  SysRouteInsWorkCenter('Erp', 'DRILL-E', '');
+  SysRouteInsInstruction('Erp', 'DRILL009', '')
+  SysRouteInsAddlParameter('Erp', '2nd Stack Height', Fnc.SysGetAttrValue('Stack_Hgt_2'), '', '', false, '', '', '');
+  SysRouteInsAddlParameter('Erp', '2nd Flute Length', Fnc.SysGetAttrValue('Flute_Len_2'), '', '', false, '', '', '');
+  SysRouteInsAddlParameter('Erp', '2nd Min Drill Size', Fnc.SysGetAttrValue('Min_Drill_Size_2'), '', '', false, '', '', '');
+  SysRouteInsAddlParameter('Erp', 'Material Tg', Fnc.SysGetAttrValue('TG_Class'), '', '', false, '', '', '');
+  SysRouteInsAddlParameter('Erp', 'Thickness', FormatFloat('0.000', Fnc.SysGetAttrValue('LayupThickness')), '', '', false, '', '', '');
+end;
+
+procedure ScopeDrill_8Hole_Man_SD;     // Herole added on 18-Aug-2021
+begin
+  SysRouteInsDepartment('Erp', 'SCPDR-A', '');
+  SysRouteInsWorkCenter('Erp', 'SCPDR-A', '');
+  SysRouteInsInstruction('Erp', 'SCPDR054', '')                     
+end;
+
+procedure HotPress_Meiki_Man_SD;     // Herole added on 19-Oct-2021
+begin
+  SysRouteInsDepartment('Erp', 'PRESS-B', '');
+  SysRouteInsWorkCenter('Erp', 'PRESS-B0', '');
+  SysRouteInsAddlParameter('Erp', 'Press Thickness', FormatFloat('0.000', Fnc.SysGetAttrValue('Press_Thickness')), '', '', false, '', '', '');
+end;
+
+procedure Mechanical_DualDrill_Man_SD;     // Herole added on 14-Dec-2021
+begin
+  SysRouteInsDepartment('Erp', 'DRILL-E', '');
+  SysRouteInsWorkCenter('Erp', 'DRILL-E', '');
+  SysRouteInsInstruction('Erp', 'DRILL099', '')
+end;

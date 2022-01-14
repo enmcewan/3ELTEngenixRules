@@ -1,0 +1,806 @@
+//HeaderImportExport-->
+//SiteId=0
+//Enterprise=True
+//ScriptType=1
+//ScriptGroup=BOM Conversion
+//HeaderImportExport<--
+function Df : float;                                                                                                                                                                                                                                                                                                                                                                                                                                                                    
+begin
+  result := 0.0;
+
+  result := Fnc.GetStackupMaterialValue('DF_3');
+
+  if result = 0.0 then                        
+    result := Fnc.GetStackupMaterialValue('DF_2');
+
+  else if result = 0.0 then
+    result := Fnc.GetStackupMaterialValue('DF_1'); 
+end;
+
+function Get_Core_CuType : string;
+var 
+  cu_Family : string;
+begin
+  result := '';
+  cu_Family := Fnc.GetStackupMaterialValue('TopLayer.ItemFamily');
+  
+  if copy(cu_Family, 1, 3) = 'Cu-' then
+  begin
+    result := copy(cu_Family, 4, length(cu_Family)); 
+  end;                                     
+end;
+                
+function Foil_Profile : string;
+begin
+  result := '';
+  
+  if Fnc.SysGetAttrValue('OverrideFoilPr') = 'No' then
+  begin                            
+    if Fnc.GetStackupMaterialValue('ThicknessAfterPressing') < 0.1 then
+    begin
+      if Df >= 0.015 then            
+        result := 'RTF';     
+               
+      else if ((Df >= 0.009 ) and (DF < 0.015)) then
+        result := 'RTF';                  
+                                            
+      else if Df < 0.009 then           
+      begin                                                                 
+       case Fnc.GetStackupMaterialValue('TopLayer.LayupCodeThckCu') of
+         '1/3oz' : result := 'VLP/HVLP';          
+         '1/2oz' : result := 'VLP/HVLP';                   
+         '1oz'   : result := 'VLP/HVLP';                     
+         '2oz'   : result := 'RTF';              
+         '3oz'   : result := 'RTF';  
+       end;                                             
+      end;                                    
+                                       
+    end                                                  
+    else
+    begin
+      if Df >= 0.015 then
+        result := 'HTE';                          
+  
+      else if ((Df >= 0.009 ) and (DF < 0.015)) then
+        result := 'RTF';
+  
+      else if Df < 0.009 then
+      begin
+       case Fnc.GetStackupMaterialValue('TopLayer.LayupCodeThckCu') of
+         '1/3oz' : result := 'VLP/HVLP';
+         '1/2oz' : result := 'VLP/HVLP';
+         '1oz'   : result := 'VLP/HVLP';
+         '2oz'   : result := 'RTF';
+         '3oz'   : result := 'RTF'; 
+       end;
+      end;                          
+    end;
+      
+    //  ShowMessage('Warning : No value for Df found, unable to choose RTF or non-RTF material');
+    if result = '' then result := 'RTF';  
+  end
+  else
+    result := Fnc.SysGetAttrValue('OverrideFoilPr'); 
+
+end;
+
+function GetPDMConstrCode(CodeNumber : string) : string;
+var
+  PPG_Style : string;
+begin
+  result := '';
+  PPG_Style := '';
+  
+  if CodeNumber = 'FirstCode' then 
+    PPG_Style := Copy(Fnc.GetStackupMaterialValue('Construction'), 3, 4);
+  else // SecondCode
+    PPG_Style := Copy(Fnc.GetStackupMaterialValue('Construction'), 12, 4);
+   
+  case PPG_Style of
+    '1080' : result := 'A';            
+    '106 ' : result := 'B';
+    '106' : result := 'B';
+    '106S' : result := 'B';
+    '106L' : result := 'B'; 
+    '2116' : result := 'C';
+    '3313' : result := 'D';
+    '1500' : result := 'E';                             
+    '1501' : result := 'F';                             
+    '1504' : result := 'G';        
+    '2113' : result := 'H';
+    //'2116' : PDM_Constr := 'I'; Needs more logic
+    '1652' : result := 'J';
+    '1506' : result := 'K';           
+    '7628' : result := 'L';                     
+    '7629' : result := 'M';
+    '1017' : result := 'N';
+    '2313' : result := 'P';           
+    '2112' : result := 'Q';        
+    '1037' : result := 'R';            
+    '1065' : result := 'S';
+    '1078' : result := 'T';
+    '1027' : result := 'U';
+    '1086' : result := 'V';
+    '1067' : result := 'W';                                           
+    '2013' : result := 'X';
+    '1035' : result := 'Y';
+  end;                                                    
+end; 
+
+Function AssignCuLabel(CuWt: string): string;
+begin                                                      
+  Result := CuWt;
+  
+  case CuWt of
+    '5um' : Result := '05';     // 1200 5um Cu Foil 
+    '1/4oz' : Result := '--';  //unknown
+    '1/3oz'  : Result := '12';
+    '1/2oz' : Result := '18';
+    '1oz'   : Result := '35';
+    '2oz'   : Result := '70';
+    '3oz'   : Result := '03'; 
+  end; 
+                                       
+end;
+
+function GetPPGStyle(PPG_Name : string) : string;
+begin
+  result := '';
+  
+  if length(PPG_Name) <= 7 then
+    result := '0' + Copy(PPG_Name, 1, 3)  // to handle 106 glass
+  else
+    result := Copy(PPG_Name, 1, 4)
+end;
+
+function GetResinPercent(PPG_Name : string) : string;
+begin
+  result := '';
+  
+  if length(PPG_Name) <= 7 then
+    result := '0' + Copy(PPG_Name, 1, 3)  // to handle 106 glass
+  else
+    result := Copy(PPG_Name, 1, 4);
+    
+  result :=  copy(PPG_Name, length(PPG_Name) - 1, 2);   
+end; 
+
+function BomConvSetFiltersForMaterial(FilterList: TStringList; MatrlRecId: integer);
+var
+  GroupFilter: string;
+  TightFilter: string;
+  PanelWidth: integer;
+  PanelLength: integer;                     
+  PDM_Qualify: string;               
+  PDM_Mat_Type : string;  
+  PDM_Supplier : string;
+  PDM_CoreThk : string;
+  egx_CoreThk : string;
+  CoreThk1000 : float;
+  PDM_Foil_P : string;
+  PDM_Constr1 : string;
+  PDM_Constr2 : string;
+  PDM_Constr3 : string;
+  CoreCWTop : string;
+  CoreCWBot : string;
+  PDM_CuWt : string;                     
+  CoreCuThkTop : float;
+  CoreCuThkBot : float;
+  Isola : boolean;
+  CoreGrpSearchText : string;
+  CoreGrpSearchTextI1 : string;  
+  CoreGrpSearchTextI2 : string;  
+  CoreGrpSearchTextI3 : string;  
+  CoreGrpSearchTextI4 : string;  
+  CorePrtSearchText : string;
+  CorePrtSearchTextI1 : string; 
+  CorePrtSearchTextI2 : string; 
+  CorePrtSearchTextI3 : string; 
+  CorePrtSearchTextI4 : string;                                             
+  
+  PDM_PPGStyle : string;
+  PPGGrpSearchText : string;
+  PPGGrpSearchTextI1 : string;
+  PPGGrpSearchTextI2 : string
+  PPGGrpSearchTextI3 : string
+  PPGGrpSearchTextI4 : string
+  PPGPrtSearchText : string;
+  PPGPrtSearchTextI1 : string;
+  PPGPrtSearchTextI2 : string;
+  PPGPrtSearchTextI3 : string;
+  PPGPrtSearchTextI4 : string;
+  
+  FoilFormat: string;
+  FoilEP : string;
+  FoilLength : string;
+  FoilWidth : string;
+  FoilSearchStrP1 : string;
+  
+  RC : string;
+  RP : string;
+  
+begin
+  PDM_Qualify := '';
+  PDM_Mat_Type := '';    
+  PDM_Supplier := '';
+  PDM_CoreThk := '';
+  egx_CoreThk := '';
+  CoreThk1000 := 0.0;
+  PDM_Foil_P := '';
+  PDM_Constr1 := '';
+  PDM_Constr2 := '';
+  PDM_Constr3 := ''; 
+  CoreCWTop := '';
+  CoreCWBot := '';
+  PDM_CuWt := '';
+  CoreCuThkTop := 0.0;          
+  CoreCuThkBot := 0.0;        
+  PanelLength := 0;
+  PanelWidth := 0;
+  Isola := false;
+  CoreGrpSearchText := '';
+  CoreGrpSearchTextI1 := '';  
+  CoreGrpSearchTextI2 := '';  
+  CoreGrpSearchTextI3 := '';  
+  CoreGrpSearchTextI4 := '';  
+  CorePrtSearchText := '';
+  CorePrtSearchTextI1 := ''; 
+  CorePrtSearchTextI2 := ''; 
+  CorePrtSearchTextI3 := ''; 
+  CorePrtSearchTextI4 := '';
+  
+  PDM_PPGStyle := '';
+  PPGGrpSearchText := '';
+  PPGGrpSearchTextI1 := '';
+  PPGGrpSearchTextI2 := ''; 
+  PPGGrpSearchTextI3 := ''; 
+  PPGGrpSearchTextI4 := ''; 
+  PPGPrtSearchText := '';
+  PPGPrtSearchTextI1 := '';
+  PPGPrtSearchTextI2 := '';
+  PPGPrtSearchTextI3 := '';
+  PPGPrtSearchTextI4 := '';                
+                                    
+  GroupFilter := '';           
+  TightFilter := '';
+  
+  FoilFormat := '';
+  FoilEP := '';
+  FoilLength := '';
+  FoilWidth := '';
+  FoilSearchStrP1 := ''; 
+  
+  RC := '';
+  RP := '';
+  
+  if UpperCase(Fnc.SysStackupTable.FieldByName('ItemDesc').AsString) = 'FOIL' then
+  begin
+    if Fnc.GetStackupMaterialValue('TopLayer.LayupCodeThckCu') <> '5um' then   // 1200 5um Cu Foil
+    begin
+      if Fnc.SysGetAttrValue('Pin_Lam') = true then
+      begin       
+        FoilLength := '0670';
+        FoilWidth := '0570';
+      end 
+      else // Pulse Bond/Pin Bond
+      begin
+        if Fnc.GetStackupMaterialValue('TopLayer.LayupCodeThckCu') = '1oz' then
+          FoilLength := '0660'
+        else                                            
+          FoilLength := '0670';
+  
+        FoilFormat := 'ROLL';
+      end
+    end
+    else
+    begin
+      if Fnc.SysGetAttrValue('Panel_Length') <= 540 then
+        FoilLength := '0540'
+      else if Fnc.SysGetAttrValue('Panel_Length') <= 640 then
+        FoilLength := '0640';
+                         
+      FoilWidth := '0540';
+      FoilFormat := '-MT18SD';
+    end;
+
+    //FoilEP := ''; //Needs some logic  // No longer used
+
+    FoilSearchStrP1 := 'F0' + AssignCuLabel(Fnc.GetStackupMaterialValue('TopLayer.LayupCodeThckCu'));
+
+    TightFilter := 'Item LIKE ' + QuotedStr(FoilSearchStrP1 + '-' + FoilLength + FoilWidth + FoilFormat);
+    GroupFilter := 'Item LIKE ' + QuotedStr(FoilSearchStrP1 + '-' + FoilLength + FoilWidth + FoilFormat + '**');
+  end;
+
+  if UpperCase(Fnc.GetStackupMaterialValue('ItemDesc')) = 'CORE' then                             
+  begin
+     Get_Core_CuType;
+    // Convert Engenix Material Family to Paradigm Inventory Family Code
+    case Fnc.GetStackupMaterialValue('Family') of
+      '185HR' : begin PDM_Mat_Type := 'N'; Isola := true end; //Multiple Supplier Codes, handled below
+      'FR370HR' : begin if Get_Core_CuType = 'RTF' then PDM_Mat_Type := 'S' else PDM_Mat_Type := 'R' ;  Isola := true end; //Multiple Supplier Codes, handled below 
+      'FR408HR' : begin PDM_Mat_Type := '5'; Isola := true end;//Multiple Supplier Codes, handled below          
+      'IS415' : begin PDM_Mat_Type := '3'; PDM_Supplier := 'AS'; end; 
+      'MCL-E-679F' : begin PDM_Mat_Type := 'C'; PDM_Supplier := 'HL'; end;
+      'MCL-E-679FG(S)' : begin PDM_Mat_Type := 'V'; PDM_Supplier := 'HL'; end; 
+      'MCL-E-700G(R)' : if Get_Core_CuType = 'VLP' then PDM_Mat_Type := 'N' else PDM_Mat_Type := '2';   //Multiple Supplier Codes, handled below
+      'MCL-HE-679G' : PDM_Mat_Type := '1'; //Multiple Supplier Codes, handled below 
+      'Megtron 4' : begin PDM_Mat_Type := '5'; PDM_Supplier := 'PN'; end;
+      //'Megtron 6(K)' : begin PDM_Mat_Type := 'P'; PDM_Supplier := 'PN'; end;
+      'Megtron 6' : begin PDM_Mat_Type := 'P'; PDM_Supplier := 'PN'; end; 
+      'N4000-11' : begin if Get_Core_CuType = 'RTF' then PDM_Mat_Type := 'U' else PDM_Mat_Type := 'T' ; PDM_Supplier := 'NL'; end;
+      'N4000-12' : begin PDM_Mat_Type := 'Y'; PDM_Supplier := 'NL'; end; 
+      'N4000-12SI' : begin PDM_Mat_Type := '8'; PDM_Supplier := 'NL'; end;
+      'N4000-13' : begin if Get_Core_CuType = 'RTF' then PDM_Mat_Type := 'Q' else PDM_Mat_Type := 'H' ; PDM_Supplier := 'NL'; end;
+      'N4000-13EP' : begin PDM_Mat_Type := '5'; PDM_Supplier := 'NL'; end;
+      'N4000-13EPSI' : begin PDM_Mat_Type := '6'; PDM_Supplier := 'NL'; end;
+      'N4000-13SI' : begin PDM_Mat_Type := 'K'; PDM_Supplier := 'NL'; end;
+      'N4000-6' : begin if Get_Core_CuType = 'RTF' then PDM_Mat_Type := 'G' else PDM_Mat_Type := 'B' ; PDM_Supplier := 'NL'; end; 
+      'S1000' : begin PDM_Mat_Type := 'L'; PDM_Supplier := 'SY'; end;
+      'S1000-2' : begin PDM_Mat_Type := 'R'; PDM_Supplier := 'SY'; end;
+      'S1170' : begin if Get_Core_CuType = 'RTF' then PDM_Mat_Type := 'G' else PDM_Mat_Type := 'B' ; PDM_Supplier := 'SY'; end;
+      'TU-668' : begin PDM_Mat_Type := 'L'; PDM_Supplier := 'TU'; end;
+      'TU-768' : begin PDM_Mat_Type := 'R'; PDM_Supplier := 'TU'; end;
+      'TU-862 HF' : begin PDM_Mat_Type := 'O'; PDM_Supplier := 'TU'; end;
+      'TU-872 LK' : begin PDM_Mat_Type := 'Q'; PDM_Supplier := 'TU'; end;
+      'TU-872 SLK' : begin PDM_Mat_Type := '5'; PDM_Supplier := 'TU'; end;
+      // New Materials Below            
+      'TU-872 SLK SP' : begin PDM_Mat_Type := 'K'; PDM_Supplier := 'TU'; end;
+      'TU-883' : begin PDM_Mat_Type := 'C'; PDM_Supplier := 'TU'; end;  
+      'TU-933' : begin PDM_Mat_Type := 'B'; PDM_Supplier := 'TU' end;                                      
+      'S7439' :  begin PDM_Mat_Type := '5'; PDM_Supplier := 'SY'; end;
+      'S1141KF' : begin PDM_Mat_Type := 'A'; PDM_Supplier := 'SY'; end; 
+      'S1000-2M' : begin PDM_Mat_Type := 'H'; PDM_Supplier := 'SY'; end;                     
+      'S7335' : begin PDM_Mat_Type := 'C'; PDM_Supplier := 'SY'; end;   
+      'S7338' : begin PDM_Mat_Type := 'P'; PDM_Supplier := 'SY'; end;
+      'Megtron 6G' : begin PDM_Mat_Type := 'C'; PDM_Supplier := 'PN'; end;                        
+      'R1566' : begin end;  // Qualified, no code for purchase yet. 
+      'R1755M' : begin end;  //Evaluation, no code                      
+      'Megtron 4F' : begin PDM_Mat_Type := 'B'; PDM_Supplier := 'PN'; end; 
+      'N4000-7' : begin PDM_Mat_Type := 'E'; PDM_Supplier := 'NL'; end; 
+      'N4800-20' : begin PDM_Mat_Type := '0'; PDM_Supplier := 'NL'; end;  
+      'MCL-BE-67G(R)' : begin PDM_Mat_Type := '2'; PDM_Supplier := 'HK'; end;
+      'MCL-BE-67G(S)' : begin if Get_Core_CuType = 'RTF' then PDM_Mat_Type := '8' else PDM_Mat_Type := '7' ; PDM_Supplier := 'HK'; end;
+      'MCL-E-679FGB(S)' :  begin PDM_Mat_Type := 'C'; PDM_Supplier := 'HK'; end;  
+      'MCL-E-679FJ' : begin PDM_Mat_Type := 'R'; PDM_Supplier := 'HK'; end;
+      'MCL-HE-679G(S)' : begin if Get_Core_CuType = 'RTF' then PDM_Mat_Type := '5' else PDM_Mat_Type := '6'; PDM_Supplier := 'HK'; end; 
+      'EM-370(D)' : begin PDM_Mat_Type := 'G'; PDM_Supplier := 'EM'end;
+      'EM-888' : begin PDM_Mat_Type := 'B'; PDM_Supplier := 'EM'; end;
+      'GA-170-LL' : begin PDM_Mat_Type := 'R'; PDM_Supplier := 'GE'; end;
+      'IT-150DA' : begin PDM_Mat_Type := 'P'; PDM_Supplier := 'IT'; end; 
+      'IT-158' : begin PDM_Mat_Type := 'L'; PDM_Supplier := 'IT'; end; 
+      'IT-180A' : begin PDM_Mat_Type := 'R'; PDM_Supplier := 'IT'; end; 
+      'IT-170GRA1' : begin end; //Evaluation, no code 
+      'IT-180I' : begin end;  //Evaluation, no code                        
+      'NP-140TL' : begin PDM_Mat_Type := 'A'; PDM_Supplier := 'NY'; end;
+      'NPG-TL' : begin PDM_Mat_Type := 'D'; PDM_Supplier := 'NY'; end; 
+      'NP-155FTL' : begin end;  //Evaluation, no code                                                            
+      'IS410' : begin end;  // No Code (maybe deleted ?
+      'FR408' : begin PDM_Mat_Type := 'Q'; Isola := true end;
+      'I-Speed' : begin if Get_Core_CuType = 'VLP' then PDM_Mat_Type := 'O' else if Get_Core_CuType = 'RTF' then PDM_Mat_Type := '6' Isola := true end;  // Same code as Fr408HR, need to use 'Qualified' Flag
+      'RO4350' : begin PDM_Mat_Type := '4'; PDM_Supplier := 'RO'; end; 
+      'MCL-E-67W' :  begin PDM_Mat_Type := 'A'; PDM_Supplier := 'HL'; end;     
+      'MCL-BE-67G(H)' :  begin PDM_Mat_Type := 'D'; PDM_Supplier := 'HK'; end;
+      'MCL-E-679W' :  begin PDM_Mat_Type := 'B'; PDM_Supplier := 'HL'; end;
+      'MCL-E-679FG' : begin PDM_Mat_Type := 'O'; PDM_Supplier := 'HL'; end; 
+      'FX-2' :  begin PDM_Mat_Type := 'P'; PDM_Supplier := 'HL'; end;
+      'LZ-71G' : begin end; // No material code, maybe deleted?
+      'LW-900G' : begin PDM_Mat_Type := 'G'; PDM_Supplier := 'HL'; end;
+      'LW-910G' : begin PDM_Mat_Type := 'H'; PDM_Supplier := 'HL'; end; 
+      'MCL-E-679F(J)' : begin PDM_Mat_Type := 'R'; PDM_Supplier := 'HK'; end;
+      'NP-155F' : begin PDM_Mat_Type := 'C'; PDM_Supplier := 'NY'; end; 
+      'Faradflex' : begin PDM_Mat_Type := 'V'; PDM_Supplier := 'OM'; end;
+      'FR402' : begin if Get_Core_CuType = 'RTF' then PDM_Mat_Type := 'F' else PDM_Mat_Type := 'A' ;  Isola := true end;
+      'FR406' : begin if Get_Core_CuType = 'RTF' then PDM_Mat_Type := 'G' else PDM_Mat_Type := 'B' ;  Isola := true end; 
+      'MCL-E-75G' : begin PDM_Mat_Type := 'N' end;
+      'FR4ED-130' : begin end; // Not in material sheet 
+      'ISOLA High Tg A' : begin end; //Not in material sheet
+      'IT-170GRA-1' : begin end; // Not in material sheet
+      'MCL-E-67' : begin end; // Not in material sheet
+      'Megtron 6N': begin PDM_Mat_Type := 'H'; PDM_Supplier := 'PN' end; 
+      'Megtron 7': begin PDM_Mat_Type := 'I'; PDM_Supplier := 'PN' end;                         
+      'NPG-170N' : begin PDM_Mat_Type := 'H' PDM_Supplier := 'NY' end;                
+      'TU-863' : begin PDM_Mat_Type := 'H'; PDM_Supplier := 'TU' end;
+      'TU-863+' : begin PDM_Mat_Type := 'J'; PDM_Supplier := 'TU' end; 
+      'TU-865' : begin PDM_Mat_Type := 'I'; PDM_Supplier := 'TU' end;
+      'TU-883 SP' : begin PDM_Mat_Type := 'G'; PDM_Supplier := 'TU' end;
+      'TU-933+' : begin PDM_Mat_Type := 'P'; PDM_Supplier := 'TU' end;  
+      
+    End; // End Case 
+  
+    CoreThk1000 := Fnc.GetStackupMaterialValue('ThicknessAfterPressing') * 100; 
+    CoreThk1000 := Round(CoreThk1000);
+    CoreThk1000 := CoreThk1000 * 10;
+    //ShowMessage(CoreThk1000); 
+    // Testing new method
+    CoreThk1000 := Fnc.GetStackupMaterialValue('ThicknessAfterPressing') * 1000;
+    PDM_CoreThk := FormatFloat('0000',CoreThk1000); 
+
+    egx_CoreThk := Copy(Fnc.GetStackupMaterialValue('ItemMatrlDesc'), 1, 5);
+    
+    if StrToFloatDef(egx_CoreThk, -1.0) > 0.0 then
+    begin                            
+      CoreThk1000 := StrToFloat(egx_CoreThk) * 1000;
+      PDM_CoreThk := FormatFloat('0000',CoreThk1000);
+    end
+    else
+    begin
+      egx_CoreThk := Copy(Fnc.GetStackupMaterialValue('ItemMatrlDesc'), 1, 4);
+      CoreThk1000 := StrToFloat(egx_CoreThk) * 1000;
+      PDM_CoreThk := FormatFloat('0000',CoreThk1000);
+    end;
+    
+    if PDM_Mat_Type = 'V' then
+      PDM_Constr1 := 'M'
+    else
+      PDM_Constr1 := GetPDMConstrCode('FirstCode');
+      
+    if Length(Fnc.GetStackupMaterialValue('Construction')) <= 8 then 
+    begin               
+      PDM_Constr2 := '-';
+      
+    end
+    else
+      PDM_Constr2 := GetPDMConstrCode('SecondCode');
+                   
+    CoreCWTop := Fnc.GetStackupMaterialValue('TopLayer.LayupCodeThckCu');
+    CoreCWBot := Fnc.GetStackupMaterialValue('BottomLayer.LayupCodeThckCu');
+    CoreCuThkTop := Fnc.GetStackupMaterialValue('TopLayer.LayupThckCu');                                                    
+    CoreCuThkBot := Fnc.GetStackupMaterialValue('BottomLayer.LayupThckCu');
+                                  
+    if ((CoreCWTop <> null) and(CoreCWBot <> null)) then                            
+    begin
+      PDM_CuWt := AssignCuLabel(CoreCWTop) + AssignCuLabel(CoreCWBot);
+
+      if CoreCWTop <> CoreCWBot then //Force Largest Copper Weight First for Different Cu weights per side
+      begin
+        if CoreCuThkBot > CoreCuThkTop then
+          PDM_CuWt := AssignCuLabel(CoreCWBot) + AssignCuLabel(CoreCWTop);
+      end;
+               
+    end
+    else                                  
+    begin
+      if ((CoreCWTop = null) and (CoreCWBot <> null)) then
+        PDM_CuWt := AssignCuLabel(CoreCWBot) + AssignCuLabel(CoreCWBot);
+                                              
+      if ((CoreCWTop <> null) and (CoreCWBot = null)) then
+        PDM_CuWt := AssignCuLabel(CoreCWTop) + AssignCuLabel(CoreCWTop);
+
+      if ((CoreCWTop = null) and (CoreCWBot = null)) then               
+        PDM_CuWt := '1818';
+    end; 
+               
+     
+    
+    {if (( PanelLength = '510' ) and ( PanelWidth = '410' )) then
+    begin               
+      // 939 BOM Panel Size vs Attribute Panel Size
+      //Swap length and width for this size since the grain is in the length. All other sizes, grain is in the width
+      PanelLength := '410';
+      PanelWidth := '510';
+    end; }
+    if Fnc.SysGetAttrValueTopLevel('Grain_Dir') = 'Panel Width' then
+    begin
+      PanelLength := IntToStr(Fnc.SysGetAttrValue('Panel_Length'));
+      PanelWidth := IntToStr(Fnc.SysGetAttrValue('Panel_Width'));
+    end 
+    else if Fnc.SysGetAttrValueTopLevel('Grain_Dir') = 'Panel Length' then 
+    begin
+      PanelLength := IntToStr(Fnc.SysGetAttrValue('Panel_Width'));
+      PanelWidth := IntToStr(Fnc.SysGetAttrValue('Panel_Length')); 
+    end
+    else
+    begin
+      PanelLength := IntToStr(Fnc.SysGetAttrValue('Panel_Length'));
+      PanelWidth := IntToStr(Fnc.SysGetAttrValue('Panel_Width'));
+    end;
+    
+    
+    if Length(Fnc.GetStackupMaterialValue('Construction')) <= 8 then 
+    CoreGrpSearchText := 
+        PDM_Mat_Type
+      + PDM_CoreThk                                 
+      + PDM_Constr1          
+      + '**'                                
+      + PDM_CuWt
+      +'**';
+      
+    CorePrtSearchText :=
+        PDM_Mat_Type                   
+      + PDM_CoreThk        
+      + PDM_Constr1
+      + PDM_Constr2
+      + PDM_CuWt                       
+      + PanelWidth       
+      + PanelLength;
+      
+    if NOT Isola then
+    begin
+      if ((PDM_Mat_Type <> 'N') and (PDM_Mat_Type <> '1')) then
+      begin                                 
+        CoreGrpSearchText := CoreGrpSearchText + PDM_Supplier;
+        CorePrtSearchText := CorePrtSearchText + PDM_Supplier;
+                     
+        GroupFilter := 
+          'Item LIKE '
+          + QuotedStr('**' + CoreGrpSearchText)         
+                             
+        TightFilter := 
+          'Item LIKE ' 
+        + QuotedStr('**' + CorePrtSearchText)
+      end
+      else
+      begin
+        CoreGrpSearchTextI1 := CoreGrpSearchText + 'HK';
+        CoreGrpSearchTextI2 := CoreGrpSearchText + 'HL';
+  
+        CorePrtSearchTextI1 := CorePrtSearchText + 'HK';
+        CorePrtSearchTextI2 := CorePrtSearchText + 'HL';
+        
+        GroupFilter :=                                              
+          'Item LIKE '                                                         
+          + QuotedStr('**' + CoreGrpSearchTextI1)
+          + ' or Item LIKE '                 
+          + QuotedStr('**' + CoreGrpSearchTextI2)
+          
+        TightFilter := 
+        'Item LIKE ' 
+        + QuotedStr('**' + CorePrtSearchTextI1)                    
+        + ' or Item LIKE '                              
+        + QuotedStr('**' + CorePrtSearchTextI2)
+      end;
+    end                                             
+    else                                       
+    begin
+      if Fnc.SysGetAttrValue('Mat_Supp_code') = 'None' then
+      begin
+        CoreGrpSearchTextI1 := CoreGrpSearchText + 'AC'; 
+        CoreGrpSearchTextI2 := CoreGrpSearchText + 'AS';
+        CoreGrpSearchTextI3 := CoreGrpSearchText + 'IA';
+        CoreGrpSearchTextI4 := CoreGrpSearchText + 'IU';
+                              
+        CorePrtSearchTextI1 := CorePrtSearchText + 'AC';
+        CorePrtSearchTextI2 := CorePrtSearchText + 'AS';
+        CorePrtSearchTextI3 := CorePrtSearchText + 'IA';
+        CorePrtSearchTextI4 := CorePrtSearchText + 'IU'; 
+        
+        GroupFilter := 
+          'Item LIKE '                                                         
+          + QuotedStr('**' + CoreGrpSearchTextI1)
+          + ' or Item LIKE '                 
+          + QuotedStr('**' + CoreGrpSearchTextI2) 
+          + ' or Item LIKE '            
+          + QuotedStr('**' + CoreGrpSearchTextI3)        
+          + ' or Item LIKE '           
+          + QuotedStr('**' + CoreGrpSearchTextI4)
+                                            
+        TightFilter := 
+          'Item LIKE ' 
+          + QuotedStr('**' + CorePrtSearchTextI1)                    
+          + ' or Item LIKE '                              
+          + QuotedStr('**' + CorePrtSearchTextI2)                  
+          + ' or Item LIKE '                  
+          + QuotedStr('**' + CorePrtSearchTextI3)
+          + ' or Item LIKE '                                           
+          + QuotedStr('**' + CorePrtSearchTextI4);
+      end
+      else
+      begin
+        CoreGrpSearchTextI1 := CoreGrpSearchText + Fnc.SysGetAttrValue('Mat_Supp_code');
+        CorePrtSearchTextI1 := CorePrtSearchText + Fnc.SysGetAttrValue('Mat_Supp_code');
+        
+        GroupFilter := 'Item LIKE ' + QuotedStr('**' + CoreGrpSearchTextI1);
+        TightFilter := 'Item LIKE ' + QuotedStr('**' + CorePrtSearchTextI1); 
+      end;                                           
+    end;
+  End; //CORE Material
+                                                 
+  if UpperCase(Fnc.SysStackupTable.FieldByName('ItemDesc').AsString) = 'PP/FILLER' then
+  begin
+    // Convert Engenix Material Family to Paradigm Inventory Family Code
+    case Fnc.GetStackupMaterialValue('Family') of
+      '185HR' : begin PDM_Mat_Type := 'N'; Isola := true end; //Multiple Supplier Codes, handled below
+      'FR370HR' : begin PDM_Mat_Type := 'R' ;  Isola := true end; //Multiple Supplier Codes, handled below 
+      'FR408HR' : begin PDM_Mat_Type := '5'; Isola := true end;//Multiple Supplier Codes, handled below          
+      'IS415' : begin PDM_Mat_Type := '3'; PDM_Supplier := 'AS'; end; 
+      'MCL-E-679F' : begin PDM_Mat_Type := 'C'; PDM_Supplier := 'HL'; end;                
+      'MCL-E-679FG(S)' : begin PDM_Mat_Type := 'V'; PDM_Supplier := 'HL'; end; 
+      'MCL-E-700G(R)' : PDM_Mat_Type := 'N';  //There is another 700G option in Not Qualified List  //Multiple Supplier Codes, handled below
+      'MCL-HE-679G' : PDM_Mat_Type := '1'; //Multiple Supplier Codes, handled below 
+      'Megtron 4' : begin PDM_Mat_Type := '5'; PDM_Supplier := 'PN'; end;
+      //'Megtron 6(K)' : begin PDM_Mat_Type := 'P'; PDM_Supplier := 'PN'; end;
+      'Megtron 6' : begin PDM_Mat_Type := 'P'; PDM_Supplier := 'PN'; end; 
+      'N4000-11' : begin PDM_Mat_Type := 'T' ; PDM_Supplier := 'NL'; end;
+      'N4000-12' : begin PDM_Mat_Type := 'Y'; PDM_Supplier := 'NL'; end;
+      'N4000-12SI' : begin PDM_Mat_Type := '8'; PDM_Supplier := 'NL'; end;
+      'N4000-13' : begin PDM_Mat_Type := 'H' ; PDM_Supplier := 'NL'; end;
+      'N4000-13EP' : begin PDM_Mat_Type := '5'; PDM_Supplier := 'NL'; end;
+      'N4000-13EPSI' : begin PDM_Mat_Type := '6'; PDM_Supplier := 'NL'; end;
+      'N4000-13SI' : begin PDM_Mat_Type := 'K'; PDM_Supplier := 'NL'; end;
+      'N4000-6' : begin PDM_Mat_Type := 'B' ; PDM_Supplier := 'NL'; end; 
+      'S1000' : begin PDM_Mat_Type := 'L'; PDM_Supplier := 'SY'; end;
+      'S1000-2' : begin PDM_Mat_Type := 'R'; PDM_Supplier := 'SY'; end;
+      'S1170' : begin PDM_Mat_Type := 'B' ; PDM_Supplier := 'SY'; end;
+      'TU-668' : begin PDM_Mat_Type := 'L'; PDM_Supplier := 'TU'; end;
+      'TU-768' : begin PDM_Mat_Type := 'R'; PDM_Supplier := 'TU'; end;
+      'TU-862 HF' : begin PDM_Mat_Type := 'O'; PDM_Supplier := 'TU'; end;
+      'TU-872 LK' : begin PDM_Mat_Type := 'Q'; PDM_Supplier := 'TU'; end;
+      'TU-872 SLK' : begin PDM_Mat_Type := '5'; PDM_Supplier := 'TU'; end;
+       // New Materials Below 
+      'TU-872 SLK SP' : begin PDM_Mat_Type := 'K'; PDM_Supplier := 'TU'; end;
+      'TU-883' : begin PDM_Mat_Type := 'C'; PDM_Supplier := 'TU'; end; 
+      'TU-933' : begin PDM_Mat_Type := 'B'; PDM_Supplier := 'TU' end;                                      
+      'S7439' :  begin PDM_Mat_Type := '5'; PDM_Supplier := 'SY'; end;
+      'S1141KF' : begin PDM_Mat_Type := 'A'; PDM_Supplier := 'SY'; end; 
+      'S1000-2M' : begin PDM_Mat_Type := 'R'; PDM_Supplier := 'SY'; end; 
+      'S7335' : begin PDM_Mat_Type := 'C'; PDM_Supplier := 'SY'; end;
+      'S7338' : begin PDM_Mat_Type := 'P'; PDM_Supplier := 'SY'; end;
+      'Megtron 6' : begin PDM_Mat_Type := 'P'; PDM_Supplier := 'PN'; end;
+      'Megtron 6G' : begin PDM_Mat_Type := 'C'; PDM_Supplier := 'PN'; end;                        
+      'R1566' : begin end;  // Qualified, no code for purchase yet. 
+      'R1755M' : begin end;  //Evaluation, no code                      
+      'Megtron 4F' : begin PDM_Mat_Type := 'B'; PDM_Supplier := 'PN'; end; 
+      'N4000-7' : begin PDM_Mat_Type := 'E'; PDM_Supplier := 'NL'; end; 
+      'N4800-20' : begin PDM_Mat_Type := '0'; PDM_Supplier := 'NL'; end;  
+      'MCL-BE-67G(R)' : begin PDM_Mat_Type := '2'; PDM_Supplier := 'HK'; end;
+      'MCL-BE-67G(S)' : begin PDM_Mat_Type := '7' ; PDM_Supplier := 'HK'; end;  //
+      'MCL-E-679FGB(S)' :  begin PDM_Mat_Type := 'C'; PDM_Supplier := 'HK'; end;  
+      'MCL-E-679FJ' : begin PDM_Mat_Type := 'R'; PDM_Supplier := 'HK'; end;
+      'MCL-HE-679G(S)' : begin PDM_Mat_Type := '5'; PDM_Supplier := 'HK'; end; 
+      'EM-370(D)' : begin PDM_Mat_Type := 'G'; PDM_Supplier := 'EM'end;  
+      'EM-888' : begin PDM_Mat_Type := 'B'; PDM_Supplier := 'EM'; end;
+      'GA-170-LL' : begin PDM_Mat_Type := 'R'; PDM_Supplier := 'GE'; end;
+      'IT-150DA' : begin PDM_Mat_Type := 'P'; PDM_Supplier := 'IT'; end;
+      'IT-158' : begin PDM_Mat_Type := 'L'; PDM_Supplier := 'IT'; end; 
+      'IT-180A' : begin PDM_Mat_Type := 'R'; PDM_Supplier := 'IT'; end; 
+      'IT-170GRA1' : begin end; //Evaluation, no code 
+      'IT-180I' : begin end;  //Evaluation, no code                        
+      'NP-140TL' : begin PDM_Mat_Type := 'A'; PDM_Supplier := 'NY'; end;
+      'NPG-TL' : begin PDM_Mat_Type := 'D'; PDM_Supplier := 'NY'; end; 
+      'NP-155FTL' : begin end;  //Evaluation, no code                                                            
+      'IS410' : begin PDM_Mat_Type := 'I'; Isola := true end;
+      'FR408' : begin PDM_Mat_Type := 'Q'; Isola := true end;
+      'I-Speed' : begin PDM_Mat_Type := 'X5'; Isola := true end;  // Same code as Fr408HR, need to use 'Qualified' Flag
+      'RO4350' : begin PDM_Mat_Type := '4'; PDM_Supplier := 'RO'; end; 
+      'MCL-E-67W' :  begin PDM_Mat_Type := 'A'; PDM_Supplier := 'HL'; end;     
+      'MCL-BE-67G(H)' :  begin PDM_Mat_Type := 'D'; PDM_Supplier := 'HK'; end;
+      'MCL-E-679W' :  begin PDM_Mat_Type := 'B'; PDM_Supplier := 'HL'; end;
+      'MCL-E-679FG' : begin PDM_Mat_Type := 'O'; PDM_Supplier := 'HL'; end; 
+      'FX-2' :  begin PDM_Mat_Type := 'P'; PDM_Supplier := 'HL'; end;
+      'LZ-71G' : begin PDM_Mat_Type := 'Z'; PDM_Supplier := 'HL'; end;
+      'LW-900G' : begin PDM_Mat_Type := 'G'; PDM_Supplier := 'HL'; end;
+      'LW-910G' : begin PDM_Mat_Type := 'H'; PDM_Supplier := 'HL'; end;
+      'MCL-E-679F(J)' : begin PDM_Mat_Type := 'R'; PDM_Supplier := 'HK'; end;
+      'NP-155F' : begin PDM_Mat_Type := 'C'; PDM_Supplier := 'NY'; end; 
+      'FR402' : begin PDM_Mat_Type := 'A' ;  Isola := true end;     
+      'FR406' : begin PDM_Mat_Type := 'B' ;  Isola := true end; 
+      'MCL-E-75G' : begin PDM_Mat_Type := 'N' end;
+      'Megtron 6N': begin PDM_Mat_Type := 'H'; PDM_Supplier := 'PN' end;
+      'Megtron 7': begin PDM_Mat_Type := 'I'; PDM_Supplier := 'PN' end;
+      'NPG-170N' : begin PDM_Mat_Type := 'H' PDM_Supplier := 'NY' end; 
+      'TU-863' : begin PDM_Mat_Type := 'H'; PDM_Supplier := 'TU' end;
+      'TU-863+' : begin PDM_Mat_Type := 'J'; PDM_Supplier := 'TU' end; 
+      'TU-865' : begin PDM_Mat_Type := 'I'; PDM_Supplier := 'TU' end;   
+      'TU-883 SP' : begin PDM_Mat_Type := 'G'; PDM_Supplier := 'TU' end;
+      'TU-933+' : begin PDM_Mat_Type := 'P'; PDM_Supplier := 'TU' end;  
+    End; // End Case     
+                      
+    PDM_PPGStyle := GetPPGStyle(Fnc.GetStackupMaterialValue('Description'));
+    
+    RP := GetResinPercent(Fnc.GetStackupMaterialValue('Description'));
+    
+    
+    if Fnc.SysGetAttrValueTopLevel('Grain_Dir') = 'Panel Width' then
+    begin
+      PanelLength := IntToStr(Fnc.SysGetAttrValue('Panel_Length_Press')); //Changed to Press size per Alison 10/29
+      PanelWidth := IntToStr(Fnc.SysGetAttrValue('Panel_Width_Press')); 
+    end
+    else if Fnc.SysGetAttrValueTopLevel('Grain_Dir') = 'Panel Length' then
+    begin
+      PanelLength := IntToStr(Fnc.SysGetAttrValue('Panel_Width_Press'));
+      PanelWidth := IntToStr(Fnc.SysGetAttrValue('Panel_Length_Press')); 
+    end
+    else
+    begin
+      PanelLength := IntToStr(Fnc.SysGetAttrValue('Panel_Length_Press')); //Changed to Press size per Alison 10/29
+      PanelWidth := IntToStr(Fnc.SysGetAttrValue('Panel_Width_Press')); 
+    end;
+         
+    PPGGrpSearchText :=   
+          PDM_Mat_Type                              
+        + PDM_PPGStyle                                                                                                                                            
+        +'**';                                   
+                                    
+    PPGPrtSearchText :=                     
+          PDM_Mat_Type                         
+        + PDM_PPGStyle                       
+        + '**'    
+        + '-' + RP + '-'
+        + PanelWidth 
+        + PanelLength;
+                                              
+    if NOT Isola then 
+    begin 
+      if ((PDM_Mat_Type <> 'N') and (PDM_Mat_Type <> '1')) then
+      begin                  
+        PPGGrpSearchText := PPGGrpSearchText + PDM_Supplier;           
+        PPGPrtSearchText := PPGPrtSearchText + PDM_Supplier;
+                                                       
+        GroupFilter := 
+          'Item LIKE '                                                         
+          + QuotedStr('**' + PPGGrpSearchText)           
+                             
+        TightFilter := 
+          'Item LIKE '           
+          + QuotedStr('**' + PPGPrtSearchText)
+      end
+      else                          
+      begin                           
+        PPGGrpSearchTextI1 := PPGGrpSearchText + 'HL';
+        PPGGrpSearchTextI2 := PPGGrpSearchText + 'HK';
+        
+        PPGPrtSearchTextI1 := PPGPrtSearchText + 'HL';
+        PPGPrtSearchTextI2 := PPGPrtSearchText + 'HK';
+        
+        GroupFilter := 
+          'Item LIKE '                                                         
+          + QuotedStr('**' + PPGGrpSearchTextI1)
+          + ' or Item LIKE '                 
+          + QuotedStr('**' + PPGGrpSearchTextI2)
+          
+        TightFilter := 
+          'Item LIKE ' 
+          + QuotedStr('**' + PPGPrtSearchTextI1)
+          + ' or Item LIKE '                                     
+          + QuotedStr('**' + PPGPrtSearchTextI2) 
+      end;
+    end 
+    else
+    begin      
+      if Fnc.SysGetAttrValue('Mat_Supp_code') = 'None' then
+      begin
+        PPGGrpSearchTextI1 := PPGGrpSearchText + 'AC';
+        PPGGrpSearchTextI2 := PPGGrpSearchText + 'AS'; 
+        PPGGrpSearchTextI3 := PPGGrpSearchText + 'IA';
+        PPGGrpSearchTextI4 := PPGGrpSearchText + 'IU';
+        
+        PPGPrtSearchTextI1 := PPGPrtSearchText + 'AC';
+        PPGPrtSearchTextI2 := PPGPrtSearchText + 'AS';
+        PPGPrtSearchTextI3 := PPGPrtSearchText + 'IA';
+        PPGPrtSearchTextI4 := PPGPrtSearchText + 'IU'; 
+        
+        GroupFilter := 
+          'Item LIKE '                                                         
+          + QuotedStr('**' + PPGGrpSearchTextI1)
+          + ' or Item LIKE '                 
+          + QuotedStr('**' + PPGGrpSearchTextI2)
+          + ' or Item LIKE '                               
+          + QuotedStr('**' + PPGGrpSearchTextI3)
+          + ' or Item LIKE '           
+          + QuotedStr('**' + PPGGrpSearchTextI4)
+                             
+        TightFilter := 
+          'Item LIKE ' 
+          + QuotedStr('**' + PPGPrtSearchTextI1)
+          + ' or Item LIKE '                              
+          + QuotedStr('**' + PPGPrtSearchTextI2)                  
+          + ' or Item LIKE '                  
+          + QuotedStr('**' + PPGPrtSearchTextI3)
+          + ' or Item LIKE '                                           
+          + QuotedStr('**' + PPGPrtSearchTextI4);
+      end
+      else
+      begin
+        PPGGrpSearchTextI1 := PPGGrpSearchText + Fnc.SysGetAttrValue('Mat_Supp_code');
+        PPGPrtSearchTextI1 := PPGPrtSearchText + Fnc.SysGetAttrValue('Mat_Supp_code');
+        
+        GroupFilter := 'Item LIKE ' + QuotedStr('**' + PPGGrpSearchTextI1);
+        TightFilter := 'Item LIKE ' + QuotedStr('**' + PPGPrtSearchTextI1); 
+      end;  
+    end; 
+  End; // End PPG Material
+
+  // pass back the results to the calling program
+  FilterList.Add('TightFilter=' + TightFilter);
+  FilterList.Add('GroupFilter=' + GroupFilter);
+end;

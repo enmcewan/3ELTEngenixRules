@@ -1,0 +1,10 @@
+//HeaderImportExport-->
+//SiteId=0
+//Enterprise=True
+//ScriptType=1
+//ScriptGroup=Reports
+//HeaderImportExport<--
+procedure Report_CustomMasterReport(ParamList: TStringList; FileTable: TSysTable);
+begin
+  // create your own master report and save as external file
+end;

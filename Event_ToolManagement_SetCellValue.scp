@@ -1,0 +1,48 @@
+//HeaderImportExport-->
+//SiteId=0
+//Enterprise=True
+//ScriptType=1
+//ScriptGroup=Tool Management
+//HeaderImportExport<--
+ {
+--> Systemsetting "ToolModuleSetDisplayValueByScript" must be checked/enabled
+
+- tblTools: Table with all the defined tools, is positioned on the proper record
+
+- ParamList: TStringList with parameters and values
+
+  Update the 'DisplayValue' and/or 'ReadOnly' based on the 'Function'
+
+  ParamList.Values['Function']: 'ReadWrite' or 'DisplayValue'
+  ParamList.Values['FieldName']: Field/Column name
+  ParamList.Values['DisplayValue']: Current value to display as function = 'DisplayValue'
+  ParamList.Values['ReadOnly']: default 'False' as function = 'ReadWrite'
+}
+
+procedure ToolManagement_SetCellValue(tblTools: TSysTable; ParamList: TStringList);
+begin
+{ sample script
+
+  FieldName := LowerCase(ParamList.Values['FieldName']);
+
+  if (FieldName = 'scale_x') or (FieldName = 'scale_y') then
+  begin
+
+    if tblTools.FieldByName('Layer').AsString <> '' then
+    begin
+
+      if LowerCase(ParamList.Values['Function']) = 'readwrite' then
+      begin
+        ParamList.Values['ReadOnly'] := 'True';
+      end;
+
+      if LowerCase(ParamList.Values['Function']) = 'displayvalue' then
+      begin
+        if StrToFloatDef(ParamList.Values['DisplayValue'], 0.0) = 0.0 then
+          ParamList.Values['DisplayValue'] := '';
+      end;
+    end;
+  end;
+}
+end;
+

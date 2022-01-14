@@ -1,0 +1,337 @@
+//HeaderImportExport-->
+//SiteId=0
+//Enterprise=True
+//ScriptType=0
+//ScriptGroup=
+//HeaderImportExport<--
+const
+  cMaterialsTypeId_Prepreg = 3;   // MaterialsType.MaterialsTypeId, Prepreg
+  cMaterialsTypeId_PP_FIller = 4; // MaterialsType.MaterialsTypeId, PP/Filler
+
+  c1GHzId = 1;  // MaterialFrequency.FrequencyID,  1 GHz
+  c5GHzId = 2;  // MaterialFrequency.FrequencyID,  5 GHz
+  c10GHzId = 3; // MaterialFrequency.FrequencyID, 10 GHz
+
+  cLoop = 0; // process x records and break, value = 0 means no break
+
+var
+  genQry: TAdoQuery;
+  qryFamily: TAdoQuery;
+  tblMaterials: TAdoQuery;
+  qryIESBom: TAdoQuery;
+  tblLookup: TAdoQuery;
+
+function GetEngenixQry(sql: string): TAdoQuery;
+begin
+  Result := TAdoQuery.Create(nil);
+  Result.Connection := Fnc.DBConnection;
+  Result.Sql.Text := sql;
+  Result.Active := True;
+end;
+
+function GetEngenixTbl(sql: string): TSysTable;
+begin
+  genQry.Active := False;
+  genQry.Sql.Text := sql;
+  genQry.Active := True;
+
+  Result := Fnc.SysTableCreate('myTable');
+  Fnc.SysDBQueryToMemTableStruc(genQry, Result);
+  Fnc.SysCloneSysTableData(genQry, Result);
+
+  genQry.Active := False;
+end;
+
+procedure CheckTableDefOneField(FieldName: string; FieldDef: string);
+var
+  TableName: string;
+  aQry: TAdoQuery;
+begin
+  TableName := 'PDMIESStackup';
+
+  aQry := GetEngenixQry('Select * From Jobs Where JobId < 0');
+
+  aQry.Active := False;
+  aQry.Sql.Clear;
+  aQry.Sql.Add('IF NOT EXISTS (SELECT * FROM SysObjects O INNER JOIN SysColumns C ON O.ID=C.ID WHERE ObjectProperty(O.ID,' + QuotedStr('IsUserTable') + ')=1');
+  aQry.Sql.Add(Format('AND O.Name=%s AND C.Name=%s)', [QuotedStr(TableName), QuotedStr(FieldName)]));
+  aQry.Sql.Add(Format('ALTER TABLE %s ADD %s %s', [TableName, FieldName, FieldDef]));
+
+  aQry.ExecSql;
+
+  aQry.Free;
+end;
+
+procedure CheckTableDef;
+begin
+  CheckTableDefOneField('Cnv_LookupFilter', '[nvarchar](max) NULL');
+  CheckTableDefOneField('Cnv_Family', '[nvarchar](50) NULL');
+  CheckTableDefOneField('Cnv_FamilyId', '[int] NULL');
+  CheckTableDefOneField('Cnv_AllMaterials', '[nvarchar](254) NULL');
+  CheckTableDefOneField('Cnv_Material', '[nvarchar](50) NULL');
+  CheckTableDefOneField('Cnv_MaterialsId', '[int] NULL');
+end;
+
+function GetIESBom: TAdoQuery;
+begin
+  Result := TAdoQuery.Create(nil);
+  Result.Connection := Fnc.DBConnection;
+  Result.Sql.Add('Select   RKey, PARENT_PTR, LAYUP_SEQ, PM, TYPE, FAM, STYLE, Supplier, Resin, AltResin,');
+  Result.Sql.Add('         Cnv_LookupFilter, Cnv_Family, Cnv_FamilyId, Cnv_AllMaterials, Cnv_Material, Cnv_MaterialsId');
+  Result.Sql.Add('From     PDMIESStackup');
+  Result.Sql.Add('Order By PARENT_PTR, LAYUP_SEQ');
+  Result.Active := True;
+end;
+
+function GetFamilyId(Family: string): integer;
+begin
+  Result := -1;
+
+  if qryFamily.Locate('Description', Family, SetOf([loCaseInsensitive])) then
+    Result := qryFamily.FieldByName('MaterialsFamilyId').AsInteger;
+end;
+
+procedure DoUpdateEngenixMatrlPtr;
+var
+  PDM_Family: string;
+  PDM_Supplier: string;
+  LookupFilter: string;
+
+  AltResin: integer;
+
+  Family: integer
+  FamilyId: integer
+  Material: string;
+  MaterialsId: integer
+  AllMaterials: string;
+  Style: string
+begin
+  LookupFilter := '';
+  Family := '';
+  FamilyId := -1;
+  Material := '';
+  MaterialsId := -1;
+  AllMaterials := '';
+  Style := '';
+
+  AltResin := 0;
+  try
+    AltResin := qryIESBom.FieldByName('AltResin').AsInteger;
+  except
+  end;
+
+  PDM_Family := QuotedStr(qryIESBom.FieldByName('Fam').AsString);
+  PDM_Supplier := QuotedStr(qryIESBom.FieldByName('Supplier').AsString);
+
+  LookupFilter :=
+         Format('((PDM_Fam_Code1 = %s) or (PDM_Fam_Code2 = %s))', [PDM_Family, PDM_Family])
+       + ' and '
+       + Format('((PDM_SUPPLIER1 = %s) or (PDM_SUPPLIER2 = %s) or (PDM_SUPPLIER3 = %s) or (PDM_SUPPLIER4 = %s))', [PDM_Supplier, PDM_Supplier, PDM_Supplier, PDM_Supplier]);
+
+  tblLookup.Filtered := False;
+  tblLookup.FilterOptions := SetOf([foCaseInsensitive]);
+  tblLookup.Filter := LookupFilter;
+  tblLookup.Filtered := True;
+
+  if tblLookup.RecordCount = 1 then
+  begin
+    Family := tblLookup.FieldByName('Egx_Family').AsString;
+    FamilyId := GetFamilyId(Family);
+  end;
+
+  if FamilyId > -1 then
+  begin
+    Style := IntToStr(StrToIntDef(qryIESBom.FieldByName('Style').AsString, 0));
+    Style := QuotedStr(Style + '*');
+
+    tblMaterials.Filtered := False;
+    tblMaterials.FilterOptions := SetOf([foCaseInsensitive]);
+    tblMaterials.Filter := Format('(Description = %s) and (MaterialsFamilyId = %d)', [Style, FamilyId]);
+    tblMaterials.Filtered := True;
+
+    if AltResin > 0 then
+    begin
+      tblMaterials.First;
+      while not tblMaterials.Eof do
+      begin
+        if tblMaterials.FieldByName('ResinPercent').AsInteger =  AltResin then
+        begin
+          Material := tblMaterials.FieldByName('Description').AsString;
+          MaterialsId := tblMaterials.FieldByName('MaterialsId').AsInteger;
+          break;
+        end;
+
+        tblMaterials.Next;
+      end;
+    end;
+
+    if (not tblMaterials.IsEmpty) and (AltResin = 0) then
+    begin
+
+      tblMaterials.First;
+      while not tblMaterials.Eof do
+      begin
+        if AllMaterials <> '' then
+          AllMaterials := AllMaterials + ' / ';
+        AllMaterials := AllMaterials + tblMaterials.FieldByName('Description').AsString;
+        tblMaterials.Next;
+      end;
+
+      case UpperCase(qryIESBom.FieldByName('Resin').AsString) of
+
+        '00':
+          begin
+            tblMaterials.First;
+            if tblMaterials.RecordCount > 2 then
+              tblMaterials.Next;
+
+            Material := tblMaterials.FieldByName('Description').AsString;
+            MaterialsId := tblMaterials.FieldByName('MaterialsId').AsInteger;
+          end;
+
+        'L0':
+          begin
+            tblMaterials.First;
+            Material := tblMaterials.FieldByName('Description').AsString;
+            MaterialsId := tblMaterials.FieldByName('MaterialsId').AsInteger;
+          end;
+
+        'M0':
+          begin
+            tblMaterials.First;
+            tblMaterials.Next;
+            if not tblMaterials.Eof then
+            begin
+              Material := tblMaterials.FieldByName('Description').AsString;
+              MaterialsId := tblMaterials.FieldByName('MaterialsId').AsInteger;
+            end;
+          end;
+
+        'H0':
+          begin
+            tblMaterials.Last;
+            Material := tblMaterials.FieldByName('Description').AsString;
+            MaterialsId := tblMaterials.FieldByName('MaterialsId').AsInteger;
+          end;
+      end;
+    end;
+  end;
+
+  genQry.Active := False;
+  genQry.Sql.Clear;
+  genQry.Sql.Add('Update PDMIESStackup Set');
+  genQry.Sql.Add(Format('Cnv_LookupFilter = %s', [QuotedStr(LookupFilter)]));
+  genQry.Sql.Add(Format(', Cnv_Family = %s', [QuotedStr(Family)]));
+  genQry.Sql.Add(Format(', Cnv_FamilyId = %d', [FamilyId]));
+  genQry.Sql.Add(Format(', Cnv_AllMaterials = %s', [QuotedStr(AllMaterials)]));
+  genQry.Sql.Add(Format(', Cnv_Material = %s', [QuotedStr(Material)]));
+  genQry.Sql.Add(Format(', Cnv_MaterialsId = %d', [MaterialsId]));
+  genQry.Sql.Add(Format('Where RKey = %d', [qryIESBom.FieldByName('RKey').AsInteger]));
+  genQry.ExecSQL;
+end;
+
+procedure UpdateEngenixMatrlPtr;
+var
+  i: integer;
+begin
+  i := 0;
+  qryIESBom.First;
+
+  while not qryIESBom.Eof do
+  begin
+
+    if UpperCase(qryIESBom.FieldByName('Type').AsString) = 'P' then
+    begin
+      DoUpdateEngenixMatrlPtr;
+
+      if cLoop > 0 then
+      begin
+        Inc(i);
+        if i > cLoop then
+          break;
+      end;
+     end;
+
+    qryIESBom.Next;
+  end;
+
+  tblMaterials.Filtered := False;
+  tblMaterials.Filter := '';
+end;
+
+procedure Fix_PPGCODE;
+begin
+{
+  qryLookup.First;
+  while not qryLookup.Eof do
+  begin
+    qryLookup.Edit;
+
+    if qryLookup.FieldByName('PDM_FAM_CODE1').IsNull then
+      qryLookup.FieldByName('PDM_FAM_CODE1').AsString := '';
+
+    if qryLookup.FieldByName('PDM_FAM_CODE2').IsNull then
+      qryLookup.FieldByName('PDM_FAM_CODE2').AsString := '';
+
+    if qryLookup.FieldByName('PDM_SUPPLIER1').IsNull then
+      qryLookup.FieldByName('PDM_SUPPLIER1').AsString := '';
+
+    if qryLookup.FieldByName('PDM_SUPPLIER2').IsNull then
+      qryLookup.FieldByName('PDM_SUPPLIER2').AsString := '';
+
+    if qryLookup.FieldByName('PDM_SUPPLIER3').IsNull then
+      qryLookup.FieldByName('PDM_SUPPLIER3').AsString := '';
+
+    if qryLookup.FieldByName('PDM_SUPPLIER4').IsNull then
+      qryLookup.FieldByName('PDM_SUPPLIER4').AsString := '';
+
+    qryLookup.Post;
+
+    qryLookup.Next;
+   end;
+}
+end;
+
+var
+  aMsg: string;
+begin
+  aMsg := 'Did you define Frequencies and checked the Frequency and MaterialType pointers in this script?';
+  if not (MessageDlg(aMsg, mtConfirmation, SetOf([mbOk, mbCancel]), 0) = mrOk) then
+    Exit;
+
+  Fnc.MouseBusy;
+
+  CheckTableDef;
+
+  genQry := GetEngenixQry('Select * From Materials Where MaterialsId < 0'); // dummy Sql, just need the query
+
+  qryFamily := GetEngenixQry('Select * From MaterialsFamily');
+  tblMaterials := GetEngenixTbl(Format('Select * From Materials Where MaterialsTypeId=%d Order By MaterialsTypeId, ResinPercent', [cMaterialsTypeId_Prepreg]));
+  qryIESBom := GetIESBom;
+  tblLookup := GetEngenixTbl('Select * From PPGCODE');
+
+//  Fix_PPGCODE;
+
+  UpdateEngenixMatrlPtr;
+
+  qryFamily.Active := False;
+  qryFamily.Free;
+
+  Fnc.SysTableDestroy(tblMaterials);
+
+  qryIESBom.Active := False;
+  qryIESBom.Free;
+
+  Fnc.SysTableDestroy(tblLookup);
+
+  genQry.Active := False;
+  genQry.Free;
+
+  Fnc.MouseNormal;
+
+  aMsg := 'Prepreg mapping Finished';
+  MessageDlg(aMsg, mtInformation, SetOf([mbOk]), 0);
+end;
+
+
+

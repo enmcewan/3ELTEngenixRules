@@ -1,0 +1,69 @@
+//HeaderImportExport-->
+//SiteId=0
+//Enterprise=True
+//ScriptType=0
+//ScriptGroup=
+//HeaderImportExport<--
+procedure SetHiPotValues(MfgPartType: string; reset: boolean);
+var
+  HiPotTable: TSysTable;                                     
+  JobData: TStringList;
+  CustCode: string;
+  tableFilter: string;         
+begin                                  
+  JobData := Fnc.GetJobData;
+  CustCode := JobData.Values['CustomerName'];
+  //ShowMessage(CustCode);
+  tableFilter := '([Customer] = ' + QuotedStr(CustCode) + ')';
+  HiPotTable := Fnc.CustomTableGet('Hi_Pot02'); // 1308
+                                                                
+  HiPotTable.Filtered := False;
+  HiPotTable.Filter := tableFilter;
+  HiPotTable.Filtered := True;
+  //Fnc.OpenDataGrid(HiPotTable);
+
+  if not HiPotTable.isEmpty then
+  begin
+    HiPotTable.First;
+    if (Fnc.SysAttrEditGetAttrValue('Volt') = 0) or ( reset ) then
+    begin
+      if MfgPartType = 'MFGTP' then
+        Fnc.SysAttrEditSetAttrValue('Volt', HiPotTable.FieldByName('OL_Volts').AsFloat, false)
+      else if MfgPartType = 'MFGSB' then
+        Fnc.SysAttrEditSetAttrValue('Volt', HiPotTable.FieldByName('IL_Volts').AsFloat, false);
+    end;               
+
+    if ( Fnc.SysAttrEditGetAttrValue('Ramp') = 0 ) or ( reset )then
+    begin
+      if MfgPartType = 'MFGTP' then
+        Fnc.SysAttrEditSetAttrValue('Ramp', HiPotTable.FieldByName('OL_Ramp').AsInteger, false)
+      else if MfgPartType = 'MFGSB' then
+        Fnc.SysAttrEditSetAttrValue('Ramp', HiPotTable.FieldByName('IL_Ramp').AsInteger, false);
+    end;
+
+    if ( Fnc.SysAttrEditGetAttrValue('Hold') = 0 ) or ( reset ) then
+    begin
+      if MfgPartType = 'MFGTP' then
+        Fnc.SysAttrEditSetAttrValue('Hold', HiPotTable.FieldByName('OL_Hold').AsInteger, false)
+      else if MfgPartType = 'MFGSB' then
+        Fnc.SysAttrEditSetAttrValue('Hold', HiPotTable.FieldByName('IL_Hold').AsInteger, false);
+    end;
+
+    if ( Fnc.SysAttrEditGetAttrValue('Leak_New') = 0 ) or ( reset )then
+    begin
+      if MfgPartType = 'MFGTP' then
+        Fnc.SysAttrEditSetAttrValue('Leak_New', HiPotTable.FieldByName('OL_Leak').AsFloat, false)
+      else if MfgPartType = 'MFGSB' then
+        Fnc.SysAttrEditSetAttrValue('Leak_New', HiPotTable.FieldByName('IL_Leak').AsFloat, false);
+    end;         
+
+    if (Fnc.SysAttrEditGetAttrValue('Volt') > 0) and (Fnc.SysAttrEditGetAttrValue('Ramp') > 0) then
+      Fnc.SysAttrEditSetAttrValue('Wait', (Fnc.SysAttrEditGetAttrValue('Volt') / Fnc.SysAttrEditGetAttrValue('Ramp')) * 1000);
+  end              
+  else                                     
+    MessageDlg('Customer Code ' + CustCode + ' not found in Hi-Pot Table. Hi-Pot Parameters not set', mtWarning, Setof([mbOK]), 0);
+
+  HiPotTable.Filtered := False;
+  HiPotTable.Filter := '';
+
+end;

@@ -1,0 +1,511 @@
+//HeaderImportExport-->
+//SiteId=0
+//Enterprise=True
+//ScriptType=1
+//ScriptGroup=Stackup
+//HeaderImportExport<--
+// Rev: 1.7.0.04 - JDB - Include Drill Loss in calculation
+
+{ This script is fired as a user opens the dropdown box in the
+  Layup module for selecting a material at a certain position
+  in the Layup.
+
+  Script has to calculate/adjust the parameters for an entry in
+  the materials table when it is used at this position in the Layup.
+  Ea, if a Gap/Combo is seletced, then the thickness has to be
+  re-calculated depending on the layup above/below.
+
+  Second option is to exclude Gap/Combo's from the list of available
+  options at this position. Ea certain prepregs or combo's with that
+  prepregtype on the outside are not suitable for using at this
+  position in the layup, the resin filling can be to low.
+
+  Fnc.SysLayupParamTable has the layup where the material is used
+  Fnc.SysMaterialsTable has all combinations then can be selected.
+
+  Fields to be set/changed in the Fnc.SysMaterialsTable:
+
+  =====> Layup materials like Core, Prepreg, Gap/Combo, RCC, etc, etc
+
+  'ThicknessCalc' (float)
+         thickness as the material is used at this position in the Layup
+
+  'DKCalc_Top', 'DKCalc_Bottom (float)
+         the DK for the top/bottom part of the materials as it is pressed,
+         ea prepreg it will be the DK of the Resin, for Cores it will be zero
+
+  'DKMiddle' (float)
+         The DK of the middle section of the material. ea for Prepreg this
+         will be the calculated DK based on the DK of the Resing and Glass
+         using the weight of the glass and the final top-to-top thickness of
+         the layers that the prepreg is pressed. For Cores and other materials
+         that do not change thickness at pressing, this is the 'standard' DK for
+         the materials
+                        
+  'Exclude' (boolean)
+         False: valid option at this position, True: item is excluded
+         from the list of valid options at this position.
+         (see also 'DispColor')
+
+  'DispColor' (integer)
+         Option to specify the color for row in the popup grid. Can be used ea
+         to show Combo's/Gap that have poor Resin filling in Yellow or Red
+         Possible values for this field: clRed, clYellow, clBlue, clFusia, clAqua
+         (see also 'Exclude')
+
+  === => SolderMask materials
+
+  'Exclude' (boolean)
+         Always False, unless you want to exclude a SolderMask (type) from the
+         drop-down for selecting materials
+         (see also 'DispColor')
+
+  'DispColor' (integer)
+         Option to specify the color for row in the popup grid. Possible values
+         for this field: clRed, clYellow, clBlue, .... (see also 'Exclude')
+
+  'DKCalc_Middle'
+         DK of the Soldermask
+
+}
+
+
+Const
+  ShowDebugMsg = False;
+
+procedure SetSpecificDkForFrequency;
+var                                  
+  FreqId: integer;
+  FreqStr: string;
+begin
+  FreqId := Fnc.SysImpedanceFrequencyId;
+  if FreqId < 1 then
+    FreqId := Fnc.SysDefaultImpedanceFrequencyId;
+
+  if FreqId > 0 then
+  begin
+    FreqStr := IntToStr(FreqId);
+
+    if not (Fnc.SysMaterialsTable.Fields.FindField('DKOriginal_' + FreqStr) = nil) then
+    begin
+      Fnc.SysMaterialsTable.First;
+
+      while not Fnc.SysMaterialsTable.Eof do
+      begin
+        Fnc.SysMaterialsTable.Edit;
+        Fnc.SysMaterialsTable.FieldByName('DKOriginal').AsFloat := Fnc.SysMaterialsTable.FieldByName('DKOriginal_' + FreqStr).AsFloat;
+        Fnc.SysMaterialsTable.FieldByName('DKAverage').AsFloat := Fnc.SysMaterialsTable.FieldByName('DKAverage_' + FreqStr).AsFloat;
+        Fnc.SysMaterialsTable.FieldByName('DKGlass').AsFloat := Fnc.SysMaterialsTable.FieldByName('DKGlass_' + FreqStr).AsFloat;
+        Fnc.SysMaterialsTable.FieldByName('DKResin').AsFloat := Fnc.SysMaterialsTable.FieldByName('DKResin_' + FreqStr).AsFloat;
+        Fnc.SysMaterialsTable.FieldByName('DF').AsFloat := Fnc.SysMaterialsTable.FieldByName('DF_' + FreqStr).AsFloat;
+        Fnc.SysMaterialsTable.Post;
+
+        Fnc.SysMaterialsTable.Next;
+      end;
+    end;
+  end;
+end;
+
+procedure GetLayerParam(bAbove: boolean; var LayerHeight: float; var CopperDensity: float);
+var
+    CuLayerType : String;
+begin
+  LayerHeight := 0.0;
+  CopperDensity := 100;
+
+
+  with Fnc.SysLayupParamTable do
+  begin
+    // find the item we should calculate
+    if Locate('ActiveRecord', True, SetOf([])) then
+    begin
+
+      // re-position to the item above/below
+      if bAbove then
+        Prior
+      else
+        Next;
+
+      // check if there is an item above/below
+      if not (Bof or Eof) then
+      begin
+
+        // If this is a layer, then use the height/thickness of that layer
+        if FieldByName('ItemType').AsString = 'LYR' then
+        begin
+          // Get the height/thickness of the Layer
+          LayerHeight := FieldByName('GapIns').AsFloat;
+          CopperDensity := FieldByName('LayupCuDensity').AsFloat;
+          CuLayerType   := UpperCase(FieldByName('Type').AsString);
+
+          // if copper density is same as that of predefined layer types but does not match
+          // layer type then user changed layer type manually so update copper density based
+          // on new layer type. If copper density is 0.0 then update copper density based on
+          // layer type.Any other copper density is manually specified density. DO NOT edit
+          // density.
+
+          if ((CopperDensity = 20.0) and (CuLayerType <> 'SIGNAL')) or
+             ((CopperDensity = 60.0) and (CuLayerType <> 'MIXED')) or
+             ((CopperDensity = 80.0) and (CuLayerType <> 'POWER_GROUND'))or
+              (CopperDensity = 0.0) then
+
+            case UpperCase(FieldByName('Type').AsString) of
+              'SIGNAL':       CopperDensity := 20.0;
+              'MIXED':        CopperDensity := 60.0;
+              'POWER_GROUND': CopperDensity := 80.0;
+            end;
+
+          // Update Cu Density field in the stack-up dialog.
+          Edit;
+          FieldByName('LayupCuDensity').AsFloat := CopperDensity;
+          Post;
+        end;
+      end;
+
+    end;
+  end;
+end;
+
+
+// CalculateDrillLoss calculates the total height that is lost due to holes.
+// The volume lost is back calculated to figure out the total height that is lost due to holes.
+function CalculateDrillLoss(OriginalHeight : double) : double;
+var
+  VolumeLost : double;
+  Area : double;
+  ExistingVolume : double;
+  NewVolume : double;
+  HoleHeight : double;
+  HoleRadius : double;
+  NumberOfHoles : double;
+begin
+  // In this example, we will calculate the loss by panel.  This means that the number
+  //  of holes per panel must be filled in for the drill tool.  You could alternatively
+  //  calculate the loss by part if you want.
+
+  Result := OriginalHeight;
+  VolumeLost := 0.0;
+  Fnc.SysDrillToolTable.First;
+
+  while not Fnc.SysDrillToolTable.EOF do
+  begin
+    if (Fnc.SysDrillToolTable.FieldByName('AffectedTop').AsBoolean) then
+    begin
+      // figure out what the drill hole height is...
+      HoleHeight := Fnc.SysDrillToolTable.FieldByName('HalveHoleDepthTop').AsFloat; // (must divide by 2 in some cases as prepreg may
+                                                                                    // come from both top & bottom - this is already done)
+      HoleRadius := (Fnc.SysDrillToolTable.FieldByName('FINISH_SIZE').AsFloat / 2.0); // (finish size is a diameter)
+      NumberOfHoles := Fnc.SysDrillToolTable.FieldByName('TOTNUMHOLES').AsFloat;  // calculating by panel
+      //NumberOfHoles := Fnc.SysDrillToolTable.FieldByName('NUMHOLES').AsFloat;  // calculating by part
+
+      // result := Pi * R (radius) * R (radius) * HoleHeight  * Number of holes
+      VolumeLost := VolumeLost + (3.14159265 * HoleRadius * HoleRadius * (HoleHeight) * NumberOfHoles);
+    end;
+
+    if (Fnc.SysDrillToolTable.FieldByName('AffectedBottom').AsBoolean) then
+    begin
+      // figure out what the drill hole height is...
+      HoleHeight := Fnc.SysDrillToolTable.FieldByName('HalveHoleDepthBottom').AsFloat;
+      HoleRadius := (Fnc.SysDrillToolTable.FieldByName('FINISH_SIZE').AsFloat / 2.0);
+      NumberOfHoles := Fnc.SysDrillToolTable.FieldByName('TOTNUMHOLES').AsFloat;  // calculating by panel
+      //NumberOfHoles := Fnc.SysDrillToolTable.FieldByName('NUMHOLES').AsFloat;  // calculating by part
+
+      // result := Pi * R (radius) * R (radius) * HoleHeight (must divide by 2 as prepreg will come from both top & bottom) * Number of holes
+      VolumeLost := VolumeLost + (3.14159265 * HoleRadius * HoleRadius * (HoleHeight) * NumberOfHoles);
+    end;
+
+    Fnc.SysDrillToolTable.Next;
+  end;
+
+  // calculation by panel
+  Area := Fnc.SysRequirementsDetails.FieldByName('PANELWIDTH').AsFloat * Fnc.SysRequirementsDetails.FieldByName('PANELLENGTH').AsFloat;
+  // calculation by part
+  //Area := Fnc.SysRequirementsDetails.FieldByName('PARTWIDTH').AsFloat * Fnc.SysRequirementsDetails.FieldByName('PARTLENGTH').AsFloat;
+
+  ExistingVolume := Area * OriginalHeight;
+  NewVolume := ExistingVolume - VolumeLost;
+  if NewVolume < 0.0 then
+    NewVolume := 0.0;
+
+  // now back calculate to get our height
+  if Area > 0.0 then
+    result := NewVolume / Area;
+end;
+
+function CalculateThePressedThickness(var PressedThickness: double; HeightUp: float; HeightDn: float; DensityUp: float; DensityDn: float): boolean;
+begin
+  PressedThickness := Fnc.SysMaterialsTable.FieldByName('ThicknessAfterPressing').AsFloat;
+
+  { =======================================================================
+    Now the following calculation is customer specific. The following
+    calculation is just an example for demo purposes. Depending on the
+    parameters of the Up/Down layertype, the material will flow more/less
+    into the imaged layer
+    =======================================================================}
+
+  // do a correction because of the image density, density of 100 means
+  // there is no image, ea pressing foil on prepreg
+  if DensityUp < 100 then
+    PressedThickness := PressedThickness - (((100 - DensityUp) / 100) * HeightUp);
+
+  if DensityDn < 100 then
+    PressedThickness := PressedThickness - (((100 - DensityDn) / 100) * HeightDn);
+
+  PressedThickness := CalculateDrillLoss(PressedThickness);
+end;
+
+procedure TotFromPrepregs(var PPDK: float; var PPGlassThk: float);
+var
+  aSql: string;
+  qryPrepregs: TAdoQuery;
+  GapHeaderId: integer;
+  Ply: integer;
+  FreqId: integer;
+begin
+//  Fnc.Debug := True;
+//  Fnc.SendDebugString('--> TotFromPrepregs');
+
+  PPDK := 0;
+  PPGlassThk :=0;
+
+  GapHeaderId := Fnc.SysMaterialsTable.FieldByName('MaterialsGapHeaderId').AsInteger;
+  Ply := Fnc.SysMaterialsTable.FieldByName('Ply').AsInteger;
+
+  if GapHeaderId > 0 then
+  begin
+    FreqId := Fnc.SysImpedanceFrequencyId;
+    if FreqId < 1 then
+      FreqId := Fnc.SysDefaultImpedanceFrequencyId;
+
+//    Fnc.SendDebugString('MaterialsGapHeaderId: ' + Fnc.SysMaterialsTable.FieldByName('MaterialsGapHeaderId').AsString);
+//    Fnc.SendDebugString('FreqId: ' + IntToStr(FreqId));
+
+    qryPrepregs := TAdoQuery.Create(nil);
+    qryPrepregs.Connection := Fnc.DBConnection;
+
+    // assume this is a single-site database !!
+    aSql := ' SELECT   m.MaterialsId' +
+            '         ,m.MaterialsFamilyId' +
+            '         ,m.GlassThickness' +
+            '         ,mfd_m.DKOrig_Average as DKMaterial' +
+            '         ,mfd_f.DKOrig_Average as DKFamily' +
+            ' FROM      MaterialsGapDetail as mgd' +
+            ' LEFT JOIN Materials as m ON (m.MaterialsId = mgd.MaterialsId)' +
+            ' LEFT JOIN MaterialFreqDetails as mfd_m ON (mfd_m.SourcePtr = mgd.MaterialsId)' +
+            '                                          AND (mfd_m.SourceType = 2)' +
+            '                                          AND (mfd_m.FrequencyId =' + IntToStr(FreqId) +  ')' +
+            ' LEFT JOIN MaterialFreqDetails as mfd_f ON (mfd_f.SourcePtr = m.MaterialsFamilyId)' +
+            '                                          AND (mfd_f.SourceType = 1)' +
+            '                                          AND (mfd_f.FrequencyId =' + IntToStr(FreqId) +  ')' +
+            ' WHERE     (mgd.MaterialsGapHeaderId = ' + IntToStr(GapHeaderId) + ')';
+
+    qryPrepregs.Sql.Add(aSql);
+    qryPrepregs.Active := True;
+
+//    Fnc.OpendataGrid(qryPrepregs);
+
+    qryPrepregs.First;
+    while not qryPrepregs.Eof do
+    begin
+      if qryPrepregs.FieldByName('DKMaterial').AsFloat > 0.0 then
+        PPDK := PPDK + qryPrepregs.FieldByName('DKMaterial').AsFloat
+      else
+        PPDK := PPDK + qryPrepregs.FieldByName('DKFamily').AsFloat;
+
+      PPGlassThk:= PPGlassThk + qryPrepregs.FieldByName('GlassThickness').AsFloat;
+
+      qryPrepregs.Next;
+    end;
+
+    if ply > 0 then
+      PPDK := PPDK/ply
+    else
+      PPDK := 0;
+                                        
+    qryPrepregs.Close;
+    qryPrepregs.Free;
+  end;
+
+//  Fnc.SendDebugString('<-- TotFromPrepregs');
+//  Fnc.Debug := False;
+end;
+
+function CalculateDK(TotalThickness: double): double;
+var
+  GlassThickness: double;
+  PartDKGlass: double;
+  PartDKResin: double;       
+  PPDK: double;
+begin
+  GlassThickness := 0;
+  PartDKGlass := 0;
+  PartDKResin := 0;
+
+  Result := Fnc.SysMaterialsTable.FieldByName('DKOriginal').AsFloat;
+                                                    
+  if Result = 0 then
+  begin
+
+    // Er(prepreg) = (Er(glass) * GT / TT) +(Er(resin) * (TT - GT) / TT)
+    // Where:
+    // Er(glass) = 6.33            
+    // GT = the total glass thickness of the plies of prepreg
+    //      (The glass thickness for each style of prepreg can Be found from the GlassInfo page
+    //      of the Toronto.xls file by multiplying the glass wt column by 0.000525530.)
+    // TT = total thickness of the prepreg (as it is pressed)
+                                            
+    // Pull table value                           
+    //GlassThickness := Fnc.SysMaterialsTable.FieldByName('GlassWeight').AsFloat * 0.000525530;
+                  
+    // or Get the Totals from the pre-pregs in the combo
+//    TotFromPrepregs(Fnc.SysMaterialsTable.FieldByName('MaterialsGapHeaderId').AsInteger,Fnc.SysMaterialsTable.FieldByName('Ply').AsInteger, PPDK, GlassThickness);
+    TotFromPrepregs(PPDK, GlassThickness);
+
+
+    try
+      //RLGC Full Calculation
+      {PartDKGlass := Fnc.SysMaterialsTable.FieldByName('DKGlass').AsFloat * GlassThickness / TotalThickness;
+      PartDKResin := Fnc.SysMaterialsTable.FieldByName('DKResin').AsFloat * (TotalThickness - GlassThickness) / TotalThickness;
+      Result := PartDKGlass + PartDKResin;}
+
+      // or Use PPG DK - No spearate Resin Value
+      Result := PPDK;
+
+    except
+      Result := 0;
+    end;
+  end;
+end;
+
+function GetDKResin: double;
+begin
+  if Fnc.SysMaterialsTable.FieldByName('DKResin').AsFloat = 0 then
+    Result := Fnc.SysMaterialsTable.FieldByName('DKOriginal').AsFloat
+  else
+    Result := Fnc.SysMaterialsTable.FieldByName('DKResin').AsFloat;
+ // ShowMessage(Result);
+end;
+
+// Calculate for all the materials what this means if they are used under these conditions
+procedure Process_Laminate;
+var                                 
+  HeightUp: double;
+  HeightMiddle: double;
+  HeightDn: double;
+  CopperDensityUp: double;
+  CopperDensityDn: double;
+  DKUp: double;
+  DKMiddle: double;
+  DKDn: double;
+  InvalidOption: boolean;
+  TempValue : double;
+begin
+  DKUp := 0;
+  DKMiddle := 0;
+  DKDn := 0;
+  InvalidOption := False;
+
+  GetLayerParam(True, HeightUp, CopperDensityUp);
+  GetLayerParam(False, HeightDn, CopperDensityDn);
+
+  //fnc.opendatagrid(Fnc.SysMaterialsTable, nil, nil, true);
+
+  if not Fnc.SysMaterialsTable.FieldByName('AdjustThickness').AsBoolean then
+  begin
+    // as per materials definition, Height/Thickness does not change at pressing, ea Core
+    HeightMiddle := Fnc.SysMaterialsTable.FieldByName('ThicknessAfterPressing').AsFloat;
+    DKMiddle := CalculateDK(HeightMiddle);
+  end
+  else
+  begin
+    // as per material definition, the final thickness changes depending on the parameters of the layer Up/Down
+    InvalidOption := CalculateThePressedThickness(HeightMiddle, HeightUp, HeightDn, CopperDensityUp, CopperDensityDn);
+
+    // DK of top section might change (like with Prepreg)
+    if HeightUp > 0 then                      
+      DKUp := GetDKResin;
+
+    DKMiddle := CalculateDK(HeightMiddle);
+
+    // DK of bottom section might change (like with Prepreg)
+    if HeightDn > 0 then
+      DKDn := GetDKResin;
+  end;
+
+  Fnc.SysMaterialsTable.Edit;
+
+  Fnc.SysMaterialsTable.FieldByName('ThicknessCalc').AsFloat := HeightMiddle;
+  Fnc.SysMaterialsTable.FieldByName('DKCalc_Top').AsFloat := DKUp;   
+  Fnc.SysMaterialsTable.FieldByName('DKCalc_Middle').AsFloat := DKMiddle;
+  Fnc.SysMaterialsTable.FieldByName('DKCalc_Bottom').AsFloat := DKDn;
+  Fnc.SysMaterialsTable.FieldByName('Exclude').AsBoolean := false;
+
+  // Init these two values
+  Fnc.SysMaterialsTable.FieldByName('Exclude').AsBoolean := False;
+  Fnc.SysMaterialsTable.FieldByName('DispColor').AsInteger := 0;
+
+//Enable these lines to exclude Gap/Combo's that run under the minimum
+//  thickness as specified in the Materials Table
+
+  if Fnc.SysMaterialsTable.FieldByName('MinThickness').AsFloat > 0 then
+  begin
+    if HeightMiddle < Fnc.SysMaterialsTable.FieldByName('MinThickness').AsFloat then
+      Fnc.SysMaterialsTable.FieldByName('Exclude').AsBoolean := True;
+  end;
+
+  // show options that are not suitable in Red
+  if (HeightMiddle < 0) or (Fnc.SysMaterialsTable.FieldByName('MinThickness').AsFloat > 0) then
+  begin
+    TempValue := HeightMiddle - Fnc.SysMaterialsTable.FieldByName('MinThickness').AsFloat;
+
+    if TempValue < 0.001 then
+      // Warning
+      Fnc.SysMaterialsTable.FieldByName('DispColor').AsInteger := clYellow;
+
+    if TempValue < 0.0 then
+      // Material does not fit at this position
+      Fnc.SysMaterialsTable.FieldByName('DispColor').AsInteger := clRed;
+  end;
+
+  Fnc.SysMaterialsTable.Post;
+end; 
+
+procedure Process_SolderMask;
+begin
+  with Fnc.SysMaterialsTable do
+  begin
+    Edit;
+    FieldByName('Exclude').AsBoolean := False;
+    FieldByName('DKCalc_Middle').AsFloat := FieldByName('DKOriginal').AsFloat;
+    FieldByName('ThicknessCalc').AsFloat := FieldByName('ThicknessAfterPressing').AsFloat;
+    Post;
+  end;
+end;
+
+begin
+//  Fnc.CS.SendMsg('===> EventLayup');
+//  Fnc.OpenDataGrid(Fnc.SysRequirementsDetails, nil,nil,false);
+//  Fnc.OpenDataGrid(Fnc.SysDrillToolTable, nil,nil,false);
+
+  SetSpecificDkForFrequency;
+
+  Fnc.SysMaterialsTable.First;
+
+  while not Fnc.SysMaterialsTable.Eof do
+  begin
+
+    case Fnc.SysMaterialsTable.FieldByName('MaterialsClassId').AsInteger of
+      1: Process_Laminate;
+      2: Process_SolderMask;
+    end;
+
+    Fnc.SysMaterialsTable.Next;
+  end;
+
+  Fnc.SysRequirementsDetails.Edit;
+  Fnc.SysRequirementsDetails.FieldByName('ScriptVersion').AsString := 'zzzz';
+  Fnc.SysRequirementsDetails.Post;
+
+//  Fnc.CS.SendMsg('<=== EventLayup');
+end;
+
