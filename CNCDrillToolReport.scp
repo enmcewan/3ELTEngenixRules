@@ -1,9 +1,6 @@
-//HeaderImportExport-->
-//SiteId=0
-//Enterprise=True
-//ScriptType=0
-//ScriptGroup=
-//HeaderImportExport<--
+uses
+  RouteFunctions,
+  Eng_DrillFunctions;
 const
   ExcelTemplate = 'EngenixCNCDrillDetails.xlsx';
   ExcelReport   = StringReplace(ExcelTemplate,'.xlsx', Fnc.GetJobData.Values['JobName'] + '.xlsx', SetOf([rfReplaceAll, rfIgnoreCase]));
@@ -13,7 +10,7 @@ const
 var
   ErrFound : boolean;
   ErrMsg : string;
-  Excelquery : TADOQuery;
+  ExcelQuery : TADOQuery;
 
 procedure CheckTemplatesExists;
 begin
@@ -32,8 +29,15 @@ begin
   end;
 end;
 
+function CheckReportExists: boolean;
+begin
+  result := false;
+  if FileExists(WorkingDir + ExcelReport) then
+    result := true;
+end;
+
 function FileCopy(Source,Dest : String): Boolean;
-var                                                                    
+var
   SourceStream,DestStream : TFileStream;
 begin
   try
@@ -64,90 +68,21 @@ begin
   end;
 end;
 
+ function GenMaterialType: string;
 
-function ExcelColumnMap(jobAttributeID : integer) : string
-begin
+ begin
   result := '';
-  case jobAttributeID of
-      1     : result := 'Rules Version';
-      2     : result := 'Layer Count';
-      19    : result := 'Thick Board';
-      3     : result := 'Sequential Build';
-      26    : result := 'Build-Up';
-      4     : result := 'Core Capping';
-      5     : result := 'Hybrid Construction';
-      27    : result := 'VIPPO';
-      28    : result := 'Cu Filled Via';
-      8     : result := 'Skip BVH';
-      9     : result := 'Surface BVH';
-      7     : result := 'Mech Blind Via';
-      29    : result := '2-mil Core';
-      30    : result := '1-mil or less Core';
-      14    : result := 'Back Drill';
-      11    : result := 'Back Drill VIP';
-      10    : result := 'Dual Drilling';
-      15    : result := 'Surface Finish';
-      24    : result := 'Selective Gold';
-      25    : result := 'Gold Finger';
-      12    : result := 'Stacked BVH over BVH';
-      13    : result := 'Stacked BVH over Buried Hole';
-      21    : result := 'PTH AR 1-15';
-      22    : result := 'BVH AR 1-075';
-      23    : result := 'New Customer';
-      16    : result := 'Application';
-      18    : result := 'Cavity Milling';
-      31    : result := 'Material Type';
-      32    : result := '065mm Drill Pitch';
-      33    : result := 'Nano Connector';
-  end;
-  //showmessage(result);
-end;
+  if Fnc.SysGetAttrValue('CoreMat') <> '' then
+    result := Fnc.SysGetAttrValue('CoreMat')
 
-procedure ExcelHandler(currentJob : integer; jobAttributes : TSysTable; ExcelQuery : TadoQuery);
-var
-  ExcelColumn : string;
-  i : integer;
-  ExceptionMessage : string;
-begin
-  // Query declaration moved to initializing procedure so it is only accessed one time
-
-  Excelquery.Append; // Add a new row for the next Job
-  ExcelColumn := '';
-
-  //if currentJob = 1 then
-  //  Fnc.OpenDataGrid(jobAttributes);
-  jobAttributes.First;
-
-  // Add Job Values
-  Excelquery.FieldByName('JobID').AsString := jobAttributes.FieldByName('JobID').AsString;
-  Excelquery.FieldByName('Job Name').AsString := jobAttributes.FieldByName('JobName').AsString;
-  Excelquery.FieldByName('Job Revision').AsString := jobAttributes.FieldByName('JobRev').AsString;
-  Excelquery.FieldByName('Customer').AsString := jobAttributes.FieldByName('CustomerName').AsString;
-  Excelquery.FieldByName('Part Description').AsString := jobAttributes.FieldByName('PartDescription').AsString;
-  Excelquery.FieldByName('Part Revision').AsString := jobAttributes.FieldByName('PartRevision').AsString;
-  Excelquery.FieldByName('Job Type').AsString := jobAttributes.FieldByName('JobType').AsString;
-  Excelquery.FieldByName('Engr').AsString := jobAttributes.FieldByName('UserName').AsString;
-  Excelquery.FieldByName('Status').AsString := jobAttributes.FieldByName('Status').AsString;
-  Excelquery.FieldByName('Completed Date').AsDateTime := jobAttributes.FieldByName('CompletedDate').AsDateTime;
-  Excelquery.FieldByName('Done').AsBoolean := jobAttributes.FieldByName('Done').AsBoolean;
-
-  // Add Attribute Values
-  while not jobAttributes.EOF do
+  if (Fnc.SysGetAttrValue('PPGMat') <> '') and ((Fnc.SysGetAttrValue('PPGMat') <> 'No PPG')) then
   begin
-    ExcelColumn := ExcelColumnMap(jobAttributes.FieldByName('JobAttributeID').AsInteger);
-    try
-      Excelquery.FieldByName(ExcelColumn).AsString := jobAttributes.FieldByName('EntryValue').AsString;
-    except
-      //Fnc.SysShowException('Failed updating Excel sheet for Job ' + IntToStr(currentJob));
-      //Fnc.SysShowException(ExceptionMessage);
-    end;
-
-    jobAttributes.Next;
+    if Fnc.SysGetAttrValue('PPGMat') <> Fnc.SysGetAttrValue('CoreMat') then
+    result := result + '/' + Fnc.SysGetAttrValue('PPGMat');
   end;
-  //Fnc.OpenDataGrid(Excelquery);
-  Excelquery.Post;
 end;
 
+procedure GenCNCDrillReport;
 begin
   ErrMsg := '';
   ErrFound := false;
@@ -159,42 +94,64 @@ begin
     exit;
   end
   else
+  begin
+    if not CheckReportExists then
     CopyTemplateToWorkingDir;
+  end
   if ErrFound then
     MessageDlg(ErrMsg, mtError, Setof([mbOK]), 0);
 
   if not ErrFound then
   begin
-
+    Fnc.MouseBusy;
     Excelquery := TadoQuery.Create(nil);
     Excelquery.ConnectionString := Fnc.ExcelConnect(WorkingDir + ExcelReport, true, 0);
     Excelquery.Close;
     Excelquery.Sql.Clear;
     Excelquery.Sql.Add('SELECT * FROM [CNC Drill Report$]');
+
     try
-    Excelquery.Open;
+      Excelquery.Open;
     except
       MessageDlg('Error on Excel query', mtError, Setof([mbOK]), 0);
       Excelquery.Close;
       Excelquery.Free;
       exit;
     end;
-    Fnc.MouseBusy;
-    //Fnc.OpenDataGrid(ExcelQuery)
-    Excelquery.Append; // Add a new row for the next Job
-    Excelquery.FieldByName('Material type').AsString := Fnc.GetJobData.Values['JobName'];
 
-    ExcelQuery.Post
-    {try
-      GenReport(Excelquery);
+    try
+      ExcelQuery.First;
+      if ExcelQuery.EOF  and ExcelQuery.BOF then // Add new row if empty
+        ExcelQuery.Append;
+      else
+        Excelquery.Edit  // Else Edit Existing Row. Will Need to eventually Filter/Find each drill file
+
+      //Fnc.OpenDataGrid(ExcelQuery)
+
+      Excelquery.FieldByName('JobID').AsString := Fnc.GetJobData.Values['JobId'];
+      Excelquery.FieldByName('Customer').AsString := Fnc.GetJobData.Values['CustomerName'];
+      Excelquery.FieldByName('Job Name').AsString := Fnc.GetJobData.Values['JobName'];
+      Excelquery.FieldByName('Part Description').AsString := Fnc.GetJobData.Values['PartDescription'];
+      Excelquery.FieldByName('Part Number').AsString := Fnc.GetJobData.Values['PartNumberName'];
+      Excelquery.FieldByName('Job Type').AsString := Eng_JobType;
+      Excelquery.FieldByName('Export to ERP Date').AsString := 'NEED TO UPDATE THIS AT EXXXXPORT';
+      Excelquery.FieldByName('Material type').AsString := GenMaterialType;
+      Excelquery.FieldByName('Layer Count').AsString := Fnc.SysGetAttrValue('LayerCount');
+      Excelquery.FieldByName('Board Thickness').AsString := Fnc.SysGetAttrValue('LayupThickness');
+      Excelquery.FieldByName('NC Drill Entry Material').AsString := Fnc.SysGetAttrValue('NC_Drill_1_EntryMat'); // Will need to figure out 1st Drill v 2nd Drill
+      Excelquery.FieldByName('NC Stack Height').AsString := Fnc.SysGetAttrValue('Stack_Hgt'); // Will need to figure out 1st Drill v 2nd Drill
+      Excelquery.FieldByName('Build Stage').AsString := Fnc.SysGetAttrValue('ItemMatrlDesc');
+      Excelquery.FieldByName('Panel Length').AsString := Fnc.SysGetAttrValue('Panel_Length');
+      Excelquery.FieldByName('Panel Width').AsString := Fnc.SysGetAttrValue('Panel_Width');
+      ExcelQuery.Post
+    finally
+      Excelquery.Close;
+      Excelquery.Free;
       Fnc.MouseNormal;
-      MessageDlg('The report generated successfully', mtInformation, Setof([mbOK]), 0);
-    except
-      MessageDlg('Error generating report', mtError, Setof([mbOK]), 0);
-    end;}
-
-    Excelquery.Close;
-    Excelquery.Free;
-
+    end;
   end;
+end;
+
+begin
+  GenCNCDrillReport;
 end;
