@@ -89,6 +89,7 @@ var
   DrillDetails: TsysTable;
   ToolColName: string;
   DrillsWithTools: integer;
+  DrillSize: float;
 begin
   //ShowMessage(Excelquery.FieldByName('Panel Width').AsString);
   //Fnc.OpenDataGrid(ExcelQuery)
@@ -105,7 +106,6 @@ begin
       DrillsWithTools := DrillsWithTools + 1;
       ExcelQuery.FieldByName('Drill Name').AsString := DrillName;
       DrillDetails.First;
-      //ExcelQuery.First;
 
       while not DrillDetails.Eof do
       begin
@@ -114,19 +114,19 @@ begin
         else
           ExcelQuery.Append;
 
-        if DrillDetails.FieldByName('DRILL_SIZE').AsFloat = 0.275 then
-          ToolColName := FormatFloat('0000', FloatToStr(DrillDetails.FieldByName('DRILL_SIZE').AsFloat) * 1000);
-        else
-          ToolColName := FormatFloat('000', FloatToStr(DrillDetails.FieldByName('DRILL_SIZE').AsFloat) * 100);
+        DrillSize := DrillDetails.FieldByName('DRILL_SIZE').AsFloat;
 
+        // if last char <> 0 then 0.125 or 0.0275 etc
+        if Copy(FormatFloat('0000', FloatToStr(DrillDetails.FieldByName('DRILL_SIZE').AsFloat) * 1000), 4, 1) <> '0' then
+          ToolColName := FormatFloat('0000', FloatToStr(DrillSize) * 1000);
+        else
+          ToolColName := FormatFloat('000', FloatToStr(DrillSize) * 100);
         try
           ExcelQuery.FieldByName(ToolColName).AsInteger := DrillDetails.FieldByName('TotNumHoles').AsFloat;
         except
           MessageDlg('Could not find Excel Column Name ' + ToolColName,  mtWarning, Setof([mbOK]) , 0);
-
         end;
         DrillDetails.Next;
-        //ExcelQuery.Next;
       end;
       //Fnc.OpenDataGrid(DrillDetails);
     end;
