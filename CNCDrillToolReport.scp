@@ -224,7 +224,21 @@ begin
   end;
 end;
 
+procedure SetCNCDrillReportExportDate;
 begin
   CreateAndOpenExcelQuery;
-  AddMetaData;
+  try
+    ExcelQuery.First;
+    ExcelQuery.Edit;
+    ExcelQuery.FieldByName('Export to ERP Date').AsString := DateToStr(Date);
+    ExcelQuery.Post;
+  finally
+    Excelquery.Close;
+    Excelquery.Free;
+  end;
+end;
+
+begin
+  // Testing only
+  SetCNCDrillReportExportDate
 end;
