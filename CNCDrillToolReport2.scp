@@ -224,7 +224,7 @@ begin
     MessageDlg(ErrMsg, mtError, Setof([mbOK]), 0);
 end;
 
-procedure GenCNCDrillReport;
+procedure GenCNCDrillReport2;
 begin
 
   try
