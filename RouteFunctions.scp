@@ -4389,12 +4389,3 @@ function GenMaterialType: string;
     result := result + '/' + Fnc.SysGetAttrValue('PPGMat');
   end;
 end;
-
-procedure InsertQRInfoAtStep1; // 1471 QR Code information info update
-begin
-  SysRouteInsAddlParameter('Erp', 'QR Info', Fnc.GetJobData.Values['JobName'] + ' ' +
-                                             Fnc.SysGetAttrValue('TopLayer') +  '-' +
-                                             Fnc.SysGetAttrValue('BotLayer') + ' ' +
-                                             GenMaterialType
-                                             ,'', '', false, '', '', '');
-end;

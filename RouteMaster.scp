@@ -1180,12 +1180,13 @@ begin
 
   PostProc_Set_QR_Barcode;
 
-  Fnc.SysRouteGenInsAddlParam(1, 'Erp', 'QR Info',
-                                                   Fnc.GetJobData.Values['JobName'] + ' ' +
-                                                   Fnc.SysGetAttrValue('TopLayer') +  '-' +
-                                                   Fnc.SysGetAttrValue('BotLayer') + ' ' +
-                                                   GenMaterialType,
-                                                   '', '', false, '', '', '');
+  Fnc.SysRouteGenInsAddlParam(1, 'Erp', 'QR Info', '*.(' +
+                                             Fnc.GetJobData.Values['JobName'] + '*' +
+                                             Fnc.SysGetAttrValue('TopLayer') +  '-' +
+                                             Fnc.SysGetAttrValue('BotLayer') + '*' +
+                                             GenMaterialType + '*' +
+                                             IntToStr(Fnc.SysGetAttrValue('Panel_Length')) + IntToStr(Fnc.SysGetAttrValue('Panel_Width')) +')'
+                                             ,'', '', false, '', '', '');
 
   if FindNumberOfDrillFiles >  0 then
     GenCNCDrillReport;
