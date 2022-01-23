@@ -47,10 +47,10 @@ begin
     SetParam(ToolDataSet, 'DrillType', True, 6, 10, '');
 
   if ToolDataSet.FieldDefs.IndexOf('NumHoles') > -1 then
-    SetParam(ToolDataSet, 'NumHoles', False, 7, 10, '#Holes/Part');
+    SetParam(ToolDataSet, 'NumHoles', False, 7, 10, 'Holes/Part');
 
   if ToolDataSet.FieldDefs.IndexOf('TotNumHoles') > -1 then
-    SetParam(ToolDataSet, 'TotNumHoles', False, 8, 10, '#Holes/Panel');
+    SetParam(ToolDataSet, 'TotNumHoles', False, 8, 10, 'Holes/Panel');
 
   if ToolDataSet.FieldDefs.IndexOf('ToolRef') > -1 then
     SetParam(ToolDataSet, 'ToolRef', False, 9, 5, '');
@@ -84,8 +84,10 @@ begin
   begin                
     ToolsCleanupDisplay(ToolDataSet);
 
-    // example to present a dropdown to the user for the field 'HoleType'
-    FieldOptions.Add('HoleType=Laser');
+    // example to present a dropdown to the user for the field 'HoleType' 
+    FieldOptions.Add('HoleType=PTH'); 
+    FieldOptions.Add('HoleType=Slot'); 
+    FieldOptions.Add('HoleType=Laser'); 
     FieldOptions.Add('HoleType=Via');
     FieldOptions.Add('HoleType=Plated');
     FieldOptions.Add('HoleType=Non Plated');

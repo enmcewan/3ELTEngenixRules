@@ -23,7 +23,7 @@ Var
   PhotoLine: string;
   AltLine: string;
   ProdResource: string
-  DesLine: string;
+  DesLine: string;       
 
 procedure PEP_SD;
 begin
@@ -35,8 +35,8 @@ begin
 
   AddSubsAndInnersAtStep; // 1229 PEP Flow option for Sub-assembly build.
   
-  if Fnc.SysRouteInsGetStepNum = 1 then  // 1471 QR Code information info update    
-    InsertQRInfoAtStep1;   
+  //if Fnc.SysRouteInsGetStepNum = 1 then  // 1471 QR Code information info update    
+  //  InsertQRInfoAtStep1;   
 
 end;
            
@@ -56,8 +56,8 @@ begin
   SysRouteInsDepartment('Erp', 'SHEAR=C', '');
   SysRouteInsWorkCenter('Erp', 'SHEAR=C', '');
   
-  if Fnc.SysRouteInsGetStepNum = 1 then  // 1471 QR Code information info update    
-    InsertQRInfoAtStep1; 
+  //if Fnc.SysRouteInsGetStepNum = 1 then  // 1471 QR Code information info update    
+  //  InsertQRInfoAtStep1; 
 end;
 
 procedure Shearing_Laser_SD;
@@ -170,8 +170,8 @@ begin
   if OxideLineName = 'L4' then
     SysRouteInsWorkCenter('Erp', 'OXDOL-E0', '');
     
-  if Fnc.SysRouteInsGetStepNum = 1 then  // 1471 QR Code information info update    
-    InsertQRInfoAtStep1;  
+  //if Fnc.SysRouteInsGetStepNum = 1 then  // 1471 QR Code information info update    
+  //  InsertQRInfoAtStep1;  
 
 end;
 
@@ -2826,9 +2826,9 @@ begin
                  
   Fnc.SysSetAttrValue('KK_Distance', Fnc.SysGetAttrValue('Panel_Length') - 8);
   SysRouteInsAddlParameter('Erp', 'KK Distance', Fnc.SysGetAttrValue('KK_Distance'), '', '', false, '', '', '');
-  
-  if Fnc.SysRouteInsGetStepNum = 1 then  // 1471 QR Code information info update    
-    InsertQRInfoAtStep1; 
+         
+  //if Fnc.SysRouteInsGetStepNum = 1 then  // 1471 QR Code information info update    
+  //  InsertQRInfoAtStep1; 
                   
 end;         
 

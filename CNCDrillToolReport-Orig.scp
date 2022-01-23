@@ -4,7 +4,7 @@
 //ScriptType=0
 //ScriptGroup=
 //HeaderImportExport<--
-uses                                                                                                                                                              
+uses
   RouteFunctions,
   Eng_DrillFunctions;
 const
@@ -12,20 +12,18 @@ const
   ExcelReport   = StringReplace(ExcelTemplate,'.xlsx', Fnc.GetJobData.Values['JobName'] + '.xlsx', SetOf([rfReplaceAll, rfIgnoreCase]));
   FileTemplateDir = 'C:\Engenix\Report\Template\';
   WorkingDir = 'C:\Engenix\Report\';
-  SlotToolFile = 'SlotTools.txt';
-  DrillToolFile = 'DrillTools.txt';
 
 var
   ErrFound : boolean;
   ErrMsg : string;
-  ExcelQuery : TADOQuery;           
-                                          
+  ExcelQuery : TADOQuery;
+
 procedure CheckTemplatesExists;
-begin                         
+begin                              
   if (DirectoryExists(FileTemplateDir)) then
   begin
     if not (FileExists(FileTemplateDir + ExcelTemplate)) then
-    begin                                
+    begin
       ErrFound := True;
       ErrMsg := 'Template file ' + FileTemplateDir + ExcelTemplate + ' not found';
     end;
@@ -105,73 +103,43 @@ var
   DrillsWithTools: integer;
   DrillSize: float;
   DrillList: TStringList;
-  
-  SlotToolsList: TStringList;
-  DrillToolsList: TStringList;
-  DrillToolStr: String;
 begin
   //Fnc.OpenDataGrid(ExcelQuery)
-  DrillList := TStringList.Create;        
+  DrillList := TStringList.Create;
   DrillList.Sorted := true;
   for i := 1 to FindNumberofDrillFiles do
   begin
-    if (Fnc.SysGetItemAttrValue('DrillDefID', True, cStackupDrill, i) = 1) or 
-       (Fnc.SysGetItemAttrValue('DrillDefID', True, cStackupDrill, i) = 9)
-    then
-    begin 
-      DrillName := Fnc.SysGetItemAttrValue('ItemLayerName', True, cStackupDrill, i);
-      DrillList.Add(DrillName); 
-    end;
+    DrillName := Fnc.SysGetItemAttrValue('ItemLayerName', True, cStackupDrill, i);
+    DrillList.Add(DrillName);
   end;
-  
-  SlotToolsList := TStringList.Create;
-  SlotToolsList.LoadFromFile(FileTemplateDir + SlotToolFile); // Starts at Col 213 (F213)
-  DrillToolsList := TStringList.Create; 
-  DrillToolsList.LoadFromFile(FileTemplateDir + DrillToolFile); // Starts at Col 17 (F17)
-                           
-  DrillsWithTools := 0;       
-  for i := 0 to DrillList.Count -1 do
+
+  DrillsWithTools := 0;
+  for i := 1 to DrillList.Count -1 do
   begin
-    DrillName := DrillList.Strings[i]
+    DrillName := DrillList.Strings[i]Fnc.SysGetItemAttrValue('ItemLayerName', True, cStackupDrill, i);
     DrillDetails := Fnc.SysGetDrillRouteToolsDetails(DrillName);
     //Fnc.OpenDataGrid(DrillDetails);
 
     if not DrillDetails.IsEmpty then
     begin
-      DrillsWithTools := DrillsWithTools + 1;
-      
-      ExcelQuery.Append;
-      
-      ExcelQuery.FieldByName('Drill Name').AsString := DrillName;
-               
-      if Fnc.SysGetAttrValue('LayerCount') > 2 then
-      begin 
-        if Fnc.SysGetLayerAttrValue(DrillName, 'DrillDefID') = 1 then
-          Excelquery.FieldByName('Board Thickness').AsFloat := Fnc.SysGetAttrValue('Press_Thickness') 
-        else
-          Excelquery.FieldByName('Board Thickness').AsFloat := Fnc.SysGetAttrValue('LayupThickness'); 
-      end
+      DrillsWithTools := DrillsWithTools + 1;          
+
+      if DrillsWithTools = 1 then
+        ExcelQuery.Edit
       else
-        Excelquery.FieldByName('Board Thickness').AsFloat := DSThicknessB4Plating;
-        
-      Excelquery.FieldByName('Build Stage').AsString := Fnc.SysGetAttrValue('ItemMatrlDesc');
-            
+        ExcelQuery.Append;
+
       DrillDetails.First;
       while not DrillDetails.Eof do
-      begin 
+      begin
+        ExcelQuery.FieldByName('Drill Name').AsString := DrillName;
         DrillSize := DrillDetails.FieldByName('DRILL_SIZE').AsFloat;
-        DrillToolStr := FormatFloat('0.000', DrillSize);
 
         // if last char <> 0 then 0.125 or 0.0275 etc
-        //if Copy(FormatFloat('0000', FloatToStr(DrillDetails.FieldByName('DRILL_SIZE').AsFloat) * 1000), 4, 1) <> '0' then
-        //  ToolColName := FormatFloat('0000', FloatToStr(DrillSize) * 1000);
-        //else                   
-        //  ToolColName := FormatFloat('000', FloatToStr(DrillSize) * 100);
-        
-        if DrillDetails.FieldByName('HoleType').AsString = 'Slot' then
-          ToolColName := 'F' + IntToStr(SlotToolsList.IndexOf(DrillToolStr) + 213 )
+        if Copy(FormatFloat('0000', FloatToStr(DrillDetails.FieldByName('DRILL_SIZE').AsFloat) * 1000), 4, 1) <> '0' then
+          ToolColName := FormatFloat('0000', FloatToStr(DrillSize) * 1000);
         else
-          ToolColName := 'F' + IntToStr(DrillToolsList.IndexOf(DrillToolStr) + 17 );  
+          ToolColName := FormatFloat('000', FloatToStr(DrillSize) * 100);
         try
           ExcelQuery.FieldByName(ToolColName).AsInteger := DrillDetails.FieldByName('TotNumHoles').AsFloat;
         except
@@ -182,11 +150,9 @@ begin
       //Fnc.OpenDataGrid(DrillDetails);
     end;
     Fnc.SysTableDestroy(DrillDetails);
-  end;                                        
+  end;
   DrillList.Free;
-  SlotToolsList.Free;
-  DrillToolsList.Free;
-end;                                             
+end;
 
 procedure AddMetaData;
 begin
@@ -197,15 +163,15 @@ begin
   Excelquery.FieldByName('Customer').AsString := Fnc.GetJobData.Values['CustomerName'];
   Excelquery.FieldByName('Job Name').AsString := Fnc.GetJobData.Values['JobName'];
   Excelquery.FieldByName('Part Description').AsString := Fnc.GetJobData.Values['PartDescription'];
-  Excelquery.FieldByName('Part Number').AsString := Fnc.GetJobData.Values['PartNumberName'];                    
+  Excelquery.FieldByName('Part Number').AsString := Fnc.GetJobData.Values['PartNumberName'];
   Excelquery.FieldByName('Job Type').AsString := Eng_JobType;
-  Excelquery.FieldByName('Export to ERP Date').AsString := DateToStr(Date);
+  Excelquery.FieldByName('Export to ERP Date').AsString := 'Updated During Export';
   Excelquery.FieldByName('Material type').AsString := GenMaterialType;
-  Excelquery.FieldByName('Layer Count').AsInteger := Fnc.SysGetAttrValue('LayerCount');      
-  //Excelquery.FieldByName('Board Thickness').AsFloat := Fnc.SysGetAttrValue('LayupThickness'); // Value at Drill Stage!
+  Excelquery.FieldByName('Layer Count').AsInteger := Fnc.SysGetAttrValue('LayerCount');
+  Excelquery.FieldByName('Board Thickness').AsFloat := Fnc.SysGetAttrValue('LayupThickness'); // Value at Drill Stage!
   Excelquery.FieldByName('NC Drill Entry Material').AsString := Fnc.SysGetAttrValue('NC_Drill_1_EntryMat'); // Will need to figure out 1st Drill v 2nd Drill
   Excelquery.FieldByName('NC Stack Height').AsInteger := Fnc.SysGetAttrValue('Stack_Hgt'); // Will need to figure out 1st Drill v 2nd Drill
-  //Excelquery.FieldByName('Build Stage').AsString := Fnc.SysGetAttrValue('ItemMatrlDesc');
+  Excelquery.FieldByName('Build Stage').AsString := Fnc.SysGetAttrValue('ItemMatrlDesc');
   Excelquery.FieldByName('Panel Length').AsFloat := Fnc.SysGetAttrValue('Panel_Length');
   Excelquery.FieldByName('Panel Width').AsFloat := Fnc.SysGetAttrValue('Panel_Width');
 end;
@@ -230,32 +196,31 @@ begin
     MessageDlg(ErrMsg, mtError, Setof([mbOK]), 0);
 end;
 
-procedure GenCNCDrillReport2;
-begin 
+procedure GenCNCDrillReport;
+begin
+  CreateJobFileFromTemplate;                                    
 
-  try 
-    CreateJobFileFromTemplate;                                    
+  if not ErrFound then
+    CreateAndOpenExcelQuery;
+  else
+    exit;
 
-    if not ErrFound then
-      CreateAndOpenExcelQuery;
-    else
-      exit;                                                              
-                                 
+  try                     
     AddMetaData;     
     InsertDrillToolData;
-    ExcelQuery.Post              
+    ExcelQuery.Post 
   finally
     Excelquery.Close;
     Excelquery.Free;
-    Fnc.MouseNormal;
+    Fnc.MouseNormal;       
   end;
-end;              
+end;
 
 procedure SetCNCDrillReportExportDate;
 begin                      
   CreateAndOpenExcelQuery;
   try
-    ExcelQuery.First;                   
+    ExcelQuery.First;
     ExcelQuery.Edit;
     ExcelQuery.FieldByName('Export to ERP Date').AsString := DateToStr(Date);
     ExcelQuery.Post;
@@ -268,4 +233,4 @@ end;
 begin 
   // Testing only
   SetCNCDrillReportExportDate
-end;
+end;         

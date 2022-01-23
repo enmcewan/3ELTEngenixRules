@@ -336,7 +336,7 @@ begin
   LayerBot := Fnc.SysGetAttrValue('BotLayer');
 
   for i := 0 to DrillList.Count -1 do
-  begin                     
+  begin                          
     DrillValues := TStringList.Create;
     DrillValues.Text := DrillList.Strings[i];
     //ShowMessage(DrillValues.Text);

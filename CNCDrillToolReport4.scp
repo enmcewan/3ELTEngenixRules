@@ -1,0 +1,197 @@
+//HeaderImportExport-->
+//SiteId=0
+//Enterprise=True
+//ScriptType=0
+//ScriptGroup=
+//HeaderImportExport<--
+uses                                                                                                                                                                              
+  RouteFunctions,
+  Eng_DrillFunctions,
+  SanitizeFileName;
+const
+  FileTemplateDir = 'C:\Engenix\Report\Template\';
+  WorkingDir = 'C:\Engenix\Report\Jobs\' + Fnc.GetJobData.Values['JobId'] + '\';
+  SlotToolFile = 'SlotTools.txt';
+  DrillToolFile = 'DrillTools.txt';
+  
+  MetaFileEnd = ' Meta.txt';
+  ToolFileEnd = ' DrillTools.txt';
+var
+  ErrFound : boolean;     
+  ErrMsg : string;
+  MetaData: TStringList;
+  ToolData: TStringList     
+  ReportFilePath: string;
+  DataFiles: TStringlist;
+                                                                       
+procedure InsertDrillToolData(ToolData: TStringList);
+var
+  i : integer;
+  DrillName : string;
+  DrillDetails: TsysTable;                 
+  ToolCol: integer;         
+  ToolRow: integer;            
+  DrillsWithTools: integer;
+  DrillSize: float;                          
+  DrillList: TStringList;
+
+  SlotToolsList: TStringList;
+  DrillToolsList: TStringList;
+  DrillToolStr: String;
+  
+  Thickness: float;
+
+begin
+  Thickness := 0.0;
+  
+  DrillList := TStringList.Create;
+  DrillList.Sorted := true;
+  for i := 1 to FindNumberofDrillFiles do             
+  begin
+    if (Fnc.SysGetItemAttrValue('DrillDefID', True, cStackupDrill, i) = 1) or
+       (Fnc.SysGetItemAttrValue('DrillDefID', True, cStackupDrill, i) = 9)
+    then
+    begin
+      DrillName := Fnc.SysGetItemAttrValue('ItemLayerName', True, cStackupDrill, i);
+      DrillList.Add(DrillName);
+    end;
+  end;
+
+  SlotToolsList := TStringList.Create;
+  SlotToolsList.LoadFromFile(FileTemplateDir + SlotToolFile); // Starts at Col 213 (F213)
+  DrillToolsList := TStringList.Create;
+  DrillToolsList.LoadFromFile(FileTemplateDir + DrillToolFile); // Starts at Col 17 (F17)
+
+  DrillsWithTools := 0;
+  ToolRow := 3;
+
+  for i := 0 to DrillList.Count -1 do   
+  begin
+    DrillName := DrillList.Strings[i]
+    DrillDetails := Fnc.SysGetDrillRouteToolsDetails(DrillName);
+    //Fnc.OpenDataGrid(DrillDetails);
+
+    if not DrillDetails.IsEmpty then
+    begin
+      DrillsWithTools := DrillsWithTools + 1;
+
+      ToolRow := ToolRow + 1;
+      
+      ToolData.Add(DrillName); 
+
+      if Fnc.SysGetAttrValue('LayerCount') > 2 then
+      begin
+        if Fnc.SysGetLayerAttrValue(DrillName, 'DrillDefID') = 1 then
+          Thickness := Fnc.SysGetAttrValue('Press_Thickness')
+        else
+          Thickness := Fnc.SysGetAttrValue('LayupThickness');
+      end                                                                               
+      else                            
+        Thickness := DSThicknessB4Plating;
+        
+      ToolData.Add(FloatToStr(Thickness));
+      ToolData.Add(Fnc.SysGetAttrValue('ItemMatrlDesc'));
+      
+      if Fnc.SysGetLayerAttrValue(DrillName, 'DrillDefID') = 1 then
+      begin
+        ToolData.Add(Fnc.SysGetAttrValue('NC_Drill_1_EntryMat'));
+        ToolData.Add(IntToStr(Fnc.SysGetAttrValue('Stack_Hgt')));
+      end                    
+      else
+      begin
+        ToolData.Add(Fnc.SysGetAttrValue('Drill_Entry_Sht_2'));
+        ToolData.Add(IntToStr(Fnc.SysGetAttrValue('Stack_Hgt_2'))); 
+      end;
+
+      DrillDetails.First;
+      while not DrillDetails.Eof do
+      begin
+        DrillSize := DrillDetails.FieldByName('DRILL_SIZE').AsFloat;
+        DrillToolStr := FormatFloat('0.000', DrillSize);
+
+        if DrillDetails.FieldByName('HoleType').AsString = 'Slot' then
+          ToolCol := SlotToolsList.IndexOf(DrillToolStr) + 213
+        else                           
+          ToolCol := DrillToolsList.IndexOf(DrillToolStr) + 17                   
+        
+        ToolData.Add('DT' + ';' + IntToStr(ToolRow) + ';' + IntToStr(ToolCol) + ';' + DrillDetails.FieldByName('TotNumHoles').AsString);
+        DrillDetails.Next;                    
+      end;                            
+      //Fnc.OpenDataGrid(DrillDetails);
+    end;                           
+    Fnc.SysTableDestroy(DrillDetails);
+  end;
+  
+  ToolData.SaveToFile(ReportFilePath + ToolFileEnd); 
+  
+  DrillList.Free;                                  
+  SlotToolsList.Free;                       
+  DrillToolsList.Free;
+  ToolData.Free;                                 
+end;
+
+procedure AddMetaData(MetaData: TStringList);
+begin
+  MetaData.Add(IntToStr(Fnc.GetJobData.Values['JobId']));
+  MetaData.Add(Fnc.GetJobData.Values['CustomerName']);
+  MetaData.Add(Fnc.GetJobData.Values['JobName']);
+  MetaData.Add(Fnc.GetJobData.Values['PartDescription']);
+  MetaData.Add(Fnc.GetJobData.Values['PartNumberName']);
+  MetaData.Add(Eng_JobType);
+  MetaData.Add(DateToStr(Date));   
+  MetaData.Add(GenMaterialType);
+  MetaData.Add(IntToStr(Fnc.SysGetAttrValue('LayerCount')));
+  MetaData.Add(IntToStr(Fnc.SysGetAttrValue('Panel_Length')));
+  MetaData.Add(IntToStr(Fnc.SysGetAttrValue('Panel_Width')));
+  MetaData.SaveToFile(ReportFilePath + MetaFileEnd); 
+end;                                       
+
+procedure GenReportFilePath;
+begin
+  ForceDirectories(WorkingDir);
+  ReportFilePath := WorkingDir +
+                    IntToStr(Fnc.SysGetAttrValue('ItemSeq')) + '-' +
+                    CleanFileName(Fnc.GetJobData.Values['JobName'] + ' Rev-' +
+                    CleanFileName(Fnc.GetJobData.Values['Revision'])) + ' ' +                                            
+                    CleanFileName(Fnc.SysGetAttrValue('ItemMatrlDesc'));
+end;
+                      
+procedure FindDrillDataFiles;
+var
+  searchResult : TSearchRec;
+begin
+  DataFiles := TStringList.Create;
+  NullStrictConvert := false; // needed for searchResult else  FindFirst errors with Could not convert variant type of null... 
+  SetCurrentDir(WorkingDir); 
+  // Current Dir is now set until changed. But could change when report is generated
+                                                    
+  if FindFirst('*.txt', faAnyFile, searchResult) = 0 then
+  begin
+    repeat
+      DataFiles.Add(searchResult.Name);
+    until FindNext(searchResult) <> 0 
+    FindClose(searchResult);
+  end;
+                                                  
+  ShowMessage(DataFiles.Text); 
+end;
+                                
+procedure GenDrillReportData             
+begin               
+  GenReportFilePath;             
+  
+  if Fnc.SysGetAttrValue('MfgPartType') = 'Top' then
+  begin
+    MetaData := TStringList.Create;
+    AddMetaData(MetaData)  
+  end;
+  
+  ToolData := TStringList.Create;
+  InsertDrillToolData(ToolData)
+end;
+                                  
+begin                               
+  GenDrillReportData
+  //FindDrillDataFiles;
+  //DataFiles.Free;
+end;

@@ -1,0 +1,58 @@
+//HeaderImportExport-->
+//SiteId=0
+//Enterprise=True
+//ScriptType=0
+//ScriptGroup=
+//HeaderImportExport<--
+{             
+  CleanFileName
+  ---------------------------------------------------------------------------
+
+  Given an input string strip any chars that would result
+  in an invalid file name.  This should just be passed the
+  filename not the entire path because the slashes will be
+  stripped.  The function ensures that the resulting string
+  does not hae multiple spaces together and does not start
+  or end with a space.  If the entire string is removed the
+  result would not be a valid file name so an error is raised.
+
+}
+
+function CleanFileName(InputString: string): string;
+var
+  i: integer;
+  ResultWithSpaces: string;
+begin
+
+  ResultWithSpaces := InputString;
+
+  for i := 1 to Length(ResultWithSpaces) do
+  begin
+    // These chars are invalid in file names.
+    case ResultWithSpaces[i] of 
+      '/', '\', ':', '*', '?', '"', '<', '>', '|', ' ', #$D, #$A, #9:
+        // Use a * to indicate a duplicate space so we can remove
+        // them at the end.
+        {$WARNINGS OFF} // W1047 Unsafe code 'String index to var param'
+        if (i > 1) and
+          ((ResultWithSpaces[i - 1] = ' ') or (ResultWithSpaces[i - 1] = '*')) then
+          ResultWithSpaces[i] := '*'
+        else
+          ResultWithSpaces[i] := ' ';
+
+        {$WARNINGS ON}
+    end;
+  end;
+
+  // A * indicates duplicate spaces.  Remove them.
+  result := ReplaceStr(ResultWithSpaces, '*', '');
+
+  // Also trim any leading or trailing spaces
+  result := Trim(Result);
+
+  if result = '' then
+  begin
+    raise(Exception.Create('Resulting FileName was empty Input string was: '
+      + InputString));
+  end;
+end;

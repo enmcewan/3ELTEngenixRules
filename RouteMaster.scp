@@ -1,11 +1,17 @@
-uses
+//HeaderImportExport-->
+//SiteId=0
+//Enterprise=True
+//ScriptType=0
+//ScriptGroup=HCS
+//HeaderImportExport<--
+uses                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        
   Event_RouteGenLibrary, //Route System Scripts
   Eng_RouteFunctions, Eng_DrillFunctions,    //Route System Functions
   RouteFunctions,
   RouteFunctions_Drilling,
   RouteFlow01_PEInners,
   RouteFlow02_Bk2Drill,
-  CNCDrillToolReport;  //Route User Scripts
+  CNCDrillToolReport4;  //Route User Scripts
 
 function VerifyKeyAttributesOK(ErrorList : TStringList) : boolean;
 begin
@@ -20,8 +26,8 @@ begin
   if LayupCoreCount > 0 then
   begin
     if ((fnc.SysGetAttrValue('Panel_Length_Press') = 0) or (fnc.SysGetAttrValue('Panel_Width_Press') = 0)) then
-    begin
-      Result := false;
+    begin               
+      Result := false;           
       ErrorList.Add('Panel Length Press or Panel Width Press');
     end;
   end;
@@ -1069,8 +1075,11 @@ var
   DeptCodeCount: TStringList;
 
   RouteCopyTable: TSysTable;
+  StepNumber: integer;
 begin
   DeptCodeCount := TStringList.Create;
+  
+  ShowMessage('Running PostProc_Set_QR_Barcode');
 
   RouteCopyTable := Fnc.SysTableCreate('CopyRouteStepDetails');
 
@@ -1128,28 +1137,29 @@ begin
     else}
       SeqStr := '-' + IntToStr(SeqNo);
 
-    Fnc.SysRouteGenUpdAddlParam(RouteCopyTable.FieldByName('StepNo').AsInteger, 'QR Code', 'AddlParamValue' , QRCode + SeqStr);
+    StepNumber := RouteCopyTable.FieldByName('StepNo').AsInteger;
+    Fnc.SysRouteGenUpdAddlParam(StepNumber, 'QR Code', 'AddlParamValue' , 'Step' + IntToStr(StepNumber) + '*' + QRCode + SeqStr);  
 
     RouteCopyTable.Next;
-  end;
+  end;                                      
 
   //--
 
   Fnc.SysTableDestroy(RouteCopyTable);
 
-  DeptCodeCount.Free;
+  DeptCodeCount.Free;                                      
 end;
-
+                                               
 procedure RoutePostProcess;
 var
-  i : integer;
+  i : integer;                             
   routeStep : integer;
-  photoSeqStr : string;
+  photoSeqStr : string;                                
 begin
   photoSeqStr := '';
 
   //ShowMessage('Post Process');
-
+                                                            
   if photoStepList.Count > 1 then
   begin
     //ShowMessage(photoStepList.Text);
@@ -1177,19 +1187,29 @@ begin
 
   //Fnc.SysSetAttrValue('In_Process_Cu_Thk', InProcessCuThk); // (364) Surface Cu thickness calculation correction
   //ShowMessage( 'Ending Cu Thk ' + IntToStr(InProcessCuThk) + 'um'  );
-
-  PostProc_Set_QR_Barcode;
-
-  Fnc.SysRouteGenInsAddlParam(1, 'Erp', 'QR Info', '*.(' +
+                                                     
+  
+                                                         
+  Fnc.SysRouteGenInsAddlParam(1, 'Erp', 'QR Info',
                                              Fnc.GetJobData.Values['JobName'] + '*' +
                                              Fnc.SysGetAttrValue('TopLayer') +  '-' +
                                              Fnc.SysGetAttrValue('BotLayer') + '*' +
                                              GenMaterialType + '*' +
-                                             IntToStr(Fnc.SysGetAttrValue('Panel_Length')) + IntToStr(Fnc.SysGetAttrValue('Panel_Width')) +')'
-                                             ,'', '', false, '', '', '');
-
+                                             IntToStr(Fnc.SysGetAttrValue('Panel_Length')) + IntToStr(Fnc.SysGetAttrValue('Panel_Width'))
+                                             ,'','',false,'','',''); 
+                                             
+  {Fnc.SysRouteGenUpdAddlParam(1, 'QR Info', 'AddlParamValue',
+                                             Fnc.GetJobData.Values['JobName'] + '*' +
+                                             Fnc.SysGetAttrValue('TopLayer') +  '-' +
+                                             Fnc.SysGetAttrValue('BotLayer') + '*' +
+                                             GenMaterialType + '*' +
+                                             IntToStr(Fnc.SysGetAttrValue('Panel_Length')) + IntToStr(Fnc.SysGetAttrValue('Panel_Width')));  
+  }
+  PostProc_Set_QR_Barcode;
+  
   if FindNumberOfDrillFiles >  0 then
-    GenCNCDrillReport;
+    GenDrillReportData; 
+    //TESTDELETE;
 
 end;
 
