@@ -6,7 +6,7 @@
 //HeaderImportExport<--
 uses
   ParadigmLibrary,
-  CNCDrillToolReport2;
+  CNCDrillToolReportGen;
 
 var
     WO_Abort : boolean;
@@ -27,7 +27,7 @@ begin
   result := part_table.FieldByName('RKEY').AsInteger;
                                           
   if not (part_table = nil) then
-  begin
+  begin                                                
     part_table.Close;
     Fnc.SysTableDestroy(part_table);               
   end;
@@ -298,7 +298,7 @@ begin
   else
   begin
     Fnc.SysSetAttrValueTopLevel('ACode1', Fnc.SysGetAttrValueTopLevel('Rules_Version') + '+' + DateToStr(Date)); // 1228 Paradigm export script to include Engenix version + export date
-    //SetCNCDrillReportExportDate;
+    UpdateCNCDrillReportExportDate;
   end;
 end;
 

@@ -199,33 +199,29 @@ begin
         WorkSheet := WorkBook.WorkSheets.Item['CNC Drill Report'];
   
       if not VarIsNull(WorkSheet) then
-      begin                 
+      begin                       
         if ExportDateMode then
-        begin
-          WorkSheet.Cells[row,7].Value  := DateToStr(Date); 
-        end   
+          WorkSheet.Cells[row,7].Value  := DateToStr(Date);   
         else
         begin
           AddMetaData(Worksheet);
           InsertDrillToolData(Worksheet);
           MessageDlg('CNC Drill Tool Report Generated Sucessfully', mtInformation, Setof([mbOK]), 0);  
-        end
-               
-        WorkBook.Save;
-        
+        end               
+        WorkBook.Save;        
       end;                
     finally
       if not VarIsNull(ExcelOleObject) then
         ExcelOleObject.Quit;
     end;  
-  end;
+  end;                                  
 end;                   
 
 procedure UpdateCNCDrillReportExportDate;
 begin
   GenExcelReport(true); 
 end         
-
+                                
 procedure GenCNCDrillToolReport;
 begin
   CreateJobFileFromTemplate;
