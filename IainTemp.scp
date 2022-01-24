@@ -37,4 +37,7 @@ begin
   Fnc.SysItemTypeAttrLinkTable.Filtered := False;
 
 
-end;
+end; 
+
+
+

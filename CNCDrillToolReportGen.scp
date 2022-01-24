@@ -1,0 +1,240 @@
+//HeaderImportExport-->
+//SiteId=0
+//Enterprise=True
+//ScriptType=0
+//ScriptGroup=
+//HeaderImportExport<--
+uses                                                                                                                                                                                                                                                                                        
+  CNCDrillToolReportMaster
+const
+  ExcelTemplate = 'EngenixCNCDrillDetails.xlsx';
+  ExcelReport   = StringReplace(ExcelTemplate,'.xlsx', Fnc.GetJobData.Values['JobName'] + '.xlsx', SetOf([rfReplaceAll, rfIgnoreCase]));
+  SlotToolFile = 'SlotTools.txt';
+  DrillToolFile = 'DrillTools.txt';
+  row = 3;
+var
+  ErrFound : boolean;                                               
+  ErrMsg : string;
+               
+                                                                       
+procedure CheckTemplatesExists;
+begin
+  if (DirectoryExists(FileTemplateDir)) then
+  begin
+    if not (FileExists(FileTemplateDir + ExcelTemplate)) then
+    begin                                 
+      ErrFound := True;
+      ErrMsg := 'Template file ' + FileTemplateDir + ExcelTemplate + ' not found';
+    end;
+  end               
+  else
+  begin
+    ErrFound := True;
+    ErrMsg := 'Template directory ' + FileTemplateDir + ' not found.';
+  end;
+end;
+
+function CheckReportExists: boolean;
+begin
+  result := false;
+  if FileExists(WorkingDir + ExcelReport) then
+    result := true;
+end;
+
+function FileCopy(Source,Dest : String): Boolean;
+var
+  SourceStream,DestStream : TFileStream;
+begin
+  try
+    SourceStream := TFileStream.Create(Source,fmOpenRead);
+    DestStream := TFileStream.Create(Dest,fmCreate);
+    DestStream.CopyFrom(SourceStream,SourceStream.Size);
+    SourceStream.Free;
+    DestStream.Free; 
+    Result := True;
+  except
+    Result := False;
+    SourceStream.Free;
+    DestStream.Free; 
+  end;
+end;
+
+procedure CopyTemplateToWorkingDir;
+begin
+  try
+    begin
+      if not(FileCopy(FileTemplateDir+ExcelTemplate,WorkingDir+ExcelReport)) then
+      begin
+        ErrFound := True;
+        ErrMsg := 'Unable to copy Excel file from the template directory';
+      end;
+    end
+  except
+    ErrFound := True;
+    ErrMsg := 'Exception error copying Excel file from the template directory';
+  end;
+end; 
+
+procedure CreateJobFileFromTemplate;
+begin
+  ErrMsg := '';
+  ErrFound := false;
+
+  CheckTemplatesExists;
+  if ErrFound then
+  begin
+    MessageDlg(ErrMsg, mtError, Setof([mbOK]), 0);
+    exit;
+  end
+  else
+  begin
+      CopyTemplateToWorkingDir;
+  end
+  if ErrFound then
+    MessageDlg(ErrMsg, mtError, Setof([mbOK]), 0);
+end; 
+
+function GetExcelOleFileObject: variant;
+var
+  aMsg: string;
+begin
+  Result := nil;
+  aMsg := '';
+
+  if not FileExists(WorkingDir + ExcelReport) then
+  begin
+    ErrFound := true;
+    aMsg := 'CNC Drill Tool Report File does not exist: ' + WorkingDir + ExcelReport;
+  end;
+  else
+  begin
+    Result := CreateOleObject('Excel.Application');
+    if VarIsNull(Result) then
+      aMsg := 'Failed to create an Excel session';
+  end;
+
+  if not (aMsg = '') then
+    MessageDlg(aMsg, mtWarning, Setof([mbOK]), 0);
+
+end;
+
+procedure InsertDrillToolData(Worksheet: variant);
+var       
+  i: integer;
+  j: integer;
+  DrillToolList: TStringList;
+  ToolRow: integer;
+  DrillFileStart: integer;
+  DrillToolDetails: TStringList;
+begin
+  ToolRow := Worksheet.UsedRange.Rows.Count;
+  for i := 0 to DataFiles.Count -1 do
+  begin
+    if pos('DrillTools.txt', DataFiles.Strings[i] ) then
+    begin
+      DrillToolList := TStringList.Create;
+      DrillToolList.LoadFromFile(WorkingDir + DataFiles.Strings[i]);
+      
+      ToolRow := ToolRow + 1; 
+      DrillFileStart := 0;
+      for j := 0 to DrillToolList.Count -1 do
+      begin                                     
+        if pos('DRL-', DrillToolList.Strings[j]) > 0 then
+        begin
+          DrillFileStart := j;
+          if DrillFileStart > 0 then ToolRow := ToolRow + 1;
+        end;
+
+        if j = DrillFileStart + 0 then WorkSheet.Cells[ToolRow,11].Value := DrillToolList.Strings[j]; // Drill Name
+        if j = DrillFileStart + 1 then WorkSheet.Cells[ToolRow,10].Value := DrillToolList.Strings[j]; // Thickness
+        if j = DrillFileStart + 2 then WorkSheet.Cells[ToolRow,14].Value := DrillToolList.Strings[j]; // Mfg Part Name
+        if j = DrillFileStart + 3 then WorkSheet.Cells[ToolRow,12].Value := DrillToolList.Strings[j]; // Drill Entry Material
+        if j = DrillFileStart + 4 then WorkSheet.Cells[ToolRow,13].Value := DrillToolList.Strings[j]; // Stack Height
+                      
+        if pos('DT', DrillToolList.Strings[j]) then
+        begin
+          DrillToolDetails := TStringList.Create;
+          DrillToolDetails.DelimitedText := DrillToolList.Strings[j];
+          WorkSheet.Cells[ToolRow,StrToInt(DrillToolDetails.Strings[2])].Value := DrillToolDetails.Strings[3]; 
+        end;
+      end;
+    end;
+  end;
+  DrillToolList.Free;
+  DrillToolDetails.Free;
+end;                              
+
+procedure AddMetaData(Worksheet: variant);
+begin
+  WorkSheet.Cells[row,1].Value := Fnc.GetJobData.Values['JobId'];
+  WorkSheet.Cells[row,2].Value  := Fnc.GetJobData.Values['CustomerName'];
+  WorkSheet.Cells[row,3].Value  := Fnc.GetJobData.Values['JobName'];
+  WorkSheet.Cells[row,4].Value := Fnc.GetJobData.Values['PartDescription'];
+  WorkSheet.Cells[row,5].Value := Fnc.GetJobData.Values['PartNumberName'];
+  WorkSheet.Cells[row,6].Value  := Eng_JobType;  
+  WorkSheet.Cells[row,8].Value  := GenMaterialType;
+  WorkSheet.Cells[row,9].Value := Fnc.SysGetAttrValue('LayerCount');
+  WorkSheet.Cells[row,15].Value := Fnc.SysGetAttrValue('Panel_Length');
+  WorkSheet.Cells[row,16].Value := Fnc.SysGetAttrValue('Panel_Width');
+end;
+
+procedure GenExcelReport(ExportDateMode: boolean);
+var                                          
+  ExcelOleObject: variant;
+  WorkBook: variant;
+  WorkSheet: variant;
+begin                      
+  WorkBook := nil;
+  WorkSheet := nil;                           
+                
+  ExcelOleObject := GetExcelOleFileObject;
+
+  if not ErrFound then
+  begin      
+    try
+      ExcelOleObject.DisplayAlerts := False;
+      WorkBook := ExcelOleObject.WorkBooks.Open(WorkingDir + ExcelReport);  
+                                    
+      if not VarIsNull(WorkBook)then
+        WorkSheet := WorkBook.WorkSheets.Item['CNC Drill Report'];
+  
+      if not VarIsNull(WorkSheet) then
+      begin                 
+        if ExportDateMode then
+        begin
+          WorkSheet.Cells[row,7].Value  := DateToStr(Date); 
+        end   
+        else
+        begin
+          AddMetaData(Worksheet);
+          InsertDrillToolData(Worksheet);
+          MessageDlg('CNC Drill Tool Report Generated Sucessfully', mtInformation, Setof([mbOK]), 0);  
+        end
+               
+        WorkBook.Save;
+        
+      end;                
+    finally
+      if not VarIsNull(ExcelOleObject) then
+        ExcelOleObject.Quit;
+    end;  
+  end;
+end;                   
+
+procedure UpdateCNCDrillReportExportDate;
+begin
+  GenExcelReport(true); 
+end         
+
+procedure GenCNCDrillToolReport;
+begin
+  CreateJobFileFromTemplate;
+  FindDrillDataFiles;
+  GenExcelReport(false); 
+  DataFiles.Free;
+end; 
+                         
+begin
+  GenCNCDrillToolReport;
+  UpdateCNCDrillReportExportDate;
+end; 

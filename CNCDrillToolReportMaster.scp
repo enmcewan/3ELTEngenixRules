@@ -1,0 +1,46 @@
+//HeaderImportExport-->
+//SiteId=0
+//Enterprise=True
+//ScriptType=0
+//ScriptGroup=
+//HeaderImportExport<--
+uses                                                                                                                                                                              
+  RouteFunctions,
+  Eng_DrillFunctions,
+  SanitizeFileName,
+  IainTemp;
+const
+  FileTemplateDir = 'C:\Engenix\Report\Template\';
+  WorkingDir = 'C:\Engenix\Report\Jobs\' + Fnc.GetJobData.Values['JobId'] + '\';
+  SlotToolFile = 'SlotTools.txt';
+  DrillToolFile = 'DrillTools.txt';
+  
+  MetaFileEnd = ' Meta.txt';
+  ToolFileEnd = ' DrillTools.txt';
+var
+  ErrFound : boolean;     
+  ErrMsg : string;                                
+  MetaData: TStringList;
+  ToolData: TStringList     
+  ReportFilePath: string;
+  DataFiles: TStringlist;
+  
+procedure FindDrillDataFiles;
+var
+  searchResult : TSearchRec;
+begin
+  DataFiles := TStringList.Create;
+  NullStrictConvert := false; // needed for searchResult else  FindFirst errors with Could not convert variant type of null... 
+  SetCurrentDir(WorkingDir); 
+  // Current Dir is now set until changed. But could change when report is generated
+                                                    
+  if FindFirst('*.txt', faAnyFile, searchResult) = 0 then
+  begin
+    repeat
+      DataFiles.Add(searchResult.Name);
+    until FindNext(searchResult) <> 0 
+    FindClose(searchResult);
+  end;
+                                                  
+  //ShowMessage(DataFiles.Text); 
+end;  

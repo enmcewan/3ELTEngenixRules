@@ -4,6 +4,10 @@
 //ScriptType=1
 //ScriptGroup=Route Gen/Regen
 //HeaderImportExport<--
+uses
+  CNCDrillToolReportGen;
+  
 procedure RouteUserEvent3;
 begin
+  GenCNCDrillToolReport;
 end;
