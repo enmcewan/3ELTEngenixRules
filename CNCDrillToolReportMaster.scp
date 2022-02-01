@@ -7,23 +7,19 @@
 uses                                                                                                                                                                              
   RouteFunctions,
   Eng_DrillFunctions,
-  SanitizeFileName,
-  IainTemp;
+  SanitizeFileName;
 const
   FileTemplateDir = 'C:\Engenix\Report\Template\';
-  WorkingDir = 'C:\Engenix\Report\Jobs\' + Fnc.GetJobData.Values['JobId'] + '\';
-  SlotToolFile = 'SlotTools.txt';
-  DrillToolFile = 'DrillTools.txt';
-  
+  WorkingDir = 'C:\Engenix\Report\Jobs\' + Fnc.GetJobData.Values['JobId'] + '\'; 
   MetaFileEnd = ' Meta.txt';
-  ToolFileEnd = ' DrillTools.txt';
-var
+  ToolFileEnd = ' DrillTools.txt'; 
+var                              
   ErrFound : boolean;     
   ErrMsg : string;                                
-  MetaData: TStringList;
+  MetaData: TStringList;                   
   ToolData: TStringList     
   ReportFilePath: string;
-  DataFiles: TStringlist;
+  DataFiles: TStringlist;                             
   
 procedure FindDrillDataFiles;
 var

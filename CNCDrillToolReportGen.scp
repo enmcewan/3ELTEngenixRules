@@ -8,16 +8,13 @@ uses
   CNCDrillToolReportMaster
 const
   ExcelTemplate = 'EngenixCNCDrillDetails.xlsx';
-  ExcelReport   = StringReplace(ExcelTemplate,'.xlsx', Fnc.GetJobData.Values['JobName'] + '.xlsx', SetOf([rfReplaceAll, rfIgnoreCase]));
-  SlotToolFile = 'SlotTools.txt';
-  DrillToolFile = 'DrillTools.txt';
   row = 3;
-var
+var                   
   ErrFound : boolean;                                               
-  ErrMsg : string;
-               
+  ErrMsg : string;            
+  ExcelReport : string;            
                                                                        
-procedure CheckTemplatesExists;
+procedure CheckTemplatesExists;                      
 begin
   if (DirectoryExists(FileTemplateDir)) then
   begin
@@ -32,7 +29,7 @@ begin
     ErrFound := True;
     ErrMsg := 'Template directory ' + FileTemplateDir + ' not found.';
   end;
-end;
+end;  
 
 function CheckReportExists: boolean;
 begin
@@ -172,7 +169,7 @@ begin
   WorkSheet.Cells[row,4].Value := Fnc.GetJobData.Values['PartDescription'];
   WorkSheet.Cells[row,5].Value := Fnc.GetJobData.Values['PartNumberName'];
   WorkSheet.Cells[row,6].Value  := Eng_JobType;  
-  WorkSheet.Cells[row,8].Value  := GenMaterialType;
+  WorkSheet.Cells[row,8].Value  := GenMaterialType;    
   WorkSheet.Cells[row,9].Value := Fnc.SysGetAttrValue('LayerCount');
   WorkSheet.Cells[row,15].Value := Fnc.SysGetAttrValue('Panel_Length');
   WorkSheet.Cells[row,16].Value := Fnc.SysGetAttrValue('Panel_Width');
@@ -183,7 +180,7 @@ var
   ExcelOleObject: variant;
   WorkBook: variant;
   WorkSheet: variant;
-begin                      
+begin                                  
   WorkBook := nil;
   WorkSheet := nil;                           
                 
@@ -208,7 +205,7 @@ begin
           InsertDrillToolData(Worksheet);
           MessageDlg('CNC Drill Tool Report Generated Sucessfully', mtInformation, Setof([mbOK]), 0);  
         end               
-        WorkBook.Save;        
+        WorkBook.Save;              
       end;                
     finally
       if not VarIsNull(ExcelOleObject) then
@@ -220,10 +217,11 @@ end;
 procedure UpdateCNCDrillReportExportDate;
 begin
   GenExcelReport(true); 
-end         
+end                                                      
                                 
 procedure GenCNCDrillToolReport;
 begin
+  ExcelReport := StringReplace(ExcelTemplate,'.xlsx', CleanFileName(Fnc.GetJobData.Values['JobName']) + '.xlsx', SetOf([rfReplaceAll, rfIgnoreCase])); 
   CreateJobFileFromTemplate;
   FindDrillDataFiles;
   GenExcelReport(false); 

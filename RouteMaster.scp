@@ -1078,9 +1078,6 @@ var
   StepNumber: integer;
 begin
   DeptCodeCount := TStringList.Create;
-  
-  ShowMessage('Running PostProc_Set_QR_Barcode');
-
   RouteCopyTable := Fnc.SysTableCreate('CopyRouteStepDetails');
 
   Fnc.SysTableAddField(RouteCopyTable, 'RecId', 0, ftAutoInc);
@@ -1089,7 +1086,7 @@ begin
   Fnc.SysTableAddField(RouteCopyTable, 'Manual', 5, ftString);
 
   RouteCopyTable.Active := True;
-
+                                                 
   i := 1;
 
   while Fnc.SysRouteGenGetStepDetails(i, 'ProcLibName', ParamValue) do
@@ -1132,7 +1129,7 @@ begin
 
     SeqStr := IntToStr(SeqNo);
 
-    {if SeqNo = 1 then
+    {if SeqNo = 1 then       
       SeqStr := ''
     else}
       SeqStr := '-' + IntToStr(SeqNo);
@@ -1188,8 +1185,8 @@ begin
   //Fnc.SysSetAttrValue('In_Process_Cu_Thk', InProcessCuThk); // (364) Surface Cu thickness calculation correction
   //ShowMessage( 'Ending Cu Thk ' + IntToStr(InProcessCuThk) + 'um'  );
                                                      
-  
-                                                         
+  Fnc.SysRouteGenDelAddlParam(1, 'QR Info'); 
+  Fnc.SysRouteGenDelAddlParam(2, 'QR Info');                                                     
   Fnc.SysRouteGenInsAddlParam(1, 'Erp', 'QR Info',
                                              Fnc.GetJobData.Values['JobName'] + '*' +
                                              Fnc.SysGetAttrValue('TopLayer') +  '-' +
@@ -1197,14 +1194,7 @@ begin
                                              GenMaterialType + '*' +
                                              IntToStr(Fnc.SysGetAttrValue('Panel_Length')) + IntToStr(Fnc.SysGetAttrValue('Panel_Width'))
                                              ,'','',false,'','',''); 
-                                             
-  {Fnc.SysRouteGenUpdAddlParam(1, 'QR Info', 'AddlParamValue',
-                                             Fnc.GetJobData.Values['JobName'] + '*' +
-                                             Fnc.SysGetAttrValue('TopLayer') +  '-' +
-                                             Fnc.SysGetAttrValue('BotLayer') + '*' +
-                                             GenMaterialType + '*' +
-                                             IntToStr(Fnc.SysGetAttrValue('Panel_Length')) + IntToStr(Fnc.SysGetAttrValue('Panel_Width')));  
-  }
+ 
   PostProc_Set_QR_Barcode;
   
   if FindNumberOfDrillFiles >  0 then

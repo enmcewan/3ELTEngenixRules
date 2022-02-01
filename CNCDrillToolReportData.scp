@@ -5,7 +5,11 @@
 //ScriptGroup=
 //HeaderImportExport<--
 uses
-  CNCDrillToolReportMaster  
+  CNCDrillToolReportMaster;
+  
+const
+  SlotToolFile = 'SlotTools.txt';
+  DrillToolFile = 'DrillTools.txt'; 
                                                                        
 procedure InsertDrillToolData(ToolData: TStringList);
 var
@@ -48,7 +52,7 @@ begin
   ToolRow := 3;
 
   for i := 0 to DrillList.Count -1 do   
-  begin
+  begin                              
     DrillName := DrillList.Strings[i]
     DrillDetails := Fnc.SysGetDrillRouteToolsDetails(DrillName);
 
