@@ -4,20 +4,16 @@
 //ScriptType=0
 //ScriptGroup=
 //HeaderImportExport<--
-uses                                                                                                                                                                                                                                                                                                                                                                                                                                                                
-  RouteFunctions,
-  Eng_DrillFunctions,
-  SanitizeFileName;
-const
+const                                                                                                                                                                                                                                      
   FileTemplateDir = 'C:\Engenix\Report\Template\';
   ExcelFile = 'EngenixCNCDrillDetails.xlsx'; 
   WorkingDir = 'C:\Engenix\Report\';      
-  row = 3;
-  SlotToolFile = 'SlotTools.txt';
+  row = 3;                                       
+  SlotToolFile = 'SlotTools.txt';                    
   DrillToolFile = 'DrillTools.txt';
   
 var                              
-  ErrFound : boolean;     
+  ErrFound : boolean;                     
   ErrMsg : string;                                
   MetaData: TStringList;                       
   ToolData: TStringList          
@@ -65,7 +61,7 @@ begin
     DestStream.Free; 
   end;
 end;
-
+                                                     
 procedure CopyTemplateToWorkingDir;
 begin
   try
@@ -88,18 +84,18 @@ begin
   ErrFound := false;
 
   CheckTemplatesExists;
-  if ErrFound then
+  if ErrFound then                                                    
   begin
     MessageDlg(ErrMsg, mtError, Setof([mbOK]), 0);
     exit;
   end
   else
   begin
-    if not (FileExists(WorkingDir + ExcelFile)) then
+    //if not (FileExists(WorkingDir + ExcelFile)) then
     begin 
       CopyTemplateToWorkingDir;
     end;
-  end                       
+  end                         
   if ErrFound then
     MessageDlg(ErrMsg, mtError, Setof([mbOK]), 0);
 end; 
@@ -144,11 +140,11 @@ begin
   CUST_JOBLAYERS.LayerName,
   CUST_JOBLAYERS.DrillDefId,
   CUST_JOBSTACKUP.RecId,
-  CUST_JOBSTACKUP.ItemMatrlDesc
+  CUST_JOBSTACKUP.ItemMatrlDesc                       
 
 FROM CUST_JOBDRILLTOOLS
   LEFT JOIN CUST_JOBLAYERS on (CUST_JOBLAYERS.RecId = CUST_JOBDRILLTOOLS.LayerID AND CUST_JOBDRILLTOOLS.JOBID = CUST_JOBLAYERS.JOBID)
-
+                        
   LEFT JOIN CUST_JOBSTACKUP on (CUST_JOBSTACKUP.JobID = CUST_JOBDRILLTOOLS.JOBID) AND (CUST_JOBSTACKUP.RecId = (Select
               RecIdParent
             From
@@ -223,9 +219,9 @@ begin
   FROM
     CUST_JOBPARTATTRIBUTES
   WHERE
-    JobID = ' + IntToStr(20043) + ' AND
+    JobID = ' + IntToStr(JobID) + ' AND
     PARTNAME = ' + QuotedStr(PartName) + ' AND
-    ( 
+    (                    
       (ATTRIBUTENAME = ' + QuotedStr('CoreMat') + ') OR 
       (ATTRIBUTENAME = ' + QuotedStr('PPGMat') + ') OR
       (ATTRIBUTENAME = ' + QuotedStr('LayerCount') + ') OR
@@ -243,7 +239,7 @@ begin
     )                     
   ORDER BY
     ATTRIBUTEID  
-  ');
+  ');                          
                               
   JobDataQuery.Open;
                                    
@@ -404,7 +400,7 @@ var
   EntryMatAll: String;
   DrillSize: float;
 begin                            
-  SheetRow := row;
+  SheetRow := row;               
   JobRow := SheetRow;                       
   currentJobID := 0;                          
   lastJobID := 0;                                                                     
@@ -421,38 +417,41 @@ begin
   DrillToolsList := TStringList.Create;
   DrillToolsList.LoadFromFile(FileTemplateDir + DrillToolFile); // Starts at Col 17 (F17)   
                                                    
-  DrillToolData.First;              
+  DrillToolData.First;                                                                                                                                                                                  
   While Not DrillToolData.EOF do  
   begin
     currentJobID := DrillToolData.FieldByName('JOBID').AsInteger;
     CurrentDrillLayerID := DrillToolData.FieldByName('LayerID').AsInteger;
     
     // Add Drill Tool to Spreadsheet Cell
-    DrillSize := DrillToolData.FieldByName('DRILL_SIZE').AsFloat;
-    DrillToolStr := FormatFloat('0.000', DrillSize);
-                                            
-    if DrillToolData.FieldByName('HoleType').AsString = 'Slot' then
-      ToolCol := SlotToolsList.IndexOf(DrillToolStr) + 213
-    else                           
-      ToolCol := DrillToolsList.IndexOf(DrillToolStr) + 17 
-    
-    WorkSheet.Cells[SheetRow,ToolCol].Value := DrillToolData.FieldByName('TotNumHoles').AsString;
+    //if CurrentDrillLayerID = LastDrillLayerID then
+    //begin 
+      DrillSize := DrillToolData.FieldByName('DRILL_SIZE').AsFloat;
+      DrillToolStr := FormatFloat('0.000', DrillSize);
+                                                                              
+      if DrillToolData.FieldByName('HoleType').AsString = 'Slot' then
+        ToolCol := SlotToolsList.IndexOf(DrillToolStr) + 213
+      else                           
+        ToolCol := DrillToolsList.IndexOf(DrillToolStr) + 17 
+                                
+      WorkSheet.Cells[SheetRow,ToolCol].Value := DrillToolData.FieldByName('TotNumHoles').AsString; 
+    //end;     
                                                
-    if (CurrentDrillLayerID <> LastDrillLayerID) or (CurrentDrillLayerID = 0) then
-    begin
+    if CurrentDrillLayerID <> LastDrillLayerID then
+    begin                                      
       //ShowMessage(CurrentDrillCount);
       WorkSheet.Cells[SheetRow,13].Value := DrillToolData.FieldByName('LayerName').AsString;
       WorkSheet.Cells[SheetRow,16].Value := DrillToolData.FieldByName('ItemMatrlDesc').AsString;
+                                                           
+      MfgPartData := GetMfgPartData(currentJobID, DrillToolData.FieldByName('ItemMatrlDesc').AsString);
       
-      MfgPartData := GetMfgPartData(JobID, DrillToolData.FieldByName('ItemMatrlDesc').AsString);
-      
-      if MfgPartData.Count >= 10 then
-      begin                            
+      if MfgPartData.Count >= 10 then                                      
+      begin                                     
         WorkSheet.Cells[SheetRow,8].Value := MfgPartData.values['CoreMat'] + '/' + MfgPartData.values['PPGMat']; //Material Type
         WorkSheet.Cells[SheetRow,9].Value := MfgPartData.values['LayerCount'];  
         WorkSheet.Cells[SheetRow,10].Value := MfgPartData.values['Panel_Length'];                   
         WorkSheet.Cells[SheetRow,11].Value := MfgPartData.values['Panel_Width'];
-        
+                             
         EntryMatAll := MfgPartData.values['NC_Drill_1_EntryMat']; 
                                                                    
         if pos('/', EntryMatAll) > 0 then   //  LE300/Aluminum
@@ -460,7 +459,7 @@ begin
           EntryMat1 := Copy(EntryMatAll, 0, pos('/', EntryMatAll) -1);
           EntryMat2 := Copy(EntryMatAll, pos('/', EntryMatAll) + 1, Length(EntryMatAll));                
         end                               
-        else                    
+        else                                             
           EntryMat1 := EntryMatAll;
         
         if (DrillToolData.FieldByName('DrillDefId').AsInteger = 1) or 
@@ -480,15 +479,16 @@ begin
           WorkSheet.Cells[SheetRow,12].Value := FormatFloat('0.000', MfgPartData.values['LayupThickness']);
           WorkSheet.Cells[SheetRow,14].Value := EntryMat2;
           WorkSheet.Cells[SheetRow,15].Value := MfgPartData.values['Stack_Hgt_2'];
-        end;
-        
-      end;
+        end;     
+      end;                 
       
       // Populate Job Data Via Query                           
-      if (currentJobID <> lastJobID) or (CurrentJobID = 0) then
-      begin                             
-        JobPartData := GetJobPartData(currentJobID);  
-        //ShowMessage(JobRow);
+      if (currentJobID <> lastJobID) then
+      begin
+        CurrentDrillCount := 0;
+        JobPartData := GetJobPartData(currentJobID);
+        JobRow := SheetRow;  
+        //ShowMessage(JobRow);            
         if JobPartData.Count = 6 then                                           
         begin
           WorkSheet.Cells[JobRow,1].Value := currentJobID;                      
@@ -496,24 +496,33 @@ begin
           WorkSheet.Cells[JobRow,3].Value := JobPartData.Strings[1]; //JobName            
           WorkSheet.Cells[JobRow,4].Value := JobPartData.Strings[2]; //PartDescription
           WorkSheet.Cells[JobRow,5].Value := JobPartData.Strings[3]; //PartNumberName
-          WorkSheet.Cells[JobRow,6].Value := JobPartData.Strings[4]; //JobTypeName
+          WorkSheet.Cells[JobRow,6].Value := JobPartData.Strings[4]; //JobTypeName         
           WorkSheet.Cells[JobRow,7].Value := JobPartData.Strings[5]; //LastExportToErpDate
-        end;                                          
-                      
-      end;                      
-      JobRow := SheetRow + CurrentDrillCount; 
-      SheetRow := SheetRow + 1;
-      Inc(CurrentDrillCount);
-    end;                                                                  
+        end;
+        
+                                             
+      end;
+      
+      //JobRow := SheetRow + CurrentDrillCount; 
+                                     
+      if CurrentDrillCount > 0       
+        then SheetRow := SheetRow + 1;
+      
+      Inc(CurrentDrillCount);      
+                               
+    end // End Of New Layer;
+    
     lastJobID := currentJobID;
     LastDrillLayerID := CurrentDrillLayerID; 
-    DrillToolData.next;      
-  end;
+    DrillToolData.next;
+                         
+  End;
+  
   SlotToolsList.Free;
   DrillToolsList.Free;
   JobPartData.Free;
   MfgPartData.Free
-end; 
+end;                                     
                 
 procedure GenDrillToolData(Worksheet: variant);
 var                                           
