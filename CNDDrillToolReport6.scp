@@ -1,0 +1,527 @@
+//HeaderImportExport-->
+//SiteId=0
+//Enterprise=True
+//ScriptType=0
+//ScriptGroup=
+//HeaderImportExport<--
+const                                                                                                                                                                                                                                                                                                                                                   
+  FileTemplateDir = 'C:\Engenix\Report\Template\';
+  ExcelFile = 'EngenixCNCDrillDetails.xlsx'; 
+  WorkingDir = 'C:\Engenix\Report\';      
+  row = 2;                                       
+  SlotToolFile = 'SlotTools.txt';                    
+  DrillToolFile = 'DrillTools.txt';
+  
+var                              
+  ErrFound : boolean;                     
+  ErrMsg : string;                                
+  MetaData: TStringList;                       
+  ToolData: TStringList          
+  ReportFilePath: string;   
+  DataFiles: TStringlist;
+                        
+procedure CheckTemplatesExists;    
+begin
+  if (DirectoryExists(FileTemplateDir)) then
+  begin                                                               
+    if not (FileExists(FileTemplateDir + ExcelFile)) then
+    begin                                 
+      ErrFound := True;
+      ErrMsg := 'Template file ' + FileTemplateDir + ExcelFile + ' not found';
+    end;
+  end               
+  else
+  begin
+    ErrFound := True;
+    ErrMsg := 'Template directory ' + FileTemplateDir + ' not found.';
+  end;
+end;  
+
+function CheckReportExists: boolean;
+begin
+  result := false;
+  if FileExists(WorkingDir + ExcelFile) then
+    result := true;
+end;
+
+function FileCopy(Source,Dest : String): Boolean;
+var
+  SourceStream,DestStream : TFileStream;
+begin    
+  try
+    SourceStream := TFileStream.Create(Source,fmOpenRead);
+    DestStream := TFileStream.Create(Dest,fmCreate);
+    DestStream.CopyFrom(SourceStream,SourceStream.Size);
+    SourceStream.Free;              
+    DestStream.Free; 
+    Result := True;
+  except
+    Result := False;
+    SourceStream.Free;
+    DestStream.Free; 
+  end;
+end;
+                                                     
+procedure CopyTemplateToWorkingDir;
+begin
+  try
+    begin
+      if not(FileCopy(FileTemplateDir+ExcelFile,WorkingDir+ExcelFile)) then
+      begin
+        ErrFound := True;
+        ErrMsg := 'Unable to copy Excel file from the template directory';
+      end;
+    end
+  except
+    ErrFound := True;
+    ErrMsg := 'Exception error copying Excel file from the template directory';
+  end;
+end; 
+
+procedure CreateJobFileFromTemplate;
+begin
+  ErrMsg := '';   
+  ErrFound := false;
+
+  CheckTemplatesExists;
+  if ErrFound then                                                    
+  begin
+    MessageDlg(ErrMsg, mtError, Setof([mbOK]), 0);
+    exit;
+  end
+  else
+  begin
+    //if not (FileExists(WorkingDir + ExcelFile)) then
+    begin 
+      CopyTemplateToWorkingDir;
+    end;
+  end                         
+  if ErrFound then
+    MessageDlg(ErrMsg, mtError, Setof([mbOK]), 0);
+end; 
+
+function GetExcelOleFileObject: variant;
+var                                         
+  aMsg: string;          
+begin
+  Result := nil;
+  aMsg := '';
+
+  if not FileExists(WorkingDir + ExcelFile) then
+  begin
+    ErrFound := true;
+    aMsg := 'CNC Drill Tool Report File does not exist: ' + WorkingDir + ExcelFile;
+  end;
+  else
+  begin
+    Result := CreateOleObject('Excel.Application');
+    if VarIsNull(Result) then
+      aMsg := 'Failed to create an Excel session';
+  end;
+
+  if not (aMsg = '') then
+    MessageDlg(aMsg, mtWarning, Setof([mbOK]), 0);
+
+end;
+
+function DTQueryText : string;
+begin
+  result :=
+  '                            
+  SELECT
+  CUST_JOBDRILLTOOLS.CUST_JOBDRILLTOOLSID,
+  CUST_JOBDRILLTOOLS.JOBID,
+  CUST_JOBDRILLTOOLS.LayerID,
+  CUST_JOBDRILLTOOLS.DrillLayerName,
+  CUST_JOBDRILLTOOLS.Tool,
+  CUST_JOBDRILLTOOLS.HoleType,
+  CUST_JOBDRILLTOOLS.DRILL_SIZE,
+  CUST_JOBDRILLTOOLS.TotNumHoles,
+  CUST_JOBLAYERS.LayerName,
+  CUST_JOBLAYERS.DrillDefId,
+  CUST_JOBSTACKUP.RecId,
+  CUST_JOBSTACKUP.ItemMatrlDesc                       
+
+FROM CUST_JOBDRILLTOOLS
+  LEFT JOIN CUST_JOBLAYERS on (CUST_JOBLAYERS.RecId = CUST_JOBDRILLTOOLS.LayerID AND CUST_JOBDRILLTOOLS.JOBID = CUST_JOBLAYERS.JOBID)
+                        
+  LEFT JOIN CUST_JOBSTACKUP on (CUST_JOBSTACKUP.JobID = CUST_JOBDRILLTOOLS.JOBID) AND (CUST_JOBSTACKUP.RecId = (Select
+              RecIdParent
+            From
+              CUST_JOBSTACKUP
+            Where (CUST_JOBSTACKUP.ItemLayerPntr = CUST_JOBDRILLTOOLS.LayerID) and (CUST_JOBSTACKUP.JOBID = CUST_JOBDRILLTOOLS.JOBID)))
+
+WHERE (CUST_JOBLAYERS.DrillDefId = 1) OR (CUST_JOBLAYERS.DrillDefId = 9)
+ORDER BY CUST_JOBDRILLTOOLS.JOBID, CUST_JOBDRILLTOOLS.DrillLayerName, CUST_JOBDRILLTOOLS.Tool
+  '
+end;
+
+function GetJobPartData(JobID: integer) : TStringList;
+var
+  JobDataQuery : TADOQuery;
+begin           
+  result := TStringList.Create; 
+  
+  JobDataQuery := TAdoQuery.Create(nil);
+  JobDataQuery.Connection := Fnc.DbConnection;
+  JobDataQuery.SQL.Add('
+    SELECT            
+    Jobs.JobName,   
+    Jobs.Revision,
+    Jobs.LastExportToErpDate,        
+    Customers.CustomerName,
+    PartNumbers.PartNumberName,
+    PartNumbers.PartDescription,
+    PartNumbers.PartRevision,
+    JobTypes.JobTypeName
+  
+    FROM Jobs
+    left join Customers on (Customers.CustomerID = jobs.CustomerID)
+    left join PartNumbers on (PartNumbers.PartNumberID = jobs.PartNumberID)
+    left join JobTypes on (JobTypes.JobTypeId = jobs.JobTypeID) 
+                                                 
+    WHERE Jobs.JobID = ' + QuotedStr(JobID) +  
+    ' ORDER BY Jobs.JobID 
+  ');
+                              
+  JobDataQuery.Open;                     
+                                   
+  if not JobDataQuery.IsEmpty then
+  begin
+    JobDataQuery.First;   
+    Result.Add(JobDataQuery.FieldByName('CustomerName').AsString)
+    Result.Add(JobDataQuery.FieldByName('JobName').AsString);
+    Result.Add(JobDataQuery.FieldByName('PartDescription').AsString);
+    Result.Add(JobDataQuery.FieldByName('PartNumberName').AsString);
+    Result.Add(JobDataQuery.FieldByName('JobTypeName').AsString);
+    Result.Add(JobDataQuery.FieldByName('LastExportToErpDate').AsString);  
+  end
+  //ShowMessage(Result.Text);
+  JobDataQuery.Close;
+  JobDataQuery.Free;   
+end;
+
+function GetMfgPartData(JobID: integer; PartName: string) : TStringList;
+var
+  JobDataQuery : TADOQuery;
+begin
+  result := TStringList.Create; 
+                                                               
+  JobDataQuery := TAdoQuery.Create(nil);
+  JobDataQuery.Connection := Fnc.DbConnection;
+  JobDataQuery.SQL.Add('                 
+  SELECT          
+    JOBID,
+    PARTNAME,
+    PARTTYPE,
+    ATTRIBUTENAME,
+    VALUE
+  FROM
+    CUST_JOBPARTATTRIBUTES
+  WHERE
+    JobID = ' + IntToStr(JobID) + ' AND
+    PARTNAME = ' + QuotedStr(PartName) + ' AND
+    (                    
+      (ATTRIBUTENAME = ' + QuotedStr('CoreMat') + ') OR 
+      (ATTRIBUTENAME = ' + QuotedStr('PPGMat') + ') OR
+      (ATTRIBUTENAME = ' + QuotedStr('LayerCount') + ') OR
+      (ATTRIBUTENAME = ' + QuotedStr('Press_Thickness') + ') OR
+      (ATTRIBUTENAME = ' + QuotedStr('LayupThickness') + ') OR 
+      (ATTRIBUTENAME = ' + QuotedStr('Panel_Length') + ') OR
+      (ATTRIBUTENAME = ' + QuotedStr('Panel_Width') + ') OR
+      (ATTRIBUTENAME = ' + QuotedStr('Press_Thickness') + ') OR
+      (ATTRIBUTENAME = ' + QuotedStr('LayupThickness') + ') OR
+      (ATTRIBUTENAME = ' + QuotedStr('NC_Drill_1_EntryMat') + ') OR
+      (ATTRIBUTENAME = ' + QuotedStr('Stack_Hgt') + ') OR
+      (ATTRIBUTENAME = ' + QuotedStr('Stack_Hgt_2') + ') OR
+      (ATTRIBUTENAME = ' + QuotedStr('NCRunX2') + ') OR
+      (ATTRIBUTENAME = ' + QuotedStr('Drill_Entry_Sht') + ')
+    )                     
+  ORDER BY
+    ATTRIBUTEID  
+  ');                          
+                              
+  JobDataQuery.Open;
+                                   
+  if not JobDataQuery.IsEmpty then                 
+  begin                            
+    JobDataQuery.First;
+    While not JobDataQuery.EOF do
+    begin
+      Result.Add(JobDataQuery.FieldByName('ATTRIBUTENAME').AsString + '=' +JobDataQuery.FieldByName('VALUE').AsString);    
+      JobDataQuery.Next     
+    end;
+  end;
+  JobDataQuery.Close;
+  JobDataQuery.Free;
+  //ShowMessage(Result.Text);
+end;                    
+
+function GetMfgPartList(JobID: integer) : TStringList;
+var
+  JobDataQuery : TADOQuery;
+  currentMfgPart,  
+  lastMfgPart: string;
+  CurrentDrillDef,
+  LastDrillDef: integer;
+begin
+  result := TStringList.Create;
+  currentMfgPart := '';
+  lastMfgPart := '';           
+  
+  JobDataQuery := TAdoQuery.Create(nil);
+  JobDataQuery.Connection := Fnc.DbConnection;
+  JobDataQuery.SQL.Add('          
+  SELECT 
+  CUST_JOBDRILLTOOLS.CUST_JOBDRILLTOOLSID,
+  CUST_JOBDRILLTOOLS.JOBID,                
+  CUST_JOBDRILLTOOLS.LayerID,
+  CUST_JOBDRILLTOOLS.DrillLayerName,
+  CUST_JOBDRILLTOOLS.Tool,
+  CUST_JOBDRILLTOOLS.HoleType,
+  CUST_JOBDRILLTOOLS.DRILL_SIZE,
+  CUST_JOBDRILLTOOLS.TotNumHoles,
+  CUST_JOBLAYERS.LayerName,
+  CUST_JOBLAYERS.DrillDefId,                           
+  CUST_JOBSTACKUP.RecId,
+  CUST_JOBSTACKUP.ItemMatrlDesc
+
+  FROM CUST_JOBDRILLTOOLS
+    LEFT JOIN CUST_JOBLAYERS on (CUST_JOBLAYERS.RecId = CUST_JOBDRILLTOOLS.LayerID AND CUST_JOBDRILLTOOLS.JOBID = CUST_JOBLAYERS.JOBID)
+                               
+    LEFT JOIN CUST_JOBSTACKUP on (CUST_JOBSTACKUP.JobID = CUST_JOBDRILLTOOLS.JOBID) AND (CUST_JOBSTACKUP.RecId = (Select
+                RecIdParent
+              From
+                CUST_JOBSTACKUP
+              Where (CUST_JOBSTACKUP.ItemLayerPntr = CUST_JOBDRILLTOOLS.LayerID) and (CUST_JOBSTACKUP.JOBID = CUST_JOBDRILLTOOLS.JOBID)))
+                                                       
+  WHERE 
+    CUST_JOBDRILLTOOLS.JOBID = ' + QuotedStr(JobID) + ' AND ((CUST_JOBLAYERS.DrillDefId = 1) OR (CUST_JOBLAYERS.DrillDefId = 9))
+  
+  ORDER BY CUST_JOBDRILLTOOLS.JOBID, CUST_JOBDRILLTOOLS.DrillLayerName, CUST_JOBDRILLTOOLS.Tool   
+  ');
+                             
+  JobDataQuery.Open;
+  
+  JobDataQuery.First;                                              
+  While not JobDataQuery.EOF do
+  begin
+    currentMfgPart := JobDataQuery.FieldByName('ItemMatrlDesc').AsString; 
+    CurrentDrillDef := JobDataQuery.FieldByName('DrillDefId').AsString; 
+    if (currentMfgPart <> lastMfgPart) or (currentMfgPart = '') OR (CurrentDrillDef <> LastDrillDef) then
+    begin                                      
+      result.Add(
+        JobDataQuery.FieldByName('JOBID').AsString + ',' +
+        JobDataQuery.FieldByName('DrillDefId').AsString + ',' +
+        JobDataQuery.FieldByName('ItemMatrlDesc').AsString 
+      );
+    end;
+       
+    lastMfgPart := JobDataQuery.FieldByName('ItemMatrlDesc').AsString;
+    LastDrillDef := JobDataQuery.FieldByName('DrillDefId').AsString; 
+    JobDataQuery.next;            
+  end;
+  ShowMessage(result.text);
+end
+
+procedure InsertDataIntoWorksheet(Worksheet: variant; DrillToolData: TSysTable);
+var                                                         
+  currentJobID,
+  lastJobID,                              
+  JobID,
+  CurrentDrillLayerID,                              
+  LastDrillLayerID,
+  SheetRow,
+  ToolCol: integer;
+  JobPartData,
+  MfgPartData,
+  SlotToolsList,      
+  DrillToolsList: TStringList;                                        
+  DrillToolStr,
+  EntryMat1,
+  EntryMat2,           
+  EntryMatAll: String;
+  DrillSize: float;
+begin                            
+  SheetRow := row;                                     
+  currentJobID := 0;                          
+  lastJobID := 0;                                                                     
+  CurrentDrillLayerID := 0;
+  LastDrillLayerID := 0;                                     
+  EntryMat1 := '';
+  EntryMat2 := '';                  
+                         
+  // ToolRow := Worksheet.UsedRange.Rows.Count
+  
+  SlotToolsList := TStringList.Create;
+  SlotToolsList.LoadFromFile(FileTemplateDir + SlotToolFile); // Starts at Col 213 (F213)
+  DrillToolsList := TStringList.Create;
+  DrillToolsList.LoadFromFile(FileTemplateDir + DrillToolFile); // Starts at Col 17 (F17)   
+                                                   
+  DrillToolData.First;                                                                                                                                                                                  
+  While Not DrillToolData.EOF do  
+  begin
+    currentJobID := DrillToolData.FieldByName('JOBID').AsInteger;
+    CurrentDrillLayerID := DrillToolData.FieldByName('LayerID').AsInteger;
+    
+    if ( currentJobID <> lastJobID ) or (CurrentDrillLayerID <> LastDrillLayerID) then
+      SheetRow := SheetRow + 1;
+                    
+    // Add Drill Tool to Spreadsheet Cell
+    DrillSize := DrillToolData.FieldByName('DRILL_SIZE').AsFloat;
+    DrillToolStr := FormatFloat('0.000', DrillSize);
+                                                                            
+    if DrillToolData.FieldByName('HoleType').AsString = 'Slot' then
+      ToolCol := SlotToolsList.IndexOf(DrillToolStr) + 213
+    else                           
+      ToolCol := DrillToolsList.IndexOf(DrillToolStr) + 17 
+                              
+    WorkSheet.Cells[SheetRow,ToolCol].Value := DrillToolData.FieldByName('TotNumHoles').AsString;  
+                           
+    // Populate Job Data Via Query                           
+    if (currentJobID <> lastJobID) then
+    begin                       
+      LastDrillLayerID := 0;
+      JobPartData := GetJobPartData(currentJobID);
+           
+      if JobPartData.Count = 6 then                                           
+      begin      
+        WorkSheet.Cells[SheetRow,1].Value := currentJobID;                      
+        WorkSheet.Cells[SheetRow,2].Value := JobPartData.Strings[0]; //CustomerName
+        WorkSheet.Cells[SheetRow,3].Value := JobPartData.Strings[1]; //JobName            
+        WorkSheet.Cells[SheetRow,4].Value := JobPartData.Strings[2]; //PartDescription
+        WorkSheet.Cells[SheetRow,5].Value := JobPartData.Strings[3]; //PartNumberName
+        WorkSheet.Cells[SheetRow,6].Value := JobPartData.Strings[4]; //JobTypeName         
+        WorkSheet.Cells[SheetRow,7].Value := JobPartData.Strings[5]; //LastExportToErpDate
+      end;                                      
+    end;
+      
+    if CurrentDrillLayerID <> LastDrillLayerID then
+    begin                                      
+      //ShowMessage(CurrentDrillCount);
+      WorkSheet.Cells[SheetRow,13].Value := DrillToolData.FieldByName('LayerName').AsString;
+      WorkSheet.Cells[SheetRow,16].Value := DrillToolData.FieldByName('ItemMatrlDesc').AsString;
+                                                           
+      MfgPartData := GetMfgPartData(currentJobID, DrillToolData.FieldByName('ItemMatrlDesc').AsString);
+      
+      if MfgPartData.Count >= 10 then                                      
+      begin                                     
+        WorkSheet.Cells[SheetRow,8].Value := MfgPartData.values['CoreMat'] + '/' + MfgPartData.values['PPGMat']; //Material Type
+        WorkSheet.Cells[SheetRow,9].Value := MfgPartData.values['LayerCount'];  
+        WorkSheet.Cells[SheetRow,10].Value := MfgPartData.values['Panel_Length'];                   
+        WorkSheet.Cells[SheetRow,11].Value := MfgPartData.values['Panel_Width'];
+                             
+        EntryMatAll := MfgPartData.values['NC_Drill_1_EntryMat']; 
+                                                                   
+        if pos('/', EntryMatAll) > 0 then   //  LE300/Aluminum
+        begin
+          EntryMat1 := Copy(EntryMatAll, 0, pos('/', EntryMatAll) -1);
+          EntryMat2 := Copy(EntryMatAll, pos('/', EntryMatAll) + 1, Length(EntryMatAll));                
+        end                               
+        else                                             
+          EntryMat1 := EntryMatAll;
+        
+        if (DrillToolData.FieldByName('DrillDefId').AsInteger = 1) or 
+           (pos('SubAssembly', DrillToolData.FieldByName('ItemMatrlDesc').AsString) > 0) then
+        begin                                                                           
+          WorkSheet.Cells[SheetRow,12].Value := FormatFloat('0.000', MfgPartData.values['Press_Thickness']);
+                                    
+          if pos('SubAssembly', DrillToolData.FieldByName('ItemMatrlDesc').AsString) > 0 then
+            WorkSheet.Cells[SheetRow,14].Value := MfgPartData.values['Drill_Entry_Sht'];
+          else                                            
+            WorkSheet.Cells[SheetRow,14].Value := EntryMat1;
+            
+          WorkSheet.Cells[SheetRow,15].Value := MfgPartData.values['Stack_Hgt']; 
+        end                                                    
+        else //9                                                     
+        begin    
+          WorkSheet.Cells[SheetRow,12].Value := FormatFloat('0.000', MfgPartData.values['LayupThickness']);
+          WorkSheet.Cells[SheetRow,14].Value := EntryMat2;
+          WorkSheet.Cells[SheetRow,15].Value := MfgPartData.values['Stack_Hgt_2'];
+        end;
+      end;                                                   
+    end // End Of New Layer;
+    
+    lastJobID := currentJobID;
+    LastDrillLayerID := CurrentDrillLayerID; 
+    DrillToolData.next;
+                         
+  End;
+  
+  SlotToolsList.Free;
+  DrillToolsList.Free;
+  JobPartData.Free;
+  MfgPartData.Free
+end;                                     
+                
+procedure GenDrillToolData(Worksheet: variant);
+var                                           
+  DrillTools: TSysTable;
+  DTQuery: TSysQuery;
+begin
+  DTQuery := TAdoQuery.Create(nil);
+  DTQuery.Connection := Fnc.DbConnection;             
+
+  DTQuery.SQL.Add(DTQueryText); 
+  DTQuery.Open;
+  
+  if not(DTQuery.IsEmpty) then                                            
+  begin
+    DrillTools := DTQuery;
+    //Fnc.OpenDataGrid(DrillTools);
+    InsertDataIntoWorksheet(Worksheet, DrillTools);
+  end;
+                                  
+  if not (DrillTools = nil) then
+  begin                                
+    DrillTools.Close;                        
+    Fnc.SysTableDestroy(DrillTools);   
+  end;                      
+                         
+end;                              
+                               
+procedure GenExcelReport;
+var                                          
+  ExcelOleObject: variant;              
+  WorkBook: variant;
+  WorkSheet: variant;
+begin                                  
+  WorkBook := nil;
+  WorkSheet := nil;                           
+                
+  ExcelOleObject := GetExcelOleFileObject;  
+                        
+  if not ErrFound then
+  begin      
+    try
+      ExcelOleObject.DisplayAlerts := False;
+      WorkBook := ExcelOleObject.WorkBooks.Open(WorkingDir + ExcelFile);  
+                                    
+      if not VarIsNull(WorkBook)then
+        WorkSheet := WorkBook.WorkSheets.Item['CNC Drill Report'];
+  
+      if not VarIsNull(WorkSheet) then
+      begin                       
+        GenDrillToolData(Worksheet);             
+        WorkBook.Save;
+        MessageDlg('CNC Drill Tool Report Generated Sucessfully', mtInformation, Setof([mbOK]), 0);  
+      end;                   
+    finally
+      if not VarIsNull(ExcelOleObject) then
+        ExcelOleObject.Quit;
+    end;  
+  end;                                  
+end;                                                                        
+                                
+procedure GenCNCDrillToolReport;
+begin
+  CreateJobFileFromTemplate;
+  //FindDrillDataFiles;                              
+  //GenExcelReport(false); 
+ // DataFiles.Free;
+end; 
+                         
+begin
+  GenCNCDrillToolReport;
+  GenExcelReport;
+end; 
