@@ -111,7 +111,7 @@ begin
     SysRouteInsWorkCenter('Erp', 'HIPIL-A', '');
   end
   else
-  begin
+  begin                                                                                    
     SysRouteInsDepartment('Erp', 'HIPOL-A', '');
     SysRouteInsWorkCenter('Erp', 'HIPOL-A', '');
   end;
@@ -141,7 +141,12 @@ begin
   SysRouteInsWorkCenter('Erp', 'INSIL-A', '');
 
   if CustCode_Rule('Customer') = 'FA' then
-    SysRouteInsInstruction('Erp', 'INSIL004', ''); // "CROSS_OUT : NOT ALLOWED"
+    SysRouteInsInstruction('Erp', 'INSIL004', ''); // "CROSS_OUT : NOT ALLOWED"                         
+    
+  // 2199 IL AOI Step Additional Info
+  SysRouteInsAddlParameter('Erp', 'Min Air Gap', Fnc.SysGetAttrValue('Air_Gap'),'', '', false, '', '', '');
+  SysRouteInsAddlParameter('Erp', 'Min Line Width', Fnc.SysGetAttrValue('Line_Width'),'', '', false, '', '', ''); 
+  SysRouteInsAddlParameter('Erp', 'Thickness', FormatFloat('0.000',Fnc.SysGetAttrValue('LayupThickness')),'', '', false, '', '', '');
 end;
 
 procedure IL_PEP_SD;  // 1229 PEP Flow option for Sub-assembly build. 
@@ -150,7 +155,7 @@ begin
   SysRouteInsWorkCenter('Erp', 'PEPOL-A', '');
                                                                           
   //if CustCode_Rule('Customer') = 'FA' then
-  //  SysRouteInsInstruction('Erp', 'PEPOL010', ''); // “Check OPE location off-set”
+  //  SysRouteInsInstruction('Erp', 'PEPOL010', ''); // “Check OPE location off-set”              
     
   SysRouteInsInstruction('Erp', 'PEPOL011', '');  // Remark PEP Sandwich cores only
 

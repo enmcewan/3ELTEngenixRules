@@ -327,6 +327,69 @@ begin
     SysRouteInsMaterials('Engx', Material, FoilWtinKG, '')
 end;
 
+procedure KKXDYDDistance; // 2200 IL Shearing / Routing Info  
+begin
+  if (Fnc.SysGetAttrValue('MfgPartType') = 'Top') and
+     (PressCycleMoreThan1 = false) and
+     (FoilBuild = true)
+  then
+  begin
+    if (ProdCodeLBlb = true) or (CustCode_Rule('Customer') = 'FA') then         
+    begin
+      if Eng_JobType = 'Sample' then
+         MessageDlg('For LB / Fanuc model, the manually entered value of ' + 
+                     IntToStr(Fnc.SysGetAttrValue('KK_Distance')) +
+                    ' will be used as the KK distance. Please check and confirm', mtWarning, SetOf([mbOK]), 0);
+    end
+    else
+      Fnc.SysSetAttrValue('KK_Distance', Fnc.SysGetAttrValue('Panel_Length') - 8);
+  end                           
+  else        
+  begin
+    if (( Eng_JobType = 'Sample' ) and ( PressCycleMoreThan1 = true )) then
+      //ShowMessage('ERROR!!! : MORE THAN ONE TIME PRESS, THE KEY IN VALUE: ' + IntToStr(Fnc.SysGetAttrValue('KK_Distance')) + ' WILL BE USED AS KK DISTANCE, PLEASE CHECK AND CONFIRM');
+      MessageDlg('More than one time press, the manually entered value of ' + 
+                  IntToStr(Fnc.SysGetAttrValue('KK_Distance')) +
+                  ' will be used as the KK distance. Please check and confirm', mtWarning, SetOf([mbOK]), 0);
+  end;
+                       
+  if ((Fnc.SysGetAttrValue('KK_Distance') < 100) or (Fnc.SysGetAttrValue('KK_Distance') > 700)) then
+    MessageDlg('Wrong KK Distance, please feedback to Engineering!', mtError, SetOf([mbOK]), 0);
+    
+  SysRouteInsAddlParameter('Erp', 'KK Distance', Fnc.SysGetAttrValue('KK_Distance'), '', '', false, '', '', '');
+  
+  if (Fnc.SysGetAttrValue('LaserBTopHits') > 0 ) or
+     (Fnc.SysGetAttrValue('LaserABotHits') > 0 ) or
+     (Fnc.SysGetAttrValue('UVLaserB_Top') > 0 ) or
+     (Fnc.SysGetAttrValue('UVLaserB_Top') > 0 )
+  then
+  begin
+    if Fnc.SysGetAttrValue('Panel_Length_XD') = 0 then 
+    begin // 1465
+      if Fnc.SysGetAttrValue('Panel_Length') > 510 then
+        Fnc.SysSetAttrValue('Panel_Length_XD', 460)
+      else
+        Fnc.SysSetAttrValue('Panel_Length_XD', 350) 
+    end;         
+                                                                
+    if Fnc.SysGetAttrValue('Panel_Width_XD') = 0 then
+    begin
+      if Fnc.SysGetAttrValue('MfgPartType') = 'Top' then  // 1465
+        Fnc.SysSetAttrValue('Panel_Width_XD', Fnc.SysGetAttrValue('Panel_Width') - 10)
+      else if Fnc.SysGetAttrValue('MfgPartType') = 'Sub' then
+      begin
+         if IsFirstSub(Fnc.SysGetAttrValue('ItemMatrlDesc')) then
+           Fnc.SysSetAttrValue('Panel_Width_XD', Fnc.SysGetAttrValue('Panel_Width') - 10)
+         else
+           Fnc.SysSetAttrValue('Panel_Width_XD', Fnc.SysGetAttrValue('Panel_Width') - 14)
+      end;
+    end;
+
+    SysRouteInsAddlParameter('Erp', 'X Distance Length', Fnc.SysGetAttrValue('Panel_Length_XD'), '', '', false, '', '', '');
+    SysRouteInsAddlParameter('Erp', 'Y Distance Width', Fnc.SysGetAttrValue('Panel_Width_XD'), '', '', false, '', '', ''); 
+  end;
+end;  
+
 procedure Scope_Drilling_SD;
 var
   fixedDim: string;
@@ -382,7 +445,9 @@ begin
                                                          
     SysRouteInsAddlParameter('Erp', 'Fixed Dimension', fixedDim, '', '', false, '', '', '');
     SysRouteInsAddlParameter('Erp', 'Control Range', controlRange, '', '', false, '', '', '');
-  end; 
+  end;
+  
+  KKXDYDDistance; // 2200 IL Shearing / Routing Info  
 end;
 
 procedure Scope_Drilling_EP_SD;
@@ -395,27 +460,28 @@ end;
 
 procedure IL_RoutShear_Common;
 var
-  Calc_KK : integer;
+  //Calc_KK : integer;
   ShearPnlPress : boolean;
   ShearSize : string;
-  X_CMK_SF : float;
+  X_CMK_SF : float;        
   Y_CMK_SF : float;
   Press_Thk_Nom : string;
   Press_Thk_Max : string;
   Press_Thk_Min : string;
 
 begin                         
-  Calc_KK := 0;
+  //Calc_KK := 0;
   ShearPnlPress := false;
   ShearSize := '';
-  X_CMK_SF := 0.0;
+  X_CMK_SF := 0.0;         
   Y_CMK_SF := 0.0;
 
   Press_Thk_Nom := '';
   Press_Thk_Max := '';
   Press_Thk_Min := '';
 
-  if (
+  // 2200 IL Shearing / Routing Info 
+  {if (
       (Fnc.SysGetAttrValue('MfgPartType') = 'Top') and
       (PressCycleMoreThan1 = false) and
       (FoilBuild = true)
@@ -429,7 +495,6 @@ begin
     then         
     begin
       if Eng_JobType = 'Sample' then
-        //ShowMessage('ERROR!!! : For LB / Fanuc model, THE KEY IN VALUE: ' + IntToStr(Fnc.SysGetAttrValue('KK_Distance')) + ' WILL BE USED AS KK DISTANCE, PLEASE CHECK AND CONFIRM');
         MessageDlg('For LB / Fanuc model, the manually entered value of ' + 
                   IntToStr(Fnc.SysGetAttrValue('KK_Distance')) +
                   ' will be used as the KK distance. Please check and confirm', mtWarning, SetOf([mbOK]), 0);
@@ -440,19 +505,18 @@ begin
       Fnc.SysSetAttrValue('KK_Distance', Calc_KK);
    end;
   end
-  else
+  else        
   begin
     if (( Eng_JobType = 'Sample' ) and ( PressCycleMoreThan1 = true )) then
-      //ShowMessage('ERROR!!! : MORE THAN ONE TIME PRESS, THE KEY IN VALUE: ' + IntToStr(Fnc.SysGetAttrValue('KK_Distance')) + ' WILL BE USED AS KK DISTANCE, PLEASE CHECK AND CONFIRM');
       MessageDlg('More than one time press, the manually entered value of ' + 
                   IntToStr(Fnc.SysGetAttrValue('KK_Distance')) +
                   ' will be used as the KK distance. Please check and confirm', mtWarning, SetOf([mbOK]), 0);
   end;
-
+                       
   if ((Fnc.SysGetAttrValue('KK_Distance') < 100) or (Fnc.SysGetAttrValue('KK_Distance') > 700)) then
     ShowMessage('ERROR!!! : Wrong KK Distance, please feedback to Engineering!');
-
-  //No need to calculate the Pressed Thickness, this will come from the stack-up
+  }
+   //No need to calculate the Pressed Thickness, this will come from the stack-up
 
   //No need for special Pressed Min Thickness for "GM04", should be applied at the stack-up requirements
 
@@ -497,7 +561,7 @@ begin
   if ShearSize = '0 X 0' then
     ShowMessage('ERROR!!! : Shear Size cannot be 0 X 0');
 
-  SysRouteInsAddlParameter('Erp', 'KK Distance', Fnc.SysGetAttrValue('KK_Distance'), '', '', false, '', '', '');
+  //SysRouteInsAddlParameter('Erp', 'KK Distance', Fnc.SysGetAttrValue('KK_Distance'), '', '', false, '', '', '');
   SysRouteInsAddlParameter('Erp', 'Shear Size', ShearSize, '', '', false, '', '', '');
 
   if (
@@ -508,20 +572,17 @@ begin
      )
   then
   begin
-    if Fnc.SysGetAttrValue('Panel_Length_XD') = 0 then
-      //Fnc.SysSetAttrValue('Panel_Length_XD', Fnc.SysGetAttrValue('Panel_Length') - 160);
+    // 2200 IL Shearing / Routing Info 
+    {if Fnc.SysGetAttrValue('Panel_Length_XD') = 0 then 
     begin // 1465
       if Fnc.SysGetAttrValue('Panel_Length') > 510 then
         Fnc.SysSetAttrValue('Panel_Length_XD', 460)
       else
         Fnc.SysSetAttrValue('Panel_Length_XD', 350) 
     end;
-    
-    //if Fnc.SysGetAttrValue('Panel_Width_XD') = 0 then 
-    //  Fnc.SysSetAttrValue('Panel_Width_XD', Fnc.SysGetAttrValue('Panel_Width') - 10);
                                                                 
     if Fnc.SysGetAttrValue('Panel_Width_XD') = 0 then
-    begin
+    begin             
       if Fnc.SysGetAttrValue('MfgPartType') = 'Top' then  // 1465
         Fnc.SysSetAttrValue('Panel_Width_XD', Fnc.SysGetAttrValue('Panel_Width') - 10)
       else if Fnc.SysGetAttrValue('MfgPartType') = 'Sub' then
@@ -534,8 +595,8 @@ begin
     end;
 
     SysRouteInsAddlParameter('Erp', 'X Distance Length', Fnc.SysGetAttrValue('Panel_Length_XD'), '', '', false, '', '', '');
-    SysRouteInsAddlParameter('Erp', 'Y Distance Width', Fnc.SysGetAttrValue('Panel_Width_XD'), '', '', false, '', '', '');
-                       
+    SysRouteInsAddlParameter('Erp', 'Y Distance Width', Fnc.SysGetAttrValue('Panel_Width_XD'), '', '', false, '', '', ''); 
+    }              
     if ((Fnc.SysGetAttrValueTopLevel('QPCB_Length') > 0 ) and (Fnc.SysGetAttrValue('MfgPartType') = 'Top')) then
     begin
       X_CMK_SF := (0.076 * Fnc.SysGetAttrValueTopLevel('QPCB_Length') * 100 ) / Fnc.SysGetAttrValue('Panel_Length');
@@ -566,11 +627,11 @@ begin
 end;
 
 procedure IL_Route_SD;
-var
+var            
   CalcStackHt : integer;
 begin
   CalcStackHt := 0.0;
-
+                                              
   SysRouteInsDepartment('Erp', 'FINIL-B', '');
   SysRouteInsWorkCenter('Erp', 'FINIL-B', '');
 
@@ -613,8 +674,8 @@ begin
   else
     SysRouteInsWorkCenter('Erp', 'FINBE-A0', '');
 
-  IL_RoutShear_Common;
-end;
+  IL_RoutShear_Common; 
+end;                                                                               
 
 procedure IL_Shearing_SD;
 begin
@@ -622,7 +683,6 @@ begin
   SysRouteInsWorkCenter('Erp', 'FINIL-A', '');
 
   IL_RoutShear_Common;
-
 end;
 
 procedure Outgoing_SD;
