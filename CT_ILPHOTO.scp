@@ -181,8 +181,8 @@ begin
     bCont := FieldNameList.Count > 0;
   end;
                       
-  if bCont then
-    bCont := CheckInnerPhoto2ATable(InnerPhoto1A, FieldNameList, errMsg);
+  //if bCont then  2197
+  //  bCont := CheckInnerPhoto2ATable(InnerPhoto1A, FieldNameList, errMsg);
 
   //ShowMessage(FieldNameList.Text);
                         

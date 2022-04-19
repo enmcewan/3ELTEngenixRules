@@ -31,6 +31,38 @@ begin
   if ( Fnc.SysGetAttrValue('Seq_Build') = true ) or ( SubParentIsSequential ) then 
     SysRouteInsAddlParameter('Erp', 'Remark', 'Sequential Build', '', '', false, '', '', ''); 
 end;
+                                                        
+procedure Insert_MinHole_Aspect(process: string);
+var
+  thicknessAfterPlating: float;
+  minHoleSize_NP : float;                          
+begin
+  thicknessAfterPlating := Fnc.SysGetAttrValue('Press_Thickness') + 
+                           ( InProcessCuThk/1000 * 2 ) - 
+                           ( StrToFloat(GetBaseCuInMicrons(true, false)) / 1000 );
+                           
+  if ( not PluggedFilledB4Photo ) or ( process = 'Epoxy' ) then  
+  begin
+    SysRouteInsAddlParameter('Erp', 'Min Hole Size', Fnc.SysGetAttrValue('Min_Hole_Size'), '', '', false, '', '', '');
+    SysRouteInsAddlParameter('Erp', 'Aspect Ratio', formatFloat('0.0', thicknessAfterPlating / Fnc.SysGetAttrValue('Min_Hole_Size')), '', '', false, '', '', '');
+  end
+  else                              
+  begin
+    if Fnc.SysGetAttrValue('Abs_Min_Th') > 0 then
+      minHoleSize_NP := Fnc.SysGetAttrValue('Min_Drill_Size_NP') - (Fnc.SysGetAttrValue('Abs_Min_Th') / 1000*2 )
+    else       
+      minHoleSize_NP := Fnc.SysGetAttrValue('Min_Drill_Size_NP') - (Fnc.SysGetAttrValue('Ave_Min_Th') / 1000*2 );   
+                                                                                                                                          
+    if Fnc.SysGetAttrValue('MfgPartType') = 'Top' then // 961 - removal of NP Holes from subs
+    begin
+      SysRouteInsAddlParameter('Erp', 'Min Hole Size NP', minHoleSize_NP , '', '', false, '', '', '');
+      SysRouteInsAddlParameter('Erp', 'Aspect Ratio', formatFloat('0.0', thicknessAfterPlating / minHoleSize_NP), '', '', false, '', '', '');
+    end                        
+    else                                     
+      SysRouteInsAddlParameter('Erp', 'Aspect Ratio', formatFloat('0.0', thicknessAfterPlating / Fnc.SysGetAttrValue('Min_Hole_Size')), '', '', false, '', '', '');
+  
+  end;  
+end;
 
 procedure OL_Photo_Common_SD(PhotoProcess : string);
 var
@@ -117,15 +149,15 @@ begin
 
       if Fnc.SysGetAttrValue('Abs_Min_Th') > 0 then
         Fnc.SysSetAttrValue('Min_Hole_Size', Min_Drill - (Fnc.SysGetAttrValue('Abs_Min_Th')/1000*2 ));
-      else
+      else                                       
         Fnc.SysSetAttrValue('Min_Hole_Size', Min_Drill - (Fnc.SysGetAttrValue('Ave_Min_Th')/1000*2 ));
 
       Fnc.SysSetAttrValue('Min_Hole_Size', Round100(Fnc.SysGetAttrValue('Min_Hole_Size')));
 
       thicknessAfterPlating := Fnc.SysGetAttrValue('Press_Thickness') + ( InProcessCuThk/1000 * 2 ) - ( StrToFloat(GetBaseCuInMicrons(true, false)) / 1000 );
-
+                                    
       // 756 Update Aspect ratio calculation for OL layer photo process
-      if not PluggedFilledB4Photo then
+      {if not PluggedFilledB4Photo then  
       begin
         SysRouteInsAddlParameter('Erp', 'Min Hole Size', Fnc.SysGetAttrValue('Min_Hole_Size'), '', '', false, '', '', '');
         SysRouteInsAddlParameter('Erp', 'Aspect Ratio', formatFloat('0.0', thicknessAfterPlating / Fnc.SysGetAttrValue('Min_Hole_Size')), '', '', false, '', '', '');
@@ -134,7 +166,7 @@ begin
       begin
         if Fnc.SysGetAttrValue('Abs_Min_Th') > 0 then
           minHoleSize_NP := Fnc.SysGetAttrValue('Min_Drill_Size_NP') - (Fnc.SysGetAttrValue('Abs_Min_Th') / 1000*2 )
-        else
+        else       
           minHoleSize_NP := Fnc.SysGetAttrValue('Min_Drill_Size_NP') - (Fnc.SysGetAttrValue('Ave_Min_Th') / 1000*2 );   
                                                                                                                                               
         if Fnc.SysGetAttrValue('MfgPartType') = 'Top' then // 961 - removal of NP Holes from subs
@@ -145,9 +177,12 @@ begin
         else                                     
           SysRouteInsAddlParameter('Erp', 'Aspect Ratio', formatFloat('0.0', thicknessAfterPlating / Fnc.SysGetAttrValue('Min_Hole_Size')), '', '', false, '', '', '');
       
-      end;
+      end;}
+      // 2203 Epoxy Pluggin Additional Information - Common with OL Photo so made the above a sub routine
+      Insert_MinHole_Aspect('OLPhoto'); 
+      
                                                          
-      //No Computation required - already done
+      //No Computation required - already done 
       SysRouteInsAddlParameter('Erp', 'Max Hole Size', Fnc.SysGetAttrValue('Max_Hole_Size'), '', '', false, '', '', '');
       SysRouteInsAddlParameter('Erp', 'Max P-Hole Size', Fnc.SysGetAttrValue('Max_PHole_Size'), '', '', false, '', '', '');
                                                 
@@ -231,11 +266,11 @@ begin
 end;
 
 procedure OL_Photo_PForm_SbS_SD;
-begin
+begin                                               
   OL_Photo_Common_SD('PForm_SBS');
   SysRouteInsWorkCenter('Erp', 'EXPOL-A05', '');
 end;                         
-
+                                                  
 // 1108 OL PHoto Process Flow Update
 procedure OL_Photo_PForm_TCI_SD;        
 begin                    
@@ -426,7 +461,7 @@ begin
       (Fnc.SysGetAttrValue('LayupThickness') < 0.40)
      )
   then                                        
-    Noda := false;
+    Noda := false;                                                            
 
   if ((Onsokki = true) and (Noda = true)) then
     SysRouteInsWorkCenter('Erp', 'EPXPL-A', '');
@@ -436,7 +471,7 @@ begin
 
   if ((Onsokki = false) and (Noda = true)) then
     SysRouteInsWorkCenter('Erp', 'EPXPL-B0', '');
-
+                                                                                                        
   if ((Onsokki = false) and (Noda = false)) then
   begin
     ShowMessage('ERROR!!! - NO EPOXY LINE CAN BE USED!!, PLS CHECK WITH PE.');
@@ -450,6 +485,11 @@ begin
   // 1107 Runcard Additional Info
   if Fnc.SysGetAttrValue('MfgPartType') = 'Top' then
     SysRouteInsAddlParameter('Erp', 'Plug to Non-plug', Fnc.SysGetAttrValue('EpoxyPlug_PlugToNonPlugSpacing'), '', '', false, '', '', '');
+                             
+  // 2203 Epoxy Plugging additional Info 
+  SysRouteInsAddlParameter('Erp', 'Thickness', FormatFloat('0.000', Fnc.SysGetAttrValue('LayupThickness')), '', '', false, '', '', '');
+  SysRouteInsAddlParameter('Erp', 'Panel Size', Fnc.SysGetAttrValue('Panel_Size'), '', '', false, '', '', '');
+  Insert_MinHole_Aspect('Epoxy'); 
 end;
 
 procedure Epoxy_PlugA_SD;
@@ -460,9 +500,9 @@ begin
   if ( not Fnc.SysGetAttrValue('BackDrill_Epoxy') ) and  // 1258 Additional pre-baking b4 Epoxy Plugging 
      (( Fnc.SysGetAttrValue('EpoxySide') = 'Epoxy Side A' ) or ( Fnc.SysGetAttrValue('EpoxySide') = 'Epoxy Side AB' )) then
     SysRouteInsAddlParameter('Erp', 'Remarks', 'Pre-Bake using Blue Box Oven', '', '', false, '', '', ''); 
-end;
+end;                                   
 
-procedure Epoxy_PlugB_SD;
+procedure Epoxy_PlugB_SD;    
 begin                     
   Epoxy_Plug_Common;
   SysRouteInsAddlParameter('Erp', 'Top B Layer', Fnc.SysGetAttrValue('TopLayer'), '', '', false, '', '', '');
@@ -470,7 +510,7 @@ begin
   if ( not Fnc.SysGetAttrValue('BackDrill_Epoxy') ) and  // 1258 Additional pre-baking b4 Epoxy Plugging   
      (( Fnc.SysGetAttrValue('EpoxySide') = 'Epoxy Side B' ) or ( Fnc.SysGetAttrValue('EpoxySide') = 'Epoxy Side BA' )) then
     SysRouteInsAddlParameter('Erp', 'Remarks', 'Pre-Bake using Blue Box Oven', '', '', false, '', '', '');
-end;
+end;          
 
 procedure Epoxy_PlugA_SS_SD;   // 1463
 begin

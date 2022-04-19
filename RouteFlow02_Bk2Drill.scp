@@ -132,7 +132,7 @@ begin
       (Fnc.SysGetAttrValue('IL_Finish_Rout') = true)
      )
   then
-  begin
+  begin                         
     SysRouteInsertStepExt('IL_Rout', 'IL_Rout01');
     SysRouteInsertStepExt('IL_Bevel', 'IL_Bevel01');
   end
@@ -153,7 +153,7 @@ end;
 function GetsUltrasonic( afterDesmear : string )  : boolean;  // 978 Updated Cu Rule - Metalization 
 var
   partsPerPanel : integer;
-  thickness : float;
+  thickness : float;                                 
   minDrillHoleSize : float;
   aspectRatio : float;
 begin                                           
@@ -411,9 +411,19 @@ begin
     SysRouteInsertStepExt('MicroEtch_DirLaser', 'MicroEtch_DirLaser01');   
   end;
   
-  if ShearingRequired then
+  if ShearingRequired then  // 2269 Shearing After Laser 
+  begin
+    if  (Fnc.SysGetAttrValue('Press_Thickness') > 1.8) or
+        (Fnc.SysGetAttrValue('Press_Thickness') < 0.6) or
+        (Fnc.SysGetAttrValue('IL_Finish_Rout'))
+    then
+    begin                                                                                                
+      SysRouteInsertStepExt('IL_Rout_Laser', 'IL_Rout_Laser01');                            
+      SysRouteInsertStepExt('IL_Bevel_Laser', 'IL_Bevel_Laser01');
+    end                                                       
+    else
       SysRouteInsertStepExt('Shearing_Laser', 'Shearing_Laser01');
-      
+  end;  
 end; 
 
 procedure NC_EpxPlug_wFlash;
@@ -428,7 +438,7 @@ begin
   SysRouteInsertStepExt('CuHoleCheck', 'CuHoleCheck01');
   
   if ( ( Fnc.SysGetAttrValue('BackDrill_Epoxy') ) and ( Fnc.SysGetAttrValue('NCRunX2') = true )) then // 844 Backdrill after Electrolytic Cu
-    Back_Drill_Epoxy; 
+    Back_Drill_Epoxy;     
                                                                                                 
   Epoxy_Plugging;
                       
@@ -502,7 +512,7 @@ begin
 
       SysRouteInsertStepExt('Outgoing', 'Outgoing01');
           
-    end
+    end                                       
     else
       SysRouteInsertStepExt('Shearing', 'Shearing01');
   end;

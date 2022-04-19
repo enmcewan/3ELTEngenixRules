@@ -60,17 +60,59 @@ begin
   //  InsertQRInfoAtStep1; 
 end;
 
-procedure Shearing_Laser_SD;
-var                  
-  ShearSize : string;
-begin
+procedure Shearing_Laser_SD;                       
+begin           
   SysRouteInsDepartment('Erp', 'FINIL-A', '');
-  SysRouteInsWorkCenter('Erp', 'FINIL-A', '');
+  SysRouteInsWorkCenter('Erp', 'FINIL-A', '');                             
+  SysRouteInsAddlParameter('Erp', 'Shear To', LaserShearSize, '', '', false, '', '', ''); 
+end;                        
+                                               
+procedure IL_Rout_Laser_SD;  // 2269 Shearing After Laser 
+var                                          
+  CalcStackHt : integer;   
+begin
+  CalcStackHt := 0.0;
+                                              
+  SysRouteInsDepartment('Erp', 'FINIL-B', '');
+  SysRouteInsWorkCenter('Erp', 'FINIL-B', '');
+  
+  if not Fnc.SysGetAttrValue('FinIL_Stk_Ovr') then // 1472
+  begin
+    //CalcStackHt := Round(8/Fnc.SysGetAttrValue('Press_Thickness'));
+    CalcStackHt := Round(7.1/Fnc.SysGetAttrValue('Press_Thickness')); // 1499
+    Fnc.SysSetAttrValue('FinIL_Stk', CalcStackHt);
+    SysRouteInsAddlParameter('Erp', 'Stack Height', CalcStackHt, '', '', false, '', '', '');
+  end
+  else                                                
+  begin                                                    
+    if Fnc.SysGetAttrValue('FinIL_Stk_User') > 0 then
+    begin
+      Fnc.SysSetAttrValue('FinIL_Stk', Fnc.SysGetAttrValue('FinIL_Stk_User'));
+      SysRouteInsAddlParameter('Erp', 'Stack Height', Fnc.SysGetAttrValue('FinIL_Stk_User'), '', '', false, '', '', '');
+    end
+    else
+      MessageDlg('IL Finish Route Stack Height user override selected but value is 0', mtWarning, Setof([mbOK]) , 0);
+  end;
 
-  ShearSize := IntToStr(Fnc.SysGetAttrValue('Panel_Length')) + ' X ' + IntToStr(Fnc.SysGetAttrValue('Panel_Width'));
-
-  SysRouteInsAddlParameter('Erp', 'Shear To', ShearSize, '', '', false, '', '', '');
+  {if Fnc.SysGetAttrValue('NCRunX2') = true then
+    SysRouteInsInstruction('Erp', '2NC_KRAFT', ''); // REMARK: PUT KRAFT PAPER INBETWEEN PANEL
+                         
+  if Fnc.SysGetAttrValue('IL_Finish_Rout') = true then
+    SysRouteInsInstruction('Erp', 'FINIL010', ''); //  PLS USE SPECIFIC ROUTING TAPE (PROGRAME) FOR THIS MODEL ONLY.
+  }
+  
+  StepParam('Erp', 'Shear To', LaserShearSize); 
 end;
+             
+procedure IL_Bevel_Laser_SD;   // 2269 Shearing After Laser 
+begin
+  SysRouteInsDepartment('Erp', 'FINBE-A', '');
+
+  if Fnc.SysGetAttrValue('Press_Thickness') > 3.5 then
+    SysRouteInsWorkCenter('Erp', 'FINBE-B0', '')
+  else
+    SysRouteInsWorkCenter('Erp', 'FINBE-A0', '');                             
+end;  
 
 procedure Oxide_SD;
 var
@@ -310,7 +352,7 @@ begin
 
   Material := TStringList.Create;
   Material.add('Foil');
-                           
+                                         
   FoilWtinKG := 0.0;        
 
   Fnc.SysGetCopperValues(True, false, BaseCopper, FirstPlating, SecondPlating);
@@ -320,15 +362,33 @@ begin
       '1oz'   : FoilWtinKG := 0.1088 ;
       '2oz'   : FoilWtinKG := 0.2215 ;
     end;
-
+                          
   if ( BaseCopper = '5um' ) or ( Fnc.SysGetAttrValue('Pin_Lam') ) then   // 1200 5um Cu Foil   // 1247 BOM Cu Foil Unit        
     SysRouteInsMaterials('Engx', Material, 1, '')
   else
     SysRouteInsMaterials('Engx', Material, FoilWtinKG, '')
 end;
 
-procedure KKXDYDDistance; // 2200 IL Shearing / Routing Info  
+function IsLaserDrilled: boolean;
 begin
+  result := false;
+  
+  if (Fnc.SysGetAttrValue('LaserBTopHits') > 0 ) or
+     (Fnc.SysGetAttrValue('LaserABotHits') > 0 ) or
+     (Fnc.SysGetAttrValue('UVLaserB_Top') > 0 ) or
+     (Fnc.SysGetAttrValue('UVLaserB_Top') > 0 )  
+  then
+    result := true;
+end
+
+procedure KKXDYDDistance; // 2200 IL Shearing / Routing Info
+var
+  X_CMK_SF,
+  Y_CMK_SF: float
+begin
+  X_CMK_SF := 0;
+  Y_CMK_SF := 0;
+                            
   if (Fnc.SysGetAttrValue('MfgPartType') = 'Top') and
      (PressCycleMoreThan1 = false) and
      (FoilBuild = true)
@@ -340,11 +400,11 @@ begin
          MessageDlg('For LB / Fanuc model, the manually entered value of ' + 
                      IntToStr(Fnc.SysGetAttrValue('KK_Distance')) +
                     ' will be used as the KK distance. Please check and confirm', mtWarning, SetOf([mbOK]), 0);
-    end
+    end                            
     else
       Fnc.SysSetAttrValue('KK_Distance', Fnc.SysGetAttrValue('Panel_Length') - 8);
   end                           
-  else        
+  else                                                                                                                        
   begin
     if (( Eng_JobType = 'Sample' ) and ( PressCycleMoreThan1 = true )) then
       //ShowMessage('ERROR!!! : MORE THAN ONE TIME PRESS, THE KEY IN VALUE: ' + IntToStr(Fnc.SysGetAttrValue('KK_Distance')) + ' WILL BE USED AS KK DISTANCE, PLEASE CHECK AND CONFIRM');
@@ -358,11 +418,7 @@ begin
     
   SysRouteInsAddlParameter('Erp', 'KK Distance', Fnc.SysGetAttrValue('KK_Distance'), '', '', false, '', '', '');
   
-  if (Fnc.SysGetAttrValue('LaserBTopHits') > 0 ) or
-     (Fnc.SysGetAttrValue('LaserABotHits') > 0 ) or
-     (Fnc.SysGetAttrValue('UVLaserB_Top') > 0 ) or
-     (Fnc.SysGetAttrValue('UVLaserB_Top') > 0 )
-  then
+  if IsLaserDrilled then
   begin
     if Fnc.SysGetAttrValue('Panel_Length_XD') = 0 then 
     begin // 1465
@@ -383,10 +439,22 @@ begin
          else
            Fnc.SysSetAttrValue('Panel_Width_XD', Fnc.SysGetAttrValue('Panel_Width') - 14)
       end;
-    end;
+    end;                                                 
 
     SysRouteInsAddlParameter('Erp', 'X Distance Length', Fnc.SysGetAttrValue('Panel_Length_XD'), '', '', false, '', '', '');
-    SysRouteInsAddlParameter('Erp', 'Y Distance Width', Fnc.SysGetAttrValue('Panel_Width_XD'), '', '', false, '', '', ''); 
+    SysRouteInsAddlParameter('Erp', 'Y Distance Width', Fnc.SysGetAttrValue('Panel_Width_XD'), '', '', false, '', '', '');
+    
+    if ((Fnc.SysGetAttrValueTopLevel('QPCB_Length') > 0 ) and (Fnc.SysGetAttrValue('MfgPartType') = 'Top')) then
+    begin
+      X_CMK_SF := (0.076 * Fnc.SysGetAttrValueTopLevel('QPCB_Length') * 100 ) / Fnc.SysGetAttrValue('Panel_Length');
+      Y_CMK_SF := (0.076 * Fnc.SysGetAttrValueTopLevel('Panel_Cavity') / Fnc.SysGetAttrValueTopLevel('QPCB_Length') * 100 ) / Fnc.SysGetAttrValue('Panel_Width');
+
+      X_CMK_SF := Round1000(X_CMK_SF);
+      Y_CMK_SF := Round1000(Y_CMK_SF);
+
+      SysRouteInsAddlParameter('Erp', 'X CMK SF', X_CMK_SF, '', '', false, '', '', '');
+      SysRouteInsAddlParameter('Erp', 'Y CMK SF', Y_CMK_SF, '', '', false, '', '', '');
+    end; 
   end;
 end;  
 
@@ -457,14 +525,14 @@ begin
 
   SysRouteInsAddlParameter('Erp', 'KK Distance', Fnc.SysGetAttrValue('KK_Distance'), '', '', false, '', '', '');
 end;
-
+                                          
 procedure IL_RoutShear_Common;
 var
   //Calc_KK : integer;
   ShearPnlPress : boolean;
   ShearSize : string;
-  X_CMK_SF : float;        
-  Y_CMK_SF : float;
+  //X_CMK_SF : float;        
+  //Y_CMK_SF : float;
   Press_Thk_Nom : string;
   Press_Thk_Max : string;
   Press_Thk_Min : string;
@@ -473,15 +541,15 @@ begin
   //Calc_KK := 0;
   ShearPnlPress := false;
   ShearSize := '';
-  X_CMK_SF := 0.0;         
-  Y_CMK_SF := 0.0;
+  //X_CMK_SF := 0.0;         
+  //Y_CMK_SF := 0.0;
 
-  Press_Thk_Nom := '';
+  Press_Thk_Nom := '';         
   Press_Thk_Max := '';
   Press_Thk_Min := '';
 
   // 2200 IL Shearing / Routing Info 
-  {if (
+  {if (                 
       (Fnc.SysGetAttrValue('MfgPartType') = 'Top') and
       (PressCycleMoreThan1 = false) and
       (FoilBuild = true)
@@ -564,13 +632,7 @@ begin
   //SysRouteInsAddlParameter('Erp', 'KK Distance', Fnc.SysGetAttrValue('KK_Distance'), '', '', false, '', '', '');
   SysRouteInsAddlParameter('Erp', 'Shear Size', ShearSize, '', '', false, '', '', '');
 
-  if (
-      (Fnc.SysGetAttrValue('LaserBTopHits') > 0 ) or
-      (Fnc.SysGetAttrValue('LaserABotHits') > 0 ) or
-      (Fnc.SysGetAttrValue('UVLaserB_Top') > 0 ) or
-      (Fnc.SysGetAttrValue('UVLaserB_Top') > 0 )
-     )
-  then
+  if IsLaserDrilled then
   begin
     // 2200 IL Shearing / Routing Info 
     {if Fnc.SysGetAttrValue('Panel_Length_XD') = 0 then 
@@ -596,7 +658,7 @@ begin
 
     SysRouteInsAddlParameter('Erp', 'X Distance Length', Fnc.SysGetAttrValue('Panel_Length_XD'), '', '', false, '', '', '');
     SysRouteInsAddlParameter('Erp', 'Y Distance Width', Fnc.SysGetAttrValue('Panel_Width_XD'), '', '', false, '', '', ''); 
-    }              
+                 
     if ((Fnc.SysGetAttrValueTopLevel('QPCB_Length') > 0 ) and (Fnc.SysGetAttrValue('MfgPartType') = 'Top')) then
     begin
       X_CMK_SF := (0.076 * Fnc.SysGetAttrValueTopLevel('QPCB_Length') * 100 ) / Fnc.SysGetAttrValue('Panel_Length');
@@ -607,8 +669,8 @@ begin
 
       SysRouteInsAddlParameter('Erp', 'X CMK SF', X_CMK_SF, '', '', false, '', '', '');
       SysRouteInsAddlParameter('Erp', 'Y CMK SF', Y_CMK_SF, '', '', false, '', '', '');
-    end;
-
+    end; 
+   }
     SysRouteInsInstruction('Erp', 'FINIL001', ''); // REMARKS:4- HOLE MARK CENTER DRILL.
 
   end;
@@ -624,7 +686,7 @@ begin
   if Fnc.SysGetAttrValue('NCRunX2') = true then
     SysRouteInsInstruction('Erp', '2NC_KRAFT', ''); // REMARK: PUT KRAFT PAPER IN BETWEEN PANEL
 
-end;
+end; 
 
 procedure IL_Route_SD;
 var            
@@ -659,7 +721,7 @@ begin
 
   if Fnc.SysGetAttrValue('NCRunX2') = true then
     SysRouteInsInstruction('Erp', '2NC_KRAFT', ''); // REMARK: PUT KRAFT PAPER INBETWEEN PANEL
-
+                         
   if Fnc.SysGetAttrValue('IL_Finish_Rout') = true then
     SysRouteInsInstruction('Erp', 'FINIL010', ''); //  PLS USE SPECIFIC ROUTING TAPE (PROGRAME) FOR THIS MODEL ONLY.
 
@@ -672,7 +734,7 @@ begin
   if Fnc.SysGetAttrValue('Press_Thickness') > 3.5 then
     SysRouteInsWorkCenter('Erp', 'FINBE-B0', '')
   else
-    SysRouteInsWorkCenter('Erp', 'FINBE-A0', '');
+    SysRouteInsWorkCenter('Erp', 'FINBE-A0', '');                             
 
   IL_RoutShear_Common; 
 end;                                                                               
@@ -2416,7 +2478,7 @@ begin
         //GetCopperPlating_Line(Plating_Line_Selected, Plating_Line_Alternative);
         //Plating_Line := Plating_Line_Selected 
         Plating_Line := SelectPlatingLine; 
-      end;
+      end;                                                      
     end
     else
      Plating_Line := Fnc.SysGetAttrValue('Electrolytic_Cu_Line'); 
@@ -2852,6 +2914,11 @@ begin
     end;
   end;
   AddBoardFinishAsAttribute; // 1223 Additional Surface Finish info under Electrolytic Cu step 
+  
+  SysRouteInsAddlParameter('Erp', 'Panel Size', Fnc.SysGetAttrValue('Panel_Size'), '', '', false, '', '', '');  // 2201 Electrolytic Cu Info
+  
+  if Plating_Line = 'FILL_VIA' then  // 2202 Fill Via plating Spec
+    SysRouteInsAddlParameter('Erp', 'Dimple Spec', Fnc.SysGetAttrValue('Fill_Via_DimpleSpec'), '', '', false, '', '', '');
 End;
 
 Procedure Electrolytic_Cu_1_SD;
@@ -2873,7 +2940,7 @@ begin
     Fnc.SysSetAttrValue('Min_Surf_Plt', 15.0);
                   
   SysRouteInsAddlParameter('Erp','Min Surface Plate', Fnc.SysGetAttrValue('Min_Surf_Plt'), '', '', false, '', '', '');
-  SysRouteInsAddlParameter('Erp', 'Process', 'Flash Plating', '', '', false, '', '', '');
+  SysRouteInsAddlParameter('Erp', 'Process', 'Flash Plating', '', '', false, '', '', '');  
 
   CalcAndInsert_DECUTHK(false, 2, 'CappedVia');
   AddBoardFinishAsAttribute; // 1223 Additional Surface Finish info under Electrolytic Cu step 

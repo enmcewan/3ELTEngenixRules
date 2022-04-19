@@ -97,7 +97,7 @@ begin
            
        // 793 Update Photo process rule
       if ( Fnc.SysGetAttrValue('EdgePlating') ) or 
-         (
+         (                             
           (( Fnc.SysGetAttrValue('Slot_Length_PTH') >= 10.00 ) or ( Fnc.SysGetAttrValue('Max_Hole_Size') >= 10.00 )) and 
           ( Fnc.SysGetAttrValue('LayupThickness') >= 2.5 )
          )  // 1254 DES Rule Update

@@ -853,7 +853,7 @@ begin
       if ( Fnc.SysGetAttrValue('NCRunX2') ) and ( Fnc.SysGetAttrValue('Drill_FSF_X') <> 0 ) then
         Fnc.SysSetAttrValue('Drill_Offset_X_2', SetDrillXOffset(2));
     end;
-  end;
+  end;         
 
   // Set Layer Attributes
   if Fnc.SysGetItemAttrValue('Layer_Min_Line', true, cStackupLayer, 1) = 0.0 then
@@ -1173,7 +1173,7 @@ begin
         4 : photoSeqStr := '5th Photo';
         5 : photoSeqStr := '6th Photo';
         6 : photoSeqStr := '7th Photo';
-        7 : photoSeqStr := '8th Photo';
+        7 : photoSeqStr := '8th Photo';                 
         8 : photoSeqStr := '9th Photo';
       end;
 
@@ -1192,7 +1192,8 @@ begin
                                              Fnc.SysGetAttrValue('TopLayer') +  '-' +
                                              Fnc.SysGetAttrValue('BotLayer') + '*' +
                                              GenMaterialType + '*' +
-                                             IntToStr(Fnc.SysGetAttrValue('Panel_Length')) + IntToStr(Fnc.SysGetAttrValue('Panel_Width'))
+                                             IntToStr(Fnc.SysGetAttrValue('Panel_Length')) + 
+                                             IntToStr(Fnc.SysGetAttrValue('Panel_Width'))
                                              ,'','',false,'','',''); 
  
   PostProc_Set_QR_Barcode;

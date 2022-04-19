@@ -15,36 +15,55 @@ procedure EGX_Missing_Steps;
 begin
 end;
 
-procedure IL_Exposure_SD;
-var
-  Group_Erp: string;
-  DesLine: string;
+procedure IL_Exposure_SD; // 2197
+var                                            
+  Dept_Erp,
+  Group_Erp,
+  DesLine,
   AltLine: string;
-
-  Material : TStringlist;
+  Material : TStringlist;                    
 begin                         
   if Fnc.SysGetAttrValue('MfgPartType') = 'Inn' then
   begin
-    //InitGlobalVariables;
-    //ShowMessage(Fnc.SysGetAttrValue('LayupThicknessRelam'));
-    GetRes(Group_Erp, DesLine, AltLine);
-    SysRouteInsDepartment('Erp', 'EXPIL-D', '');
-    SysRouteInsWorkCenter('Erp', Group_Erp, '');
-
-    if (( SubLayersAreOnTopMfgPart ) or ( Fnc.SysGetAttrValueParent('Core_Build') = true )) then // Thin Core Remarks
-      AltLine := 'Core Capping Build, Use LDI Machine Only';
-                              
-    if (( GrandParentIsSequential ) or ( ParentIsSequential )) then
+    Dept_Erp := '';
+    Group_Erp := '';
+    
+    if ( SubLayersAreOnTopMfgPart ) or ( Fnc.SysGetAttrValueParent('Core_Build') ) then // Thin Core Remarks
     begin
+      Dept_Erp := 'EXPIL-K';
+      Group_Erp := 'EXPIL-K0'; 
+      AltLine := 'Core Capping Build, Use LDI Machine Only';
+    end;
+    
+    if ( GrandParentIsSequential ) or ( ParentIsSequential ) then
+    begin                         
+      Dept_Erp := 'EXPIL-K';
+      Group_Erp := 'EXPIL-K0';     
       AltLine := 'Sequential Build, Use LDI Machine Only';
                               
       if ( SubLayersAreOnTopMfgPart ) or                                
-         ( Fnc.SysGetAttrValueParent('Core_Build') = true ) or
+         ( Fnc.SysGetAttrValueParent('Core_Build') = true ) or 
          ( ParentSubIsCoreBuild )
-      then
+      then                     
         AltLine := 'Seq/Core Capping Build, Use LDI Machine Only';
     end;
-
+                                 
+    if Group_Erp = '' then // Not set by the rules above  
+    begin
+      GetRes(Group_Erp, DesLine, AltLine); // Don't really need this table lookup any more. Table 2A is not used. Easily done with rules.
+      
+      if pos('-D', Group_Erp) > 0 then Dept_Erp := 'EXPIL-D';
+      
+      if pos('-K', Group_Erp) > 0 then 
+      begin
+        Dept_Erp := 'EXPIL-K';
+        AltLine := 'LDI Only';
+      end
+    end;
+    
+    SysRouteInsDepartment('Erp', Dept_Erp, '');
+    SysRouteInsWorkCenter('Erp', Group_Erp, ''); 
+    
     SysRouteInsAddlParameter('Erp', 'Alt Line', AltLine, '', '', false, '', '', '');
                                         
     if HasFaradflexMat then
@@ -54,18 +73,18 @@ begin
       SysRouteInsAddlParameter('Erp', '4 Hole Alignment', 'X: ' + FloatToStr(Fnc.SysGetAttrValue('FourHoleAlign_X')) + 'mm / Y: ' +
                                                                   FloatToStr(Fnc.SysGetAttrValue('FourHoleAlign_Y')) + 'mm'
                                                                 , '', '', false, '', '', '');
-  end
+  end                                         
   else //Dummy Core
   begin                                                                                          
     SysRouteInsDepartment('Erp', 'EXPIL-D', '');
-    SysRouteInsWorkCenter('Erp', 'EXPIL-N0', '');
+    SysRouteInsWorkCenter('Erp', 'EXPIL-N0', '');            
     SysRouteInsAddlParameter('Erp', 'Alt Line', 'G2', '', '', false, '', '', '');
   end;
 
   Material := TStringList.Create;
   Material.add('Core');
   SysRouteInsMaterials('Engx', Material, 1, '');
-
+  Material.Free;
 end;
 
 procedure IL_DES_SD;
@@ -80,9 +99,9 @@ begin
     GetRes(Group_Erp, DesLine, AltLine);
     //ShowMessage(ILPHOTOList.strings[1]);
 
-    SysRouteInsDepartment('Erp', 'DESIL-D', '');
+    SysRouteInsDepartment('Erp', 'DESIL-D', '');                       
     SysRouteInsWorkCenter('Erp', DesLine, ''); 
-    SysRouteInsAddlParameter('Erp', 'Alt Line', AltLine, '', '', false, '', '', ''); 
+    //SysRouteInsAddlParameter('Erp', 'Alt Line', AltLine, '', '', false, '', '', '');  2197
     if (( FindImpedanceSides = 'Outer' ) or ( FindImpedanceSides = 'Both' )) then    // 962 - Impedance Info
       SysRouteInsAddlParameter('Erp', 'Impedance', 'Yes', '', '', false, '', '', '');
     else

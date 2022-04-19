@@ -4,7 +4,7 @@
 //ScriptType=1
 //ScriptGroup=Custom Table Export
 //HeaderImportExport<--
-uses
+uses                                                                               
   Event_ExportStackup_CreateTables;
 
 
@@ -43,7 +43,7 @@ begin
   // now add in all of the new records
   Query.SQL.Clear;
   Query.SQL.Add('SELECT * FROM ' + SQLTableName + ' WHERE JobID = ' + IntToStr(Fnc.JobID));
-  Query.Open;
+  Query.Open;                                           
 
   try
     theTable.First;
@@ -90,7 +90,7 @@ begin
 end;
 
 procedure ExportPartAttributes(SQLTableName: string);
-var
+var                                         
   i: integer;
   MfgPartList: TStringList;
   TempList: TStringList;
@@ -426,7 +426,7 @@ begin
     ExportToSQLTable(T_JOBREQUIREMENTS, Fnc.SysExportRequirements, '');
     ExportToSQLTable(T_JOBREQDETAILS, Fnc.SysExportReqDetails, '');
     ExportToSQLTable(T_JOBIMPEDANCEMODELS_RLGC, Fnc.SysExportImpedanceModels_RLGC, '');
-    ExportToSQLTable(T_JOBIMPEDANCEMODELS_POLAR, Fnc.SysExportImpedanceModels_Polar, '');
+    ExportToSQLTable(T_JOBIMPEDANCEMODELS_POLAR, Fnc.SysExportImpedanceModels_Polar, '');  
     ExportToSQLTable(T_JOBIMPEDANCECOUPONS, Fnc.SysExportImpedanceCoupons, '');
     ExportToSQLTable(T_JOBSTACKUP, Fnc.SysExportStackup, '');
     ExportToSQLTable(T_JOBLAYERS, Fnc.SysExportLayers, '');
