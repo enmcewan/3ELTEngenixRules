@@ -4,7 +4,7 @@
 //ScriptType=0
 //ScriptGroup=HCS
 //HeaderImportExport<--
-uses
+uses                                                                           
   Event_RouteGenLibrary,
   Eng_RouteFunctions,
   RouteFunctions,
@@ -19,19 +19,19 @@ procedure IL_Exposure_SD; // 2197
 var                                            
   Dept_Erp,
   Group_Erp,
-  DesLine,
+  DesLine,                                              
   AltLine: string;
   Material : TStringlist;                    
 begin                         
   if Fnc.SysGetAttrValue('MfgPartType') = 'Inn' then
-  begin
+  begin                                   
     Dept_Erp := '';
     Group_Erp := '';
     
     if ( SubLayersAreOnTopMfgPart ) or ( Fnc.SysGetAttrValueParent('Core_Build') ) then // Thin Core Remarks
     begin
       Dept_Erp := 'EXPIL-K';
-      Group_Erp := 'EXPIL-K0'; 
+      Group_Erp := 'EXPIL-K0';                         
       AltLine := 'Core Capping Build, Use LDI Machine Only';
     end;
     
@@ -61,31 +61,31 @@ begin
       end
     end;
     
-    SysRouteInsDepartment('Erp', Dept_Erp, '');
-    SysRouteInsWorkCenter('Erp', Group_Erp, ''); 
+    StepDeptERP(Dept_Erp);
+    StepWCERP(Group_Erp); 
     
-    SysRouteInsAddlParameter('Erp', 'Alt Line', AltLine, '', '', false, '', '', '');
+    StepParamERP('Alt Line', AltLine);
                                         
     if HasFaradflexMat then
-      SysRouteInsAddlParameter('Erp', 'Remark', 'Faradflex Core, Panel Leader Taping needed', '', '', false, '', '', '');
+      StepParamERP('Remark', 'Faradflex Core, Panel Leader Taping needed');
       
     if ( SandwichCore ) and ( not Fnc.SysGetAttrValueTopLevel('Alt_PEP_Process') ) then // 1470 
-      SysRouteInsAddlParameter('Erp', '4 Hole Alignment', 'X: ' + FloatToStr(Fnc.SysGetAttrValue('FourHoleAlign_X')) + 'mm / Y: ' +
+      StepParamERP('4 Hole Alignment', 'X: ' + FloatToStr(Fnc.SysGetAttrValue('FourHoleAlign_X')) + 'mm / Y: ' +
                                                                   FloatToStr(Fnc.SysGetAttrValue('FourHoleAlign_Y')) + 'mm'
-                                                                , '', '', false, '', '', '');
+                                                                );
   end                                         
   else //Dummy Core
   begin                                                                                          
-    SysRouteInsDepartment('Erp', 'EXPIL-D', '');
-    SysRouteInsWorkCenter('Erp', 'EXPIL-N0', '');            
-    SysRouteInsAddlParameter('Erp', 'Alt Line', 'G2', '', '', false, '', '', '');
-  end;
+    StepDeptERP('EXPIL-D');
+    StepWCERP('EXPIL-N0');            
+    StepParamERP('Alt Line', 'G2');
+  end;                                                                                                  
 
   Material := TStringList.Create;
   Material.add('Core');
-  SysRouteInsMaterials('Engx', Material, 1, '');
+  StepMaterialsERP(Material, 1);
   Material.Free;
-end;
+end;    
 
 procedure IL_DES_SD;
 var
@@ -99,26 +99,26 @@ begin
     GetRes(Group_Erp, DesLine, AltLine);
     //ShowMessage(ILPHOTOList.strings[1]);
 
-    SysRouteInsDepartment('Erp', 'DESIL-D', '');                       
-    SysRouteInsWorkCenter('Erp', DesLine, ''); 
-    //SysRouteInsAddlParameter('Erp', 'Alt Line', AltLine, '', '', false, '', '', '');  2197
+    StepDeptERP('DESIL-D');
+    StepWCERP(DesLine); 
+    //StepParamERP('Alt Line', AltLine); 2197 
     if (( FindImpedanceSides = 'Outer' ) or ( FindImpedanceSides = 'Both' )) then    // 962 - Impedance Info
-      SysRouteInsAddlParameter('Erp', 'Impedance', 'Yes', '', '', false, '', '', '');
+      StepParamERP('Impedance', 'Yes');
     else
-      SysRouteInsAddlParameter('Erp', 'Impedance', 'No', '', '', false, '', '', ''); 
+      StepParamERP('Impedance', 'No'); 
       
     if (
         (CustCode_Rule('Customer') = 'FA') and
         ((Fnc.SysGetAttrValue('Line_Width') > 0.0) or (Fnc.SysGetAttrValue('Air_Gap') > 0.0))
        )
     then
-      SysRouteInsInstruction('Erp', 'DESIL007', ''); //'Remark : Sampling check line width'
+      StepInstructionERP('DESIL007'); //'Remark : Sampling check line width'
 
   end
   else
   begin  // Dummy Core
-    SysRouteInsDepartment('Erp', 'DESIL-D', '');
-    SysRouteInsWorkCenter('Erp', 'DESIL-E', '');
+    StepDeptERP('DESIL-D');
+    StepWCERP('DESIL-E');
   end;
 end;
                                                                                                                               
@@ -126,65 +126,65 @@ procedure HiPotTest_SD;
 begin
   if Fnc.SysGetAttrValue('MfgPartType') = 'Inn' then
   begin
-    SysRouteInsDepartment('Erp', 'HIPIL-A', '');
-    SysRouteInsWorkCenter('Erp', 'HIPIL-A', '');
+    StepDeptERP('HIPIL-A');
+    StepWCERP('HIPIL-A');
   end
   else
-  begin                                                                                    
-    SysRouteInsDepartment('Erp', 'HIPOL-A', '');
-    SysRouteInsWorkCenter('Erp', 'HIPOL-A', '');
+  begin
+    StepDeptERP('HIPOL-A');
+    StepWCERP('HIPOL-A');
   end;
   
   
   // 1391 Add unit Name for Hi Pot Parameters
   if ((Fnc.SysGetAttrValue('Volt') > 0) and (Fnc.SysGetAttrValue('Ramp') > 0)) then
   begin
-    SysRouteInsAddlParameter('Erp', 'Volt', FloatToStr(Fnc.SysGetAttrValue('Volt')) + ' KV', '', '', false, '', '', '');
-    SysRouteInsAddlParameter('Erp', 'Ramp', IntToStr(Fnc.SysGetAttrValue('Ramp')) + ' V/sec', '', '', false, '', '', '');
+    StepParamERP('Volt', FloatToStr(Fnc.SysGetAttrValue('Volt')) + ' KV');
+    StepParamERP('Ramp', IntToStr(Fnc.SysGetAttrValue('Ramp')) + ' V/sec');
                                                                                                                        
     Fnc.SysSetAttrValue('Wait', (Fnc.SysGetAttrValue('Volt') / Fnc.SysGetAttrValue('Ramp')) * 1000 ); // 1308
-    SysRouteInsAddlParameter('Erp', 'Wait', FloatToStr(Fnc.SysGetAttrValue('Wait')) + ' sec', '', '', false, '', '', '');
+    StepParamERP('Wait', FloatToStr(Fnc.SysGetAttrValue('Wait')) + ' sec');
 
     if Fnc.SysGetAttrValue('Hold') > 0 then
-      SysRouteInsAddlParameter('Erp', 'Hold', IntToStr(Fnc.SysGetAttrValue('Hold')) + ' sec', '', '', false, '', '', '');                            
+      StepParamERP('Hold', IntToStr(Fnc.SysGetAttrValue('Hold')) + ' sec');                            
                                      
     if Fnc.SysGetAttrValue('Leak_New') > 0 then
-      SysRouteInsAddlParameter('Erp', 'Leak', IntToStr(Fnc.SysGetAttrValue('Leak_New')) + ' uA', '', '', false, '', '', ''); // 1308
+      StepParamERP('Leak', IntToStr(Fnc.SysGetAttrValue('Leak_New')) + ' uA'); // 1308
   end;
 
 end;                                                                                                                    
 
 procedure IL_AOI_SD;
 begin                         
-  SysRouteInsDepartment('Erp', 'INSIL-A', '');
-  SysRouteInsWorkCenter('Erp', 'INSIL-A', '');
+  StepDeptERP('INSIL-A');
+  StepWCERP('INSIL-A');
 
   if CustCode_Rule('Customer') = 'FA' then
-    SysRouteInsInstruction('Erp', 'INSIL004', ''); // "CROSS_OUT : NOT ALLOWED"                         
+    StepInstructionERP('INSIL004'); // "CROSS_OUT : NOT ALLOWED"
     
   // 2199 IL AOI Step Additional Info
-  SysRouteInsAddlParameter('Erp', 'Min Air Gap', Fnc.SysGetAttrValue('Air_Gap'),'', '', false, '', '', '');
-  SysRouteInsAddlParameter('Erp', 'Min Line Width', Fnc.SysGetAttrValue('Line_Width'),'', '', false, '', '', ''); 
-  SysRouteInsAddlParameter('Erp', 'Thickness', FormatFloat('0.000',Fnc.SysGetAttrValue('LayupThickness')),'', '', false, '', '', '');
+  StepParamERP('Min Air Gap', Fnc.SysGetAttrValue('Air_Gap'));
+  StepParamERP('Min Line Width', Fnc.SysGetAttrValue('Line_Width')); 
+  StepParamERP('Thickness', FormatFloat('0.000',Fnc.SysGetAttrValue('LayupThickness')));
 end;
 
 procedure IL_PEP_SD;  // 1229 PEP Flow option for Sub-assembly build. 
 begin
-  SysRouteInsDepartment('Erp', 'PEPOL-A', '');
-  SysRouteInsWorkCenter('Erp', 'PEPOL-A', '');
+  StepDeptERP('PEPOL-A');
+  StepWCERP('PEPOL-A');
                                                                           
   //if CustCode_Rule('Customer') = 'FA' then
-  //  SysRouteInsInstruction('Erp', 'PEPOL010', ''); // “Check OPE location off-set”              
+  //  StepInstructionERP('PEPOL010'); // “Check OPE location off-set”
     
-  SysRouteInsInstruction('Erp', 'PEPOL011', '');  // Remark PEP Sandwich cores only
+  StepInstructionERP('PEPOL011');  // Remark PEP Sandwich cores only
 
 end; 
 
 procedure IL_SSP_SD;  // 1229 PEP Flow option for Sub-assembly build. 
 begin
-  SysRouteInsDepartment('Erp', 'EXPSM-A', '');                                                            
-  SysRouteInsWorkCenter('Erp', 'EXPSM-A', '');
-  SysRouteInsInstruction('Erp', 'EXPSM012', ''); // Remarks: Measure PEP OffSet Value
-  SysRouteInsInstruction('Erp', 'EXPSM013', ''); // Send back panels to IL AOI for matching
-  SysRouteInsAddlParameter('Erp', 'Panel Size',Fnc.SysGetAttrValue('Panel_Size'), '', '', false, '', '', ''); 
+  StepDeptERP('EXPSM-A');                                                            
+  StepWCERP('EXPSM-A');
+  StepInstructionERP('EXPSM012'); // Remarks: Measure PEP OffSet Value
+  StepInstructionERP('EXPSM013'); // Send back panels to IL AOI for matching
+  StepParamERP('Panel Size',Fnc.SysGetAttrValue('Panel_Size')); 
 end;

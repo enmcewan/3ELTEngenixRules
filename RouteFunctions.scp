@@ -4,12 +4,12 @@
 //ScriptType=0
 //ScriptGroup=HCS
 //HeaderImportExport<--
-Uses
+Uses                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      
   Eng_RouteFunctions,
   Event_RouteGenLibrary;
 
 Var
-  CurrentCuThkUM : integer;
+  CurrentCuThkUM : integer;         
   BakingDone : boolean;
   ENIG_NFluxDone : boolean;
   BKDRTop : boolean;
@@ -20,25 +20,25 @@ Var
   BackDrillDone : boolean;
   ImpedanceDone : boolean;
   PressThickness : float;
-  VCutDone : boolean;
+  VCutDone : boolean;         
   //ImmersionSilverDone: boolean;   1256
-  VCUT_TYPE : string;
-  BaseCuTopUM : integer;
-  BaseCuBotUM : integer;
-  AOIforCMK : boolean;                                        
+  VCUT_TYPE : string;                           
+  BaseCuTopUM : integer;  
+  BaseCuBotUM : integer;               
+  AOIforCMK : boolean;
   NCRun : integer;
   MicroEtchDone : boolean;
   TopFirstPlatingUM : float;
-  BotFirstPlatingUM : float;
-  Baking_Mtl : string;
+  BotFirstPlatingUM : float;          
+  Baking_Mtl : string;                       
   OLPhotoLineforDES : string;
-
-  GLB_NC_Thickness: double;
+                                              
+  GLB_NC_Thickness: double;               
   GLB_Ave_CuThk: double;
   GLB_Abs_CuThk: double;
   GLB_TGT_Ave_Hole_CuThk: double;
   GLB_TGT_Abs_HOLE_CuThk: double;
-
+                      
   Min_Drill : float;
   Min_Slot  : float;
 
@@ -56,10 +56,54 @@ Var
   photoStepList : TStringList;  // Photo Sequence
 
   MetalizationRun : integer;
-
+  
   epoxyPlugDone : boolean; //978
-  verticalDesmear : boolean;
+  verticalDesmear : boolean;  
 
+procedure StepParam(Source: string; ParamCode: string; ParamValue: string) // Added with 2269
+begin
+  Fnc.SysRouteGenInsAddlParam(Fnc.SysRouteInsGetStepNum, Source, ParamCode, ParamValue, '', '', false, '', '', '' );
+end;
+
+procedure StepParamERP(ParamCode: string; ParamValue: string)
+begin
+  Fnc.SysRouteGenInsAddlParam(Fnc.SysRouteInsGetStepNum, 'Erp', ParamCode, ParamValue, '', '', false, '', '', '' );
+end;
+
+procedure StepDept(Source: string; DeptCode: string);
+begin
+  Fnc.SysRouteGenInsDepartment(Fnc.SysRouteInsGetStepNum, Source, DeptCode, '');
+end;
+
+procedure StepDeptERP(DeptCode: string);
+begin         
+  Fnc.SysRouteGenInsDepartment(Fnc.SysRouteInsGetStepNum, 'Erp', DeptCode, '');
+end;
+
+procedure StepWC(Source: string; WCCode: string);
+begin
+  Fnc.SysRouteGenInsWorkCenter(Fnc.SysRouteInsGetStepNum, Source, WCCode, '');
+end;
+
+procedure StepWCERP(WCCode: string);
+begin
+  Fnc.SysRouteGenInsWorkCenter(Fnc.SysRouteInsGetStepNum, 'Erp', WCCode, '');
+end;
+
+procedure StepMaterials(Source: string; MaterialTypeList: TStringList; MaterialQty: double);
+begin           
+  Fnc.SysRouteGenInsMaterials(Fnc.SysRouteInsGetStepNum, Source, MaterialTypeList, MaterialQty, '');
+end;
+
+procedure StepMaterialsERP(MaterialTypeList: TStringList; MaterialQty: double);
+begin
+  Fnc.SysRouteGenInsMaterials(Fnc.SysRouteInsGetStepNum, 'Engx', MaterialTypeList, MaterialQty, '');
+end;
+
+procedure StepInstructionERP(InstrCode: string);
+begin
+  Fnc.SysRouteGenInsInstruction(Fnc.SysRouteInsGetStepNum, 'Erp', InstrCode, '');
+end; 
 
 procedure GET_VCUT_TYPE;
 begin
@@ -75,10 +119,11 @@ begin
 end;
 
 function SetTopBotLayerNames: TStringList;
-var                                                                 
+var
   TopLayer: string;
   BottomLayer: string;
 begin
+
   Fnc.SysGetTopAndBottomLayerName(TopLayer,BottomLayer);
   Fnc.SysSetAttrValue('TopLayer', Trim(TopLayer));
   Fnc.SysSetAttrValue('BotLayer', Trim(BottomLayer));
@@ -86,7 +131,7 @@ begin
 end
 
 function CheckCoreOrSubFormsParent : boolean;
-var
+var                         
   MfgPartName : string;
 begin
   MfgPartName := '';
@@ -141,7 +186,7 @@ begin
 end;
 
 function CoreBuild: boolean;
-var
+var              
   I: Integer;
   MatList: TStringList;
 begin
@@ -155,7 +200,7 @@ begin
     if Matlist.Strings[0] = 'Core' then
     begin
       //ShowMessage('Material at top is a ' + MatList.Strings(0));
-      Result := true;                         
+      Result := true;
     end;
 
     if MatList.Strings[MatList.Count - 1] = 'Core' then
@@ -197,10 +242,10 @@ begin
       Result := true;
     end;
   end;
-                                     
+
   MatList.Free;
-end;                                    
-    
+end;
+
 function LayupCoreCount : integer;
 var
   SubList : TStringList;
@@ -214,7 +259,7 @@ procedure GetCopperInfo;
 var
   BaseCopper: string;
   FirstPlating: string;
-  SecondPlating: string;
+  SecondPlating: string;         
   Msg: string;
 begin
 
@@ -272,7 +317,7 @@ begin
     '2oz' : result := '70';
     '3oz' : result := '';
   end;
-
+         
   if result = '' then
     ShowMessage('Copper Weight Not in Table ILPHOTO_2A!!!');
 
@@ -281,7 +326,7 @@ end;
 function GetLayerTypeAbbr(LayerType : string) : string;
 begin
   result := '';
-
+                   
   Case LayerType of
     'SIGNAL' : result := 'S';
     'MIXED' : result := 'M';
@@ -297,7 +342,7 @@ Var
   CoreFamilyList : TStringList;
   UniqueCoreFamilyList : TStringList;
   CoreFam1 : string;
-  CoreFam2 : string;  
+  CoreFam2 : string;
   CoreFam3 : string;
 
 begin
@@ -308,7 +353,7 @@ begin
   CoreFamilyList := Fnc.SysStackupGetMaterialList(99, True, 'Core', 'ItemFamily');
 
   for i := 0 to CoreFamilyList.Count-1 do
-  begin                            
+  begin
     UniqueCoreFamilyList.Add(CoreFamilyList[i]);
   end;
 
@@ -333,8 +378,8 @@ begin
     //showmessage(CoreFam2);
   end;
 
-  if UniqueCoreFamilyList.Count = 3 then                                    
-  begin                          
+  if UniqueCoreFamilyList.Count = 3 then
+  begin
     CoreFam1 := UniqueCoreFamilyList.Strings[0];
     CoreFam2 := UniqueCoreFamilyList.Strings[1];
     CoreFam3 := UniqueCoreFamilyList.Strings[2];
@@ -343,7 +388,7 @@ begin
 {
   if CoreFam2 <> '' then
     Fnc.SysSetAttrValue('Hybrid', true);
-}                                                 
+}
 
   if CoreFam1 <> '' then
   begin
@@ -360,7 +405,7 @@ begin
 
   UniqueCoreFamilyList.Free;
   CoreFamilyList.Free;
-end;  
+end;
 
 function PPG_Types : integer;
 Var
@@ -380,7 +425,7 @@ begin
   begin
     UniquePPGFamilyList.Add(PPGFamilyList[i]);
   end;
-                                                     
+
   result := UniquePPGFamilyList.Count;
 end;
 
@@ -452,7 +497,7 @@ begin
 
   UniquePPGFamilyList.Free;
   PPGFamilyList.Free;
-end;                                   
+end;
 
 function PPGTypesForILFinish : boolean;
 begin
@@ -525,7 +570,7 @@ Var
  MatFamilyList : TStringList;
 begin
   result := false;
-  Baking_Mtl := '';
+  Baking_Mtl := '';    
 
   //Get Material Family List & Baking Switch value from all Cores & Pre-Pregs
   MatBakingList := Fnc.SysStackupGetMaterialList(99, True, 'Core;PP/Filler', 'User_Baking');
@@ -535,11 +580,12 @@ begin
 
   for i := 0 to MatBakingList.Count -1 do
   begin
-    if MatBakingList.Strings[i] = true then
-    begin
-      result := true;
-      Baking_Mtl := MatFamilyList.Strings[i]
-    end;
+    if pos('No Valid Material', MatBakingList.Strings[i]) = 0 then
+      if MatBakingList.Strings[i] = true then
+      begin
+        result := true;
+        Baking_Mtl := MatFamilyList.Strings[i]
+      end; 
   end;
 
   //if result = true then ShowMessage('Material Gets Baking');
@@ -608,8 +654,9 @@ begin
 
   for i := 0 to MatCEList.Count -1 do
   begin
-    if MatCEList.Strings[i] = true then
-      result := true;
+    if pos('No Valid Material', MatCEList.Strings[i]) = 0 then
+      if MatCEList.Strings[i] = true then
+        result := true;
   end;
 
   //if result = true then ShowMessage('Material Gets Special Desmeatr');
@@ -630,9 +677,10 @@ begin
   //ShowMessage(MatSpecialDSList.Text);
 
   for i := 0 to MatPIList.Count -1 do
-  begin
-    if MatPIList.Strings[i] = true then
-      result := true;
+  begin            
+    if pos('No Valid Material', MatPIList.Strings[i]) = 0 then 
+      if MatPIList.Strings[i] = true then
+        result := true;
   end;
 
   //if result = true then ShowMessage('Material Gets Special Desmeatr');
@@ -654,8 +702,9 @@ begin
 
   for i := 0 to MatPCureList.Count -1 do
   begin
-    if MatPCureList.Strings[i] = true then
-      result := true;
+    if pos('No Valid Material', MatPCureList.Strings[i]) = 0 then 
+      if MatPCureList.Strings[i] = true then
+        result := true;
   end;
 
   //if result = true then ShowMessage('Material Gets Special Desmeatr');
@@ -708,10 +757,10 @@ end;
 function DrillProcessSide(DrillStartLayer: string; LayerTop: string; LayerBot: string; MaskTop: string; MaskBot: string) : string;
 begin
   result := 'None';
-
+  
   if (( DrillStartLayer = MaskTop ) or ( DrillStartLayer = LayerTop )) then
     result := 'Top';
-
+    
   if (( DrillStartLayer = MaskBot ) or ( DrillStartLayer = LayerBot )) then
     result := 'Bot';
 
@@ -723,7 +772,7 @@ var
   I: integer;
   LayerTop : string;
   LayerBot : string;
-  MaskTop : string;
+  MaskTop : string;                    
   MaskBot : string;
   LayerCount : integer;
   DrillStartLayer : string;
@@ -736,73 +785,73 @@ begin
   Fnc.SysSetAttrValue('CuFilledVias', false);
   Fnc.SysSetAttrValue('NPCountersink', false);
   Fnc.SysSetAttrValue('PLCountersink', false);
-  Fnc.SysSetAttrValue('CappedVia', false);
+  Fnc.SysSetAttrValue('CappedVia', false);            
   Fnc.SysSetAttrValue('BackDrill', false);
   Fnc.SysSetAttrValue('BackDrill_Epoxy', false); // 844 Backdrill after electrolytic Cu
   Fnc.SysSetAttrValue('Counterbore', false);
   Fnc.SysSetAttrValue('EpoxySide', 'None');
   Fnc.SysSetAttrValue('SMPlugType', 'None');
   //Fnc.SysSetAttrValue('NCRunX2', false);
-
+  
   Fnc.SysSetAttrValue('PLCountersink_Side', 'None');
   Fnc.SysSetAttrValue('NPCountersink_Side', 'None');
   Fnc.SysSetAttrValue('Counterbore_Side', 'None');
-  Fnc.SysSetAttrValue('Milling', false);
+  Fnc.SysSetAttrValue('Milling', false); 
 
   LayerTop := '';
   LayerBot := '';
   MaskTop := '';
   MaskBot := '';
   BKDRTop := false;
-  BKDRBot := false;
+  BKDRBot := false;                 
   BKDRwEpoxyTop := false;
   BKDRwEpoxyBot := false;
   DrillStartLayer := '';
   DrillEndLayer := '';
-  Plated := false;
+  Plated := false;      
   MechBVHTop := false;
   MechBVHBot := false;
 
   Std_PTH_Count := 0;
-  X2_wEpoxy_Count := 0;
+  X2_wEpoxy_Count := 0;                          
 
   checkBD_StartLayer := true;
 
   NumDrillFiles := FindNumberOfDrillFiles;
 
-  if NumDrillFiles > 0 then
+  if NumDrillFiles > 0 then  
   begin
     for I := 1 to NumDrillFiles do
     begin
       DrillStartLayer := Fnc.SysGetItemAttrValue('START_NAME', True, cStackupDrill, I);
       DrillEndLayer := Fnc.SysGetItemAttrValue('END_NAME', True, cStackupDrill, I);
       Plated := Fnc.SysGetItemAttrValue('DrillPlated', True, cStackupDrill, I);
-      //ShowMessage(Fnc.SysGetItemAttrValue('ItemLayerName', True, cStackupDrill, I));
-
+      //ShowMessage(Fnc.SysGetItemAttrValue('ItemLayerName', True, cStackupDrill, I)); 
+                                                       
       LayerTop := Fnc.SysGetAttrValue('TopLayer');
       LayerBot := Fnc.SysGetAttrValue('BotLayer');
-
+      
       Fnc.SysStackupItemTypeCount(cStackupSolderMask, true, LayerCount, MaskTop, MaskBot);
       MaskTop := trim(MaskTop);
       MaskBot := trim(MaskBot);
-
+      
       //ShowMessage('Start: ' + '|'+DrillStartLayer+'|'+LayerTop+'|');
-
+                                         
       Fnc.SysStackupItemTypeCount(cStackupSolderMask, true, LayerCount, MaskTop, MaskBot);
       MaskTop := trim(MaskTop);
-      MaskBot := trim(MaskBot);
-
+      MaskBot := trim(MaskBot);     
+                             
       if (
           (Fnc.SysGetItemAttrValue('DrillDefId', True, cStackupDrill, I) = 2)
           and
           (Fnc.SysGetItemAttrValue('DrillFilledID', True, cStackupDrill, I) = 28)  // 28 = Cu Filled
          )
       then
-      begin
+      begin              
         //ShowMessage('Cu Filled Vias Found');
         Fnc.SysSetAttrValue('CuFilledVias', true);
       end;
-
+                                    
       else if Fnc.SysGetItemAttrValue('DrillDefId', True, cStackupDrill, I) = 4 then
       begin
         //ShowMessage('Countersink Found');
@@ -832,8 +881,8 @@ begin
           if Fnc.SysGetAttrValue('MfgPartType') = 'Top' then
           begin
             if (( DrillStartLayer <> MaskTop ) and ( DrillStartLayer <> MaskBot )) then
-            begin
-              MessageDlg('Error!!! Back Drill Start Layer must be a Top or Bottom Soldermask', mtWarning, SetOf([mbOK]), 0);
+            begin              
+              MessageDlg('Error!!! Back Drill Start Layer must be a Top or Bottom Soldermask', mtWarning, SetOf([mbOK]), 0); 
               checkBD_StartLayer := false;
             end;
           end
@@ -842,22 +891,22 @@ begin
             if (( DrillStartLayer <> LayerTop ) and ( DrillStartLayer <> LayerBot )) then
             begin
               MessageDlg('Error!!! Back Drill Start Layer must be a Top or Bottom Layer', mtWarning, SetOf([mbOK]), 0);
-              checkBD_StartLayer := false;
+              checkBD_StartLayer := false;                    
             end
-          end;
+          end;                           
 
           if checkBD_StartLayer then
-          begin
+          begin           
             Fnc.SysSetAttrValue('BackDrill', true);
 
             if (( DrillStartLayer = MaskTop ) or ( DrillStartLayer = LayerTop )) then
               BKDRTop := true;
 
             if (( DrillStartLayer = MaskBot ) or ( DrillStartLayer = LayerBot )) then
-              BKDRBot := true;
+              BKDRBot := true; 
           end;
         end
-        else
+        else                                           
         begin
           if (
               ( Fnc.SysGetItemAttrValue('DrillFilledID', True, cStackupDrill, I) = 18 ) or // Epoxy Plugging
@@ -884,9 +933,9 @@ begin
           begin
             MessageDlg('Error!!! Back Drill Ink is not Epoxy', mtWarning, SetOf([mbOK]), 0)
             Fnc.UserRouteGenAbort := true;
-          end;
-        end;
-      end;
+          end;    
+        end;                                                              
+      end;                  
 
       else if Fnc.SysGetItemAttrValue('DrillDefId', True, cStackupDrill, I) = 5 then
       begin
@@ -894,14 +943,14 @@ begin
         Fnc.SysSetAttrValue('Counterbore', true);
         Fnc.SysSetAttrValue('Counterbore_Side', DrillProcessSide(DrillStartLayer, LayerTop, LayerBot, MaskTop, MaskBot));
       end;
-
+      
       else if Fnc.SysGetItemAttrValue('DrillDefId', True, cStackupDrill, I) = 7 then
       begin
         //ShowMessage('Counterbore Found');
         Fnc.SysSetAttrValue('Milling', true);
         Fnc.SysSetAttrValue('Milling_Side', DrillProcessSide(DrillStartLayer, LayerTop, LayerBot, MaskTop, MaskBot));
-      end;
-
+      end;                             
+      
 
       if Fnc.SysGetItemAttrValue('DrillDefId', True, cStackupDrill, I) <> 6 then
       begin
@@ -919,7 +968,7 @@ begin
           35 : Fnc.SysSetAttrValue('SMPlugType', 'Secondary SM Plug AB');
           36 : Fnc.SysSetAttrValue('SMPlugType', 'Secondary SM Plug BA');
         end;
-      end;
+      end;           
 
       //Conditions for Mevh BVH - to be completed. Needs have Depth, Aspect Ratio etc added to the drill layer. Values for multiple blind vias need to be condidered for
       else if Fnc.SysGetItemAttrValue('DrillDefId', True, cStackupDrill, I) = 8 then //Mech BVH
@@ -1105,7 +1154,7 @@ begin
     LayerName := myTable.FieldByName('ItemLayerName').AsString;
 
   BreakItemLevel := myTable.FieldByName('ItemLevel').AsInteger;
-                                 
+
   LastItemLevel := -1;
 
   // position above the layer record
@@ -1179,7 +1228,7 @@ begin
   Fnc.SysGetCopperValues(TopBot, CuCode, BaseCopper, FirstPlating, SecondPlating);
 
   Case BaseCopper of
-    '5um' : result := 5; // 1200 5um Cu Foil
+    '5um' : result := 5; // 1200 5um Cu Foil 
     '1/4oz' : result := 9;
     '1/3oz' : result := 12;
     '1/2oz' : result := 18;
@@ -1256,11 +1305,11 @@ begin
         result := true;
     end
     else
-      result := true;                          
+      result := true;
   end;
 
 end;
-
+                         
 function PressCycleMoreThan1 : boolean;
 var
   SubList : TStringList;
@@ -1286,7 +1335,7 @@ begin
   SubList := Fnc.SysGetItemAttrValueList('ItemMatrlDesc', cStackupMfgSubAssy, 0, false);
   //ShowMessage(SubList.Text);
   if SubList.Count > 0 then
-  begin
+  begin          
     Result := true;
     Fnc.SysSetAttrValue('Seq_Build', true);
   end;
@@ -1327,7 +1376,7 @@ var
   i : integer;
   subAttrList : TStringList;
 begin
-  result := false;
+  result := false;    
 
   subAttrList := Fnc.SysGetItemAttrValueList( 'Panel_Length', cStackupMfgSubAssy + ';' + cStackupMfgSubLevel, 0, false );
   subAttrList.Sorted := true;
@@ -1340,7 +1389,7 @@ begin
   //ShowMessage(BoolToStr(result));
 
 end;
-                                  
+
 function SuborILThk_GreaterThan( check_Size : integer ) : boolean;
 var
   i : integer;
@@ -1436,11 +1485,11 @@ begin
      )
   then
     result := true;
-end;
-
+end;                              
+                                 
 function HardGoldB4Resist : boolean;
 begin
-  result := false;
+  result := false;           
 
   if ( Fnc.SysGetAttrValue('Sel_Gold_Type') <> 'None' ) and ( Fnc.SysGetAttrValue('Sel_Gold_Type') <> 'ENIG' ) then
     result := true;
@@ -1448,25 +1497,25 @@ begin
   if ( Fnc.SysGetAttrValue('Board_Finish') =  'Full Body Gold' ) or
      ( Fnc.SysGetAttrValue('Board_Finish') =  'Thin/Thick Au Plate' )
   then // 1256 or (Fnc.SysGetAttrValue('Board_Finish') = 'Full Body Gold + LGA')) then
-    result := true;
-
+    result := true;        
+                                               
   case Fnc.SysGetAttrValue('Gold_Fgr_Type') of
     //'Lead Line Etching B4 Res (Sel)',
     'Lead Line Etching',
     //'No Horn - Lead Line Etching B4 Res (Sel)',  1256
     //'Thin/Thick - Lead Line Etching B4 Res (Sel)', 1256
     // 'Thin/Thick - Chamfer B4 Res (Sel)',
-    //'Thin/Thick - After Pattern (Sel)',
+    //'Thin/Thick - After Pattern (Sel)', 
     //'Chamfer B4 Res (Sel)' ,
     //'After Pattern (Sel)' : result := true;  // 911 - Change Chamfer B4 Res (Sel) to Finger Au After Pattern   1256
     'NO Lead Line Etching',
     'Soldermask Spray': result := true;
-  end;
-
-end;
+  end;                   
+             
+end;                            
 
 procedure TotalThickestCuUM;
-Var
+Var              
   TopCuThk : float;
   BotCuThk : float;
 begin
@@ -1476,7 +1525,7 @@ begin
   if TopCuThk >= BotCuThk then
     CurrentCuThkUM := TopCuThk
   else
-    CurrentCuThkUM := BotCuThk
+    CurrentCuThkUM := BotCuThk                  
 
   CurrentCuThkUM := CurrentCuThkUM * 1000;
 
@@ -1554,7 +1603,7 @@ Var
   i : integer;
 begin
   result := false;
-
+  
   if Fnc.SysGetAttrValue('SM_Process') = 'Screen Print' then    // 1110 Override Soldermask process
     result := true
   else if Fnc.SysGetAttrValue('SM_Process') = 'Spray Coat' then
@@ -1562,9 +1611,9 @@ begin
   else
   begin
     ResistList := TStringList.Create;
-
+  
     ResistList := Fnc.SysGetItemAttrValueList('ItemFamily', cStackupSolderMask, 0, true);
-
+       
     for i := 0 to ResistList.Count - 1 do
     begin
       case ResistList.strings[i] of
@@ -1582,8 +1631,8 @@ begin
         'Greentec 600AA S70V(PUR)':  // AUS308 should be screen printed
         result := true;
       end;
-    end;
-    ResistList.Free;
+    end;   
+    ResistList.Free;    
   end;
 end;
 
@@ -1593,10 +1642,10 @@ Var
   i : integer;
 begin
   result := false;
-
-  ResistList := TStringList.Create;
+ 
+  ResistList := TStringList.Create; 
   ResistList := Fnc.SysGetItemAttrValueList('ItemFamily', cStackupSolderMask, 0, true);
-
+     
   for i := 0 to ResistList.Count - 1 do
   begin
     case ResistList.strings[i] of
@@ -1605,8 +1654,8 @@ begin
       'PSR2000-BL500': //Correct name for Mask Type above.
         result := true;
     end;
-  end;
-  ResistList.Free;
+  end;   
+  ResistList.Free;    
 end;
 
 function GetsInkJetLegend : boolean;
@@ -1673,7 +1722,7 @@ begin
   if SMaskList.Count > 2 then
     result := SMaskList.Strings[1];
 
-end;
+end;                                                                                             
 
 function InkColorWhite(InkType : string) : boolean;
 begin
@@ -1729,7 +1778,7 @@ begin
   //  if MeasOver = 'Total Incl.Plating' then MeasOver := 'PLATING';
   //  if MeasOver = 'Total Over Laminate' then MeasOver := 'DIELECTRIC';
   //  Fnc.SysSetAttrValue('PPP_MEAS_OVER', MeasOver)
-end; //end table
+end; //end table                                     
 
 
 function ThicknessOverMask : float;  //ENIG Changes
@@ -1769,10 +1818,10 @@ end;
 
 function HasMultipleSubAssemblies : boolean;
 var
-  SubList : TStringList;
+  SubList : TStringList;        
 
 begin
-  result := false;
+  result := false;                
   SubList := Fnc.SysGetItemAttrValueList('ItemMatrlDesc', cStackupMfgSubAssy, 0, true);
 
   if SubList.Count > 1 then
@@ -1943,14 +1992,14 @@ var
 begin
   result := '';
   CCode := '';
-
+                 
   CCode := Fnc.SysFindAttrValue('Cust_Code', true);
   result := Copy(CCode, Length(CCode) -1, 2);
 end;
 
 function NumTimesPress: integer;
-var
-  i: integer;
+var                                    
+  i: integer;                                                                                    
   ItemTypes: string;
   AttrList: TStringList;
   aList: TStringList;
@@ -1960,7 +2009,7 @@ begin
 
   ItemTypes := cStackupMfgSubAssy + ';' + cStackupMfgSubLevel;
   AttrList := Fnc.SysGetItemAttrValueList('ItemLevel', ItemTypes, 99, False);
-
+                     
   aList := TStringList.Create;
   LevelHigh := 0;
 
@@ -2061,7 +2110,7 @@ begin
   Overlay_Hole_Circle := 0.0;
   Total_Hole_Area_Panel := 0.0;
   Total_Hole_Circle_Panel := 0.0;
-  Total_Surface_Nohole := 0.0;
+  Total_Surface_Nohole := 0.0;                
   Total_Plating_Area := 0.0;
 
   if NCRUN = 2 then
@@ -2257,7 +2306,7 @@ begin
      )
   then
     MEtchTag3 := true;
-                                      
+
   if U_MEtchB4CNC = true then
     result := true
   else if MEtchTag0 = true then
@@ -2488,24 +2537,24 @@ begin
 end;
 
 function Valid_PDM_User(user : string) : boolean;
-var
+var 
   sqlStr: string;
   user_Table : TSysTable;
 
-begin
+begin 
   result := false;
-
+  
   sqlStr := 'SELECT USER_LOGIN_NAME FROM DATA0073 WHERE ' +
              'USER_LOGIN_NAME = ' + QuotedStr(user);
-
+                     
   user_Table := Fnc.AstaExecuteSql(SqlStr);
-
+  
   if user_Table.RecordCount = 1 then
     result := true;
-
+  
 
 end;
-
+    
 
 function HasFaradflexMat : boolean;  // New Drill Bit Instruction for Faradflex Material
 var
@@ -2517,7 +2566,7 @@ begin
     MatFamilyList := Fnc.SysStackupGetMaterialList(99, false, 'Core;PP/Filler', 'ItemFamily');  //
 
     if MatFamilyList.Count > 0 then
-    begin
+    begin                                          
       for i := 0 to MatFamilyList.Count -1 do
       begin
         if MatFamilyList.Strings[i] = 'Faradflex' then
@@ -2531,7 +2580,7 @@ var
   user: string;
 begin
   result := '';
-
+  
   //user:= 'KENNETH-CHAN'
 
   Case Fnc.GetLoggedInUserName of
@@ -2559,7 +2608,7 @@ begin
   //'KYLE-CHIANG' : result := '5790'; // 1147 Export Paradigm user name
   'DAVE-MARTIN' : result := '5807';
   'FERNANDO-BOCALAN' : result := '5819';
-  // 1147 Export Paradigm user name
+  // 1147 Export Paradigm user name 
   'ZHI-YING' : result := '5824';
   'YEE-SING' : result := '5827';
   'KENNETH-CHAN' : result := '5834';
@@ -2575,7 +2624,7 @@ begin
   result := '';
 
   if Fnc.SysGetAttrValue('MfgPartType') = 'Inn' then
-    result := trim(Fnc.SysGetAttrValue('CoreMat'))
+    result := trim(Fnc.SysGetAttrValue('CoreMat'))                                                                                                  
   else
   begin
     if ((Fnc.SysGetAttrValue('PPGMat') <> 'No PPG') and (Fnc.SysGetAttrValue('CoreMat') <> 'No Cores')) then
@@ -2610,11 +2659,12 @@ begin
 
   for i := 0 to matPOBList.Count -1 do
   begin
-    if matPOBList.Strings[i] = true then
-      result := true;
+    if pos('No Valid Material', matPOBList.Strings[i]) = 0 then
+      if matPOBList.Strings[i] = true then
+        result := true;
   end;
 end;
-
+                                
 function MatPostOxideBake : boolean;
 Var
  i : Integer;
@@ -2625,13 +2675,15 @@ begin
 
   //Get Material Family List & Baking Switch value from all Cores & Pre-Pregs
   matPOBList := Fnc.SysStackupGetMaterialList(99, True, 'Core;PP/Filler', 'User_PostOxBake');
-
-  //ShowMessage(matPOBList.Text);
-
-  for i := 0 to matPOBList.Count -1 do
-  begin
-    if matPOBList.Strings[i] = true then
-      result := true;
+                                    
+  if matPOBList.Count > 0 then
+  begin                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  
+    for i := 0 to matPOBList.Count -1 do
+    begin
+      if pos('No Valid Material', matPOBList.Strings[i]) = 0 then 
+        if matPOBList.Strings[i] = true then
+          result := true; 
+    end; 
   end;
 end;
 
@@ -2648,10 +2700,11 @@ begin
 
   //ShowMessage(matPOBList.Text);
 
-  for i := 0 to matPOBList.Count -1 do
+  for i := 0 to matPOBList.Count -1 do     
   begin
-    if matPOBList.Strings[i] = true then
-      result := true;
+    if pos('No Valid Material', matPOBList.Strings[i]) = 0 then 
+      if matPOBList.Strings[i] = true then
+        result := true;
   end;
 end;
 
@@ -2706,7 +2759,7 @@ begin
   MfgPartName := '';
   TopFormsParentLayer := false;
   BotFormsParentLayer := false;
-
+                                                             
   MfgPartName := Fnc.SysGetAttrValue('ItemMatrlDesc');
 
   if (
@@ -2779,23 +2832,23 @@ var
   i : integer;
   subCount: integer;
   grandParentLevel: integer;
-  SubLevel: integer;
-
+  SubLevel: integer;   
+                   
 begin
   // If 2 or more subs on same level then build is sequential
   result := false;   // No Sub-Assemblies
   subCount:= 0;
   ValueList := TStringList.Create;
-
+                  
   SubList := Fnc.SysGetItemAttrValueList('ItemMatrlDesc;ItemLevel', cStackupMfgTopLevel + ';' + cStackupMfgSubAssy, -2, false);
-
+  
   if SubList.Count > 0 then
-  begin
+  begin                                
     ValueList.Text := SubList.Strings[0]; // Get First Item
     grandParentLevel := StrToInt(ValueList.strings[1]);
     SubLevel := grandParentLevel + 1;
     //ShowMessage(SubList.Text);
-
+                     
     for i := 1 to SubList.Count - 1 do // start at 2nd item which is the first child
     begin
       ValueList.Text := SubList.Strings[i]; // Just reuse this
@@ -2803,10 +2856,10 @@ begin
       if SubLevel = StrToInt(ValueList.strings[1]) then
         subCount := SubCount + 1;
     end;
-
-    ValueList.Free
-  end;
-
+    
+    ValueList.Free              
+  end;                 
+  
   if subCount >= 2 then
     Result := true;
 
@@ -2822,24 +2875,24 @@ var
   i : integer;
   subCount: integer;
   ParentLevel: integer;
-  SubLevel: integer;
-
+  SubLevel: integer;   
+                   
 begin
   // If 2 or more subs on same level then build is sequential
   result := false;   // No Sub-Assemblies
   subCount:= 0;
   ValueList := TStringList.Create;
   ParentLevelList := TStringList.Create;
-
+                  
   SubList := Fnc.SysGetItemAttrValueList('ItemMatrlDesc;ItemLevel', cStackupMfgTopLevel + ';' + cStackupMfgSubAssy + ';' + cStackupMfgSubLevel, -2, true);
-
+               
   if SubList.Count > 0 then
-  begin
+  begin                                
     ValueList.Text := SubList.Strings[0]; // Get First Item
     ParentLevel := StrToInt(ValueList.strings[1]);
     SubLevel := ParentLevel + 1;
     //ShowMessage(SubList.Text);
-
+                    
     for i := 1 to SubList.Count - 1 do // start at 2nd item which is the first child
     begin
       ValueList.Text := SubList.Strings[i]; // Just reuse this
@@ -2848,13 +2901,13 @@ begin
       begin
         ParentLevelList.Add(ValueList.Strings[0]);
       end;
-
+                               
     end;
    //ShowMessage(ParentLevelList.Text);
-
-    ValueList.Free
-  end;
-
+    
+    ValueList.Free              
+  end;                   
+  
   if ( AnsiPos('x', ParentLevelList.strings[0]) ) or ( AnsiPos('x', ParentLevelList.strings[ParentLevelList.Count -1]) ) then
     Result := true;
 
@@ -2900,8 +2953,8 @@ begin
 
   SubList := Fnc.SysGetItemAttrValueList('ItemMatrlDesc', cStackupMfgSubAssy, -1, true);
   //ShowMessage(SubList.Text);
-  if SubList.Count >= 1 then
-  begin
+  if SubList.Count >= 1 then 
+  begin                                                          
     if SubList.Strings[0] = mfgPartName then
       result := true;
   end;
@@ -2910,96 +2963,88 @@ begin
 end;
 
 function SandwichCore : boolean;  // 1229 PEP Flow option for Sub-assembly build.
-var
-  SubList : TStringList;
+var                  
+  SubList : TStringList;                                      
 begin
-  result := false;
-  SubList := Fnc.SysGetItemAttrValueList('ItemMatrlDesc', cStackupMfgSubAssy  + ';' + cStackupMfgSubLevel, -1, true);
+  result := false;                          
+  SubList := Fnc.SysGetItemAttrValueList('ItemMatrlDesc', cStackupMfgSubAssy  + ';' + cStackupMfgSubLevel, -1, true); 
   //ShowMessage(SubList.Text);
   if SubList.Count > 1 then
   begin
     if ( AnsiPos('SubAssembly', SubList.Strings[0]) > 0 ) and
-       // cores will be here, doesn't matter how many
+       // cores will be here, doesn't matter how many 
        ( AnsiPos('SubAssembly', SubList.Strings[SubList.Count -1]) > 0 ) then
       result := true;
-
+      
     if ( AnsiPos('InnerLayer', SubList.Strings[0]) > 0 ) and
-       ( AnsiPos('SubAssembly', SubList.Strings[1]) > 0 ) and
+       ( AnsiPos('SubAssembly', SubList.Strings[1]) > 0 ) and 
        ( AnsiPos('InnerLayer', SubList.Strings[SubList.Count -1]) > 0 ) then
       result := true;
   end;
-
-  SubList.Free;
+    
+  SubList.Free;                         
 end;
-
-function SubIsSandwich : boolean;  // 1229 PEP Flow option for Sub-assembly build.
-var
+                   
+function SubIsSandwich : boolean;  // 1229 PEP Flow option for Sub-assembly build. 
+var                  
   SubList : TStringList;
-begin
-  result := false;
-  SubList := Fnc.SysGetItemAttrValueList('ItemMatrlDesc', cStackupMfgSubAssy  + ';' + cStackupMfgSubLevel, -1, true);
+begin                 
+  result := false;                          
+  SubList := Fnc.SysGetItemAttrValueList('ItemMatrlDesc', cStackupMfgSubAssy  + ';' + cStackupMfgSubLevel, -1, true);                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         
   //ShowMessage(SubList.Text);
-  if SubList.Count > 1 then
+  if SubList.Count > 1 then                                                                                   
   begin
     if ( AnsiPos('SubAssembly', SubList.Strings[0]) > 0 ) and
-       ( AnsiPos('InnerLayer', SubList.Strings[1]) > 0 ) and
-       ( AnsiPos('SubAssembly', SubList.Strings[SubList.Count -1]) > 0 ) then
+       ( AnsiPos('InnerLayer', SubList.Strings[1]) > 0 ) and 
+       ( AnsiPos('SubAssembly', SubList.Strings[SubList.Count -1]) > 0 ) 
+    then
+      result := true     
+                          
+    else 
+    if ( AnsiPos('InnerLayer', SubList.Strings[0]) > 0 ) and
+       ( AnsiPos('SubAssembly', SubList.Strings[1]) > 0 ) and 
+       ( AnsiPos('InnerLayer', SubList.Strings[SubList.Count -1]) > 0 ) 
+    then
       result := true
-
-
-    else if ( AnsiPos('InnerLayer', SubList.Strings[0]) > 0 ) and
-       ( AnsiPos('SubAssembly', SubList.Strings[1]) > 0 ) and
-       ( AnsiPos('InnerLayer', SubList.Strings[SubList.Count -1]) > 0 ) then
-      result := true
-
-    else if SubList.Count > 2 then
+               
+    else 
+    if SubList.Count > 2 then
     begin
-       if ( AnsiPos('SubAssembly', SubList.Strings[0]) > 0 ) and // Hack since parent is a sub  (need to consider levels)
-       ( AnsiPos('SubAssembly', SubList.Strings[1]) > 0 ) and
-       ( AnsiPos('InnerLayer', SubList.Strings[2]) > 0 ) and
-       ( AnsiPos('SubAssembly', SubList.Strings[SubList.Count -1]) > 0 ) then
-      result := true;
+      if ( AnsiPos('SubAssembly', SubList.Strings[0]) > 0 ) and // Hack since parent is a sub  (need to consider levels)
+         ( AnsiPos('SubAssembly', SubList.Strings[1]) > 0 ) and
+         ( AnsiPos('InnerLayer', SubList.Strings[2]) > 0 ) and 
+         ( AnsiPos('SubAssembly', SubList.Strings[SubList.Count -1]) > 0 ) 
+      then
+        result := true;
     end;
-
+      
   end;
-
-  SubList.Free;
-end;
-
+    
+  SubList.Free;                  
+end;             
+                      
 function SubGetsNewPEP : boolean; // 1229 PEP Flow option for Sub-assembly build.
 begin
   result := false;
-
+                                        
   if ( not Fnc.SysGetAttrValueTopLevel('Alt_PEP_Process') ) and
      ( Fnc.SysGetAttrValue('MfgPartType') = 'Sub' ) and
-     (( SubParentIsSequential ) or ( ( not Fnc.SysGetAttrValue('Seq_Build') ) and ( SandwichCore ) ))
-  then
+     (( SubParentIsSequential ) or (( not Fnc.SysGetAttrValue('Seq_Build') ) and ( SandwichCore ) )) 
+  then                                                      
     result := true;
 end;
 
-function TopLevelGetsPEP : boolean;  // 1229 PEP Flow option for Sub-assembly build.
-begin
-  result := false;
+function TopLevelGetsPEP : boolean;  // 1229 PEP Flow option for Sub-assembly build. 
+begin          
+  result := false;                    
+                                                 
+  if not (( Fnc.SysGetAttrValue('Seq_Build') ) or ( ( Fnc.SysGetAttrValue('MfgPartType') = 'Top' ) and ( SandwichCore ) )) and 
+          ( not Fnc.SysGetAttrValueTopLevel('Alt_PEP_Process') )        
+  then  
+    result := true;               
+end;                       
 
-  if not (
-          //( Fnc.SysGetAttrValue('MfgPartType') = 'Top' ) and
-          (( Fnc.SysGetAttrValue('Seq_Build') ) or ( ( Fnc.SysGetAttrValue('MfgPartType') = 'Top' ) and ( SandwichCore ) )) and
-          ( not Fnc.SysGetAttrValueTopLevel('Alt_PEP_Process') )
-         )
-  then
-    result := true;
-
-  {if not (
-          ( Fnc.SysGetAttrValue('MfgPartType') = 'Top' ) and
-          ( SandwichCore ) and
-          ( not Fnc.SysGetAttrValue('Alt_PEP_Process') )
-         )
-  then
-    result := true;}
-
-end;
-
-procedure AddSubsAndInnersAtStep;  // 1229 PEP Flow option for Sub-assembly build.
+procedure AddSubsAndInnersAtStep;  // 1229 PEP Flow option for Sub-assembly build. 
 var
   Material : TStringlist;
 begin
@@ -3008,7 +3053,7 @@ begin
   Material.add('MFGBV');
   Material.add('MFGTL');
   SysRouteInsMaterials('Engx', Material, 1, '');
-
+  
   Material.Free;
 end;
 
@@ -3065,7 +3110,7 @@ begin
     Fnc.SysSetAttrValue('Seq_Build', false);  //Update old parts
 
     if SubList.Count = 1 then
-    begin
+    begin    
       Result := 'Build-Up';
       Fnc.SysSetAttrValue('Build_Up', true);
 
@@ -3102,7 +3147,7 @@ begin
 
   if partNumber = 'XXXXX' then
     partNumber := 'Blank';
-
+  
   if Fnc.SysGetAttrValueTopLevel('Part_Type') = 'Standard' then
   begin
   if jobType = 'Sample' then
@@ -3116,8 +3161,8 @@ begin
           result := 'Job Type is Production but Part Number is: ' + partNumber;
     end
     else
-      result := 'Unknown Job Type';
-  end
+      result := 'Unknown Job Type';  
+  end       
   else if Fnc.SysGetAttrValueTopLevel('Part_Type') = 'Internal' then
   begin
     if jobType = 'Sample' then
@@ -3131,10 +3176,10 @@ begin
             result := 'Job Type is Production but Part Number is: ' + partNumber;
       end
       else
-        result := 'Unknown Job Type';
-  end;
-
-
+        result := 'Unknown Job Type';  
+  end; 
+  
+                                  
   if result <> 'OK' then
     MessageDlg(result, mtWarning, Setof([mbOK]), 0);
 end;
@@ -3142,7 +3187,7 @@ end;
 function IsSelectiveGold : boolean;
 begin
   result := false;
-
+                           
   if ( Fnc.SysGetAttrValue('Sel_Gold_Type') <> 'None' ) or
      (( Fnc.SysGetAttrValue('Gold_Fgr_Type') <> 'None' ) and ( Fnc.SysGetAttrValue('Gold_Fgr_Type') <> 'Tab Plating' )) then
     result := true;
@@ -3150,7 +3195,7 @@ end;
 function ConvertStrtoInt(str : string) : integer;  //364 Surface Cu Calculation
 begin
   result := 0;
-  try
+  try              
     result := StrtoInt(str);
   except
     MessageDlg('Cannot Convert Epoxy Plug Thinning Value to integer. Cu Thinning will be ignored!', mtWarning, Setof([mbOK]), 0);
@@ -3212,7 +3257,7 @@ begin
     try
       result := StrToInt(copy(UserDECu, 6, 2));
     except
-      begin
+      begin                                 
         MessageDlg(errorStr, mtWarning, Setof([mbOK]), 0);
         result := InProcessCuThk;
       end;
@@ -3273,12 +3318,12 @@ begin
     result := ConvertCuThinStrtoInt(Fnc.SysGetAttrValue('CoreBuild_CuThin_2ndBuff'));
   end
   else if Fnc.SysGetAttrValue('CoreBuild_CuThin_Process') = 'Micro-Etch + Buffing' then
-    result := ConvertCuThinStrtoInt(Fnc.SysGetAttrValue('CoreBuild_CuThin_1stBuff'));
+    result := ConvertCuThinStrtoInt(Fnc.SysGetAttrValue('CoreBuild_CuThin_1stBuff')); 
 end;
 
 function HasEM888Mat : boolean; // 840 Additional Baking step for EM888 material
 var
-  i : integer;
+  i : integer;  
   matFamilyList : TStringList;
 begin
   result := false;
@@ -3310,15 +3355,16 @@ begin
 
   for i := 0 to matFamilyList.Count - 1 do
   begin
-    if matFamilyList.Strings[i] = true then
-      result := true;
+    if pos('No Valid Material', matFamilyList.Strings[i]) = 0 then
+      if matFamilyList.Strings[i] = true then
+        result := true; 
   end;
 
   matFamilyList.Free;
 end;
 
 function PluggedFilledB4Photo : boolean;
-begin
+begin                   
 // 756 Update Aspect ratio calculation for OL layer photo process
   if (
       ( Fnc.SysGetAttrValue('EpoxySide') <> 'None' ) or
@@ -3336,43 +3382,43 @@ var
   mapTable : TSysTable;
   cust_code_found : boolean;
 
-begin
+begin   
   //ShowMessage(cCode);
   mapTable := Fnc.CustomTableGet('Cust_Code_Map');
   result := false;
   cust_code_found := false;
-
+  
   mapTable.First;
   While not mapTable.EOF do
   begin
     if Part_Type = 'Internal' then
-    begin
+    begin            
       if mapTable.FieldByName('Int_Code').AsString = cCode then
       begin
         result := mapTable.FieldByName('Active_PDM').AsBoolean;
         cust_code_found := true;
         Break;
-      end;
+      end;  
     end
     else if Part_Type = 'Standard' then
     begin
       if mapTable.FieldByName('Cust_Code').AsString = cCode then
-      begin
+      begin      
         result := mapTable.FieldByName('Active_PDM').AsBoolean;
         cust_code_found := true;
         Break;
-      end;
+      end;    
     end
-
-    mapTable.Next;
+                        
+    mapTable.Next;              
   end;
-
+  
   if not cust_code_found then
   begin
     MessageDlg('Customer Code not found. Route Gen will abort', mtWarning, SetOf([mbOK]), 0);
-    Fnc.UserRouteGenAbort := true;
+    Fnc.UserRouteGenAbort := true;  
   end;
-end;
+end;  
 
 procedure SetHCSPartType;
 var
@@ -3380,41 +3426,41 @@ var
   cust_code : string;
 begin
   first_2char := copy(Eng_PartNumber, 0, 2);
-
+  
   if first_2char <> 'XX' then  // XXXXX returned Eng_PartNumber if blank
   begin
     case first_2char of
-      'P-' : Fnc.SysSetAttrValueTopLevel('Part_Type', 'Standard');
+      'P-' : Fnc.SysSetAttrValueTopLevel('Part_Type', 'Standard'); 
       'M-' : Fnc.SysSetAttrValueTopLevel('Part_Type', 'Standard');
       'PD' : Fnc.SysSetAttrValueTopLevel('Part_Type', 'Internal');
-      'SM' : Fnc.SysSetAttrValueTopLevel('Part_Type', 'Internal');
-    else
+      'SM' : Fnc.SysSetAttrValueTopLevel('Part_Type', 'Internal');    
+    else           
       begin
-        MessageDlg('Part Number is not recognized. Part Type set to Standard', mtWarning, SetOf([mbOK]), 0);
-        Fnc.SysSetAttrValueTopLevel('Part_Type', 'Standard');
-      end;
-    end;
+        MessageDlg('Part Number is not recognized. Part Type set to Standard', mtWarning, SetOf([mbOK]), 0); 
+        Fnc.SysSetAttrValueTopLevel('Part_Type', 'Standard'); 
+      end;                     
+    end;           
   end
-  else
+  else                                         
   begin
     MessageDlg('Part Number is blank. Part Type set to Standard', mtWarning, SetOf([mbOK]), 0);
-    Fnc.SysSetAttrValueTopLevel('Part_Type', 'Standard');
-  end;
-
+    Fnc.SysSetAttrValueTopLevel('Part_Type', 'Standard'); 
+  end;                                      
+  
   cust_Code := copy(Eng_PartNumber, 3, 2);
-
-  if cust_Code <> 'XX' then
-  begin
+  
+  if cust_Code <> 'XX' then 
+  begin                
     if isActivePDMCust(cust_code, Fnc.SysGetAttrValueTopLevel('Part_Type') ) then
       Fnc.SysSetAttrValueTopLevel('Cust_Code', cust_Code);
     else
-    begin
+    begin                  
       MessageDlg('Inactive Code in Cust Code table. Route Gen will abort', mtWarning, SetOf([mbOK]), 0);
-      Fnc.UserRouteGenAbort := true;
-    end;
-
+      Fnc.UserRouteGenAbort := true;  
+    end;                               
+         
   end;
-
+  
 end;
 
 function getCustCodefromInternal(cCode : string; Part_Type : string) : string;  // 408 Paradigm Part Number Coding - Internal Part number
@@ -3423,11 +3469,11 @@ var
   i : integer;
   mapTable : TSysTable;
 
-begin
+begin   
   //ShowMessage(cCode);
   mapTable := Fnc.CustomTableGet('Cust_Code_Map');
   result := '';
-
+                               
   mapTable.First;
   While not mapTable.EOF do
   begin
@@ -3437,7 +3483,7 @@ begin
       begin
         result := mapTable.FieldByName('Cust_Code').AsString;
         Break;
-      end;
+      end;  
     end
     else if Part_Type = 'Standard' then
     begin
@@ -3445,37 +3491,37 @@ begin
       begin
         result := mapTable.FieldByName('Int_Code').AsString;
         Break;
-      end;
+      end;    
     end
-
+    
     mapTable.Next;
-  end;
-end;
-
-function CustCode_Rule(rule_type : string) : string; // 408 Paradigm Part Number Coding - Internal Part number
+  end; 
+end;                              
+                                  
+function CustCode_Rule(rule_type : string) : string; // 408 Paradigm Part Number Coding - Internal Part number  
 var
   cCode : string;
-begin
+begin                              
   result := '';
   cCode := Fnc.SysGetAttrValueTopLevel('Cust_Code');
-
-  if rule_type = 'Internal' then
-  begin
-    if Fnc.SysGetAttrValueTopLEvel('Part_Type') = 'Internal' then
-      result := cCode;
-    else if Fnc.SysGetAttrValueTopLevel('Part_Type') = 'Standard' then
-      result := getCustCodefromInternal(cCode, Fnc.SysGetAttrValue('Part_Type'));
+                                  
+  if rule_type = 'Internal' then  
+  begin                            
+    if Fnc.SysGetAttrValueTopLEvel('Part_Type') = 'Internal' then  
+      result := cCode;                 
+    else if Fnc.SysGetAttrValueTopLevel('Part_Type') = 'Standard' then  
+      result := getCustCodefromInternal(cCode, Fnc.SysGetAttrValue('Part_Type'));  
   end
-  else if rule_type = 'Customer' then
+  else if rule_type = 'Customer' then  
   begin
-    if Fnc.SysGetAttrValueTopLevel('Part_Type') = 'Internal' then
-      result := getCustCodefromInternal(cCode, Fnc.SysGetAttrValue('Part_Type'));
-    else if Fnc.SysGetAttrValueTopLevel('Part_Type') = 'Standard' then
-      result := cCode;
+    if Fnc.SysGetAttrValueTopLevel('Part_Type') = 'Internal' then 
+      result := getCustCodefromInternal(cCode, Fnc.SysGetAttrValue('Part_Type')); 
+    else if Fnc.SysGetAttrValueTopLevel('Part_Type') = 'Standard' then 
+      result := cCode;   
   end
-  else
-    MessageDlg('Rule Error! Customer Code Rule Type is invalid. Contact 3EPCB', mtWarning, SetOf([mbOK]), 0);
-
+  else                
+    MessageDlg('Rule Error! Customer Code Rule Type is invalid. Contact 3EPCB', mtWarning, SetOf([mbOK]), 0);  
+    
   //ShowMessage(result);
 end;
 
@@ -3489,52 +3535,52 @@ var
   so_Attr_Unit : string;
   buttonSelected : integer;
 begin
-  mapTable := Fnc.CustomTableGet('Cust_Code_Map');
+  mapTable := Fnc.CustomTableGet('Cust_Code_Map'); 
   part_Type := Fnc.SysGetAttrValue('Part_Type');
-  cCode := Fnc.SysGetAttrValue('Cust_Code');
+  cCode := Fnc.SysGetAttrValue('Cust_Code'); 
   so_Unit := '';
-  so_Attr_Unit := Fnc.SysGetAttrValue('SO_Unit');
+  so_Attr_Unit := Fnc.SysGetAttrValue('SO_Unit'); 
   part_Type := Fnc.SysGetAttrValue('Part_Type');
-
+  
   if (( part_Type = 'Standard' ) or ( part_Type = 'Internal' )) then
-  begin
-    mapTable.First;
+  begin            
+    mapTable.First;       
     While not mapTable.EOF do
     begin
       if Part_Type = 'Internal' then
       begin
         if mapTable.FieldByName('Int_Code').AsString = cCode then
         begin
-          if Eng_JobType = 'Sample' then
+          if Eng_JobType = 'Sample' then 
             so_Unit := mapTable.FieldByName('Samp_Unit').AsString
           else if Eng_JobType = 'Production' then
             so_Unit := mapTable.FieldByName('Prod_Unit').AsString
           else
             MessageDlg('Unknown Job Type - SO Unit not selected', mtWarning, SetOf([mbOK]), 0);
-          Break;
-        end;
+          Break;     
+        end;  
       end
       else if Part_Type = 'Standard' then
       begin
         if mapTable.FieldByName('Cust_Code').AsString = cCode then
-        begin
-          if Eng_JobType = 'Sample' then
+        begin           
+          if Eng_JobType = 'Sample' then 
             so_Unit := mapTable.FieldByName('Samp_Unit').AsString
           else if Eng_JobType = 'Production' then
             so_Unit := mapTable.FieldByName('Prod_Unit').AsString
           else
             MessageDlg('Unknown Job Type - SO Unit not selected', mtWarning, SetOf([mbOK]), 0);
-          Break;
-        end;
+          Break;                 
+        end;          
       end;
-
+      
       mapTable.Next;
     end;
   end
-  else
+  else                            
     MessageDlg('Unknown Part Type,  Sales Order Unit not selected', mtWarning, SetOf([mbOK]), 0);
-
-  if so_Unit <> '' then
+    
+  if so_Unit <> '' then 
   begin
     if (( so_Unit = 'Part' ) or ( so_Unit = 'Sub Part' )) then
     begin
@@ -3542,89 +3588,89 @@ begin
         Fnc.SysSetAttrValueTopLevel('SO_Unit', so_Unit)
       else if so_unit <> so_Attr_Unit then
       begin
-        buttonSelected := MessageDlg('Sales Order Unit Attribute (' + so_Attr_Unit + ') does not match with Customer Code table unit (' +
+        buttonSelected := MessageDlg('Sales Order Unit Attribute (' + so_Attr_Unit + ') does not match with Customer Code table unit (' + 
         so_unit + ') , override by rule?', mtWarning, SetOf([mbYes,mbNo]), 0);
-
-        if buttonSelected = mrYes then
+        
+        if buttonSelected = mrYes then                      
           Fnc.SysSetAttrValueTopLevel('SO_Unit', so_Unit);
       end;
     end;
-    else
-    begin
-      MessageDlg('Invalid SO Unit in Cust Code Map Table. Route Gen will abort', mtWarning, SetOf([mbOK]), 0);
-      Fnc.UserRouteGenAbort := true;
+    else              
+    begin              
+      MessageDlg('Invalid SO Unit in Cust Code Map Table. Route Gen will abort', mtWarning, SetOf([mbOK]), 0); 
+      Fnc.UserRouteGenAbort := true; 
     end
   end
   else
   begin
     MessageDlg('SO Unit not found in Cust Code Map Table. Route Gen will abort', mtWarning, SetOf([mbOK]), 0);
-    Fnc.UserRouteGenAbort := true;
+    Fnc.UserRouteGenAbort := true; 
   end;
 end;
 
-function formatCuThinValue(pstep : string; process : string) : string;  // 799 Surface Cu Thickness value format in runcard
+function formatCuThinValue(pstep : string; process : string) : string;  // 799 Surface Cu Thickness value format in runcard 
 var
   thk : string
   tol : integer;
 begin
   result := '';
-
+  
   if process = 'CoreBuild' then
-    tol := Fnc.SysGetAttrValue('CoreBuild_CuThin_Tol')
+    tol := Fnc.SysGetAttrValue('CoreBuild_CuThin_Tol') 
   else if process = 'EpoxyPlug' then
     tol := Fnc.SysGetAttrValue('EpoxyPlug_CuThin_Tol')
   else if process = 'Post-Electrolytic' then
-    tol := Fnc.SysGetAttrValue('Pre_Photo_CuThin_Tol');  // 1196 Pre-Photo Cu Thinning
-
+    tol := Fnc.SysGetAttrValue('Pre_Photo_CuThin_Tol');  // 1196 Pre-Photo Cu Thinning 
+  
   case pstep of
     'CoreBuild_CuThin_1stBuff' : thk := Fnc.SysGetAttrValue('CoreBuild_CuThin_1stBuff');
     'CoreBuild_CuThin_MEtch' : thk := Fnc.SysGetAttrValue('CoreBuild_CuThin_MEtch');
     'CoreBuild_CuThin_2ndBuff' : thk := Fnc.SysGetAttrValue('CoreBuild_CuThin_2ndBuff');
-
+    
     'EpoxyPlug_CuThin_1stBuff' : thk := Fnc.SysGetAttrValue('EpoxyPlug_CuThin_1stBuff');
     'EpoxyPlug_CuThin_2ndBuff' : thk := Fnc.SysGetAttrValue('EpoxyPlug_CuThin_2ndBuff');
     'EpoxyPlug_CuThin_MEtch' : thk := Fnc.SysGetAttrValue('EpoxyPlug_CuThin_MEtch');
-
-    'Pre_Photo_Cu_Thin' : thk := Fnc.SysGetAttrValue('Pre_Photo_CuThin_Spec'); // 1196 Pre-Photo Cu Thinning
+          
+    'Pre_Photo_Cu_Thin' : thk := Fnc.SysGetAttrValue('Pre_Photo_CuThin_Spec'); // 1196 Pre-Photo Cu Thinning 
   end;
-
-  if tol = 0 then
+  
+  if tol = 0 then    
     result := IntToStr(thk) + 'um'
   else try
     result := IntToStr( StrToInt(thk) - tol ) + '~' + thk + '~' + IntToStr( StrToInt(thk) + tol ) ;
 
-  except
+  except                      
     MessageDlg('Could not convert ' + process + ' value or tolerance to a number. Cu thinning spec is invalid.', mtError, SetOf([mbOK]), 0);
     result := thk;
-  end;
+  end;           
 end;
 
 function Get_Panel_Thickness: float;
 begin
-  result := 0;
-
+  result := 0; 
+  
   if ((MfgPartType = 'Top') or (MfgPartType = 'Sub')) then
     begin
       if Fnc.SysGetAttrValue('LayerCount') > 2 then
       begin
         if NCRun <= 1 then
-          result := Fnc.SysGetAttrValue('Press_Thickness')
+          result := Fnc.SysGetAttrValue('Press_Thickness') 
         else if NCRun > 1 then
-          result := Fnc.SysGetAttrValue('LayupThickness');
-      end;
+          result := Fnc.SysGetAttrValue('LayupThickness'); 
+      end; 
       else
         result := DSThicknessB4Plating;
-    end
+    end               
     else
-      result := Fnc.SysGetAttrValue('LayupThickness');
+      result := Fnc.SysGetAttrValue('LayupThickness'); 
 end;
 
 function PhotoBoardType : string;
 begin
   result := '';
   if Fnc.SysGetAttrValue('LayerCount') > 2 then
-  begin
-    if ( PressCycleMoreThan1 ) or ( CheckBuriedDrill(1) ) then  // 1190 Product Code for Core Drilling
+  begin                    
+    if ( PressCycleMoreThan1 ) or ( CheckBuriedDrill(1) ) then  // 1190 Product Code for Core Drilling 
       result := 'HDI'
     else
     begin
@@ -3633,7 +3679,7 @@ begin
       else
         result := 'HDI';
     end;
-  end;
+  end;                   
 end;
 
 function FindImpedanceSides : string;  // 962 - Impedance info under DES step
@@ -3644,7 +3690,7 @@ var
   LayerCount : integer;
   Outer : boolean;
   Inner : boolean;
-begin
+begin                    
   result := 'None'
   Outer := false;
   Inner := false;
@@ -3655,9 +3701,9 @@ begin
 
   //Fnc.SysStackupItemTypeCount(cStackupLayer, true, LayerCount, LayerTop, LayerBot);
   LayerTop := Fnc.SysGetAttrValue('TopLayer');
-  LayerBot := Fnc.SysGetAttrValue('BotLayer');
-
-  ImpTable.First
+  LayerBot := Fnc.SysGetAttrValue('BotLayer');    
+          
+  ImpTable.First        
   while not ImpTable.EOF do
   begin
     if ImpTable.FieldByName('SignalLayer1').AsString = LayerTop then
@@ -3665,16 +3711,16 @@ begin
 
     if ImpTable.FieldByName('SignalLayer1').AsString = LayerBot then
       Outer := true;
-
+      
     if ImpTable.FieldByName('SignalLayer2').AsString = LayerTop then
       Outer := true;
 
     if ImpTable.FieldByName('SignalLayer2').AsString = LayerBot then
       Outer := true;
-
+                
     if (( ImpTable.FieldByName('AffectedLayer1').AsString <> LayerTop ) and ( ImpTable.FieldByName('AffectedLayer1').AsString <> LayerBot )) then
       Inner := true;
-
+      
     ImpTable.Next;
   end;
 
@@ -3701,10 +3747,10 @@ begin
   LayerTable.Filtered := false;
   LayerTable.Filter := '(itemtype=' + QuotedStr('LYR') + ') or (itemtype=' + QuotedStr('LYRDUMMY') + ')';
   LayerTable.Filtered := true;
-
+  
   if not LayerTable.EOF then
     result := IntToStr(LayerTable.RecordCount);
-
+    
   if not (LayerTable = nil) then
   begin
      LayerTable.Close;
@@ -3712,117 +3758,117 @@ begin
   end
 end
 
-// 977 Automate attribute 'Product Code' by rule
+// 977 Automate attribute 'Product Code' by rule 
 function GenTopLevelProdCode(partType : string) : string;
 var
   layerCount : integer;
-begin
+begin                  
   result := '';
   //Get Layer Count
-
+  
   //layerCount := Fnc.SysGetAttrValue('LayerCount');
   layerCount := GetLayerCountWithDummies; // 1323
-
+  
   if layerCount < 10 then
-    result := '0' + IntToStr(layerCount)
+    result := '0' + IntToStr(layerCount) 
   else
-    result := IntToStr(layerCount);
-
-  case PhotoBoardType of
+    result := IntToStr(layerCount); 
+                                                         
+  case PhotoBoardType of              
     'MLB' : result := result + 'LS';
     'HDI' : result := result + 'LB';
   end;
-
+  
   // 1323
   if layerCount = 2 then
   result := result + '+PI';
-
+                                                               
   if partType = 'Sample' then
-    result := lowercase(result);
+    result := lowercase(result);   
 end;
 
-// 977 Automate attribute 'Product Code' by rule
+// 977 Automate attribute 'Product Code' by rule 
 function GenInnProdCode(partType : string) : string;
-begin
+begin      
   result := '';
   if FindNumberOfDrillFiles >  0 then
     result := 'ILX'
-  else
+  else          
     result := 'ILS'
-
+    
   if partType = 'Sample' then
     result := lowercase(result);
-end;
-// 977 Automate attribute 'Product Code' by rule
+end;                             
+// 977 Automate attribute 'Product Code' by rule 
 
 function IsValidPartNumber(first_2char : string) : boolean;
-
+  
 begin
   result := true;
-
+  
   // 'XXXXX' is returned if the part number is blank from the passing function
   if Eng_PartNumber = 'XXXXX' then
     result := false;
-
+  
   // Check if Part Number is Production(M, PD) or Sample(P, SM)
   if (
-      ( first_2char = 'M-'  ) or
+      ( first_2char = 'M-'  ) or 
       ( first_2char = 'P-'  ) or
       ( first_2char = 'PD'  ) or
       ( first_2char = 'SM'  )
-     )
+     ) 
   then
     result := true
-  else
-    result := false;
+  else         
+    result := false; 
 end;
-// 977 Automate attribute 'Product Code' by rule
+// 977 Automate attribute 'Product Code' by rule 
 
 function GenProductCode : string;
-var
+var                    
   partNumber : string;
   partType : string;
   first_2char : string;
 begin
-  result := '';
-  partNumber := '';
+  result := ''; 
+  partNumber := ''; 
   partType := '';
   first_2char := '';
-
+                         
   partNumber := Eng_PartNumber;
   first_2char := copy(partNumber, 0, 2);
-
+  
   if IsValidPartNumber(first_2char) then
-  begin
+  begin   
     case first_2char of
       'P-' : partType := 'Sample';
       'M-' : partType := 'Production';
       'PD' : partType := 'Production';
       'SM' : partType := 'Sample';
     end;
-
+                         
     if partType = 'Sample' then
       result := result + 'P' // nothing required for 'Production' part numbers
-
+                 
     case Fnc.SysGetAttrValue('MfgPartType') of
       'Top' : result := result + GenTopLevelProdCode(partType);
-      'Sub' : if partType = 'Production' then result := result + 'IC' else if partType = 'Sample' then result := result + 'ic';
+      'Sub' : if partType = 'Production' then result := result + 'IC' else if partType = 'Sample' then result := result + 'ic'; 
       'Inn' : result := result + GenInnProdCode(partType);
-      'DmC' : if partType = 'Production' then result := result + 'ILX' else if partType = 'Sample' then result := result + 'ilx';
-    end;
-
+      'DmC' : if partType = 'Production' then result := result + 'ILX' else if partType = 'Sample' then result := result + 'ilx'; 
+    end;               
+    
   end
   else
     MessageDlg('Invalid Part Number, Product Code could not be generated', mtWarning, SetOf([mbOK]), 0);
+      
 
-
-  //ShowMessage(Result);
+  //ShowMessage(Result); 
 end;
 
 function NoBlindVias : boolean;
 begin
   result := false;
-
+  
   if (( Fnc.SysGetAttrValue('Mech_BlindVias') = false ) and ( Fnc.SysGetAttrValue('BlindVias') = false)) then
     result := true;
 end;
@@ -3830,7 +3876,7 @@ end;
 function MechBlindViaMaxDepth : float;
 var
   NumDrillFiles: integer;
-  I: integer;
+  I: integer;            
   LayerTop : string;
   LayerBot : string;
   LayerCount : integer;
@@ -3856,7 +3902,7 @@ begin
         if DrillDepth > result then
           result := DrillDepth;
       end;
-    end;
+    end;               
   end;
 
   //showmessage(FloatToStr(result));
@@ -3880,15 +3926,15 @@ begin
     for I := 1 to NumDrillFiles do
     begin
       if Fnc.SysGetItemAttrValue('DrillDefID', True, cStackupDrill, I) = 2 then
-      begin
-
+      begin                                       
+        
         if Fnc.SysGetItemAttrValue('DrillDepth_U', True, cStackupDrill, I) > 0 then
           drillDepth := Fnc.SysGetItemAttrValue('DrillDepth_U', True, cStackupDrill, I)
-        else
+        else                                  
           drillDepth := Fnc.SysGetItemAttrValue('DrillDepth', True, cStackupDrill, I);
-
+          
         //ShowMessage(fnc.SysGetItemAttrValue('ItemLayerName', True, cStackupDrill, I));
-
+        
         if drillDepth > result then
           result := drillDepth;
       end;
@@ -3905,7 +3951,7 @@ var
   aspectRatio : float;
 
 begin
-  result := 0;
+  result := 0;               
   aspectRatio := 0.0;
 
   NumDrillFiles := FindNumberOfDrillFiles;
@@ -3915,10 +3961,10 @@ begin
     for I := 1 to NumDrillFiles do
     begin
       if Fnc.SysGetItemAttrValue('DrillDefID', True, cStackupDrill, I) = 2 then
-      begin
+      begin                                       
 
         aspectRatio := Fnc.SysGetItemAttrValue('AspectRatio', True, cStackupDrill, I);
-
+        
         if aspectRatio > result then
           result := aspectRatio;
       end;
@@ -3931,7 +3977,7 @@ end;
 function PAL3(aspectRatio : float; minDrill : float): boolean;
 begin
   result := false
-
+                     
   if (
       ( aspectRatio <= 5.67 ) and
       ( minDrill >= 0.3 ) and
@@ -3956,8 +4002,8 @@ begin
         ( maxDepthBlind <= 0.17 ) and
         ( maxDepthMech <= 0.4 )
        )
-    then
-      result := true;
+    then     
+      result := true;                        
   end
   else if NCRun = 2 then  // Ignore blind Vias
   begin
@@ -3965,7 +4011,7 @@ begin
         ( aspectRatio <= 6.4 ) and
         ( minDrill >= 0.2 ) and
         (( Get_Panel_Thickness >= 0.2 ) and ( Get_Panel_Thickness <= 1.59 ))
-       )
+       )           
     then
       result := true;
   end
@@ -3979,8 +4025,8 @@ begin
   begin
     if NoBlindVias then  // make conformal value pass condition (will be 0 for non-laser)
     conformal :=  100;
-
-    if (
+                 
+    if (                    
         ( aspectRatio <= 16 ) and
         ( minDrill >= 0.2 ) and
         (( Get_Panel_Thickness >= 1.00 ) and ( Get_Panel_Thickness <= 3.5 )) and
@@ -3993,7 +4039,7 @@ begin
     then
       result := true;
   end
-  else if NCRun = 2 then  // Ignore blind Vias
+  else if NCRun = 2 then  // Ignore blind Vias            
   begin
     if (
         ( aspectRatio <= 16 ) and
@@ -4013,8 +4059,8 @@ begin
   begin
     if NoBlindVias then  // make conformal value pass condition (will be 0 for non-laser)
     conformal :=  100;
-
-    if (
+    
+    if (                      
         ( aspectRatio <= 25 ) and
         ( minDrill >= 0.2 ) and
         (( Get_Panel_Thickness >= 3.00 ) and ( Get_Panel_Thickness <= 7.0 )) and
@@ -4064,24 +4110,24 @@ begin
     maxDepthBlind := MaxBlindViaDepth;
     maxDepthMech  := MechBlindViaMaxDepth;
     //cuRatio := Fnc.SysGetAttrValue('Cu_Ratio');
-
-  end
+   
+  end                             
   else if NCRun = 2 then
-  begin
+  begin                    
     aspectRatio := Fnc.SysGetAttrValue('Aspect_Ratio_Val_2');
     minDrill := Fnc.SysGetAttrValue('Min_Drill_Size_2');
     conformal := 0.0;
-    blindAspect := 0.0;
+    blindAspect := 0.0;                
     maxDepthBlind := 0.0;
     maxDepthMech  := 0.0;
     //cuRatio := Fnc.SysGetAttrValue('Cu_Ratio_2');
   end;
-
+          
   cuRatio := Set_CU_Ratio;
-
+                                   
   if (( Fnc.SysGetAttrValue('CuFilledVias')) and ( NCRun <= 1 )) then // 1138
   begin
-    if (
+    if ( 
          (minDrill >= 0.25) and
          (Get_Panel_Thickness >= 0.2) and
          (Get_Panel_Thickness <= 2) and
@@ -4089,28 +4135,28 @@ begin
          (conformal >= 80) and
          (blindAspect <= 0.75)
        )
-    then
+    then                  
       result := 'FILL_VIA';
 
     else
     begin
       errMsg := 'Error: Condition not met for FILL VIA Plating Line (Min Drill = 0.25 | Thickness 0.2-2.00 | CMK 80-100 | Blind Aspect <= 0.75)'
         + #13 + '[ ' + FloatToStr(minDrill) + ' | ' + FormatFloat('0.000', FloatToStr(Get_Panel_Thickness)) + ' | ' + FloatToStr(conformal) + ' | ' + FloatToStr(blindAspect) + ' ]'
-        + #13 + 'Please discuss with PE.';
-
+        + #13 + 'Please discuss with PE.';                    
+        
        MessageDlg(errMsg, mtWarning, Setof([mbOK]), 0);
     end;
   end
-  else
+  else                              
   begin // Not Cu Filled Vias
     if (( Fnc.SysGetAttrValue('Mech_BlindVias') = false ) and ( Fnc.SysGetAttrValue('BlindVias') = false)) then
-    begin
+    begin          
       if PAL3(aspectRatio, minDrill) then
-        result := 'PAL3';
-    end;
+        result := 'PAL3';          
+    end;                          
 
     if result = '' then
-    begin
+    begin                                    
       if MCP(aspectRatio, minDrill, conformal, blindAspect, maxDepthBlind, maxDepthMech) then
         result := 'MCP'
       else if ( maxDepthBlind > 0.17 ) and ( Get_Panel_Thickness <= 2.0 ) and ( minDrill >= 0.25 ) then // 1462
@@ -4119,24 +4165,24 @@ begin
         result := 'PAL4'
       else if PAL6(aspectRatio, minDrill, conformal, blindAspect, maxDepthBlind, maxDepthMech, cuRatio) then
         result := 'PAL6'
-    end;
+    end;                   
   end;
-
-  if result = '' then
+  
+  if result = '' then                
     MessageDlg('Plating Line not found', mtWarning, Setof([mbOK]), 0);
-
+                   
 end;
 
 function GetsExtraAZBlowerStep : boolean;
 begin
   result := false;
-
-  if ( Get_Panel_Thickness >= 3.30 ) or
+  
+  if ( Get_Panel_Thickness >= 3.30 ) or 
      ( Fnc.SysGetAttrValue('LayerCount') >= 14 ) or
      ( Fnc.SysGetAttrValue('BackDrill') = true ) or
      ( Fnc.SysGetAttrValue('BackDrill_Epoxy') = true )
   then
-    result := true;
+    result := true;   
 end;
 
 function ENIGplusOSP : boolean;  // 1256
@@ -4150,18 +4196,18 @@ end;
 function FinishGetsCZPreTreat : boolean;
 begin
   result := false;
-
+  
   // 1245 Updated CZ Rule
   if (
       (( Fnc.SysGetAttrValue('Board_Finish') = 'ENIG' ) or
        //( Fnc.SysGetAttrValue('Board_Finish') = 'ENIG + OSP' ) or
        ( ENIGplusOSP ) or
        ( Fnc.SysGetAttrValue('Board_Finish') = 'ENEPIG' ))
-       and ScreenPrintResist
-     )
-     or ( Fnc.SysGetAttrValue('Board_Finish') = 'Immersion Tin' )
+       and ScreenPrintResist 
+     ) 
+     or ( Fnc.SysGetAttrValue('Board_Finish') = 'Immersion Tin' ) 
   then
-    result := true;
+    result := true; 
 end;
 
 // 1191 Drill Side for Countersink/bore & milling
@@ -4169,7 +4215,7 @@ end;
 function DrillSide(side: string) : string;
 begin
   if side = 'Top' then
-    result := 'Side B'
+    result := 'Side B' 
   else if side = 'Bot' then
     result := 'Side A'
   else if side = 'Side B Top' then
@@ -4189,28 +4235,28 @@ end;
 procedure AddBoardFinishAsAttribute; // 1223 Additional Surface Finish info under Electrolytic Cu step  // 1257 Add to SM
 begin
   if MfgPartType = 'Top' then
-  begin
+  begin                     
     if ( Fnc.SysGetAttrValue('Sel_Gold_Type') = 'None' ) and ( Fnc.SysGetAttrValue('Gold_Fgr_Type') = 'None' ) then
-      SysRouteInsAddlParameter('Erp', 'Board Finish', Fnc.SysGetAttrValue('Board_Finish'), '', '', false, '', '', '');
-    else
-      SysRouteInsAddlParameter('Erp', 'Board Finish', Fnc.SysGetAttrValue('Board_Finish') + ' + Selective Gold', '', '', false, '', '', '');
-  end;
+      StepParamERP('Board Finish', Fnc.SysGetAttrValue('Board_Finish'));
+    else          
+      StepParamERP('Board Finish', Fnc.SysGetAttrValue('Board_Finish') + ' + Selective Gold');  
+  end; 
 end;
 
 function SelectiveGoldorFinger : boolean;
-begin               
-  result := false;
+begin     
+  result := false; 
   if ( Fnc.SysGetAttrValue('Sel_Gold_Type') <> 'None' ) or ( Fnc.SysGetAttrValue('Gold_Fgr_Type') <> 'None' ) then
     result := true;
 end;
 
-//1309 BAck drill EC
+//1309 BAck drill EC                                        
 function GetsHiPot : boolean;
 begin
   result := false;
-
-  if (Fnc.SysGetAttrValue('Comp_Type') = 'BURIED CAPACITANCE') or
-     (Fnc.SysGetAttrValue('Comp_Type') = 'CAPACITANCE & RESISTANCE')  
+  
+  if (Fnc.SysGetAttrValue('Comp_Type') = 'BURIED CAPACITANCE') or 
+     (Fnc.SysGetAttrValue('Comp_Type') = 'CAPACITANCE & RESISTANCE')
   then
     result := true;
 end;
@@ -4218,28 +4264,28 @@ end;
 function SetDrillXOffset(NCRun: integer) : float; // 1354
 var
   DrillXOffsetTable: TSysTable;
-  PanelLength: integer;    
+  PanelLength: integer;
   PanelLengthTableCol: string;
-  NoInputErrors: boolean;                   
+  NoInputErrors: boolean;   
   DrillFSFX,
   TableXScaleMin,
   TableXScaleMax
   : float;
-
-  tableFilter: string;
+  
+  tableFilter: string;                              
 begin
   result := 0.0;
   DrillXOffsetTable := Fnc.CustomTableGet('CNC_Drill_Offset_X');
   tableFilter := '';
-            
+  
   PanelLength := Fnc.SysGetAttrValue('Panel_Length');
-  NoInputErrors := true;  
-
-  if NCRun = 1 then             
-    DrillFSFX := Fnc.SysGetAttrValue('Drill_FSF_X')
-  else
-  if NCRun = 2 then
-    DrillFSFX := Fnc.SysGetAttrValue('Drill_FSF_X_2');
+  NoInputErrors := true;
+                                                                         
+  if NCRun = 1 then
+    DrillFSFX := Fnc.SysGetAttrValue('Drill_FSF_X')           
+  else              
+  if NCRun = 2 then                         
+    DrillFSFX := Fnc.SysGetAttrValue('Drill_FSF_X_2');                               
     
   // Get Table Min X Scale  2270
   DrillXOffsetTable.First;
@@ -4262,62 +4308,63 @@ begin
                ' is out of range for the CNC Drill Offset X table, offset value not set.'  ,  
                mtError, Setof([mbOK]) , 0);
     NoInputErrors := false;
-  end;
-
+  end;           
+         
   if NoInputErrors then
-  begin                 
+  begin
     // Get the Panel Length Column for the table
     if PanelLength = 505 then PanelLengthTableCol := 'PL505'
-    else                  
+    else
     if PanelLength = 515 then PanelLengthTableCol := 'PL515'
     else
     if PanelLength = 555 then PanelLengthTableCol := 'PL555'
-    else
+    else              
     if ( PanelLength >= 605 ) and ( PanelLength <= 612 ) then PanelLengthTableCol := 'PL605_612'
-    else
+    else                                     
     if ( PanelLength >= 617 ) and ( PanelLength <= 622 ) then PanelLengthTableCol := 'PL617_622'
-    else                                                                                  
-    if ( PanelLength >= 635 ) and ( PanelLength <= 655 ) then PanelLengthTableCol := 'PL635_655'
+    else
+    if ( PanelLength >= 635 ) and ( PanelLength <= 655 ) then PanelLengthTableCol := 'PL635_655' 
     else
     begin
       MessageDlg('Panel Length of ' + IntToStr(PanelLength) + ' not found in CNC Drill Offset X table, offset value not set.'  ,  mtError, Setof([mbOK]) , 0);
       NoInputErrors := false;
-    end;         
-  end;
-
-  if NoInputErrors then
+    end;
+  end;                 
+                                   
+  if NoInputErrors then         
   begin
     // Loop over table to find X Scale Row
     DrillXOffsetTable.First;
     while not (DrillXOffsetTable.EOF) and (result = 0) do
-    begin
+    begin                 
       if DrillFSFX > 0 then
       begin
       if ( DrillFSFX >= DrillXOffsetTable.FieldByName('XScaleLow').AsFloat ) and
          ( DrillFSFX <= DrillXOffsetTable.FieldByName('XScaleHigh').AsFloat ) then
-             result := DrillXOffsetTable.FieldByName(PanelLengthTableCol).AsFloat;
-      end
-      else
+             result := DrillXOffsetTable.FieldByName(PanelLengthTableCol).AsFloat;  
+      end                                          
+      else                
       begin
         if ( DrillFSFX <= DrillXOffsetTable.FieldByName('XScaleLow').AsFloat ) and
            ( DrillFSFX >= DrillXOffsetTable.FieldByName('XScaleHigh').AsFloat ) then
              result := DrillXOffsetTable.FieldByName(PanelLengthTableCol).AsFloat;
       end;
       DrillXOffsetTable.Next;
-    end;
-  end;
-end;           
+    end; 
+  end;                                           
+                                                                                           
+end;
 
 function UsesDefaultXYPanelDistance : boolean; // 1465
 var
   defaultLength : boolean;
   defaultWidth : boolean;
-
+  
 begin
   result := false;
   defaultLength := false;
   defaultWidth := false;
-
+  
   if Fnc.SysGetAttrValue('Panel_Length_XD') = 0 then
     defaultLength := true
   else
@@ -4333,11 +4380,11 @@ begin
         defaultLength := true;
     end;
   end;
-
+  
   if Fnc.SysGetAttrValue('Panel_Width_XD') = 0 then
     defaultWidth := true
   else
-  begin
+  begin  
     if Fnc.SysGetAttrValue('MfgPartType') = 'Top' then
     begin
       if Fnc.SysGetAttrValue('Panel_Width_XD') =  (Fnc.SysGetAttrValue('Panel_Width') - 10) then
@@ -4348,84 +4395,73 @@ begin
       if IsFirstSub(Fnc.SysGetAttrValue('ItemMatrlDesc')) then
       begin
        if Fnc.SysGetAttrValue('Panel_Width_XD') = (Fnc.SysGetAttrValue('Panel_Width') - 10) then
-         defaultWidth := true;
+         defaultWidth := true;  
       end
       else
       begin
        if Fnc.SysGetAttrValue('Panel_Width_XD') = ( Fnc.SysGetAttrValue('Panel_Width') - 14) then
         defaultWidth := true;
       end;
-    end;                                  
+    end;
   end;
-
+  
   if ( defaultLength ) and ( defaultWidth ) then
     result := true;
 end;
 
 procedure SetMfgPartAttrToLayerMin(MfgPartAttr: string; LayerAttr: string); // 1525
 var
-  minValue : variant;
+  minValue : variant;               
   topValue : variant;
   botValue : variant;
 begin
   topValue := Fnc.SysGetItemAttrValue(LayerAttr, true, cStackupLayer, 1);
   botValue := Fnc.SysGetItemAttrValue(LayerAttr, false, cStackupLayer, 1);
-
+  
   if ((( topValue <> 0.0 ) and ( botValue = 0.0 )) or   // Bottom forms parent
      (( topValue = 0.0 ) and ( botValue <> 0.0 )) or   // Top forms parent
      (( topValue <> 0.0 ) and ( botValue <> 0.0 ))) and  // Outer or buried sub/inner
      (( Fnc.SysGetAttrValue(MfgPartAttr) = 0 ) or ( Fnc.SysGetAttrValueTopLevel('Use_Layer_Values') ))
-  then
-  begin
+  then                 
+  begin                                                                    
     if topValue = 0.0 then topValue := 99.00;  // Ignore 0 because layer forms parent
     if botValue = 0.0 then botValue  := 99.00;
-
+    
     if topValue < botValue then
       minValue := topValue
     else
-      minValue := botValue;        
-
-    Fnc.SysSetAttrValue(MfgPartAttr, minValue);
-
+      minValue := botValue;
+       
+    Fnc.SysSetAttrValue(MfgPartAttr, minValue);            
+     
     //Fnc.SysSetAttrValue(MfgPartAttr, Min(Fnc.SysGetItemAttrValue(LayerAttr, true, cStackupLayer, 1),
     //                                     Fnc.SysGetItemAttrValue(LayerAttr, false, cStackupLayer, 1) ));
   end;
 end;
 
 function GenMaterialType: string;
- begin                                                             
-  result := '';                 
+ begin                             
+  result := '';
   if Fnc.SysGetAttrValue('CoreMat') <> '' then
     result := Fnc.SysGetAttrValue('CoreMat')
-                                                                              
+
   if (Fnc.SysGetAttrValue('PPGMat') <> '') and ((Fnc.SysGetAttrValue('PPGMat') <> 'No PPG')) then
   begin
-    if Fnc.SysGetAttrValue('PPGMat') <> Fnc.SysGetAttrValue('CoreMat') then
+    //if Fnc.SysGetAttrValue('PPGMat') <> Fnc.SysGetAttrValue('CoreMat') then
     result := result + '/' + Fnc.SysGetAttrValue('PPGMat');
-  end;
+  end;                      
+end;                                                    
+
+procedure InsertQRInfoAtStep1; // 1471 QR Code information info update    
+begin
+  StepParamERP('QR Info', Fnc.GetJobData.Values['JobName'] + ' ' + 
+                                             Fnc.SysGetAttrValue('TopLayer') +  '-' + 
+                                             Fnc.SysGetAttrValue('BotLayer') + ' ' +
+                                             Fnc.SysGetAttrValue('PPGMat') + '/' +
+                                             Fnc.SysGetAttrValue('CoreMat'));
 end;
 
 function LaserShearSize: string;  // 2269 Shearing After Laser 
 begin
   result := IntToStr(Fnc.SysGetAttrValue('Panel_Length')) + ' X ' + IntToStr(Fnc.SysGetAttrValue('Panel_Width'));
-end; 
-
-procedure StepParam(Source: string; ParamCode: string; ParamValue: string) // Added with 2269
-begin
-  Fnc.SysRouteGenInsAddlParam(Fnc.SysRouteInsGetStepNum, Source, ParamCode, ParamValue, '', '', false, '', '', '' );
-end;
-
-procedure StepDept(Source: string; DeptCode: string);
-begin
-  Fnc.SysRouteGenInsDepartment(Fnc.SysRouteInsGetStepNum, Source, DeptCode, '');
-end;
-
-procedure StepWC(Source: string; WCCode: string);
-begin
-  Fnc.SysRouteGenInsWorkCenter(Fnc.SysRouteInsGetStepNum, Source, WCCode, '');
-end;
-
-procedure StepMaterials(Source: string; MaterialTypeList: TStringList; MaterialQty: double);
-begin
-  Fnc.SysRouteGenInsMaterials(Fnc.SysRouteInsGetStepNum, Source, MaterialTypeList, MaterialQty, '');
 end; 

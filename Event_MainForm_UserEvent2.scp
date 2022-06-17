@@ -6,8 +6,8 @@
 //HeaderImportExport<--
 const
   ExcelFile = 'EngenixJobAttributes3.xlsx';
-  //FileTemplateDir = '\\engenix2\Engenix2_apps\Report_Template\';
-  FileTemplateDir = 'C:\Engenix\Report\Template\';
+  FileTemplateDir = '\\engenix2\Engenix2_apps\Report_Template\';
+  //FileTemplateDir = 'C:\Engenix\Report\Template\';
   WorkingDir = 'C:\Engenix\Report\';
 
 var
@@ -16,7 +16,7 @@ var
   Excelquery : TADOQuery;
 
 procedure CheckTemplatesExists;
-begin                                  
+begin
   if (DirectoryExists(FileTemplateDir)) then
   begin
     if not (FileExists(FileTemplateDir + ExcelFile)) then

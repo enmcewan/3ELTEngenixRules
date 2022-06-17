@@ -5,8 +5,7 @@
 //ScriptGroup=Job Save & Export
 //HeaderImportExport<--
 uses
-  ParadigmLibrary,
-  CNCDrillToolReportGen;
+  ParadigmLibrary
 
 var
     WO_Abort : boolean;
@@ -25,14 +24,14 @@ begin
 
   //ShowMessage(part_table.FieldByName('RKEY').AsInteger);
   result := part_table.FieldByName('RKEY').AsInteger;
-                                          
+
   if not (part_table = nil) then
-  begin                                                
+  begin
     part_table.Close;
-    Fnc.SysTableDestroy(part_table);               
+    Fnc.SysTableDestroy(part_table);
   end;
 end;
-                                             
+
 function GetCustCode_RKEY(cust_code : string) : integer;
 var
   qry_str : string;
@@ -296,10 +295,7 @@ begin
   if ParamList.Values['Abort'] = 'True' then
     showmessage('Save and Export Stackup aborted')
   else
-  begin
     Fnc.SysSetAttrValueTopLevel('ACode1', Fnc.SysGetAttrValueTopLevel('Rules_Version') + '+' + DateToStr(Date)); // 1228 Paradigm export script to include Engenix version + export date
-    UpdateCNCDrillReportExportDate;
-  end;
 end;
 
 // If the JobStackup Export operation is unsuccessful, the AfterJobStackupExport procedure is NOT executed.

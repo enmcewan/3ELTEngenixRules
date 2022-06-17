@@ -25,7 +25,6 @@ end;
 
 procedure OL_Pattern_Formation(EGoldB4Res : boolean);
 begin
-
   // 793 Update Photo process rule
   if ( Fnc.SysGetAttrValue('LayupThickness') >= 4.2 ) and ( photoStepList.Count = 0 ) then  // 1570 After testing comment
   begin                  
@@ -38,8 +37,8 @@ begin
   // 1108 OL Process Flow Update    
   if Fnc.SysGetAttrValue('LayupThickness') < 0.60 then // 1198 
   begin                                        
-    if SubGetsNewPEP then // 1229 PEP Flow option for Sub-assembly build.
-      SubAssemblyPEP;    
+    //if SubGetsNewPEP then // 1229 PEP Flow option for Sub-assembly build.   2296
+    //  SubAssemblyPEP;    
       
     SysRouteInsertStepExt('IL_Photo_OL_ThinPanel', 'IL_Photo_OL_ThinCore01');
     SysRouteInsertStepExt('IL_DES_OL_ThinPanel', 'IL_DES_OL_ThinPanel01');  
@@ -48,13 +47,13 @@ begin
   begin                 
     //ShowMessage(InProcessCuThk); 
     // 1108 OL Process Flow Update
-    if SubGetsNewPEP then // 1229 PEP Flow option for Sub-assembly build.
-      SubAssemblyPEP;
+    //if SubGetsNewPEP then // 1229 PEP Flow option for Sub-assembly build.   2296
+    //  SubAssemblyPEP;
       
     SysRouteInsertStepExt('OL_Photo_PForm_TCI', 'OL_Photo_PForm_TCI01');
     SysRouteInsertStepExt('OL_DES_TCI', 'OL_DES_TCI01');  
                                     
-    //SideBySideDES;
+    //SideBySideDES;                            
                                                                                                             
     if EGoldB4Res then     
     begin              
@@ -67,56 +66,37 @@ begin
         SysRouteInsertStepExt('OL_AOI', 'OL_AOI01');
     end;
   end
-  else             
-  begin          
-    {if EGoldB4Res then
-    begin                                 
-      if SubGetsNewPEP then // 1229 PEP Flow option for Sub-assembly build.
-      SubAssemblyPEP;                    
-                                        
-      SysRouteInsertStepExt('OL_Photo_Patt_Form_4EGoldB4Res', 'OL_Photo_Patt_Form_4EGoldB4Res01');  
-      SysRouteInsertStepExt('OL_DES_4EGoldB4Res', 'OL_DES_4EGoldB4Res01');  
+  else              
+  begin                 
+    //if SubGetsNewPEP then // 1229 PEP Flow option for Sub-assembly build.
+    //SubAssemblyPEP;                       
+                   
+    SysRouteInsertStepExt('OL_Photo_Patt_Form', 'OL_Photo_Patt_Form01');
+    
+    if ( EGoldB4Res ) and ( Fnc.SysGetAttrValue('Sel_Gold_Type') = 'BGA/LGA Encapsulation' ) then
+      StepParamERP('Remark', 'Selective Etching Only.');
+         
+     // 793 Update Photo process rule
+    if ( Fnc.SysGetAttrValue('EdgePlating') ) or 
+       (
+        (( Fnc.SysGetAttrValue('Slot_Length_PTH') >= 10.00 ) or ( Fnc.SysGetAttrValue('Max_Hole_Size') >= 10.00 )) and 
+        ( Fnc.SysGetAttrValue('LayupThickness') >= 2.5 )
+       )  // 1254 DES Rule Update
+         // 983  Additional Condition to Edge Plating & Slot Length Rule
+    then
+    begin
+      SysRouteInsertStepExt('OL_DEV', 'OL_DEV01');
+      SysRouteInsertStepExt('Mdl_Insp_OLDev', 'Mdl_Insp_OLDev01');
+    end;
 
-      if //(Fnc.SysGetAttrValue('Sel_Gold_Type') = 'Pattern (Overhang)') or
-         (Fnc.SysGetAttrValue('Sel_Gold_Type') = 'Pattern Overhang / PTH' ) or //1256 Need to check this
-         (Fnc.SysGetAttrValue('Board_Finish') = 'Full Body Gold') or 
-         (Fnc.SysGetAttrValue('Board_Finish') = 'Thin/Thick Au Plate') then // 1256 NEED TO CHECK THIS
-        SysRouteInsertStepExt('Mdl_Insp', 'Mdl_Insp01')
-      else
-        SysRouteInsertStepExt('OL_AOI', 'OL_AOI01'); 
-    end
-    else                                                   
-    begin}
-      if SubGetsNewPEP then // 1229 PEP Flow option for Sub-assembly build.
-      SubAssemblyPEP;
-      
-      SysRouteInsertStepExt('OL_Photo_Patt_Form', 'OL_Photo_Patt_Form01');
-      
-      if ( EGoldB4Res ) and ( Fnc.SysGetAttrValue('Sel_Gold_Type') = 'BGA/LGA Encapsulation' ) then
-        SysRouteInsAddlParameter('Erp', 'Remark', 'Selective Etching Only.', '', '', false, '', '', '');
-           
-       // 793 Update Photo process rule
-      if ( Fnc.SysGetAttrValue('EdgePlating') ) or 
-         (                             
-          (( Fnc.SysGetAttrValue('Slot_Length_PTH') >= 10.00 ) or ( Fnc.SysGetAttrValue('Max_Hole_Size') >= 10.00 )) and 
-          ( Fnc.SysGetAttrValue('LayupThickness') >= 2.5 )
-         )  // 1254 DES Rule Update
-           // 983  Additional Condition to Edge Plating & Slot Length Rule
-      then
-      begin
-        SysRouteInsertStepExt('OL_DEV', 'OL_DEV01');
-        SysRouteInsertStepExt('Mdl_Insp_OLDev', 'Mdl_Insp_OLDev01');
-      end;
-
-      SysRouteInsertStepExt('OL_DES', 'OL_DES01');
-      
-      if  ( Fnc.SysGetAttrValue('Sel_Gold_Type') = 'BGA/LGA Encapsulation' ) or
-          ( Fnc.SysGetAttrValue('Gold_Fgr_Type') = 'Lead Line Etching' ) or
-          ( Fnc.SysGetAttrValue('Gold_Fgr_Type') = 'NO Lead Line Etching' ) or
-          ( Fnc.SysGetAttrValue('Gold_Fgr_Type') = 'Soldermask Spray' ) 
-          then
-        SysRouteInsertStepExt('OL_AOI', 'OL_AOI01');
-    //end                          
+    SysRouteInsertStepExt('OL_DES', 'OL_DES01');
+    
+    if  ( Fnc.SysGetAttrValue('Sel_Gold_Type') = 'BGA/LGA Encapsulation' ) or
+        ( Fnc.SysGetAttrValue('Gold_Fgr_Type') = 'Lead Line Etching' ) or
+        ( Fnc.SysGetAttrValue('Gold_Fgr_Type') = 'NO Lead Line Etching' ) or
+        ( Fnc.SysGetAttrValue('Gold_Fgr_Type') = 'Soldermask Spray' ) 
+        then
+      SysRouteInsertStepExt('OL_AOI', 'OL_AOI01');                       
   end;
 end;
 

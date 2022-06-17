@@ -2,8 +2,10 @@
 //SiteId=0
 //Enterprise=True
 //ScriptType=1
-//ScriptGroup=Route Gen/Regen
+//ScriptGroup=ScapCapSync
 //HeaderImportExport<--
-procedure RouteUserEvent3;
+procedure SpecCapUserEvent7(ParamList: TStringList);
 begin
+  // custom scripting
 end;
+

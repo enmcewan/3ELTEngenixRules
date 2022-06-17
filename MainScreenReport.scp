@@ -63,6 +63,7 @@ begin
   end;
 end;
 
+
 function ExcelColumnMap(jobAttributeID : integer) : string
 begin
   result := '';
@@ -146,6 +147,7 @@ begin
   Excelquery.Post;
 end;
 
+
 procedure GenReport(Excelquery : TadoQuery) ;
 var
   Qry : TADOQuery;
@@ -155,13 +157,14 @@ var
   currentJob : integer;
 
   jobAttributes : TSysTable;
+
 begin
 
   Qry := TAdoQuery.Create(nil);
   Qry.Connection := Fnc.DbConnection;
 
   Qry.SQL.Add('SELECT
-  JobAnswers.JobAnswerID,        
+  JobAnswers.JobAnswerID,
   JobAnswers.JobAttributeID,
   JobAttributes.AttributeName,
   JobAttributes.Seq,
@@ -183,7 +186,7 @@ begin
   left join jobs on (Jobs.JobID = JobAnswers.JobID)
   left join Customers on (Customers.CustomerID = jobs.CustomerID)
   left join PartNumbers on (PartNumbers.PartNumberID = jobs.PartNumberID)
-  left join JobTypes on (JobTypes.JobTypeId = jobs.JobTypeID) 
+  left join JobTypes on (JobTypes.JobTypeId = jobs.JobTypeID)
   left join Users on (Users.UserID = jobs.Engr)
   left join JobStatuses on (JobStatuses.JobStatusId = jobs.JobStatusId)');
 

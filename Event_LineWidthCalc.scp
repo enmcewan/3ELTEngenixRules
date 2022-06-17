@@ -19,7 +19,7 @@
 
  The script should calculate/update the following fields in Fnc.SysImpedanceModels:
 
- - 'PlottedWidth1' (float)           
+ - 'PlottedWidth1' (float)
        Plotted line width of line 1.
 
  - 'PlottedWidth2' (float)
@@ -52,40 +52,37 @@ begin
 
          if IsInner then
          begin
-           //ShowMessage('Doing Rule for Inner');                              
-           case CuCode of
-             '1/4oz' : result := 0.00025
-             '3/8oz' : result := 0.000375
-             '1/2oz' : result := 0.0005
-             '5/8oz' : result := 0.000625
-             '3/4oz' : result := 0.00075
-             '1oz' : result := 0.001
-             '1.125oz' : result := 0.001125
-             '2oz' : result := 0.002
-             '3oz' : result := 0.003
-             '4oz' : result := 0.004
-             '5oz' : result := 0.005
-             '6oz' : result := 0.006             
-           end;
+           //ShowMessage('Doing Rule for Inner');                      
+           if CuCode = '5micron' then result := 0.000197
+           else if CuCode = '1/4oz' then result := 0.00025
+           else if CuCode = '3/8oz' then result := 0.000375
+           else if CuCode = '1/2oz' then result := 0.0005
+           else if CuCode = '5/8oz' then result := 0.000625
+           else if CuCode = '3/4oz' then result := 0.00075
+           else if CuCode = '1oz' then result := 0.001
+           else if CuCode = '1.125oz' then result := 0.001125
+           else if CuCode = '2oz' then result := 0.002
+           else if CuCode = '3oz' then result := 0.003
+           else if CuCode = '4oz' then result := 0.004
+           else if CuCode = '5oz' then result := 0.005
+           else if CuCode = '6oz' then result := 0.006
           end
          else
          begin
-           //ShowMessage('Doing Rule for Outer');         
-           case CuCode of 
-             '5micron' : result := 0.00025
-             '1/4oz' : result := 0.0005
-             '3/8oz' : result := 0.00075
-             '1/2oz' : result := 0.001
-             '5/8oz' : result := 0.0012
-             '3/4oz' : result := 0.0014
-             '1oz' : result := 0.00175
-             '1.125oz' : result := 0.002
-             '2oz' : result := 0.0035
-             '3oz' : result := 0.005
-             '4oz' : result := 0.0065
-             '5oz' : result := 0.008
-             '6oz' : result := 0.0095 
-           end;
+           //ShowMessage('Doing Rule for Outer');
+           if CuCode = '5micron' then result := 0.00025
+           else if CuCode = '1/4oz' then result := 0.0005
+           else if CuCode = '3/8oz' then result := 0.00075
+           else if CuCode = '1/2oz' then result := 0.001
+           else if CuCode = '5/8oz' then result := 0.0012
+           else if CuCode = '3/4oz' then result := 0.0014
+           else if CuCode = '1oz' then result := 0.00175
+           else if CuCode = '1.125oz' then result := 0.002
+           else if CuCode = '2oz' then result := 0.0035
+           else if CuCode = '3oz' then result := 0.005
+           else if CuCode = '4oz' then result := 0.0065
+           else if CuCode = '5oz' then result := 0.008
+           else if CuCode = '6oz' then result := 0.0095
          end;
         end;
     end;

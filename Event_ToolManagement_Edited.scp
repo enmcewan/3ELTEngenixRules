@@ -13,5 +13,5 @@ the user will be prompted to save the data on closing the dialog
 
 procedure ToolManagement_Edited(ToolTable: TSysTable; ParamList: TStringList);
 begin
-  ParamList.Values['isUpdated'] := 'True';
+//  ParamList.Values('isUpdated') := 'True';
 end;

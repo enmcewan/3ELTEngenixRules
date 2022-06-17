@@ -132,7 +132,7 @@ begin
       (Fnc.SysGetAttrValue('IL_Finish_Rout') = true)
      )
   then
-  begin                         
+  begin
     SysRouteInsertStepExt('IL_Rout', 'IL_Rout01');
     SysRouteInsertStepExt('IL_Bevel', 'IL_Bevel01');
   end
@@ -153,8 +153,8 @@ end;
 function GetsUltrasonic( afterDesmear : string )  : boolean;  // 978 Updated Cu Rule - Metalization 
 var
   partsPerPanel : integer;
-  thickness : float;                                 
-  minDrillHoleSize : float;
+  thickness : float;
+  minDrillHoleSize : float;           
   aspectRatio : float;
 begin                                           
   result := false;
@@ -176,18 +176,16 @@ begin
       thickness := Fnc.SysGetAttrValue('LayupThickness')
     else                 
       thickness := DSThicknessB4Plating;
-      
+                                          
     minDrillHoleSize := Fnc.SysGetAttrValue('Min_Drill_Size_2');
     aspectRatio := Fnc.SysGetAttrValue('Aspect_Ratio_Val_2'); 
-  end;                       
+  end;                            
                                     
-  if (
-      (( minDrillHoleSize < 0.20 ) and ( thickness > 1.0 )) or // 1204 Updated Desmear flow
+  if  (( minDrillHoleSize < 0.20 ) and ( thickness > 1.0 )) or // 1204 Updated Desmear flow
       (( partsPerPanel = 1 ) and ( thickness >= 2.0 ) and ( minDrillHoleSize <= 0.25 )) or // 1139 Hole Check after Electroless
       (( minDrillHoleSize < 0.25 ) and ( thickness >= 2.0 )) or
       ( aspectRatio > 13.6 ) or
-      (( afterDesmear ) and ( verticalDesmear ))
-     )             
+      (( afterDesmear ) and ( verticalDesmear ))             
   then
     result := true; 
 end;
@@ -257,16 +255,16 @@ begin
   end;          
                                                                   
   Material := GetDesmearSearchMaterial;
-
+       
   if Fnc.SysGetAttrValue('LayerCount') > 2 then // 2 Layer Fixes
     Thickness := Fnc.SysGetAttrValue('Press_Thickness')
   else
     Thickness := DSThicknessB4Plating;
   //Thickness := Fnc.SysGetAttrValue('Press_Thickness');
-                     
+                                     
   StepList := GetDesmearStepList(Material, Thickness);
 
-  if StepList.Count > 0 then
+  if StepList.Count > 0 then                                                               
   begin
     Rte_Step := '';
     //showmessage(StepList.Text);     
@@ -274,28 +272,29 @@ begin
     for i := 0 to StepList.Count - 1 do
     begin
       case StepList.Strings[i] of
-        'DM2'        : Rte_Step := 'Desmear_DM2';
-        'Hiji Line'  : Rte_Step := 'Desmear_AlkRinse';
-        //'Alkaline Rinse'  : Rte_Step := 'Desmear_AlkRinse';
-        'Hollmuller Desmear' : Rte_Step := 'Desmear_Holl';
-        'Oven Baking' : Rte_Step := 'Desmear_Baking';
-        'Oven Baking2' : Rte_Step := 'Desmear_Baking_2';
-        'Plasma' : Rte_Step := 'Plasma';
-        'Plasma2' : Rte_Step := 'Plasma_2';
+        'DM2'                   : Rte_Step := 'Desmear_DM2';
+        'Hiji Line'             : Rte_Step := 'Desmear_AlkRinse';
+        //'Alkaline Rinse'      : Rte_Step := 'Desmear_AlkRinse';
+        'Hollmuller Desmear'    : Rte_Step := 'Desmear_Holl';
+        'Oven Baking'           : Rte_Step := 'Desmear_Baking';
+        'Oven Baking2'          : Rte_Step := 'Desmear_Baking_2';
+        'Plasma'                : Rte_Step := 'Plasma';
+        'Plasma2'               : Rte_Step := 'Plasma_2';
         'Hollmuller Desmear2-1' : Rte_Step := 'Desmear_Holl2_1';
         'Hollmuller Desmear2-2' : Rte_Step := 'Desmear_Holl2_2';
-        'DM2-1'        : Rte_Step := 'Desmear_DM2_1';
-        'DM2-2'        : Rte_Step := 'Desmear_DM2_2';
-        'Ultrasonic'   : Rte_Step := 'Ultrasonic';
-        'Vertical Desmear' : Rte_Step := 'Vertical_Desmear';  // 978
-        'Vertical Desmear2' : Rte_Step := 'Vertical_Desmear_2'; 
+        'DM2-1'                 : Rte_Step := 'Desmear_DM2_1';
+        'DM2-2'                 : Rte_Step := 'Desmear_DM2_2';
+        'Ultrasonic'            : Rte_Step := 'Ultrasonic';
+        'Vertical Desmear'      : Rte_Step := 'Vertical_Desmear';  // 978
+        'Vertical Desmear2'     : Rte_Step := 'Vertical_Desmear_2';
+        'Hole Cleaning'         : Rte_Step := 'Hole_Cleaning';  //OD 2294                   
       end;
 
       if Rte_Step <> '' then
         SysRouteInsertStepExt(Rte_Step, Rte_Step + '0' + IntToStr(MetalizationRun));
 
-      if (( Rte_Step = 'Vertical_Desmear' ) or ( Rte_Step = 'Vertical_Desmear_2' )) then
-        verticalDesmear := true;
+      // OD 2294 removes Vertical_Desmear as a step - The Replacement Hole Cleaning does not
+      if Rte_Step = 'Vertical_Desmear_2' then verticalDesmear := true;
                       
     end;
     StepList.Free;
@@ -307,29 +306,23 @@ begin
     
   if GetsUltrasonic(true) then  
    SysRouteInsertStepExt('UltraSonicStep', 'UltraSonicStep' + '0' + IntToStr(MetalizationRun)); 
-
+                                        
   if NCRun = 1 then // 1204 Updated Desmear Flow
   begin
   if LaserG30KMechOrSkipBVH then
     SysRouteInsertStepExt('Plasma_3', 'Plasma_3' + '0' + IntToStr(MetalizationRun));
   end;
-  
+                              
   SysRouteInsertStepExt('Electroless', 'Electroless' + '0' + IntToStr(MetalizationRun));
   
-  if GetsHoleCheck then  // 1139 Hole Check After Electroless
-    SysRouteInsertStepExt('Hole_Check_AfterEless', 'Hole_Check_AfterEless' + '0' + IntToStr(MetalizationRun)); 
-     
-  {  // 1204
-  // NC RUN!
-  if NCRun = 1 then             
-  begin 
-    if ( MechBlindViaSide <> 'None' ) or ( MfgPartHasSkipBlindVias ) then
-    begin         
-      SysRouteInsertStepExt('Strike_Plating', 'Strike_Plating' + '0' + IntToStr(MetalizationRun));
-      SysRouteInsertStepExt('Electroless_SP', 'Electroless_SP' + '0' + IntToStr(MetalizationRun));
-    end;
+  if ( NCRun = 1 ) and ( MechBlindViaSide <> 'None' ) then // 2295  Updated VELCP Flow          
+  begin        
+    SysRouteInsertStepExt('Strike_Plating', 'Strike_Plating' + '0' + IntToStr(MetalizationRun));
+    SysRouteInsertStepExt('Electroless_SP', 'Electroless_SP' + '0' + IntToStr(MetalizationRun)); 
   end;
-  }
+  
+  if GetsHoleCheck then  // 1139 Hole Check After Electroless
+    SysRouteInsertStepExt('Hole_Check_AfterEless', 'Hole_Check_AfterEless' + '0' + IntToStr(MetalizationRun));                                               
 end; 
 
 procedure Conformal_Mask; // 1138 Microetch for Laser Via 
@@ -342,7 +335,7 @@ begin
 end;
 
 procedure MicroEtch; // 1138 Microetch for Laser Via 
-var                  
+var                                            
   confMask_UetchOK : boolean; 
 begin
   confMask_UetchOK := false;  // 1112 Micro-etch for thick board
@@ -411,23 +404,26 @@ begin
     SysRouteInsertStepExt('MicroEtch_DirLaser', 'MicroEtch_DirLaser01');   
   end;
   
+  //if ShearingRequired then
+  //    SysRouteInsertStepExt('Shearing_Laser', 'Shearing_Laser01');
+     
   if ShearingRequired then  // 2269 Shearing After Laser 
   begin
     if  (Fnc.SysGetAttrValue('Press_Thickness') > 1.8) or
         (Fnc.SysGetAttrValue('Press_Thickness') < 0.6) or
         (Fnc.SysGetAttrValue('IL_Finish_Rout'))
-    then
+    then                                               
     begin                                                                                                
       SysRouteInsertStepExt('IL_Rout_Laser', 'IL_Rout_Laser01');                            
       SysRouteInsertStepExt('IL_Bevel_Laser', 'IL_Bevel_Laser01');
     end                                                       
     else
       SysRouteInsertStepExt('Shearing_Laser', 'Shearing_Laser01');
-  end;  
+  end;
 end; 
 
 procedure NC_EpxPlug_wFlash;
-begin
+begin              
   SysRouteInsertStepExt('NC_Drill', 'NC_Drill01');
   
   if GetsExtraAZBlowerStep then // 1144 Additional AZ Blower Step after CNC Drill 
@@ -438,7 +434,7 @@ begin
   SysRouteInsertStepExt('CuHoleCheck', 'CuHoleCheck01');
   
   if ( ( Fnc.SysGetAttrValue('BackDrill_Epoxy') ) and ( Fnc.SysGetAttrValue('NCRunX2') = true )) then // 844 Backdrill after Electrolytic Cu
-    Back_Drill_Epoxy;     
+    Back_Drill_Epoxy; 
                                                                                                 
   Epoxy_Plugging;
                       
@@ -512,7 +508,7 @@ begin
 
       SysRouteInsertStepExt('Outgoing', 'Outgoing01');
           
-    end                                       
+    end
     else
       SysRouteInsertStepExt('Shearing', 'Shearing01');
   end;

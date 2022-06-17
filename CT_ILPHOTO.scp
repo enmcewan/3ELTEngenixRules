@@ -4,7 +4,7 @@
 //ScriptType=0
 //ScriptGroup=HCS
 //HeaderImportExport<--
-uses                                                                                                                              
+ uses                                                                                                                              
   CT_SearchLibrary,
   RouteFunctions;
 
@@ -189,7 +189,7 @@ begin
   if bCont then
   begin
     // Not sure what this code was for. 'G3' is always in the table
-    {G3_isValid := False;         
+    {G3_isValid := False;           
     if InnerPhoto1A.Locate('Type;Condition', [cILPhoto_TypeHeader, 'Group'], SetOf([loCaseInsensitive])) then
     begin
       for i := 0 to FieldNameList.Count - 1 do
@@ -232,10 +232,10 @@ begin
             if InnerPhoto1A.Locate('Type;Condition', [cILPhoto_TypeHeader, 'Group_N'], SetOf([loCaseInsensitive])) then
               Group_Erp := InnerPhoto1A.FieldByName(FieldName).AsString;
           //end;
-        end;
+        end;                                                                                                
       end;
     end;
-  end;                          
+  end;                                                   
 
   case DesLine of
     {'DES1':  No longer used
@@ -275,4 +275,3 @@ begin
               'DesLine: ' + DesLine + #13 +
               'AltLine: ' + AltLine);
 end;
-

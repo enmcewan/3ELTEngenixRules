@@ -184,7 +184,7 @@ var
   colList : TstringList;
 begin
   Result := TStringList.Create;
-
+                                          
   if Trim(Material) = '' then
     exit;
 
@@ -197,7 +197,7 @@ begin
 
   MaterialList.Text := StringReplace(Material, '/', #13, SetOf([rfReplaceAll]));
 
-  DesmearTab := Fnc.CustomTableGet('Desmear_978'); // 978 Updated Cu Rule - Metalization 
+  DesmearTab := Fnc.CustomTableGet('Desmear_2294'); // 2294 Updated Desmear Table Column
   DesmearTab.Filtered := False;
   DesmearTab.Filter := '';
   DesmearTab.FilterOptions := SetOf([foCaseInsensitive]);
@@ -220,7 +220,7 @@ begin
         else
         begin
           FieldValue := LowerCase(DesmearTab.FieldByName(FieldName).AsString);
-
+                  
           if (FieldValue <> 'none') and (FieldValue <> '') then
             TempList.Add(FieldName);
         end;
@@ -266,7 +266,7 @@ end;
 function GetDesmearStepParameters(Material: string; Thickness: float; ProdStep: string): TStringList;
 var
   i: integer;
-  errMsg: string;
+  errMsg: string;           
   FieldName: string;
   FieldList: TStringList;
   MaterialList: TStringList;
@@ -286,7 +286,7 @@ begin
 
   errMsg := '';
 
-   DesmearTab := Fnc.CustomTableGet('Desmear_978'); // 978 Updated Cu Rule - Metalization 
+   DesmearTab := Fnc.CustomTableGet('Desmear_2294'); // 2294  Updated Desmear Table Column
   DesmearTab.Filtered := False;
   DesmearTab.Filter := '';
   DesmearTab.FilterOptions := SetOf([foCaseInsensitive]);

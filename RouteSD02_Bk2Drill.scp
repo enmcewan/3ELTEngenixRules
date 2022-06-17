@@ -4,7 +4,7 @@
 //ScriptType=0
 //ScriptGroup=HCS
 //HeaderImportExport<--
-uses                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   
+uses                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  
   Event_RouteGenLibrary,
   Eng_RouteFunctions,
   RouteFunctions,
@@ -23,105 +23,104 @@ Var
   PhotoLine: string;
   AltLine: string;
   ProdResource: string
-  DesLine: string;       
+  DesLine: string;
 
-procedure PEP_SD;
+procedure PEP_SD;      
 begin
-  SysRouteInsDepartment('Erp', 'PEPOL-A', '');
-  SysRouteInsWorkCenter('Erp', 'PEPOL-A', '');
+  StepDeptERP('PEPOL-A');                                             
+  StepWCERP('PEPOL-A');
 
   if CustCode_Rule('Customer') = 'FA' then
-    SysRouteInsInstruction('Erp', 'PEPOL010', ''); // “Check OPE location off-set”
+    StepInstructionERP('PEPOL010'); // “Check OPE location off-set”
 
   AddSubsAndInnersAtStep; // 1229 PEP Flow option for Sub-assembly build.
-  
-  //if Fnc.SysRouteInsGetStepNum = 1 then  // 1471 QR Code information info update    
-  //  InsertQRInfoAtStep1;   
+
+  //if Fnc.SysRouteInsGetStepNum = 1 then  // 1471 QR Code information info update
+  //  InsertQRInfoAtStep1;
 
 end;
-           
+
 procedure Pre_Oxide_Baking_SD;
 begin
-  SysRouteInsDepartment('Erp', 'OXBAK-A', '');
-  SysRouteInsWorkCenter('Erp', 'OXBAK-A', '');
+  StepDeptERP('OXBAK-A');
+  StepWCERP('OXBAK-A');
 
   if (( HasMultipleSubAssemblies ) and ( MatPreOxide24HrBake )) then
-    SysRouteInsAddlParameter('Erp', 'Remarks', '24 Hrs Baking','', '', false, '', '', ''); 
+    StepParamERP('Remarks', '24 Hrs Baking');
 
-  SysRouteInsAddlParameter('Erp', 'Bake Reason', 'SP Material','', '', false, '', '', '');
+  StepParamERP('Bake Reason', 'SP Material');
+
+  //if Fnc.SysRouteInsGetStepNum = 1 then  // 1471 QR Code information info update
+  //  InsertQRInfoAtStep1;
 end;
 
 procedure Shearing_SD;
 begin
-  SysRouteInsDepartment('Erp', 'SHEAR=C', '');
-  SysRouteInsWorkCenter('Erp', 'SHEAR=C', '');
-  
-  //if Fnc.SysRouteInsGetStepNum = 1 then  // 1471 QR Code information info update    
-  //  InsertQRInfoAtStep1; 
+  StepDeptERP('SHEAR=C');
+  StepWCERP('SHEAR=C');
+
+  //if Fnc.SysRouteInsGetStepNum = 1 then  // 1471 QR Code information info update
+  //  InsertQRInfoAtStep1;
 end;
 
-procedure Shearing_Laser_SD;                       
-begin           
-  SysRouteInsDepartment('Erp', 'FINIL-A', '');
-  SysRouteInsWorkCenter('Erp', 'FINIL-A', '');                             
-  SysRouteInsAddlParameter('Erp', 'Shear To', LaserShearSize, '', '', false, '', '', ''); 
-end;                        
-                                               
-procedure IL_Rout_Laser_SD;  // 2269 Shearing After Laser 
-var                                          
-  CalcStackHt : integer;   
+procedure Shearing_Laser_SD;
+begin
+  StepDeptERP('FINIL-A');
+  StepWCERP('FINIL-A');
+  StepParamERP('Shear To', LaserShearSize);
+end;
+
+procedure IL_Rout_StackHeight;
+var
+  CalcStackHt : integer;
 begin
   CalcStackHt := 0.0;
-                                              
-  SysRouteInsDepartment('Erp', 'FINIL-B', '');
-  SysRouteInsWorkCenter('Erp', 'FINIL-B', '');
-  
   if not Fnc.SysGetAttrValue('FinIL_Stk_Ovr') then // 1472
   begin
-    //CalcStackHt := Round(8/Fnc.SysGetAttrValue('Press_Thickness'));
-    CalcStackHt := Round(7.1/Fnc.SysGetAttrValue('Press_Thickness')); // 1499
+    CalcStackHt := Trunc(7.1/(Fnc.SysGetAttrValue('Press_Thickness') * 1.08 )); // 2289
     Fnc.SysSetAttrValue('FinIL_Stk', CalcStackHt);
-    SysRouteInsAddlParameter('Erp', 'Stack Height', CalcStackHt, '', '', false, '', '', '');
+    StepParamERP('Stack Height', CalcStackHt);
   end
-  else                                                
-  begin                                                    
+  else
+  begin                    
     if Fnc.SysGetAttrValue('FinIL_Stk_User') > 0 then
     begin
       Fnc.SysSetAttrValue('FinIL_Stk', Fnc.SysGetAttrValue('FinIL_Stk_User'));
-      SysRouteInsAddlParameter('Erp', 'Stack Height', Fnc.SysGetAttrValue('FinIL_Stk_User'), '', '', false, '', '', '');
+      StepParamERP('Stack Height', Fnc.SysGetAttrValue('FinIL_Stk_User'));
     end
-    else
+    else                                       
       MessageDlg('IL Finish Route Stack Height user override selected but value is 0', mtWarning, Setof([mbOK]) , 0);
   end;
-
-  {if Fnc.SysGetAttrValue('NCRunX2') = true then
-    SysRouteInsInstruction('Erp', '2NC_KRAFT', ''); // REMARK: PUT KRAFT PAPER INBETWEEN PANEL
-                         
-  if Fnc.SysGetAttrValue('IL_Finish_Rout') = true then
-    SysRouteInsInstruction('Erp', 'FINIL010', ''); //  PLS USE SPECIFIC ROUTING TAPE (PROGRAME) FOR THIS MODEL ONLY.
-  }
-  
-  StepParam('Erp', 'Shear To', LaserShearSize); 
 end;
-             
-procedure IL_Bevel_Laser_SD;   // 2269 Shearing After Laser 
+
+procedure IL_Rout_Laser_SD;  // 2269 Shearing After Laser
 begin
-  SysRouteInsDepartment('Erp', 'FINBE-A', '');
+  StepDeptERP('FINIL-B');
+  StepWCERP('FINIL-B');
+
+  IL_Rout_StackHeight; // 2289
+  
+  StepParam('Erp', 'Shear To', LaserShearSize);
+end;
+
+procedure IL_Bevel_Laser_SD;   // 2269 Shearing After Laser
+begin
+  StepDeptERP('FINBE-A');
 
   if Fnc.SysGetAttrValue('Press_Thickness') > 3.5 then
-    SysRouteInsWorkCenter('Erp', 'FINBE-B0', '')
-  else
-    SysRouteInsWorkCenter('Erp', 'FINBE-A0', '');                             
-end;  
+    StepWCERP('FINBE-B0');
+  else                      
+    StepWCERP('FINBE-A0');
+end;
 
 procedure Oxide_SD;
 var
-  UseOxideLine1 : boolean;
-  UseOxideLine2 : boolean;
+  UseOxideLine1,
+  UseOxideLine2,
   UseOxideLine3 : boolean;
 
-  OxideLineName1 : string;
-  OxideLineName2 : string;
+  OxideLineName1,
+  OxideLineName2,
   OxideLineName3 : string;
 
   AltOxideLineName : string;
@@ -141,7 +140,7 @@ begin
   OxideLineSelected := false;
   OxideLineName := '';
 
-  SysRouteInsDepartment('Erp', 'OXDOL-B', '');
+  StepDeptERP('OXDOL-B');
 
   if HasSubAssemblies = true then //In place of IES GLB_INNER_PRESSED - Verify
     UseOxideLine2 := false;
@@ -199,37 +198,37 @@ begin
 
   if AltOxideLineName = 'L3/L4/L2' then
   begin
-    SysRouteInsWorkCenter('Erp', 'OXDOL-B', '');
-    SysRouteInsInstruction('Erp', 'OXDOL011', ''); // "ALTERNATIVE LINE : L3/L4/L2"
+    StepWCERP('OXDOL-B');
+    StepInstructionERP('OXDOL011'); // "ALTERNATIVE LINE : L3/L4/L2"
   end;
 
   if OxideLineName = 'L2' then
-    SysRouteInsWorkCenter('Erp', 'OXDOL-C0', '');
+    StepWCERP('OXDOL-C0');
 
   if OxideLineName = 'L3' then
-    SysRouteInsWorkCenter('Erp', 'OXDOL-D0', '');
+    StepWCERP('OXDOL-D0');
 
   if OxideLineName = 'L4' then
-    SysRouteInsWorkCenter('Erp', 'OXDOL-E0', '');
-    
-  //if Fnc.SysRouteInsGetStepNum = 1 then  // 1471 QR Code information info update    
-  //  InsertQRInfoAtStep1;  
+    StepWCERP('OXDOL-E0');
+
+  //if Fnc.SysRouteInsGetStepNum = 1 then  // 1471 QR Code information info update
+  //  InsertQRInfoAtStep1;
 
 end;
 
 procedure Post_Oxide_Baking_SD;
 begin
-  SysRouteInsDepartment('Erp', 'OXBAK-A', '');
-  SysRouteInsWorkCenter('Erp', 'OXBAK-A', '');
+  StepDeptERP('OXBAK-A');
+  StepWCERP('OXBAK-A');
 
   if PressCycleMoreThan1 = true then
-    SysRouteInsAddlParameter('Erp', 'Bake Reason', 'HDI : After 1 Press','', '', false, '', '', '');
+    StepParamERP('Bake Reason', 'HDI : After 1 Press');
 
   if  ((MatCyanateEster) or (MatPhenolCure = true)) then
-    SysRouteInsAddlParameter('Erp', 'Bake Reason', 'SP Material','', '', false, '', '', '');
+    StepParamERP('Bake Reason', 'SP Material');
 
   if ((BaseCuTopUM >= 70) or (BaseCuBotUM >= 70)) then
-    SysRouteInsAddlParameter('Erp', 'Bake Reason', 'Base Cu >= 2oz','', '', false, '', '', '');
+    StepParamERP('Bake Reason', 'Base Cu >= 2oz');
 end;
 
 procedure Pre_Book_SD;
@@ -243,55 +242,55 @@ begin
   PBookLine:= '';
   AltLine:= '';
 
-  SysRouteInsDepartment('Erp', 'PBOOK-A', '');
-  SysRouteInsWorkCenter('Erp', 'PBOOK-C0', '');
+  StepDeptERP('PBOOK-A');
+  StepWCERP('PBOOK-C0');
 
   Material := TStringList.Create;
   Material.add('Prepreg');
   Material.add('PP/Filler');
   Material.add('Core');
 
-  SysRouteInsMaterials('Engx', Material, 1, '');
+  StepMaterialsERP(Material, 1);
 end;
 
 procedure Riveting_SD;
 begin
-  SysRouteInsDepartment('Erp', 'PBOOK-B0', '');
-  SysRouteInsWorkCenter('Erp', 'PBOOK-B0', '');
+  StepDeptERP('PBOOK-B0');
+  StepWCERP('PBOOK-B0');
 
   if Fnc.SysGetAttrValue('Rivet_Thk') <> '' then
-    SysRouteInsAddlParameter('Erp', 'Rivet Thickness', Fnc.SysGetAttrValue('Rivet_Thk'), '', '', false, '', '', '');
+    StepParamERP('Rivet Thickness', Fnc.SysGetAttrValue('Rivet_Thk'));
 
   if NumOfCores > 8 then
-    SysRouteInsInstruction('Erp', 'PBOOK013', ''); // 4 Rivet
+    StepInstructionERP('PBOOK013'); // 4 Rivet
   else
-    SysRouteInsInstruction('Erp', 'PBOOK012', ''); // 2 Rivet
+    StepInstructionERP('PBOOK012'); // 2 Rivet
 
 end;
 
 procedure PlasticEye_Riveting_SD
 begin
-  SysRouteInsDepartment('Erp', 'PBOOK-B0', '');
-  SysRouteInsWorkCenter('Erp', 'PBOOK-B0', '');
-  SysRouteInsInstruction('Erp', 'PBOOK009', ''); // Remark: Plastic Eyelet Riveting.
+  StepDeptERP('PBOOK-B0');
+  StepWCERP('PBOOK-B0');
+  StepInstructionERP('PBOOK009'); // Remark: Plastic Eyelet Riveting.
 end;
 
 procedure Pin_Lam_SD;
 begin
-  SysRouteInsDepartment('Erp', 'PBOOK-A', '');
-  SysRouteInsWorkCenter('Erp', 'PBOOK-G0', '');
+  StepDeptERP('PBOOK-A');
+  StepWCERP('PBOOK-G0');
 
   //If Pin-Lam Used, Copper Foil Should be in Sheet Format. Set Attr for BOM Conversion
   Fnc.SysSetAttrValue('Pin_Lam', true);
 end;
-                
+
 procedure Pin_Bond_SD;
 var
   Work_Center : string;
-begin                       
+begin
   Work_Center := 'None';
-  SysRouteInsDepartment('Erp', 'PBOOK-A', '');
-                    
+  StepDeptERP('PBOOK-A');
+
   if (( NumOfCores ) + ( NumOfSubs )) = 2 then
   begin
     if (( SuborILThk_GreaterThan(0.25) ) and ( SuborILPnlLen_GreaterThan(609) )) then
@@ -302,7 +301,7 @@ begin
   begin
     if ( (SuborILThk_GreaterThan(0.024) ) and ( SuborILPnlLen_GreaterThan(509) )) then
       Work_Center := 'PBOOK-A0';  // 3 Head
-                  
+
     if (( NumOfCores ) + ( NumOfSubs )) = 2 then
     begin
       if (( SuborILThk_GreaterThan(0.25) ) and ( SuborILPnlLen_GreaterThan(609) )) then
@@ -311,14 +310,14 @@ begin
   end;
 
   if Work_Center <> 'None' then
-    SysRouteInsWorkCenter('Erp', Work_Center, '')
+    StepWCERP(Work_Center);   
   else
     ShowMessage('Error!!! : No Resource Selected for Pin Bond. Check Panel Length & Thickness for each Inner/Sub');
-    
+
   Fnc.SysSetAttrValue('Pin_Lam', false);
 end;
 
-procedure Hot_Press_SD;
+procedure Hot_Press_SD;  
 var
   Material : TStringList;
   FoilWtinKG : float;
@@ -327,33 +326,33 @@ var
   SecondPlating : string;
 
 begin
-  SysRouteInsDepartment('Erp', 'PRESS-A', '');
+  StepDeptERP('PRESS-A');
 
   if PinLamination = true then
-    SysRouteInsWorkCenter('Erp', 'PRESS-C1', '')
+    StepWCERP('PRESS-C1');
   else
-    SysRouteInsWorkCenter('Erp', 'PRESS-C0', '');
+    StepWCERP('PRESS-C0');
 
-  SysRouteInsAddlParameter('Erp', 'Press Thickness', FormatFloat('0.000', Fnc.SysGetAttrValue('Press_Thickness')), '', '', false, '', '', '');
+  StepParamERP('Press Thickness', FormatFloat('0.000', Fnc.SysGetAttrValue('Press_Thickness')));
 
   if Fnc.SysGetAttrValue('NCRunX2') = true then
-    SysRouteInsInstruction('Erp', '2NC_KRAFT', ''); // REMARK: PUT KRAFT PAPER IN BETWEEN PANEL
+    StepInstructionERP('2NC_KRAFT'); // REMARK: PUT KRAFT PAPER IN BETWEEN PANEL
 
   // 1246 Remove PBOOK008 Instruction
   {if (
       (BaseCuTopUM = 12) and
-      (                          
+      (
        (CustCodeFirstChar = 'W') or      // Use of this needs to be confirmed
-       (CustCodeFirstChar = 'S') 
+       (CustCodeFirstChar = 'S')
       )
-     )                                                                                             
+     )
   then
-    SysRouteInsInstruction('Erp', 'PBOOK008', ''); // =- USE COPPER FOIL - MWG FOIL } 
+    StepInstructionERP('PBOOK008'); // =- USE COPPER FOIL - MWG FOIL }
 
   Material := TStringList.Create;
   Material.add('Foil');
-                                         
-  FoilWtinKG := 0.0;        
+
+  FoilWtinKG := 0.0;
 
   Fnc.SysGetCopperValues(True, false, BaseCopper, FirstPlating, SecondPlating);
   Case BaseCopper of
@@ -362,21 +361,21 @@ begin
       '1oz'   : FoilWtinKG := 0.1088 ;
       '2oz'   : FoilWtinKG := 0.2215 ;
     end;
-                          
-  if ( BaseCopper = '5um' ) or ( Fnc.SysGetAttrValue('Pin_Lam') ) then   // 1200 5um Cu Foil   // 1247 BOM Cu Foil Unit        
-    SysRouteInsMaterials('Engx', Material, 1, '')
+
+  if ( BaseCopper = '5um' ) or ( Fnc.SysGetAttrValue('Pin_Lam') ) then   // 1200 5um Cu Foil   // 1247 BOM Cu Foil Unit
+    StepMaterialsERP(Material, 1);
   else
-    SysRouteInsMaterials('Engx', Material, FoilWtinKG, '')
+    StepMaterialsERP(Material, FoilWtinKG);
 end;
 
 function IsLaserDrilled: boolean;
 begin
   result := false;
-  
+
   if (Fnc.SysGetAttrValue('LaserBTopHits') > 0 ) or
      (Fnc.SysGetAttrValue('LaserABotHits') > 0 ) or
      (Fnc.SysGetAttrValue('UVLaserB_Top') > 0 ) or
-     (Fnc.SysGetAttrValue('UVLaserB_Top') > 0 )  
+     (Fnc.SysGetAttrValue('UVLaserB_Top') > 0 )
   then
     result := true;
 end
@@ -388,46 +387,46 @@ var
 begin
   X_CMK_SF := 0;
   Y_CMK_SF := 0;
-                            
+
   if (Fnc.SysGetAttrValue('MfgPartType') = 'Top') and
      (PressCycleMoreThan1 = false) and
      (FoilBuild = true)
   then
   begin
-    if (ProdCodeLBlb = true) or (CustCode_Rule('Customer') = 'FA') then         
+    if (ProdCodeLBlb = true) or (CustCode_Rule('Customer') = 'FA') then
     begin
       if Eng_JobType = 'Sample' then
-         MessageDlg('For LB / Fanuc model, the manually entered value of ' + 
+         MessageDlg('For LB / Fanuc model, the manually entered value of ' +
                      IntToStr(Fnc.SysGetAttrValue('KK_Distance')) +
                     ' will be used as the KK distance. Please check and confirm', mtWarning, SetOf([mbOK]), 0);
-    end                            
+    end
     else
       Fnc.SysSetAttrValue('KK_Distance', Fnc.SysGetAttrValue('Panel_Length') - 8);
-  end                           
-  else                                                                                                                        
+  end
+  else
   begin
     if (( Eng_JobType = 'Sample' ) and ( PressCycleMoreThan1 = true )) then
       //ShowMessage('ERROR!!! : MORE THAN ONE TIME PRESS, THE KEY IN VALUE: ' + IntToStr(Fnc.SysGetAttrValue('KK_Distance')) + ' WILL BE USED AS KK DISTANCE, PLEASE CHECK AND CONFIRM');
-      MessageDlg('More than one time press, the manually entered value of ' + 
+      MessageDlg('More than one time press, the manually entered value of ' +
                   IntToStr(Fnc.SysGetAttrValue('KK_Distance')) +
                   ' will be used as the KK distance. Please check and confirm', mtWarning, SetOf([mbOK]), 0);
   end;
-                       
+
   if ((Fnc.SysGetAttrValue('KK_Distance') < 100) or (Fnc.SysGetAttrValue('KK_Distance') > 700)) then
     MessageDlg('Wrong KK Distance, please feedback to Engineering!', mtError, SetOf([mbOK]), 0);
-    
-  SysRouteInsAddlParameter('Erp', 'KK Distance', Fnc.SysGetAttrValue('KK_Distance'), '', '', false, '', '', '');
-  
+
+  StepParamERP('KK Distance', Fnc.SysGetAttrValue('KK_Distance'));
+
   if IsLaserDrilled then
   begin
-    if Fnc.SysGetAttrValue('Panel_Length_XD') = 0 then 
+    if Fnc.SysGetAttrValue('Panel_Length_XD') = 0 then
     begin // 1465
       if Fnc.SysGetAttrValue('Panel_Length') > 510 then
         Fnc.SysSetAttrValue('Panel_Length_XD', 460)
       else
-        Fnc.SysSetAttrValue('Panel_Length_XD', 350) 
-    end;         
-                                                                
+        Fnc.SysSetAttrValue('Panel_Length_XD', 350)
+    end;
+
     if Fnc.SysGetAttrValue('Panel_Width_XD') = 0 then
     begin
       if Fnc.SysGetAttrValue('MfgPartType') = 'Top' then  // 1465
@@ -439,11 +438,11 @@ begin
          else
            Fnc.SysSetAttrValue('Panel_Width_XD', Fnc.SysGetAttrValue('Panel_Width') - 14)
       end;
-    end;                                                 
+    end;
 
-    SysRouteInsAddlParameter('Erp', 'X Distance Length', Fnc.SysGetAttrValue('Panel_Length_XD'), '', '', false, '', '', '');
-    SysRouteInsAddlParameter('Erp', 'Y Distance Width', Fnc.SysGetAttrValue('Panel_Width_XD'), '', '', false, '', '', '');
-    
+    StepParamERP('X Distance Length', Fnc.SysGetAttrValue('Panel_Length_XD'));
+    StepParamERP('Y Distance Width', Fnc.SysGetAttrValue('Panel_Width_XD'));
+
     if ((Fnc.SysGetAttrValueTopLevel('QPCB_Length') > 0 ) and (Fnc.SysGetAttrValue('MfgPartType') = 'Top')) then
     begin
       X_CMK_SF := (0.076 * Fnc.SysGetAttrValueTopLevel('QPCB_Length') * 100 ) / Fnc.SysGetAttrValue('Panel_Length');
@@ -452,11 +451,11 @@ begin
       X_CMK_SF := Round1000(X_CMK_SF);
       Y_CMK_SF := Round1000(Y_CMK_SF);
 
-      SysRouteInsAddlParameter('Erp', 'X CMK SF', X_CMK_SF, '', '', false, '', '', '');
-      SysRouteInsAddlParameter('Erp', 'Y CMK SF', Y_CMK_SF, '', '', false, '', '', '');
-    end; 
+      StepParamERP('X CMK SF', X_CMK_SF);
+      StepParamERP('Y CMK SF', Y_CMK_SF);
+    end;
   end;
-end;  
+end;
 
 procedure Scope_Drilling_SD;
 var
@@ -466,7 +465,7 @@ begin
   fixedDim := '';
   controlRange := '';
 
-  SysRouteInsDepartment('Erp', 'SCPDR-A', '');
+  StepDeptERP('SCPDR-A');
 
   if (
       (
@@ -479,77 +478,77 @@ begin
        (Fnc.SysGetAttrValue('Press_Thickness') > 1.4)
       and
       (Fnc.SysGetAttrValue('KK_Distance') < 598)
-     )              
-  then                              
-    SysRouteInsWorkCenter('Erp', 'SCPDR-A', '')
+     )
+  then
+    StepWCERP('SCPDR-A');
   else
-    SysRouteInsWorkCenter('Erp', 'SCPDR-B0', '');
+    StepWCERP('SCPDR-B0');
 
   if (
       ((Fnc.SysGetAttrValue('LaserBTopHits') > 0) or (Fnc.SysGetAttrValue('LaserABotHits') > 0))
       // 784 - Scope Drill remarks for HDI jobs (multiple press or jobs with laser via)
       //or
       //(HasMultipleSubAssemblies = true)
-     )
+     )                                                   
   then
     if UsesDefaultXYPanelDistance then               // 1465
-      SysRouteInsInstruction('Erp', 'SCPDR054', '')
+      StepInstructionERP('SCPDR054');
     else
-      SysRouteInsInstruction('Erp', 'SCPDR001', ''); // REMARK:SCOPE DRILL FOR 4 MURAKI HOLES.
+      StepInstructionERP('SCPDR001'); // REMARK:SCOPE DRILL FOR 4 MURAKI HOLES.
 
   if Fnc.SysGetAttrValue('NCRunX2') = true then //GLB_NC_RUN = 0 is not required
-    SysRouteInsInstruction('Erp', '2NC_KRAFT', ''); //REMARK: PUT KRAFT PAPER IN BETWEEN PANEL
+    StepInstructionERP('2NC_KRAFT'); //REMARK: PUT KRAFT PAPER IN BETWEEN PANEL
 
   // 1114 Fixed Scale Factor Info
   if Fnc.SysGetAttrValue('Scope_Drill_Fixed_X') > 0 then
   begin
     fixedDim := 'X = ' + FormatFloat('0.000', FloatToStr(Fnc.SysGetAttrValue('Scope_Drill_Fixed_X'))) + 'mm; ' +
                 'Y = ' + FormatFloat('0.000', FloatToStr(Fnc.SysGetAttrValue('Scope_Drill_Fixed_Y'))) + 'mm';
-                
+
     controlRange := 'X = ' + FormatFloat('0.000', FloatToStr(Fnc.SysGetAttrValue('Scope_Drill_Fixed_X') - 0.05)) + '~' +
                              FormatFloat('0.000', FloatToStr(Fnc.SysGetAttrValue('Scope_Drill_Fixed_X') + 0.05)) + 'mm; ' +
                     'Y = ' + FormatFloat('0.000', FloatToStr(Fnc.SysGetAttrValue('Scope_Drill_Fixed_Y') - 0.05)) + '~' +
                              FormatFloat('0.000', FloatToStr(Fnc.SysGetAttrValue('Scope_Drill_Fixed_Y') + 0.05)) + 'mm';
-                                                         
-    SysRouteInsAddlParameter('Erp', 'Fixed Dimension', fixedDim, '', '', false, '', '', '');
-    SysRouteInsAddlParameter('Erp', 'Control Range', controlRange, '', '', false, '', '', '');
+
+    StepParamERP('Fixed Dimension', fixedDim);
+    StepParamERP('Control Range', controlRange);
   end;
-  
-  KKXDYDDistance; // 2200 IL Shearing / Routing Info  
+
+  KKXDYDDistance; // 2200 IL Shearing / Routing Info
 end;
 
 procedure Scope_Drilling_EP_SD;
 begin
-  SysRouteInsDepartment('Erp', 'SCPDR-A', '');
-  SysRouteInsWorkCenter('Erp', 'SCPDR-A', '')
+  StepDeptERP('SCPDR-A');
+  StepWCERP('SCPDR-A');
 
-  SysRouteInsAddlParameter('Erp', 'KK Distance', Fnc.SysGetAttrValue('KK_Distance'), '', '', false, '', '', '');
+  StepParamERP('KK Distance', Fnc.SysGetAttrValue('KK_Distance'));
 end;
-                                          
+
 procedure IL_RoutShear_Common;
 var
   //Calc_KK : integer;
   ShearPnlPress : boolean;
   ShearSize : string;
-  //X_CMK_SF : float;        
+  //X_CMK_SF : float;
   //Y_CMK_SF : float;
   Press_Thk_Nom : string;
   Press_Thk_Max : string;
   Press_Thk_Min : string;
 
-begin                         
+begin
   //Calc_KK := 0;
   ShearPnlPress := false;
   ShearSize := '';
-  //X_CMK_SF := 0.0;         
+  //X_CMK_SF := 0.0;
   //Y_CMK_SF := 0.0;
 
-  Press_Thk_Nom := '';         
+  Press_Thk_Nom := '';
   Press_Thk_Max := '';
   Press_Thk_Min := '';
 
-  // 2200 IL Shearing / Routing Info 
-  {if (                 
+  // 2200 IL Shearing / Routing Info
+  {if (
       (Fnc.SysGetAttrValue('MfgPartType') = 'Top') and
       (PressCycleMoreThan1 = false) and
       (FoilBuild = true)
@@ -560,10 +559,10 @@ begin
         (ProdCodeLBlb = true) or
         (CustCode_Rule('Customer') = 'FA')
        )
-    then         
+    then
     begin
       if Eng_JobType = 'Sample' then
-        MessageDlg('For LB / Fanuc model, the manually entered value of ' + 
+        MessageDlg('For LB / Fanuc model, the manually entered value of ' +
                   IntToStr(Fnc.SysGetAttrValue('KK_Distance')) +
                   ' will be used as the KK distance. Please check and confirm', mtWarning, SetOf([mbOK]), 0);
     end
@@ -573,14 +572,14 @@ begin
       Fnc.SysSetAttrValue('KK_Distance', Calc_KK);
    end;
   end
-  else        
+  else
   begin
     if (( Eng_JobType = 'Sample' ) and ( PressCycleMoreThan1 = true )) then
-      MessageDlg('More than one time press, the manually entered value of ' + 
+      MessageDlg('More than one time press, the manually entered value of ' +
                   IntToStr(Fnc.SysGetAttrValue('KK_Distance')) +
                   ' will be used as the KK distance. Please check and confirm', mtWarning, SetOf([mbOK]), 0);
   end;
-                       
+
   if ((Fnc.SysGetAttrValue('KK_Distance') < 100) or (Fnc.SysGetAttrValue('KK_Distance') > 700)) then
     ShowMessage('ERROR!!! : Wrong KK Distance, please feedback to Engineering!');
   }
@@ -594,8 +593,8 @@ begin
   Press_Thk_Max := FloatToStr(Round1000(Fnc.SysGetAttrValue('Press_Thickness') * 1.08));
   Press_Thk_Min := FloatToStr(Round1000(Fnc.SysGetAttrValue('Press_Thickness') * 0.92));
 
-  SysRouteInsAddlParameter('Erp', 'Press Thickness', Press_Thk_Min + '~' + Press_Thk_Nom + '~' + Press_Thk_Max, '', '', false, '', '', '');
-  //SysRouteInsInstruction('', 'See Stack-up diagram', '');     Removed per email from Alison 10/29
+  StepParamERP('Press Thickness', Press_Thk_Min + '~' + Press_Thk_Nom + '~' + Press_Thk_Max);
+  //SysRouteInsInstruction('', 'See Stack-up diagram');     Removed per email from Alison 10/29
 
   if ((PPGTypesForILFinish = true) and (Fnc.SysGetAttrValue('BlindVias') = true)) then
     ShearPnlPress := true;
@@ -603,7 +602,7 @@ begin
   // No need to check for RCC material, not used
 
   if Fnc.SysGetAttrValue('MfgPartType') = 'Top' then
-  begin                    
+  begin
     if ((Fnc.SysGetAttrValue('BlindVias') = true) and (Fnc.SysGetAttrValue('CappedVia') = true)) then
       ShearPnlPress := true;
   end
@@ -617,7 +616,7 @@ begin
     then
       ShearPnlPress := true;
   end;
-                 
+
   if (( Fnc.SysGetAttrValue('Shear_Length') <> 0 ) and ( Fnc.SysGetAttrValue('Shear_Width') <> 0 )) then // Request from Herole 9/8 OneDesk
     ShearPnlPress := true;
 
@@ -629,22 +628,22 @@ begin
   if ShearSize = '0 X 0' then
     ShowMessage('ERROR!!! : Shear Size cannot be 0 X 0');
 
-  //SysRouteInsAddlParameter('Erp', 'KK Distance', Fnc.SysGetAttrValue('KK_Distance'), '', '', false, '', '', '');
-  SysRouteInsAddlParameter('Erp', 'Shear Size', ShearSize, '', '', false, '', '', '');
+  //StepParamERP('KK Distance', Fnc.SysGetAttrValue('KK_Distance'));
+  StepParamERP('Shear Size', ShearSize);
 
   if IsLaserDrilled then
   begin
-    // 2200 IL Shearing / Routing Info 
-    {if Fnc.SysGetAttrValue('Panel_Length_XD') = 0 then 
+    // 2200 IL Shearing / Routing Info
+    {if Fnc.SysGetAttrValue('Panel_Length_XD') = 0 then
     begin // 1465
       if Fnc.SysGetAttrValue('Panel_Length') > 510 then
         Fnc.SysSetAttrValue('Panel_Length_XD', 460)
       else
-        Fnc.SysSetAttrValue('Panel_Length_XD', 350) 
+        Fnc.SysSetAttrValue('Panel_Length_XD', 350)
     end;
-                                                                
+
     if Fnc.SysGetAttrValue('Panel_Width_XD') = 0 then
-    begin             
+    begin
       if Fnc.SysGetAttrValue('MfgPartType') = 'Top' then  // 1465
         Fnc.SysSetAttrValue('Panel_Width_XD', Fnc.SysGetAttrValue('Panel_Width') - 10)
       else if Fnc.SysGetAttrValue('MfgPartType') = 'Sub' then
@@ -656,9 +655,9 @@ begin
       end;
     end;
 
-    SysRouteInsAddlParameter('Erp', 'X Distance Length', Fnc.SysGetAttrValue('Panel_Length_XD'), '', '', false, '', '', '');
-    SysRouteInsAddlParameter('Erp', 'Y Distance Width', Fnc.SysGetAttrValue('Panel_Width_XD'), '', '', false, '', '', ''); 
-                 
+    StepParamERP('X Distance Length', Fnc.SysGetAttrValue('Panel_Length_XD'));
+    StepParamERP('Y Distance Width', Fnc.SysGetAttrValue('Panel_Width_XD'));
+
     if ((Fnc.SysGetAttrValueTopLevel('QPCB_Length') > 0 ) and (Fnc.SysGetAttrValue('MfgPartType') = 'Top')) then
     begin
       X_CMK_SF := (0.076 * Fnc.SysGetAttrValueTopLevel('QPCB_Length') * 100 ) / Fnc.SysGetAttrValue('Panel_Length');
@@ -667,98 +666,79 @@ begin
       X_CMK_SF := Round1000(X_CMK_SF);
       Y_CMK_SF := Round1000(Y_CMK_SF);
 
-      SysRouteInsAddlParameter('Erp', 'X CMK SF', X_CMK_SF, '', '', false, '', '', '');
-      SysRouteInsAddlParameter('Erp', 'Y CMK SF', Y_CMK_SF, '', '', false, '', '', '');
-    end; 
-   }
-    SysRouteInsInstruction('Erp', 'FINIL001', ''); // REMARKS:4- HOLE MARK CENTER DRILL.
+      StepParamERP('X CMK SF', X_CMK_SF);
+      StepParamERP('Y CMK SF', Y_CMK_SF);
+    end;
+    }
+    StepInstructionERP('FINIL001'); // REMARKS:4- HOLE MARK CENTER DRILL.
 
   end;
 
   if ((CustCode_Rule('Customer') = 'FA') and (Fnc.SysGetAttrValue('KK_Distance') = 502)) then
   begin
-    SysRouteInsInstruction('Erp', 'FINIL022', ''); //“ – MEASURE 7 HOLES”
-    SysRouteInsInstruction('Erp', 'FINIL036', ''); //“REMARK : Check for KK off-set.”
-    SysRouteInsInstruction('Erp', 'FINIL026', ''); // REMARK : K-K offset from panel center : 49.24mm
-    SysRouteInsInstruction('Erp', 'FINIL025', ''); // REMARK : Orientation hole from K point. X : 2.08 Y : 57.15
+    StepInstructionERP('FINIL022'); //“ – MEASURE 7 HOLES”
+    StepInstructionERP('FINIL036'); //“REMARK : Check for KK off-set.”
+    StepInstructionERP('FINIL026'); // REMARK : K-K offset from panel center : 49.24mm
+    StepInstructionERP('FINIL025'); // REMARK : Orientation hole from K point. X : 2.08 Y : 57.15
   end;
 
   if Fnc.SysGetAttrValue('NCRunX2') = true then
-    SysRouteInsInstruction('Erp', '2NC_KRAFT', ''); // REMARK: PUT KRAFT PAPER IN BETWEEN PANEL
+    StepInstructionERP('2NC_KRAFT'); // REMARK: PUT KRAFT PAPER IN BETWEEN PANEL
 
-end; 
+end;
 
 procedure IL_Route_SD;
-var            
+var
   CalcStackHt : integer;
 begin
   CalcStackHt := 0.0;
-                                              
-  SysRouteInsDepartment('Erp', 'FINIL-B', '');
-  SysRouteInsWorkCenter('Erp', 'FINIL-B', '');
 
-  {CalcStackHt := Round(8/Fnc.SysGetAttrValue('Press_Thickness'));
-  Fnc.SysSetAttrValue('FinIL_Stk', CalcStackHt);
-  SysRouteInsAddlParameter('Erp', 'Stack Height', CalcStackHt, '', '', false, '', '', '');}
-  
-  if not Fnc.SysGetAttrValue('FinIL_Stk_Ovr') then // 1472
-  begin
-    //CalcStackHt := Round(8/Fnc.SysGetAttrValue('Press_Thickness'));
-    CalcStackHt := Round(7.1/Fnc.SysGetAttrValue('Press_Thickness')); // 1499
-    Fnc.SysSetAttrValue('FinIL_Stk', CalcStackHt);
-    SysRouteInsAddlParameter('Erp', 'Stack Height', CalcStackHt, '', '', false, '', '', '');
-  end
-  else                       
-  begin                                                    
-    if Fnc.SysGetAttrValue('FinIL_Stk_User') > 0 then
-    begin
-      Fnc.SysSetAttrValue('FinIL_Stk', Fnc.SysGetAttrValue('FinIL_Stk_User'));
-      SysRouteInsAddlParameter('Erp', 'Stack Height', Fnc.SysGetAttrValue('FinIL_Stk_User'), '', '', false, '', '', '');
-    end
-    else
-      MessageDlg('IL Finish Route Stack Height user override selected but value is 0', mtWarning, Setof([mbOK]) , 0);
-  end;
+  StepDeptERP('FINIL-B');
+  StepWCERP('FINIL-B');
+
+  IL_Rout_StackHeight;  // 2289
 
   if Fnc.SysGetAttrValue('NCRunX2') = true then
-    SysRouteInsInstruction('Erp', '2NC_KRAFT', ''); // REMARK: PUT KRAFT PAPER INBETWEEN PANEL
-                         
-  if Fnc.SysGetAttrValue('IL_Finish_Rout') = true then
-    SysRouteInsInstruction('Erp', 'FINIL010', ''); //  PLS USE SPECIFIC ROUTING TAPE (PROGRAME) FOR THIS MODEL ONLY.
+    StepInstructionERP('2NC_KRAFT'); // REMARK: PUT KRAFT PAPER INBETWEEN PANEL
 
-end;
-             
-procedure IL_Bevel_SD;
+  if Fnc.SysGetAttrValue('IL_Finish_Rout') = true then
+    StepInstructionERP('FINIL010'); //  PLS USE SPECIFIC ROUTING TAPE (PROGRAME) FOR THIS MODEL ONLY.
+
+end;                  
+
+procedure IL_Bevel_SD;               
 begin
-  SysRouteInsDepartment('Erp', 'FINBE-A', '');
+  StepDeptERP('FINBE-A');
 
   if Fnc.SysGetAttrValue('Press_Thickness') > 3.5 then
-    SysRouteInsWorkCenter('Erp', 'FINBE-B0', '')
+    StepWCERP('FINBE-B0');
   else
-    SysRouteInsWorkCenter('Erp', 'FINBE-A0', '');                             
-
-  IL_RoutShear_Common; 
-end;                                                                               
-
-procedure IL_Shearing_SD;
-begin
-  SysRouteInsDepartment('Erp', 'FINIL-A', '');
-  SysRouteInsWorkCenter('Erp', 'FINIL-A', '');
+    StepWCERP('FINBE-A0');
 
   IL_RoutShear_Common;
 end;
 
+procedure IL_Shearing_SD;
+begin
+  StepDeptERP('FINIL-A');
+  StepWCERP('FINIL-A');
+
+  IL_RoutShear_Common;
+
+end;
+
 procedure Outgoing_SD;
 begin
-  SysRouteInsDepartment('Erp', 'FINGO-A', '');
+  StepDeptERP('FINGO-A');
 
   if Fnc.SysGetAttrValue('Press_Thickness') > 2.0 then
-    SysRouteInsWorkCenter('Erp', 'FINGO-A0', '')
+    StepWCERP('FINGO-A0');
   else
   begin
     if Fnc.SysGetAttrValue('Press_Thickness') > 0.6 then
-      SysRouteInsWorkCenter('Erp', 'FINGO-A0', '')
+      StepWCERP('FINGO-A0');
     else
-      SysRouteInsWorkCenter('Erp', 'FINGO-B0', '')
+      StepWCERP('FINGO-B0');
   end;
 end;
 
@@ -769,8 +749,8 @@ var
 begin
   sUEtch := '';
 
-  SysRouteInsDepartment('Erp', 'METCH-A', '');
-  SysRouteInsWorkCenter('Erp', 'METCH-A', '');
+  StepDeptERP('METCH-A');
+  StepWCERP('METCH-A');
 
   if ((Fnc.SysGetAttrValue('UVLaserB_Top') > 0) or (Fnc.SysGetAttrValue('UVLaserA_Bot') > 0)) then
   begin
@@ -780,9 +760,9 @@ begin
       Fnc.SysSetAttrValue('UEtch_Cu', 9.5);
       MicroEtchDone := true;
     end;
-                        
+
     if BaseCuTopUM = 12 then
-    begin    
+    begin
       Fnc.SysSetAttrValue('UEtch_Spec', '12 TO 7~9.5');
       Fnc.SysSetAttrValue('UEtch_Cu', 7.0);
       MicroEtchDone := true;
@@ -790,8 +770,8 @@ begin
     // DONE AS PER IES. Note that the logic does not handle anything other than 12 or 18 um base copper.
   end
   else
-  begin           
-    if BaseCuTopUM = 18 then        
+  begin
+    if BaseCuTopUM = 18 then
     begin
       if Fnc.SysGetAttrValue('UEtch_Value') <> '' then
       begin
@@ -799,7 +779,7 @@ begin
         Fnc.SysSetAttrValue('UEtch_Spec', '18 to ' + sUEtch);
 
         sUEtch := copy(sUEtch, 1, 1);
-        try                 
+        try
           Fnc.SysSetAttrValue('UEtch_Cu', StrToFloat(sUEtch));
         except
           ShowMessage('Error converting User Entered UEtch Spec to a number');
@@ -831,7 +811,7 @@ begin
   else
   begin
     case BaseCuTopUM of
-      35 : cuAfterMEtch := 29;    
+      35 : cuAfterMEtch := 29;
       18 : cuAfterMetch := 12;
       12 : cuAfterMetch := 8;
     else
@@ -846,56 +826,56 @@ begin
   UpdateInProcessCuThk(Fnc.SysGetAttrValue('UEtch_Cu'));
   //ShowMessage( 'Cu Thk After Micro-Etch ' + IntToStr(InProcessCuThk) + 'um'  );
 
-  //SysRouteInsAddlParameter('Erp', 'Micro-Etch Spec', Fnc.SysGetAttrValue('UEtch_Spec'), '', '', false, '', '', '');
+  //StepParamERP('Micro-Etch Spec', Fnc.SysGetAttrValue('UEtch_Spec'));
   // 1138 Micro Etch for Laser Via
-  SysRouteInsAddlParameter('Erp', 'Micro-Etch Spec', Fnc.SysGetAttrValue('UEtch_Cu'), '', '', false, '', '', ''); 
+  StepParamERP('Micro-Etch Spec', Fnc.SysGetAttrValue('UEtch_Cu'));
 
   if ((Fnc.SysGetAttrValue('NCRunX2') = true) and (NCRun = 0)) then
-    SysRouteInsInstruction('Erp', '2NC_PESHET', ''); // REMARK: PUT PE SHEET IN BETWEEN PANEL
+    StepInstructionERP('2NC_PESHET'); // REMARK: PUT PE SHEET IN BETWEEN PANEL
 end;
 
 procedure MicroEtchCuThin_SD;
 begin
-  SysRouteInsDepartment('Erp', 'METCH-A', '');
-  SysRouteInsWorkCenter('Erp', 'METCH-A', '');
-  SysRouteInsAddlParameter('Erp', 'Note', 'Micro-Etch for Cu Thin', '', '', false, '', '', '');
+  StepDeptERP('METCH-A');
+  StepWCERP('METCH-A');
+  StepParamERP('Note', 'Micro-Etch for Cu Thin');
 end;
 
 procedure MicroEtch_DirLaser_SD; // 1307
 begin
-  SysRouteInsDepartment('Erp', 'METCH-A', '');
-  SysRouteInsWorkCenter('Erp', 'METCH-A', '');
-  
+  StepDeptERP('METCH-A');
+  StepWCERP('METCH-A');
+
   UpdateInProcessCuThk(InProcessCuThk - 3 ); // 1568 Micro-Etch after Direct Laser
   Fnc.SysSetAttrValue('UEtch_Cu', InProcessCuThk);
-  
-  if InProcessCuThk <= 5 then              
-    SysRouteInsInstruction('Erp', 'METCH012', '') 
-  else if InProcessCuThk <= 12 then              
-    SysRouteInsInstruction('Erp', 'METCH014', '')  
+
+  if InProcessCuThk <= 5 then
+    StepInstructionERP('METCH012');
+  else if InProcessCuThk <= 12 then
+    StepInstructionERP('METCH014');
   else
-  begin                                                                        
-    SysRouteInsAddlParameter('Erp', 'Remark', '2um reduction (bare Cu coupon/Dummy)' , '', '', false, '', '', '');
-    SysRouteInsAddlParameter('Erp', 'Micro-Etch Spec', IntToStr(InProcessCuThk) + ' ± 0.5µm', '', '', false, '', '', '');
-  end;    
-  
-  
-  
-end; 
+  begin
+    StepParamERP('Remark', '2um reduction (bare Cu coupon/Dummy)' );
+    StepParamERP('Micro-Etch Spec', IntToStr(InProcessCuThk) + ' ± 0.5µm');
+  end;
+
+
+
+end;
 
 procedure UV_LaserCommon_SD(LaserSide : string);
-begin                         
-  SysRouteInsDepartment('Erp', 'LASUV-A', '');
-  SysRouteInsWorkCenter('Erp', 'LASUV-A', '');
+begin
+  StepDeptERP('LASUV-A');
+  StepWCERP('LASUV-A');
 
-  SysRouteInsAddlParameter('Erp', 'Stack Height', Fnc.SysGetAttrValue('Laser_StkHt'), '', '', false, '', '', '');
+  StepParamERP('Stack Height', Fnc.SysGetAttrValue('Laser_StkHt'));
 
   if Fnc.SysGetAttrValue('UEtch_Cu') = 0.0 then
-    SysRouteInsAddlParameter('Erp', 'Base Cu', IntToStr(BaseCuTopUM), '', '', false, '', '', '');
+    StepParamERP('Base Cu', IntToStr(BaseCuTopUM));
   else
-    //SysRouteInsAddlParameter('Erp', 'Micro-Etch Spec', Fnc.SysGetAttrValue('UEtch_Spec'), '', '', false, '', '', '');
+    //StepParamERP('Micro-Etch Spec', Fnc.SysGetAttrValue('UEtch_Spec'));
     // 1138 Micro Etch for Laser Via
-    SysRouteInsAddlParameter('Erp', 'Micro-Etch Spec', Fnc.SysGetAttrValue('UEtch_Cu'), '', '', false, '', '', ''); 
+    StepParamERP('Micro-Etch Spec', Fnc.SysGetAttrValue('UEtch_Cu'));
 
 end;
 
@@ -903,19 +883,19 @@ procedure UV_LaserA_SD;
 begin
   UV_LaserCommon_SD('LaserA');
 
-  SysRouteInsAddlParameter('Erp', 'Bottom Layer', Fnc.SysGetAttrValue('BotLayer'), '', '', false, '', '', '');
-  SysRouteInsAddlParameter('Erp', 'Laser Material', GetLaserMaterial('LaserSideA'), '', '', false, '', '', '');
-  SysRouteInsAddlParameter('Erp', 'Laser Hits', Fnc.SysGetAttrValue('UVLaserA_Bot'), '', '', false, '', '', '');
+  StepParamERP('Bottom Layer', Fnc.SysGetAttrValue('BotLayer'));
+  StepParamERP('Laser Material', GetLaserMaterial('LaserSideA'));
+  StepParamERP('Laser Hits', Fnc.SysGetAttrValue('UVLaserA_Bot'));
 
 end;
 
 procedure UV_LaserB_SD;
-begin                                              
+begin
   UV_LaserCommon_SD('LaserB');
 
-  SysRouteInsAddlParameter('Erp', 'Top Layer', Fnc.SysGetAttrValue('TopLayer'), '', '', false, '', '', '');
-  SysRouteInsAddlParameter('Erp', 'Laser Material', GetLaserMaterial('LaserSideB'), '', '', false, '', '', '');
-  SysRouteInsAddlParameter('Erp', 'Laser Hits', Fnc.SysGetAttrValue('UVLaserB_Top'), '', '', false, '', '', '');
+  StepParamERP('Top Layer', Fnc.SysGetAttrValue('TopLayer'));
+  StepParamERP('Laser Material', GetLaserMaterial('LaserSideB'));
+  StepParamERP('Laser Hits', Fnc.SysGetAttrValue('UVLaserB_Top'));
 
 end;
 
@@ -931,71 +911,71 @@ begin
   // DRY FILM = Conformal Mask Dry Film Thickness
   // MASK_SIZE = ENTER AFTER ETCHING CONFORMAL MASK SIZE
 
-  SysRouteInsDepartment('Erp', 'EXPOL-A', '');
+  StepDeptERP('EXPOL-A');
 
   OL_Photo_Common_SD('ConformalMask');
 
   //Search_Table_PhotoLine('ConformalMask', PhotoLine, AltLine, ProdResource, DesLine);
-  //SysRouteInsWorkCenter('Erp', ProdResource, '');
+  //StepWCERP(ProdResource);
 
-  SysRouteInsAddlParameter('Erp', 'Conf. Mask Size', Fnc.SysGetAttrValue('ConfMask_Size'), '', '', false, '', '', '');
+  StepParamERP('Conf. Mask Size', Fnc.SysGetAttrValue('ConfMask_Size'));
 
   if Fnc.SysGetAttrValue('ConfMask_Size_Skip') > 0 then
-    SysRouteInsAddlParameter('Erp', 'Conf. Mask Size - Skip', Fnc.SysGetAttrValue('ConfMask_Size_Skip'), '', '', false, '', '', '');
+    StepParamERP('Conf. Mask Size - Skip', Fnc.SysGetAttrValue('ConfMask_Size_Skip'));
 
-  SysRouteInsAddlParameter('Erp', 'Conf. Mask Thickness', Fnc.SysGetAttrValue('ConfMask_Thk'), '', '', false, '', '', '');
+  StepParamERP('Conf. Mask Thickness', Fnc.SysGetAttrValue('ConfMask_Thk'));
 
-  //SysRouteInsAddlParameter('Erp', 'Shear Size', IntToStr(Fnc.SysGetAttrValue('Panel_Length_Press')) + ' X ' + IntToStr(Fnc.SysGetAttrValue('Panel_Width_Press')), '');
+  //StepParamERP('Shear Size', IntToStr(Fnc.SysGetAttrValue('Panel_Length_Press')) + ' X ' + IntToStr(Fnc.SysGetAttrValue('Panel_Width_Press')));
 
   if ((Fnc.SysGetAttrValue('ConfMask_Thk') = 38) and (Fnc.SysGetAttrValue('ConfMask_Size_AE') < 115.0)) then
     ShowMessage('If Conf Mask Dry Film Thickness = 38 then After Etching Mask Size must be > 115');
 
-  SysRouteInsAddlParameter('Erp', 'Times Pressed', IntToStr(NumTimesPress), '', '', false, '', '', '');
-  
+  StepParamERP('Times Pressed', IntToStr(NumTimesPress));
+
   // 1114 Fixed Scale Factor Info
   if Fnc.SysGetAttrValue('ConfMask_FSF_X') > 0 then
   begin
     fixedDim := 'X = ' + FormatFloat('0.000', FloatToStr(Fnc.SysGetAttrValue('ConfMask_FSF_X'))) + '%; ' +
                 'Y = ' + FormatFloat('0.000', FloatToStr(Fnc.SysGetAttrValue('ConfMask_FSF_Y'))) + '%';
-                
+
     controlRange := 'X = ' + FormatFloat('0.000', FloatToStr(Fnc.SysGetAttrValue('ConfMask_FSF_X') - Fnc.SysGetAttrValue('ConfMask_FSF_X_Tol'))) + '~' +
                              FormatFloat('0.000', FloatToStr(Fnc.SysGetAttrValue('ConfMask_FSF_X') + Fnc.SysGetAttrValue('ConfMask_FSF_X_Tol'))) + '%; ' +
                     'Y = ' + FormatFloat('0.000', FloatToStr(Fnc.SysGetAttrValue('ConfMask_FSF_Y') - Fnc.SysGetAttrValue('ConfMask_FSF_Y_Tol'))) + '~' +
                              FormatFloat('0.000', FloatToStr(Fnc.SysGetAttrValue('ConfMask_FSF_Y') + Fnc.SysGetAttrValue('ConfMask_FSF_Y_Tol'))) + '%';
-                                                       
-    SysRouteInsAddlParameter('Erp', 'Fixed Scale Factor', fixedDim, '', '', false, '', '', '');
-    SysRouteInsAddlParameter('Erp', 'Control Range', controlRange, '', '', false, '', '', '');
+
+    StepParamERP('Fixed Scale Factor', fixedDim);
+    StepParamERP('Control Range', controlRange);
   end;
 
 end;
 
 procedure OL_AOI_Common_SD(AOIforCMK : boolean);
 begin
-  SysRouteInsDepartment('Erp', 'INSOL-A', '');
-  SysRouteInsWorkCenter('Erp', 'INSOL-A', '');
+  StepDeptERP('INSOL-A');
+  StepWCERP('INSOL-A');
 
   if ((Fnc.SysGetAttrValue('BlindVias') = true) or (CheckBuriedDrill(1) = true)) then
-  begin                                            
+  begin
     if NOT ((Fnc.SysGetAttrValue('BlindVias') = true) and (CheckBuriedDrill(1) = true)) then
     begin
       if Fnc.SysGetAttrValue('BlindVias') = true then
-        SysRouteInsAddlParameter('Erp', 'Via Type', 'Blind', '', '', false, '', '', '');
+        StepParamERP('Via Type', 'Blind');
 
       if CheckBuriedDrill(1) = true then
-        SysRouteInsAddlParameter('Erp', 'Via Type', 'Buried', '', '', false, '', '', '');
+        StepParamERP('Via Type', 'Buried');
     end
     else
     begin
-      SysRouteInsAddlParameter('Erp', 'Via Type', 'Blind & Buried', '', '', false, '', '', '');
+      StepParamERP('Via Type', 'Blind & Buried');
     end;
   end;
 
   if ((AOIforCMK = true) and (CustCode_Rule('Customer') = 'FA')) then
-    SysRouteInsInstruction('Erp', 'INSOL010', ''); // - 100% AOI
+    StepInstructionERP('INSOL010'); // - 100% AOI
 
-  SysRouteInsAddlParameter('Erp', 'Thickness', FormatFloat('0.000', Fnc.SysGetAttrValue('LayupThickness')), '', '', false, '', '', '');
-  SysRouteInsAddlParameter('Erp', 'Annular', Fnc.SysGetAttrValue('Annular'), '', '', false, '', '', '');
-  SysRouteInsAddlParameter('Erp', 'X Out', Fnc.SysGetAttrValue('X_Out'), '', '', false, '', '', '');
+  StepParamERP('Thickness', FormatFloat('0.000', Fnc.SysGetAttrValue('LayupThickness')));
+  StepParamERP('Annular', Fnc.SysGetAttrValue('Annular'));
+  StepParamERP('X Out', Fnc.SysGetAttrValue('X_Out'));
 
 end;
 
@@ -1005,7 +985,7 @@ begin
   OL_AOI_Common_SD(true);
 
   if Fnc.SysGetAttrValue('Application') = 'AUTOMOTIVE' then
-    SysRouteInsInstruction('Erp', 'INSOL008', ''); //TRACKPAD :100% AOI.
+    StepInstructionERP('INSOL008'); //TRACKPAD :100% AOI.
 end;
 
 procedure OL_AOI_SD;
@@ -1013,42 +993,42 @@ begin
   OL_AOI_Common_SD(false);
 
   case Fnc.SysGetAttrValueTopLevel('Circ_Repair') of
-    'INSOL001' : SysRouteInsInstruction('Erp', 'INSOL001', ''); // CIRCUIT REPAIR :REPAIR PER TRACE NOT EXCEEDING 2,BREAKS NOT EXCEEDING 3mm
-    'INSOL002' : SysRouteInsInstruction('Erp', 'INSOL002', ''); // CIRCUIT REPAIR :NOT ALLOWED
-    'INSOL003' : SysRouteInsInstruction('Erp', 'INSOL003', ''); // CIRCUIT REPAIR :A=3,B=3,SZ=3
-    'INSOL004' : SysRouteInsInstruction('Erp', 'INSOL004', ''); // CIRCUIT REPAIR :TRACE WELD MAX 2 PER PCB ADHESIVE TESTCIPC-7M-650 METHOD 2-4.28.1
-    'INSOL005' : SysRouteInsInstruction('Erp', 'INSOL005', ''); // CIRCUIT REPAIR :REPAIR TRACE NOT EXCEEDING 3MM,LENGTH NOT EXCEEDING 3MM
+    'INSOL001' : StepInstructionERP('INSOL001'); // CIRCUIT REPAIR :REPAIR PER TRACE NOT EXCEEDING 2,BREAKS NOT EXCEEDING 3mm
+    'INSOL002' : StepInstructionERP('INSOL002'); // CIRCUIT REPAIR :NOT ALLOWED
+    'INSOL003' : StepInstructionERP('INSOL003'); // CIRCUIT REPAIR :A=3,B=3,SZ=3
+    'INSOL004' : StepInstructionERP('INSOL004'); // CIRCUIT REPAIR :TRACE WELD MAX 2 PER PCB ADHESIVE TESTCIPC-7M-650 METHOD 2-4.28.1
+    'INSOL005' : StepInstructionERP('INSOL005'); // CIRCUIT REPAIR :REPAIR TRACE NOT EXCEEDING 3MM,LENGTH NOT EXCEEDING 3MM
     else         ShowMessage('Error!!! : Circuit Repair Value Out of Range');
   end;
 
-  SysRouteInsAddlParameter('Erp', 'Land Area', Fnc.SysGetAttrValue('Land_Area'), '', '', false, '', '', '');
-  SysRouteInsAddlParameter('Erp', 'Line Width', Fnc.SysGetAttrValue('Line_Width'), '', '', false, '', '', '');
-  SysRouteInsAddlParameter('Erp', 'Min Gap', Fnc.SysGetAttrValue('Min_Gap'), '', '', false, '', '', '');
+  StepParamERP('Land Area', Fnc.SysGetAttrValue('Land_Area'));
+  StepParamERP('Line Width', Fnc.SysGetAttrValue('Line_Width'));
+  StepParamERP('Min Gap', Fnc.SysGetAttrValue('Min_Gap'));
 
   if CustCode_Rule('Customer') = 'FA' then
-    SysRouteInsInstruction('Erp', 'INSOL030', ''); //REMARK : Sampling cu pad scale measurement smart scope”
+    StepInstructionERP('INSOL030'); //REMARK : Sampling cu pad scale measurement smart scope”
 
   if (
       ((Fnc.SysGetAttrValue('Board_Finish') = 'Immersion Tin') or (ProdCodeLX)) and
       (Fnc.SysGetAttrValue('LayupThickness') <= 3.0)
      )
   then
-    SysRouteInsInstruction('Erp', 'IMTIN002', ''); // REMARK: Manual masking of resist alignment pads.”
+    StepInstructionERP('IMTIN002'); // REMARK: Manual masking of resist alignment pads.”
 
 end;
 
 procedure IL_AOI_OL_ThinPanel_SD;
 begin
   OL_AOI_SD;
-  SysRouteInsDepartment('Erp', 'INSIL-A', '');
-  SysRouteInsWorkCenter('Erp', 'INSIL-A', '');  
+  StepDeptERP('INSIL-A');
+  StepWCERP('INSIL-A');
 end
 
 procedure CO2_LaserCommon_SD(LaserSide : string);
 var
   CurrentCuThk : float;
 begin
-  SysRouteInsDepartment('Erp', 'LASDR-A', '');
+  StepDeptERP('LASDR-A');
 
   if Fnc.SysGetAttrValue('UEtch_Cu') = 0.0 then
     CurrentCuThk := BaseCuBotUM
@@ -1056,25 +1036,25 @@ begin
     CurrentCuThk := Fnc.SysGetAttrValue('UEtch_Cu');
 
   if Fnc.SysGetAttrValue('ConfMask_Size') > 150 then
-    SysRouteInsWorkCenter('Erp', 'LASDR-A', '')  // 959 Laser MAchine Resource Code 
+    StepWCERP('LASDR-A');  // 959 Laser MAchine Resource Code
   else
   begin
     if CurrentCuThk > 18 then
-      SysRouteInsWorkCenter('Erp', 'LASDR-A', '')
+      StepWCERP('LASDR-A');
     else
-      SysRouteInsWorkCenter('Erp', 'LASDR-A', '');// 959 Laser MAchine Resource Code 
-  end; 
+      StepWCERP('LASDR-A');// 959 Laser MAchine Resource Code
+  end;
 
-  //SysRouteInsAddlParameter('Erp', 'Stk Height', Fnc.SysGetAttrValue('Laser_StkHt'), '');
+  //StepParamERP('Stk Height', Fnc.SysGetAttrValue('Laser_StkHt'));
 
   if Fnc.SysGetAttrValue('UEtch_Cu') = 0.0 then
-    SysRouteInsAddlParameter('Erp', 'Cu Thickness', IntToStr(CurrentCuThk), '', '', false, '', '', '');
+    StepParamERP('Cu Thickness', IntToStr(CurrentCuThk));
   else
-    //SysRouteInsAddlParameter('Erp', 'Micro-Etch Spec', Fnc.SysGetAttrValue('UEtch_Spec'), '', '', false, '', '', '');
+    //StepParamERP('Micro-Etch Spec', Fnc.SysGetAttrValue('UEtch_Spec'));
     // 1138 Micro Etch for Laser Via
-    SysRouteInsAddlParameter('Erp', 'Micro-Etch Spec', Fnc.SysGetAttrValue('UEtch_Cu'), '', '', false, '', '', ''); 
+    StepParamERP('Micro-Etch Spec', Fnc.SysGetAttrValue('UEtch_Cu'));
 
-  SysRouteInsInstruction('Erp', 'LASDR017', ''); // 836 - Instruction Code Update
+  StepInstructionERP('LASDR017'); // 836 - Instruction Code Update
 
 end;
 
@@ -1082,97 +1062,97 @@ procedure CO2_LaserA_SD;
 begin
   CO2_LaserCommon_SD('LaserA');
 
-  SysRouteInsAddlParameter('Erp', 'Bottom Layer', Fnc.SysGetAttrValue('BotLayer'), '', '', false, '', '', '');
-  //SysRouteInsAddlParameter('Erp', 'Laser Mat', GetLaseredMaterials(Fnc.SysGetAttrValue('BotLayer')),'');
-  SysRouteInsAddlParameter('Erp', 'Laser Hits', Fnc.SysGetAttrValue('LaserABotHits'), '', '', false, '', '', '');
-                           
-  //SysRouteInsInstruction('', InsertBlindViaDrillDepth('A'), '');
-  InsertBlindViaInfo('A');
-  //SysRouteInsInstruction('', GetLaseredMaterials(Fnc.SysGetAttrValue('BotLayer')),'');
+  StepParamERP('Bottom Layer', Fnc.SysGetAttrValue('BotLayer'));
+  //StepParamERP('Laser Mat', GetLaseredMaterials(Fnc.SysGetAttrValue('BotLayer')));
+  StepParamERP('Laser Hits', Fnc.SysGetAttrValue('LaserABotHits'));
+
+  //SysRouteInsInstruction('', InsertBlindViaDrillDepth('A'));
+  InsertBlindViaInfo('A');              
+  //SysRouteInsInstruction('', GetLaseredMaterials(Fnc.SysGetAttrValue('BotLayer')));
 
   //if Fnc.SysGetAttrValue('SViaStp_PadCuThk_A') <> '' then
-  //  SysRouteInsAddlParameter('Erp', 'SKIPSTP_TA', Fnc.SysGetAttrValue('SViaStp_PadCuThk_A'), '');
-
+  //  StepParamERP('SKIPSTP_TA', Fnc.SysGetAttrValue('SViaStp_PadCuThk_A'));
+                                                                                                                          
 end;
 
 procedure CO2_LaserB_SD;
 begin
   CO2_LaserCommon_SD('LaserB');
 
-  SysRouteInsAddlParameter('Erp', 'Top Layer', Fnc.SysGetAttrValue('TopLayer'), '', '', false, '', '', '');
-  //SysRouteInsAddlParameter('Erp', 'Laser Mat', GetLaseredMaterials(Fnc.SysGetAttrValue('TopLayer')),'');
-  SysRouteInsAddlParameter('Erp', 'Laser Hits', Fnc.SysGetAttrValue('LaserBTopHits'), '', '', false, '', '', '');
-
-  //SysRouteInsInstruction('', InsertBlindViaDrillDepth('B'), '');
+  StepParamERP('Top Layer', Fnc.SysGetAttrValue('TopLayer'));
+  //StepParamERP('Laser Mat', GetLaseredMaterials(Fnc.SysGetAttrValue('TopLayer')));
+  StepParamERP('Laser Hits', Fnc.SysGetAttrValue('LaserBTopHits'));
+                                     
+  //SysRouteInsInstruction('', InsertBlindViaDrillDepth('B'));
   InsertBlindViaInfo('B');
 
-  //SysRouteInsInstruction('', GetLaseredMaterials(Fnc.SysGetAttrValue('TopLayer')),'');
+  //SysRouteInsInstruction('', GetLaseredMaterials(Fnc.SysGetAttrValue('TopLayer')));
 
   //if Fnc.SysGetAttrValue('SViaStp_PadCuThk_B') <> '' then
-  //  SysRouteInsAddlParameter('Erp', 'SKIPSTP_TB', Fnc.SysGetAttrValue('SViaStp_PadCuThk_B'), '');
+  //  StepParamERP('SKIPSTP_TB', Fnc.SysGetAttrValue('SViaStp_PadCuThk_B'));
 
 end;
 
 procedure Hist_Line_SD;
 begin
-  SysRouteInsDepartment('Erp', 'HISTL-A', '');                                                            
-  SysRouteInsWorkCenter('Erp', 'HISTL-A', '');                                
+  StepDeptERP('HISTL-A');
+  StepWCERP('HISTL-A');
 end;
 
 procedure Dir_LaserCommon;
-begin                                         
-  SysRouteInsDepartment('Erp', 'LASDR-A', '');
-  SysRouteInsWorkCenter('Erp', 'LASDR-A', '');
-  SysRouteInsInstruction('Erp', 'LASDR017', '');
+begin
+  StepDeptERP('LASDR-A');
+  StepWCERP('LASDR-A');
+  StepInstructionERP('LASDR017');
 end;
-                                       
+
 procedure Dir_LaserA_SD;   // 1307 Direct Laser
-begin                        
+begin
   Dir_LaserCommon;
-  SysRouteInsAddlParameter('Erp', 'Bottom Layer', Fnc.SysGetAttrValue('BotLayer'), '', '', false, '', '', '');
-  SysRouteInsAddlParameter('Erp', 'Laser Hits', Fnc.SysGetAttrValue('LaserABotHits'), '', '', false, '', '', '');
+  StepParamERP('Bottom Layer', Fnc.SysGetAttrValue('BotLayer'));
+  StepParamERP('Laser Hits', Fnc.SysGetAttrValue('LaserABotHits'));
   InsertBlindViaInfo('A');
-  //SysRouteInsAddlParameter('Erp', 'Laser Size', Fnc.SysGetAttrValue('Direct_Laser_Size'), '', '', false, '', '', '');
+  //StepParamERP('Laser Size', Fnc.SysGetAttrValue('Direct_Laser_Size'));
 end;
 
 procedure Dir_LaserB_SD;
 begin
   Dir_LaserCommon;
-  SysRouteInsAddlParameter('Erp', 'Top Layer', Fnc.SysGetAttrValue('TopLayer'), '', '', false, '', '', '');
-  SysRouteInsAddlParameter('Erp', 'Laser Hits', Fnc.SysGetAttrValue('LaserBTopHits'), '', '', false, '', '', '');
-  InsertBlindViaInfo('B');     
-  //SysRouteInsAddlParameter('Erp', 'Laser Size', Fnc.SysGetAttrValue('Direct_Laser_Size'), '', '', false, '', '', '');
+  StepParamERP('Top Layer', Fnc.SysGetAttrValue('TopLayer'));
+  StepParamERP('Laser Hits', Fnc.SysGetAttrValue('LaserBTopHits'));
+  InsertBlindViaInfo('B');
+  //StepParamERP('Laser Size', Fnc.SysGetAttrValue('Direct_Laser_Size'));
 end;
 
 procedure Laser_Insp_SD
 begin
-  SysRouteInsDepartment('Erp', 'FINAL-A', '');
-  SysRouteInsWorkCenter('Erp', 'FINAL-A', '');
+  StepDeptERP('FINAL-A');
+  StepWCERP('FINAL-A');
 end;
 
 procedure Desmear_Std_Attr;
 begin
-  SysRouteInsAddlParameter('Erp', 'Pre-preg Material', Fnc.SysGetAttrValue('PPGMat'), '', '', false, '', '', '');
-  SysRouteInsAddlParameter('Erp', 'Core Material', Fnc.SysGetAttrValue('CoreMat'), '', '', false, '', '', '');
+  StepParamERP('Pre-preg Material', Fnc.SysGetAttrValue('PPGMat'));
+  StepParamERP('Core Material', Fnc.SysGetAttrValue('CoreMat'));
 
   if Fnc.SysGetAttrValue('LayerCount') > 2 then // 2 Layer Fixes
-    SysRouteInsAddlParameter('Erp', 'Thickness', FormatFloat('0.000', Fnc.SysGetAttrValue('Press_Thickness')), '', '', false, '', '', '');
+    StepParamERP('Thickness', FormatFloat('0.000', Fnc.SysGetAttrValue('Press_Thickness')));
   else
-    SysRouteInsAddlParameter('Erp', 'Thickness', FormatFloat('0.000', DSThicknessB4Plating), '', '', false, '', '', '');
+    StepParamERP('Thickness', FormatFloat('0.000', DSThicknessB4Plating));
 end;
 
 procedure Desmear_SD;
 var
   Instruction : string;
 begin
-  SysRouteInsDepartment('Erp', 'DMEAR-A', '');
-  SysRouteInsWorkCenter('Erp', 'DMEAR-A', '');
+  StepDeptERP('DMEAR-A');
+  StepWCERP('DMEAR-A');
 
   {Instruction := 'NOTE : MULTIPLE PROCESS STEPS REQUIRED' + #13 +
                   'REFER TO SHOP FLOOR INSTRUCTIONS' + #13 +
                   'FOR ACTUAL DEMSEAR/BAKE/PLASMA STEPS';}
-                         
-  SysRouteInsInstruction('Erp', 'DMEAR060','');  // 836 Instruction Code Update
+
+  StepInstructionERP('DMEAR060');  // 836 Instruction Code Update
   Desmear_Std_Attr;
 end;
 
@@ -1194,7 +1174,7 @@ begin
   Material := GetDesmearSearchMaterial;
   ParamList := GetDesmearStepParameters(Material, Thickness, Rte_Step);
 
-  if ParamList.Count > 0 then
+  if ParamList.Count > 0 then                                           
   begin
     //showmessage(ParamList.Strings[j] + #13#13 + ParamList.Text);
     for j := 0 to ParamList.Count - 1 do
@@ -1202,21 +1182,21 @@ begin
       ParamName := ParamList.Names[j];
       ParamValue := ParamList.Values[ParamName];
 
-      SysRouteInsAddlParameter('Erp', ParamName, ParamValue, '', '', false, '', '', '');
+      StepParamERP(ParamName, ParamValue);
 
       //showmessage('Name: ' + QuotedStr(ParamName) + ', Value: ' + QuotedStr(ParamValue));
-    end;
+    end;                                          
     ParamList.Free;
   end;
 end;
 
 procedure Desmear_Common(Line : string);
 begin
-  SysRouteInsDepartment('Erp', 'DMEAR-A', '');
+  StepDeptERP('DMEAR-A');
 
   case Line of
-    'DM' : begin SysRouteInsWorkCenter('Erp', 'DMEAR-C0', ''); SysRouteInsInstruction('Erp', 'METAL004',''); end;
-    'HM' : begin SysRouteInsWorkCenter('Erp', 'DMEAR-A0', ''); end;
+    'DM' : begin StepWCERP('DMEAR-C0'); StepInstructionERP('METAL004'); end;
+    'HM' : begin StepWCERP('DMEAR-A0'); end;
   end;
 
   Desmear_Std_Attr;
@@ -1243,7 +1223,7 @@ end;
 procedure Desmear_Holl_SD;
 begin
   if MechBlindViaSide <> 'None' then    // MEch Blind Vias
-    SysRouteInsAddlParameter('Erp', 'Remark', 'With Mech Blind Vias', '', '', false, '', '', '');
+    StepParamERP('Remark', 'With Mech Blind Vias');
 
   Desmear_Common('HM');
   DeSmear_Params('Hollmuller Desmear');
@@ -1263,106 +1243,114 @@ end;
 
 procedure Desmear_Baking_SD;
 begin
-  SysRouteInsDepartment('Erp', 'DMBAK-A', '');           
-  SysRouteInsWorkCenter('Erp', 'DMBAK-A', '');
+  StepDeptERP('DMBAK-A');
+  StepWCERP('DMBAK-A');
 
   DeSmear_Params('Oven Baking');
 end;
 
 procedure Desmear_Baking_2_SD;
 begin
-  SysRouteInsDepartment('Erp', 'DMBAK-A', '');
-  SysRouteInsWorkCenter('Erp', 'DMBAK-A', '');
+  StepDeptERP('DMBAK-A');
+  StepWCERP('DMBAK-A');
 
   DeSmear_Params('Oven Baking2');
 end;
 
 procedure Desmear_AlkRinse_SD;
 begin
-  SysRouteInsDepartment('Erp', 'ARINS-A', '');  // 836 - Instruction Code Update
-  SysRouteInsWorkCenter('Erp', 'ARINS-A', '');
+  StepDeptERP('ARINS-A');  // 836 - Instruction Code Update
+  StepWCERP('ARINS-A');
 
-  SysRouteInsInstruction('Erp', 'ARINS003',''); // 836 - Instruction Code Update
+  StepInstructionERP('ARINS003'); // 836 - Instruction Code Update
 
   //DeSmear_Params('Alkaline Rinse');
 end;
 
 procedure Plasma_SD;
 begin
-  SysRouteInsDepartment('Erp', 'PLASM-A', '');
-  SysRouteInsWorkCenter('Erp', 'PLASM-A0', '');
+  StepDeptERP('PLASM-A');
+  StepWCERP('PLASM-A0');
   DeSmear_Params('Plasma');
 end;
 
 procedure Plasma_2_SD;
-begin       
-  SysRouteInsDepartment('Erp', 'PLASM-A', '');
-  SysRouteInsWorkCenter('Erp', 'PLASM-A0', '');
+begin
+  StepDeptERP('PLASM-A');
+  StepWCERP('PLASM-A0');
   DeSmear_Params('Plasma2');
 end;
 
 procedure Plasma_3_SD;
-begin       
-  SysRouteInsDepartment('Erp', 'PLASM-A', '');
-  SysRouteInsWorkCenter('Erp', 'PLASM-A0', '');
-                                               
-  SysRouteInsAddlParameter('Erp', 'Remark', 'Program 8', '', '', false, '', '', '');
+begin
+  StepDeptERP('PLASM-A');
+  StepWCERP('PLASM-A0');
+
+  StepParamERP('Remark', 'Program 8');
 
 end;
 
-// 978 
+// 978
 procedure Vertical_Desmear_SD;
-begin            
- // SysRouteInsDepartment('Erp', 'DMEAR-B0', '');
-//  SysRouteInsWorkCenter('Erp', 'DMEAR-B0', '');
-  SysRouteInsDepartment('Erp', 'DMEAR-V01', '');
-  SysRouteInsWorkCenter('Erp', 'DMEAR-V01', ''); 
+begin
+ // StepDeptERP('DMEAR-B0');
+//  StepWCERP('DMEAR-B0');
+  StepDeptERP('DMEAR-V01');
+  StepWCERP('DMEAR-V01');
   //DeSmear_Params('Vertical Desmear');
 end;
 
 procedure Vertical_Desmear_2_SD;
 begin
-//  SysRouteInsDepartment('Erp', 'DMEAR-B0', '');
-//  SysRouteInsWorkCenter('Erp', 'DMEAR-B0', '');
-  SysRouteInsDepartment('Erp', 'DMEAR-V01', '');
-  SysRouteInsWorkCenter('Erp', 'DMEAR-V01', ''); 
+//  StepDeptERP('DMEAR-B0');
+//  StepWCERP('DMEAR-B0');
+  StepDeptERP('DMEAR-V01');
+  StepWCERP('DMEAR-V01');
   DeSmear_Params('Vertical Desmear2');
-end; 
+end;
 
 procedure Desmear_CappedVia_SD;
 begin
   //Desmear_Common('HM');
-  SysRouteInsDepartment('Erp', 'DMEAR-A', '');
-  SysRouteInsWorkCenter('Erp', 'DMEAR-A0', '');
-                                
+  StepDeptERP('DMEAR-A');
+  StepWCERP('DMEAR-A0'); 
+                                                                 
 
-  SysRouteInsAddlParameter('Erp', 'Pre-preg Material', Fnc.SysGetAttrValue('PPGMat'), '', '', false, '', '', '');
-  SysRouteInsAddlParameter('Erp', 'Core Material', Fnc.SysGetAttrValue('CoreMat'), '', '', false, '', '', '');
+  StepParamERP('Pre-preg Material', Fnc.SysGetAttrValue('PPGMat'));
+  StepParamERP('Core Material', Fnc.SysGetAttrValue('CoreMat'));
 
   if Fnc.SysGetAttrValue('LayerCount') > 2 then // 2 Layer Fixes
-    SysRouteInsAddlParameter('Erp', 'Thickness', FormatFloat('0.000', Fnc.SysGetAttrValue('LayupThickness')), '', '', false, '', '', '');
+    StepParamERP('Thickness', FormatFloat('0.000', Fnc.SysGetAttrValue('LayupThickness')));
   else
-    SysRouteInsAddlParameter('Erp', 'Thickness', FormatFloat('0.000', DSThicknessB4Plating), '', '', false, '', '', '');
+    StepParamERP('Thickness', FormatFloat('0.000', DSThicknessB4Plating));
 
   // Updated per request from Jenny 09/16/15
-  SysRouteInsAddlParameter('Erp', 'Buffing', 'OFF','', '', false, '', '', '');
-  SysRouteInsAddlParameter('Erp', 'HP Rinse', 'OFF','', '', false, '', '', '');
-  SysRouteInsAddlParameter('Erp', 'Sweller', 'OFF','', '', false, '', '', '');
-  SysRouteInsAddlParameter('Erp', 'Promoter / Neutralizer', '3.5m/min','', '', false, '', '', '');
+  StepParamERP('Buffing', 'OFF');
+  StepParamERP('HP Rinse', 'OFF');
+  StepParamERP('Sweller', 'OFF');
+  StepParamERP('Promoter / Neutralizer', '3.5m/min');
 
 end;
-                                                             
+
+procedure Hole_Cleaning_SD;
+begin
+  StepDeptERP('CURIN-U');
+  StepWCERP('CURIN-U');
+  
+  DeSmear_Params('Hole Cleaning');
+end;
+
 
 procedure CuThinning_SD;
-begin
-  SysRouteInsDepartment('Erp', 'EPBUF-A', '');
-  SysRouteInsWorkCenter('Erp', 'EPBUF-A', '');
-  SysRouteInsAddlParameter('Erp', 'Buffing Type', Fnc.SysGetAttrValue('CoreBuildCuThin'), '', '', false, '', '', '');
-  SysRouteInsInstruction('Erp', 'ROUTE003', ''); //REMARKS : CLEAR BUFFING.  (From OL Main Flow)
+begin                 
+  StepDeptERP('EPBUF-A');
+  StepWCERP('EPBUF-A');
+  StepParamERP('Buffing Type', Fnc.SysGetAttrValue('CoreBuildCuThin'));
+  StepInstructionERP('ROUTE003'); //REMARKS : CLEAR BUFFING.  (From OL Main Flow)
 end;
 
 function GetDrillEntrySheet : string;  // 912 Mech Blind Via Entry MAterial
-var
+var              
   Entry_Sheet_Mode : string;
 begin
   result := '';
@@ -1372,7 +1360,7 @@ begin
       ((NCRun <= 1) and (Fnc.SysGetAttrValue('Drill_Entry_Sht') = 'Auto')) or
       ((NCRun = 2) and (Fnc.SysGetAttrValue('Drill_Entry_Sht_2') = 'Auto'))
      )
-  then                            
+  then
   begin
     if Fnc.SysGetAttrValueTopLevel('Wicking_Max') <> 'None' then
       Entry_Sheet_Mode := 's';
@@ -1409,7 +1397,7 @@ function CNC_ManualOverride: boolean;
 begin
   result := false;
   if NCRun = 1 then
-  begin       
+  begin
     if Fnc.SysGetAttrValue('Stack_Hgt_Ovr') = true then
     begin
       Fnc.SysSetAttrValue('Stack_Hgt', Fnc.SysGetAttrValue('Stack_Hgt_User'));
@@ -1419,9 +1407,9 @@ begin
     if Fnc.SysGetAttrValue('Flute_Len_Ovr') = true  then   // 843 Process Override Rule
       Fnc.SysSetAttrValue('Flute_Len', Fnc.SysGetAttrValue('Flute_Len_User'));
   end
-  else if NCRun = 2 then         
-  begin                                                  
-    if Fnc.SysGetAttrValue('Stack_Hgt_2_Ovr') = true then 
+  else if NCRun = 2 then
+  begin
+    if Fnc.SysGetAttrValue('Stack_Hgt_2_Ovr') = true then
     begin
       Fnc.SysSetAttrValue('Stack_Hgt_2', Fnc.SysGetAttrValue('Stack_Hgt_2_User'));
       result := true;
@@ -1445,7 +1433,7 @@ var
   Flute : string;
   Slot_Flute : string;
 
-begin 
+begin
   //
   StackHeight := 0;
   Slot_StackHeight := 0;
@@ -1454,44 +1442,44 @@ begin
 
   if Fnc.SysGetAttrValue('Land_Area') <= 0.10 then
   begin
-    TableName := 'CNC_Drilling_New_C'; 
+    TableName := 'CNC_Drilling_New_C';
     //Stack Height is set to 1 in table search code
   end
   else
     //TableName := 'CNC_Drilling_New_B';  // Table 'A' is now Table 'B' in new flowchart - will look at renamimg these later
     TableName := 'CNC_Drilling_B_1321';  // 1321
-    
+
   PanelThickness := Get_Panel_Thickness;
   PanelNumLayers := Fnc.SysGetAttrValue('LayerCount');
 
   if not GetCNCDrilling_StackHeight(TableName, Min_Drill, PanelThickness, PanelNumLayers, StackHeight, Flute) then
   begin
-    //showmessage('CNC Stack Height ' + TableName + ': search failed'); 
-    
+    //showmessage('CNC Stack Height ' + TableName + ': search failed');
+
     if not CNC_ManualOverride then
-    begin                  
+    begin
       if NCRun = 1 then
-      begin          
+      begin
         Fnc.SysSetAttrValue('Stack_Hgt', 0);
         Fnc.SysSetAttrValue('Flute_Len', '0.0');
-        Fnc.UserRouteGenAbort := true;     
-      end                         
+        Fnc.UserRouteGenAbort := true;
+      end
       else if NCRun = 2 then
-      begin   
+      begin
         Fnc.SysSetAttrValue('Stack_Hgt_2', 0);
         Fnc.SysSetAttrValue('Flute_Len_2', '0.0');
         Fnc.UserRouteGenAbort := true;
-      end                    
+      end
     end
     else
-      MessageDlg('Manual override values used for Stack Height / Flute Length', mtInformation, SetOf([mbOK]), 0); 
-    
+      MessageDlg('Manual override values used for Stack Height / Flute Length', mtInformation, SetOf([mbOK]), 0);
+
   end
-  else                             
+  else
   begin
     //showmessage(TableName + ', StackHeight: ' + IntToStr(StackHeight) + ', Flute: ' + Flute);
     if Min_Slot > 0.0 then
-    begin           
+    begin
       TableName := 'CNC_Drilling_D';
 
       if not GetCNCDrilling_StackHeight(TableName, Min_Slot, PanelThickness, PanelNumLayers, Slot_StackHeight, Slot_Flute) then
@@ -1501,46 +1489,46 @@ begin
         Fnc.SysSetAttrValue('Flute_Len', '0.0');
       end
       else
-      begin                
+      begin
         if Slot_StackHeight < StackHeight then
           StackHeight := Slot_StackHeight;
-      end;                            
-    end;                        
+      end;
+    end;
 
     //Flute_Len := StrToFloat(Copy(Flute, 1, 3));
-    
+
     // 1484 NC Stack height special rule update
     // If Board Thickness is >1.5mm, =/<3.6mm  AND min drill =/<0.25mm AND have BACKDRILL, NC Stack height must be 1
     // Min_Drill, PanelThickness
     if ( PanelThickness > 1.50 ) and
        ( PanelThickness <= 3.60 ) and
        ( Min_Drill <= 0.25 ) and
-       ( (Fnc.SysGetAttrValue('BackDrill') ) or (Fnc.SysGetAttrValue('BackDrill_Epoxy')) ) 
+       ( (Fnc.SysGetAttrValue('BackDrill') ) or (Fnc.SysGetAttrValue('BackDrill_Epoxy')) )
     then
       StackHeight := 1;
-                                                              
+
     if Fnc.SysGetAttrValue('NCRunX2') = true then
     begin
-      if NCRun = 1 then                   
+      if NCRun = 1 then
       begin
         Fnc.SysSetAttrValue('Stack_Hgt', StackHeight);
         Fnc.SysSetAttrValue('Flute_Len', Flute);
       end;
-      else             
-      begin            
+      else
+      begin
         Fnc.SysSetAttrValue('Stack_Hgt_2', StackHeight);
         Fnc.SysSetAttrValue('Flute_Len_2', Flute);
-      end;                
+      end;
     end
-    else           
-    begin                     
+    else
+    begin
       Fnc.SysSetAttrValue('Stack_Hgt', StackHeight);
       Fnc.SysSetAttrValue('Flute_Len', Flute);
     end;
-    
+
     // Manual Override
     CNC_ManualOverride;
-  end;                                            
+  end;
 end;
 
 procedure NC_Drill_SD;
@@ -1549,7 +1537,7 @@ var
   fixedDim: string;
   controlRange: string;
   fixedDim2: string;
-  controlRange2: string; 
+  controlRange2: string;
 begin
 
   NCRun := NCRun + 1;
@@ -1560,176 +1548,181 @@ begin
     begin
       Min_Drill := Fnc.SysGetAttrValue('Min_Drill_Size');
       Min_Slot :=  Fnc.SysGetAttrValue('Min_Slot_Size');
-    end        
+    end
     else
-    begin                                                 
+    begin                                            
       Min_Drill := Fnc.SysGetAttrValue('Min_Drill_Size_2');
       Min_Slot :=  Fnc.SysGetAttrValue('Min_Slot_Size_2');
     end;
-  end                        
-  else               
+  end
+  else
   begin
     Min_Drill := Fnc.SysGetAttrValue('Min_Drill_Size');
     Min_Slot :=  Fnc.SysGetAttrValue('Min_Slot_Size');
-  end;                                  
+  end;
 
-  if (
-      (Fnc.SysGetAttrValue('Panel_Width') >= 455) or
+  if  (Fnc.SysGetAttrValue('Panel_Width') >= 455) or
       (Fnc.SysGetAttrValue('LayerCount') > 10) or
       (Fnc.SysGetAttrValue('Land_Area') < 0.15) or
       (Fnc.SysGetAttrValue('BlindVias') = true) or
       (Fnc.SysGetAttrValue('BuriedVias') = true)
-     )
   then
   begin
-    SysRouteInsDepartment('Erp', 'DRILL-E', '');
-    SysRouteInsWorkCenter('Erp', 'DRILL-E', '');
+    StepDeptERP('DRILL-E');
+    StepWCERP('DRILL-E');
   end
   else
   // IES has rule for Drill Hits > 9000 but both conditions go to the same
   begin
-    SysRouteInsDepartment('Erp', 'DRILL-A', '');
-    SysRouteInsWorkCenter('Erp', 'DRILL-A', '');
+    StepDeptERP('DRILL-A');
+    StepWCERP('DRILL-A');
   end;
 
   //Stack Height Lookup
   CNC_Drl_StkHght_Flt_Len;
 
-
   // 912 Mech Blind Via Entry Material
   Entry_Sheet_Mat := GetDrillEntrySheet;
-  
-  // 1114 Fixed Scale Factor Info           
+
+  // 1114 Fixed Scale Factor Info
   fixedDim := 'X = ' + FormatFloat('0.000', FloatToStr(Fnc.SysGetAttrValue('Drill_FSF_X'))) + '%; ' +
               'Y = ' + FormatFloat('0.000', FloatToStr(Fnc.SysGetAttrValue('Drill_FSF_Y'))) + '%';
-              
+
   controlRange := 'X = ' + FormatFloat('0.000', FloatToStr(Fnc.SysGetAttrValue('Drill_FSF_X') - Fnc.SysGetAttrValue('Drill_FSF_X_Tol'))) + '~' +
                            FormatFloat('0.000', FloatToStr(Fnc.SysGetAttrValue('Drill_FSF_X') + Fnc.SysGetAttrValue('Drill_FSF_X_Tol'))) + '%; ' +
                   'Y = ' + FormatFloat('0.000', FloatToStr(Fnc.SysGetAttrValue('Drill_FSF_Y') - Fnc.SysGetAttrValue('Drill_FSF_Y_Tol'))) + '~' +
-                           FormatFloat('0.000', FloatToStr(Fnc.SysGetAttrValue('Drill_FSF_Y') + Fnc.SysGetAttrValue('Drill_FSF_Y_Tol'))) + '%'; 
+                           FormatFloat('0.000', FloatToStr(Fnc.SysGetAttrValue('Drill_FSF_Y') + Fnc.SysGetAttrValue('Drill_FSF_Y_Tol'))) + '%';
 
-
+           
   // Add Instructions and Parameters
-  if Fnc.SysGetAttrValue('NCRunX2') = false then
+  {if Fnc.SysGetAttrValue('NCRunX2') = false then
   begin
-    SysRouteInsAddlParameter('Erp', 'Stack Height', Fnc.SysGetAttrValue('Stack_Hgt'), '', '', false, '', '', '');
-    SysRouteInsAddlParameter('Erp', 'Flute Length', Fnc.SysGetAttrValue('Flute_Len'), '', '', false, '', '', '');
-    SysRouteInsAddlParameter('Erp', 'Min Drill Size', Fnc.SysGetAttrValue('Min_Drill_Size'), '', '', false, '', '', '');
-    SysRouteInsAddlParameter('Erp', 'Min Slot Size', Fnc.SysGetAttrValue('Min_Slot_Size'), '', '', false, '', '', '');
-    SysRouteInsAddlParameter('Erp', 'Entry Sheet Material', Entry_Sheet_Mat, '', '', false, '', '', '');
+    StepParamERP('Stack Height', Fnc.SysGetAttrValue('Stack_Hgt'));
+    StepParamERP('Flute Length', Fnc.SysGetAttrValue('Flute_Len'));
+    StepParamERP('Min Drill Size', Fnc.SysGetAttrValue('Min_Drill_Size'));
+    StepParamERP('Min Slot Size', Fnc.SysGetAttrValue('Min_Slot_Size'));
+    StepParamERP('Entry Sheet Material', Entry_Sheet_Mat); 
+    
     // 1114 Fixed Scale Factor Info
     if Fnc.SysGetAttrValue('Drill_FSF_X') > 0 then
     begin
-      SysRouteInsAddlParameter('Erp', 'Fixed Scale Factor', fixedDim, '', '', false, '', '', '');
-      SysRouteInsAddlParameter('Erp', 'Control Range', controlRange, '', '', false, '', '', '');
+      StepParamERP('Fixed Scale Factor', fixedDim);
+      StepParamERP('Control Range', controlRange);
     end;
-    
-    // 1259 Addition Attributes for NC        
+
+    // 1259 Addition Attributes for NC
     //if (Fnc.SysGetAttrValue('Drill_Offset_X') <> 0 ) or (Fnc.SysGetAttrValue('Drill_Offset_Y') <> 0 ) then
     //begin
       if Fnc.SysGetAttrValue('Drill_Offset_X') <> 0 then
-        SysRouteInsAddlParameter('Erp', 'Offset X', FormatFloat('0.000', FloatToStr(Fnc.SysGetAttrValue('Drill_Offset_X'))), '', '', false, '', '', '');
+        StepParamERP('Offset X', FormatFloat('0.000', FloatToStr(Fnc.SysGetAttrValue('Drill_Offset_X'))));
       if Fnc.SysGetAttrValue('Drill_Offset_Y') <> 0 then
-        SysRouteInsAddlParameter('Erp', 'Offset Y', FormatFloat('0.000', FloatToStr(Fnc.SysGetAttrValue('Drill_Offset_Y'))), '', '', false, '', '', '');
+        StepParamERP('Offset Y', FormatFloat('0.000', FloatToStr(Fnc.SysGetAttrValue('Drill_Offset_Y'))));
     //end;
-    
-    // 1134 Additional Information    
+                               
+    // 1134 Additional Information
     Fnc.SysSetAttrValue('NC_Drill_1_EntryMat', Entry_Sheet_Mat);
-  end
-  else               
-  begin                    
+  end                 
+  else
+  begin}
     if NCRun = 1 then
     begin
-      SysRouteInsAddlParameter('Erp', 'Stack Height', Fnc.SysGetAttrValue('Stack_Hgt'), '', '', false, '', '', '');
-      SysRouteInsAddlParameter('Erp', 'Flute Length', Fnc.SysGetAttrValue('Flute_Len'), '', '', false, '', '', '');
-      SysRouteInsAddlParameter('Erp', 'Min Drill Size', Fnc.SysGetAttrValue('Min_Drill_Size'), '', '', false, '', '', '');
-      SysRouteInsAddlParameter('Erp', 'Min Slot Size', Fnc.SysGetAttrValue('Min_Slot_Size'), '', '', false, '', '', '');
-      SysRouteInsAddlParameter('Erp', 'Entry Sheet Mat', Entry_Sheet_Mat, '', '', false, '', '', '');
-      SysRouteInsInstruction('Erp', 'DRILL010', '');  // REMARK : 1st Drilling
-      SysRouteInsInstruction('Erp', '2NC_PESHET', ''); // REMARK: Put PE Sheet In Between Panel
+      StepParamERP('Stack Height', Fnc.SysGetAttrValue('Stack_Hgt'));
+      StepParamERP('Flute Length', Fnc.SysGetAttrValue('Flute_Len'));
+      StepParamERP('Min Drill Size', Fnc.SysGetAttrValue('Min_Drill_Size'));
+      StepParamERP('Min Slot Size', Fnc.SysGetAttrValue('Min_Slot_Size'));
+      StepParamERP('Entry Sheet Mat', Entry_Sheet_Mat);
+      
+      if Fnc.SysGetAttrValue('NCRunX2') then
+      begin
+        StepInstructionERP('DRILL010');  // REMARK : 1st Drilling
+        StepInstructionERP('2NC_PESHET'); // REMARK: Put PE Sheet In Between Panel 
+      end;
+      
       // 1114 Fixed Scale Factor Info
       if Fnc.SysGetAttrValue('Drill_FSF_X') > 0 then
       begin
-        SysRouteInsAddlParameter('Erp', 'Fixed Scale Factor', fixedDim, '', '', false, '', '', '');
-        SysRouteInsAddlParameter('Erp', 'Control Range', controlRange, '', '', false, '', '', '');
+        StepParamERP('Fixed Scale Factor', fixedDim);
+        StepParamERP('Control Range', controlRange);
       end;
-                                                      
+
       // 1259 Addition Attributes for NC
       //if (Fnc.SysGetAttrValue('Drill_Offset_X') <> 0 ) or (Fnc.SysGetAttrValue('Drill_Offset_Y') <> 0 ) then
-      //begin
+      //begin                    
         if Fnc.SysGetAttrValue('Drill_Offset_X') <> 0 then
-          SysRouteInsAddlParameter('Erp', 'Offset X', FormatFloat('0.000', FloatToStr(Fnc.SysGetAttrValue('Drill_Offset_X'))), '', '', false, '', '', '');
+          StepParamERP('Offset X', FormatFloat('0.000', FloatToStr(Fnc.SysGetAttrValue('Drill_Offset_X'))));
         if Fnc.SysGetAttrValue('Drill_Offset_Y') <> 0 then
-        SysRouteInsAddlParameter('Erp', 'Offset Y', FormatFloat('0.000', FloatToStr(Fnc.SysGetAttrValue('Drill_Offset_Y'))), '', '', false, '', '', '');
+        StepParamERP('Offset Y', FormatFloat('0.000', FloatToStr(Fnc.SysGetAttrValue('Drill_Offset_Y'))));
       //end;
-      
+
       // 1134 Additional Information
       Fnc.SysSetAttrValue('NC_Drill_1_EntryMat', Entry_Sheet_Mat);
     end
     else if NCRun = 2 then
     begin
-      SysRouteInsAddlParameter('Erp', '2nd Stack Height', Fnc.SysGetAttrValue('Stack_Hgt_2'), '', '', false, '', '', '');
-      SysRouteInsAddlParameter('Erp', '2nd Flute Length', Fnc.SysGetAttrValue('Flute_Len_2'), '', '', false, '', '', '');
-      SysRouteInsAddlParameter('Erp', '2nd Min Drill Size', Fnc.SysGetAttrValue('Min_Drill_Size_2'), '', '', false, '', '', '');
-      SysRouteInsAddlParameter('Erp', '2nd Min Slot Size', Fnc.SysGetAttrValue('Min_Slot_Size_2'), '', '', false, '', '', '');
-      SysRouteInsAddlParameter('Erp', '2nd Entry Sheet Mat', Entry_Sheet_Mat, '', '', false, '', '', '');
-      SysRouteInsInstruction('Erp', 'DRILL009', '');  // REMARK : 2nd Drilling
+      StepParamERP('2nd Stack Height', Fnc.SysGetAttrValue('Stack_Hgt_2'));
+      StepParamERP('2nd Flute Length', Fnc.SysGetAttrValue('Flute_Len_2'));
+      StepParamERP('2nd Min Drill Size', Fnc.SysGetAttrValue('Min_Drill_Size_2'));
+      StepParamERP('2nd Min Slot Size', Fnc.SysGetAttrValue('Min_Slot_Size_2'));
+      StepParamERP('2nd Entry Sheet Mat', Entry_Sheet_Mat);
+      StepInstructionERP('DRILL009');  // REMARK : 2nd Drilling
       // 1114 Fixed Scale Factor Info
       if Fnc.SysGetAttrValue('Drill_FSF_X_2') > 0 then
       begin
         fixedDim2 := 'X = ' + FormatFloat('0.000', FloatToStr(Fnc.SysGetAttrValue('Drill_FSF_X_2'))) + '%; ' +
                      'Y = ' + FormatFloat('0.000', FloatToStr(Fnc.SysGetAttrValue('Drill_FSF_Y_2'))) + '%';
-                                                                                             
+
         controlRange2 := 'X = ' + FormatFloat('0.000', FloatToStr(Fnc.SysGetAttrValue('Drill_FSF_X_2') - Fnc.SysGetAttrValue('Drill_FSF_X_Tol_2'))) + '~' +
                                   FormatFloat('0.000', FloatToStr(Fnc.SysGetAttrValue('Drill_FSF_X_2') + Fnc.SysGetAttrValue('Drill_FSF_X_Tol_2'))) + '%; ' +
                          'Y = ' + FormatFloat('0.000', FloatToStr(Fnc.SysGetAttrValue('Drill_FSF_Y_2') - Fnc.SysGetAttrValue('Drill_FSF_Y_Tol_2'))) + '~' +
                                   FormatFloat('0.000', FloatToStr(Fnc.SysGetAttrValue('Drill_FSF_Y_2') + Fnc.SysGetAttrValue('Drill_FSF_Y_Tol_2'))) + '%';
-                                  
-        SysRouteInsAddlParameter('Erp', 'Fixed Scale Factor', fixedDim2, '', '', false, '', '', '');
-        SysRouteInsAddlParameter('Erp', 'Control Range', controlRange2, '', '', false, '', '', '');
+
+        StepParamERP('Fixed Scale Factor', fixedDim2);
+        StepParamERP('Control Range', controlRange2);
       end;
-      
+
       // 1259 Addition Attributes for NC
       //if (Fnc.SysGetAttrValue('Drill_Offset_X_2') <> 0 ) or (Fnc.SysGetAttrValue('Drill_Offset_Y_2') <> 0 ) then
       //begin
         if Fnc.SysGetAttrValue('Drill_Offset_X_2') <> 0 then
-          SysRouteInsAddlParameter('Erp', 'Offset X', FormatFloat('0.000', FloatToStr(Fnc.SysGetAttrValue('Drill_Offset_X_2'))), '', '', false, '', '', '');
+          StepParamERP('Offset X', FormatFloat('0.000', FloatToStr(Fnc.SysGetAttrValue('Drill_Offset_X_2'))));
         if Fnc.SysGetAttrValue('Drill_Offset_Y_2') <> 0 then
-          SysRouteInsAddlParameter('Erp', 'Offset Y', FormatFloat('0.000', FloatToStr(Fnc.SysGetAttrValue('Drill_Offset_Y_2'))), '', '', false, '', '', '');
-      //end; 
-      
-      // 1134 Additional Information
-      Fnc.SysSetAttrValue('NC_Drill_1_EntryMat', Fnc.SysGetAttrValue('NC_Drill_1_EntryMat') + '/' + Entry_Sheet_Mat); 
-    end;                                                                                                 
-  end;
+          StepParamERP('Offset Y', FormatFloat('0.000', FloatToStr(Fnc.SysGetAttrValue('Drill_Offset_Y_2'))));
+      //end;
 
-  SysRouteInsAddlParameter('Erp', 'Material Tg', GetMatTgValue, '', '', false, '', '', '');
-  SysRouteInsAddlParameter('Erp', 'Thickness', FormatFloat('0.000', Get_Panel_Thickness), '', '', false, '', '', '');
+      // 1134 Additional Information
+      Fnc.SysSetAttrValue('NC_Drill_1_EntryMat', Fnc.SysGetAttrValue('NC_Drill_1_EntryMat') + '/' + Entry_Sheet_Mat);
+    end;
+  //end;
+
+  StepParamERP('Material Tg', GetMatTgValue);
+  StepParamERP('Thickness', FormatFloat('0.000', Get_Panel_Thickness));
 
   if CustCode_Rule('Customer') = 'GM' then
-    SysRouteInsInstruction('Erp', 'DRILL002', ''); //REMARK : 100% Hole Check
+    StepInstructionERP('DRILL002'); //REMARK : 100% Hole Check
 
   if Fnc.SysGetAttrValue('No_Scale_Adj') then
-    SysRouteInsInstruction('Erp', 'DRILL016', ''); // No NC Scaling allowed for X/Y
+    StepInstructionERP('DRILL016'); // No NC Scaling allowed for X/Y
 
   if (
       ((pos('N4000-13', Fnc.SysGetAttrValue('PPGMat')) > 0) or (pos('N4000-13', Fnc.SysGetAttrValue('CoreMat')) > 0))
-      and                               
+      and
       (Eng_JobType = 'Sample')//BOM CODE W or S = Sample
      )
-  then          
-    SysRouteInsInstruction('Erp', 'DRILL012', ''); // New N-13 Drilling Condition
+  then
+    StepInstructionERP('DRILL012'); // New N-13 Drilling Condition
 
   if ((CustCode_Rule('Customer') = 'FA') and (Fnc.SysGetAttrValue('KK_Distance') = 502)) then
   begin
-    SysRouteInsInstruction('Erp', 'DRILL046', ''); // REMARK : Check for KK offset
-    SysRouteInsInstruction('Erp', 'FINIL028', ''); // REMARK : Distance from panel edge to K point : 127.26mm
+    StepInstructionERP('DRILL046'); // REMARK : Check for KK offset
+    StepInstructionERP('FINIL028'); // REMARK : Distance from panel edge to K point : 127.26mm
   end;
 
-  SysRouteInsAddlParameter('Erp', 'Drill Side', DrillSide(Fnc.SysGetAttrValue('Drill_Side')), '', '', false, '', '', '');
+  StepParamERP('Drill Side', DrillSide(Fnc.SysGetAttrValue('Drill_Side')));
 
   if HasFaradflexMat then                                    // Faradflex drill instruction
-    SysRouteInsInstruction('Erp', 'DRILL076', ''); // 836 Instruction Code Update
+    StepInstructionERP('DRILL076'); // 836 Instruction Code Update
+                                                        
+  if SubGetsNewPEP then StepInstructionERP('DRILL167'); //With Sub-Lam PEP Slot Drilling                                                       
 end;
 
 procedure InsertPressFitRemarks;
@@ -1738,28 +1731,28 @@ var
   pressFitSpec2 : string;
   pressFitSpec3 : string;
 begin
-  SysRouteInsAddlParameter('Erp', 'Remark', 'With Tight Press Fit Tolerance', '', '', false, '', '', '');
+  StepParamERP('Remark', 'With Tight Press Fit Tolerance');
 
   pressFitSpec1 := Fnc.SysGetAttrValue('Tight_PressFit_Spec');
   pressFitSpec2 := Fnc.SysGetAttrValue('Tight_PressFit_Spec_2');
   pressFitSpec3 := Fnc.SysGetAttrValue('Tight_PressFit_Spec_3');
 
   if pressFitSpec1 <> '' then
-    SysRouteInsAddlParameter('Erp', 'Press Fit Spec 1', pressFitSpec1, '', '', false, '', '', '');
+    StepParamERP('Press Fit Spec 1', pressFitSpec1);
 
   if pressFitSpec2 <> '' then
-    SysRouteInsAddlParameter('Erp', 'Press Fit Spec 2', pressFitSpec2, '', '', false, '', '', '');
+    StepParamERP('Press Fit Spec 2', pressFitSpec2);
 
   if pressFitSpec3 <> '' then
-    SysRouteInsAddlParameter('Erp', 'Press Fit Spec 3', pressFitSpec3, '', '', false, '', '', '');
+    StepParamERP('Press Fit Spec 3', pressFitSpec3);
 
 
 end;
 
 procedure CuHoleCheck_SD;
 begin
-  SysRouteInsDepartment('Erp', 'HOLCP-A', '');
-  SysRouteInsWorkCenter('Erp', 'HOLCP-A', '');
+  StepDeptERP('HOLCP-A');
+  StepWCERP('HOLCP-A');
 
   if Fnc.SysGetAttrValue('Tight_PressFit_Tol') = true then  // 795 Tight Press Fit Tolerance rule
     begin
@@ -1775,145 +1768,118 @@ end;
 
 procedure PLCountersink_SD;
 begin
-  SysRouteInsDepartment('Erp', 'ROUTE-D0', '');
-  SysRouteInsWorkCenter('Erp', 'ROUTE-D0', '');
+  StepDeptERP('ROUTE-D0');
+  StepWCERP('ROUTE-D0');
 
-  SysRouteInsAddlParameter('Erp', 'Press Thickness', FormatFloat('0.000', Fnc.SysGetAttrValue('Press_Thickness')), '', '', false, '', '', '');
-  SysRouteInsAddlParameter('Erp', 'Angle', Fnc.SysGetAttrValue('CSAnglePL'), '', '', false, '', '', '');
-  
-  // 1191 Drill Side for Countersink/bore & milling 
-  SysRouteInsAddlParameter('Erp', 'Drill Side', DrillSide(Fnc.SysGetAttrValue('PLCountersink_Side')), '', '', false, '', '', '');
+  StepParamERP('Press Thickness', FormatFloat('0.000', Fnc.SysGetAttrValue('Press_Thickness')));
+  StepParamERP('Angle', Fnc.SysGetAttrValue('CSAnglePL'));
+
+  // 1191 Drill Side for Countersink/bore & milling
+  StepParamERP('Drill Side', DrillSide(Fnc.SysGetAttrValue('PLCountersink_Side')));
 end;
 
 procedure NPCountersink_SD;
 begin
-  SysRouteInsDepartment('Erp', 'ROUTE-D0', '');
-  SysRouteInsWorkCenter('Erp', 'ROUTE-D0', '');
+  StepDeptERP('ROUTE-D0');
+  StepWCERP('ROUTE-D0');
 
   // 1113 Thickness is incorrect
-  SysRouteInsAddlParameter('Erp', 'Thickness', FormatFloat('0.000', ThicknessOverMask), '', '', false, '', '', '');
-  SysRouteInsAddlParameter('Erp', 'Angle', Fnc.SysGetAttrValue('CSAngleNP'), '', '', false, '', '', '');
-  
-  // 1191 Drill Side for Countersink/bore & milling 
-  SysRouteInsAddlParameter('Erp', 'Drill Side', DrillSide(Fnc.SysGetAttrValue('NPCountersink_Side')), '', '', false, '', '', '');
+  StepParamERP('Thickness', FormatFloat('0.000', ThicknessOverMask));
+  StepParamERP('Angle', Fnc.SysGetAttrValue('CSAngleNP'));
+
+  // 1191 Drill Side for Countersink/bore & milling
+  StepParamERP('Drill Side', DrillSide(Fnc.SysGetAttrValue('NPCountersink_Side')));
 end;
 
 procedure EdgePlateRoute_SD;
-begin                                                   
-  SysRouteInsDepartment('Erp', 'ROUTE-A', '');
-  SysRouteInsWorkCenter('Erp', 'ROUTE-A', '');
-                   
+begin
+  StepDeptERP('ROUTE-A');
+  StepWCERP('ROUTE-A');
+
   // 793 Update Photo process
-  //SysRouteInsInstruction('Erp', 'ROUTE003', ''); // REMARKS : PANEL STACK HEIGHT REFER TO PE
+  //StepInstructionERP('ROUTE003'); // REMARKS : PANEL STACK HEIGHT REFER TO PE
 
   // SUNK TYPE Route Step Parameter omitted - Step Name will tell operators what the process is.
 end;
 
 procedure WashingStd_SD;
 begin
-  SysRouteInsDepartment('Erp', 'WASHS-A', '');
-  SysRouteInsWorkCenter('Erp', 'WASHS-A', '');
+  StepDeptERP('WASHS-A');
+  StepWCERP('WASHS-A');
 end;
 
 procedure PostNCBaking_SD;
 begin
-  SysRouteInsDepartment('Erp', 'DMBAK-A', '');
-  SysRouteInsWorkCenter('Erp', 'DMBAK-A', '');
+  StepDeptERP('DMBAK-A');
+  StepWCERP('DMBAK-A');
 
   if Baking_Mtl = 'FR408HR' then
-    SysRouteInsInstruction('Erp', 'BAKE_002', ''); // REMARK: 180 Degree C, 2 hours
+    StepInstructionERP('BAKE_002'); // REMARK: 180 Degree C, 2 hours
 
-  SysRouteInsAddlParameter('Erp', 'Bake Reason', Baking_Mtl, '', '', false, '', '', '');
+  StepParamERP('Bake Reason', Baking_Mtl);
 end;
 
 procedure Electroless_SD;
 var
   Min_Drill : float;
-  epoxyThinningG7 : boolean;
   AspectRatio: float;
 begin
-  SysRouteInsDepartment('Erp', 'METAL-C', '');
-  
-  Min_Drill := 0.0;
-  epoxyThinningG7 := false;
-                
-  if ( Fnc.SysGetAttrValue('EpoxyPlug_CuThin_Process') <> 'None' ) and ( Fnc.SysGetAttrValue('EpoxyPlug_CuThin_Process') <> 'Buffing' ) then
-    epoxyThinningG7 := true; 
+  StepDeptERP('METAL-C');
 
-  if NCRun = 1 then     
+  Min_Drill := 0.0;
+
+  if NCRun = 1 then
   begin
     Min_Drill := Fnc.SysGetAttrValue('Min_Drill_Size');
-   // Min_Slot :=  Fnc.SysGetAttrValue('Min_Slot_Size');
-   AspectRatio := Fnc.SysGetAttrValue('Aspect_Ratio_Val');  // 1569  Correction of V1/V2 rule for Job with 2x NC 
-                         
-  end
-  else          
-  begin                       
-    Min_Drill := Fnc.SysGetAttrValue('Min_Drill_Size_2'); 
-  //  Min_Slot :=  Fnc.SysGetAttrValue('Min_Slot_Size_2');
-    AspectRatio := Fnc.SysGetAttrValue('Aspect_Ratio_Val_2'); // 1569  Correction of V1/V2 rule for Job with 2x NC 
-  end;   
-  
-                                      
-  if (( Get_Panel_Thickness >= 3.2 ) and ( Min_Drill <= 0.25 )) or ( AspectRatio > 12.8)  // 1462
-  {(  // 978 Updated Cu Rule - Metalization
-      (( Get_Panel_Thickness >= 3.2 ) and ( Min_Drill <= 0.25 )) or
-      //( Fnc.SysGetAttrValue('Seq_Build') = true ) or  1306 Updated Electroless Plating Rule 
-      //( SubParentIsSequential ) or
-      //(( Fnc.SysGetAttrValue('EpoxySide') <> 'None') and ( epoxyThinningG7 )) 
-     )}
-  then
-  begin
-                                          
-    if LaserG30KMechOrSkipBVH then
-      SysRouteInsAddlParameter('Erp', 'Remark', 'On-Line Vacuum', '', '', false, '', '', ''); 
-      
-    SysRouteInsWorkCenter('Erp', 'METAL-D0', '');
-    SysRouteInsAddlParameter('Erp', 'VELCP Line', 'V2 Only', '', '', false, '', '', '');
+    AspectRatio := Fnc.SysGetAttrValue('Aspect_Ratio_Val');  // 1569  Correction of V1/V2 rule for Job with 2x NC                                  
   end
   else
-  begin                                                            
-  
-    //if LaserG30KMechOrSkipBVH then      1204 Updated Desmear Flow
-    //  SysRouteInsAddlParameter('Erp', 'Remark', 'Off-Line Vacuum', '', '', false, '', '', ''); 
-      
-    SysRouteInsWorkCenter('Erp', 'METAL-C0', '');
-    SysRouteInsAddlParameter('Erp', 'VELCP Line', 'V1 or V2', '', '', false, '', '', '');
-  end 
-           
-                                              
-  if Fnc.SysGetAttrValue('CuFilledVias') = true then
   begin
-    SysRouteInsWorkCenter('Erp', 'METAL-D0', '')
-    SysRouteInsInstruction('Erp', 'METAL016', ''); //REMARK: VIA TYPE : FILLED VIA.
-    // Note, as is this conditions will apply to all electroless steps for a Fill Via board - verify this is correct (also for Electrolytic Cu)     0
-   // ShowMessage('For 3EPCB Only : Verify with HCS that Special Via Fill Production Resource will also be used for 2X NC Epoxy Fill Electroless Step');
-  end                       
+    Min_Drill := Fnc.SysGetAttrValue('Min_Drill_Size_2');
+    AspectRatio := Fnc.SysGetAttrValue('Aspect_Ratio_Val_2'); // 1569  Correction of V1/V2 rule for Job with 2x NC
+  end;
+                                                
+  {if (( Get_Panel_Thickness >= 3.2 ) and ( Min_Drill <= 0.25 )) or ( AspectRatio > 12.8 ) then // 1462  2295
+  begin        
+    if LaserG30KMechOrSkipBVH then StepParamERP('Remark', 'On-Line Vacuum');
+    StepWCERP('METAL-D0');   
+    StepParamERP('VELCP Line', 'V2 Only');
+  end
+  else                                                                                   
+  begin               
+  StepWCERP('METAL-C0');
+  StepParamERP('VELCP Line', 'V1 or V2');
+  end;}
+                                                                      
+  if ( MechBlindViaSide <> 'None' ) and ( NCRun = 1 ) then //2295
+  begin
+    StepWCERP('METAL-D0');   
+    StepParamERP('VELCP Line', 'V2 Only');
+    StepInstructionERP('METAL041');
+    StepParamERP('Remark', 'With Mech Blind Vias'); 
+  end
   else
   begin
-    if CustCode_Rule('Customer') = 'FA' then
-      SysRouteInsWorkCenter('Erp', 'METAL-C0', '') 
-    else
-      SysRouteInsWorkCenter('Erp', 'METAL-C', '');
+    //if CustCode_Rule('Customer') = 'FA' then StepWCERP('METAL-C0') else 
+    StepWCERP('METAL-C');
+    StepParamERP('VELCP Line', 'V1 or V2');
   end;
 
-  SysRouteInsAddlParameter('Erp', 'Pre-preg Material', Fnc.SysGetAttrValue('PPGMat'), '', '', false, '', '', '');
-  SysRouteInsAddlParameter('Erp', 'Core Material', Fnc.SysGetAttrValue('CoreMat'), '', '', false, '', '', '');
+  if Fnc.SysGetAttrValue('CuFilledVias') then StepInstructionERP('METAL016');
+
+  StepParamERP('Pre-preg Material', Fnc.SysGetAttrValue('PPGMat'));
+  StepParamERP('Core Material', Fnc.SysGetAttrValue('CoreMat'));
 
   if Fnc.SysGetAttrValue('LayerCount') > 2 then // 2 Layer Fixes
-    SysRouteInsAddlParameter('Erp', 'Thickness', FormatFloat('0.000', Fnc.SysGetAttrValue('Press_Thickness')), '', '', false, '', '', '');
+    StepParamERP('Thickness', FormatFloat('0.000', Fnc.SysGetAttrValue('Press_Thickness')));
   else
-    SysRouteInsAddlParameter('Erp', 'Thickness', FormatFloat('0.000', DSThicknessB4Plating), '', '', false, '', '', ''); 
-  
+    StepParamERP('Thickness', FormatFloat('0.000', DSThicknessB4Plating));
 
-  SysRouteInsAddlParameter('Erp', 'Min Drill Size', Min_Drill, '', '', false, '', '', '');
+  StepParamERP('Min Drill Size', Min_Drill);
 
-  if ( MechBlindViaSide <> 'None' ) and ( NCRun = 1 ) then    // MEch Blind Vias 1356 
-    SysRouteInsAddlParameter('Erp', 'Remark', 'With Mech Blind Vias', '', '', false, '', '', '');
-    
   // 1107 Additional Run Card info - Note sequential build
-  if ( Fnc.SysGetAttrValue('Seq_Build') = true ) or ( SubParentIsSequential ) then 
-    SysRouteInsAddlParameter('Erp', 'Remark', 'Sequential Build', '', '', false, '', '', ''); 
+  if ( Fnc.SysGetAttrValue('Seq_Build') = true ) or ( SubParentIsSequential ) then
+    StepParamERP('Remark', 'Sequential Build');
 end;
 
 procedure Electroless_CappedVia_SD;
@@ -1958,36 +1924,39 @@ begin
   // 1107 Additional Run Card info - Note sequential build
   if Fnc.SysGetAttrValueTopLevel('Seq_Build') = true then
     SysRouteInsAddlParameter('Erp', 'Remark', 'Sequential Build', '', '', false, '', '', ''); 
-end;         
+end; 
 
-procedure Strike_Plating_SD; // 978 Updated Cu Rule - Metalization 
+procedure Strike_Plating_SD; // 978 Updated Cu Rule - Metalization
 begin
-  SysRouteInsDepartment('Erp', 'COPPL-C', '');
-  
-  if (( Get_Panel_Thickness <= 1.0 ) or ( Get_Panel_Thickness >= 3.5 )) then
-  begin                    
-    SysRouteInsWorkCenter('Erp', 'COPPL-C22', '');
-    SysRouteInsAddlParameter('Erp', 'Plating Line:', 'PAL6', '', '', false, '', '', ''); 
-  end                                                    
-  else
-  begin                                   
-    SysRouteInsWorkCenter('Erp', 'COPPL-C1', '');
-    SysRouteInsAddlParameter('Erp', 'Plating Line:', 'PAL4', '', '', false, '', '', ''); 
-  end;
-end;                                   
+  StepDeptERP('COPPL-C');
+  StepWCERP('COPPL-C');
+  StepInstructionERP('COPPL085'); //REMARK: Strike Plating Program
 
-procedure Electroless_SP_SD; // 978 Updated Cu Rule - Metalization 
-begin                                 
-  SysRouteInsDepartment('Erp', 'METAL-D0', '');
-  SysRouteInsWorkCenter('Erp', 'METAL-D0', '');
-  SysRouteInsAddlParameter('Erp', 'VELCP Line:', 'V2 Only', '', '', false, '', '', '');
-  SysRouteInsAddlParameter('Erp', 'Remark', 'On-Line Vacuum', '', '', false, '', '', '');
-  SysRouteInsAddlParameter('Erp', 'Remark', 'Use Strike Condition', '', '', false, '', '', '');
-  
+  {if ( Get_Panel_Thickness <= 1.0 ) or ( Get_Panel_Thickness >= 3.5 ) then
+  begin
+    StepWCERP('COPPL-C22');
+    StepParamERP('Plating Line:', 'PAL6');
+  end
+  else
+  begin
+    StepWCERP('COPPL-C1');
+    StepParamERP('Plating Line:', 'PAL4');
+  end;}
+end;
+
+procedure Electroless_SP_SD; // 978 Updated Cu Rule - Metalization
+begin
+  StepDeptERP('METAL-D0');
+  StepWCERP('METAL-D0');
+  StepParamERP('VELCP Line:', 'V2 Only');
+  //StepParamERP('Remark', 'On-Line Vacuum');       2295
+  //StepParamERP('Remark', 'Use Strike Condition');
+  StepInstructionERP('METAL041'); //REMARK: Strike Plating Program
+
   // 1107 Additional Run Card info - Note sequential build
-  if ( Fnc.SysGetAttrValue('Seq_Build') = true ) or ( SubParentIsSequential ) then 
-    SysRouteInsAddlParameter('Erp', 'Remark', 'Sequential Build', '', '', false, '', '', '');
-end;   
+  if ( Fnc.SysGetAttrValue('Seq_Build') = true ) or ( SubParentIsSequential ) then
+    StepParamERP('Remark', 'Sequential Build');
+end;
 
 function MCP_CU_THK_Validate_TargetThickness(CuPlating_MCP: TSysTable; aFilter: string): string;
 var
@@ -2098,7 +2067,7 @@ begin
 
   CuPlating_MCP := Fnc.CustomTableGet('CuPlating_MCP_P3_FV');  // 1086 Updated Cu Platin Rule
   Filter1 := '';
-  Filter2 := '';                        
+  Filter2 := '';
 
   GLB_Ave_CuThk := 0.0;
   GLB_TGT_Ave_Hole_CuThk := Round(GLB_TGT_Ave_Hole_CuThk * 2 / 10) * 5;
@@ -2108,7 +2077,7 @@ begin
   else if (GLB_TGT_Abs_HOLE_CuThk >= 13.5) and (GLB_TGT_Abs_HOLE_CuThk < 16.5) then
     GLB_TGT_Abs_HOLE_CuThk := 15
   else if (GLB_TGT_Abs_HOLE_CuThk >= 16.5) and (GLB_TGT_Abs_HOLE_CuThk < 19) then
-    GLB_TGT_Abs_HOLE_CuThk := 18               
+    GLB_TGT_Abs_HOLE_CuThk := 18
   else if (GLB_TGT_Abs_HOLE_CuThk >= 19) and (GLB_TGT_Abs_HOLE_CuThk < 22.5) then
     GLB_TGT_Abs_HOLE_CuThk := 20
   else if (GLB_TGT_Abs_HOLE_CuThk >= 22.5) and (GLB_TGT_Abs_HOLE_CuThk < 27.5) then
@@ -2131,11 +2100,11 @@ begin
     NC_Thickness := FloatToStr(DSThicknessB4Plating);
 
   Filter2 := Format(' and ([ThicknessMin] < %s) and (%s <= [ThicknessMax] )', ([NC_Thickness, NC_Thickness]));
-  
+
   //ShowMEssage(Filter1 + ' | ' + Filter2);
 
   errMsg := MCP_CU_THK_Validate_TargetThickness(CuPlating_MCP, Filter1);
-  if errMsg = '' then                       
+  if errMsg = '' then
     errMsg := MCP_CU_THK_Validate_BoardThickness(CuPlating_MCP, Filter1, Filter2);
 
   if errMsg = '' then
@@ -2146,7 +2115,7 @@ begin
 
     if not CuPlating_MCP.isEmpty then
     begin
-      CuPlating_MCP.First; 
+      CuPlating_MCP.First;
       //Fnc.OpenDataGrid(CuPlating_MCP);
       GLB_Ave_CuThk := CuPlating_MCP.FieldByName('ThicknessSurfacePlated').AsInteger;
     end;
@@ -2157,79 +2126,79 @@ begin
   // cleanup
   CuPlating_MCP.Filtered := False;
   CuPlating_MCP.Filter := '';
-                                           
+
   CuPlating_MCP.SortFields := '';
   CuPlating_MCP.SortDefault;
-                
+
   if GLB_Ave_CuThk = 0 then
   begin
     errMsg := 'Failed to set Surface Plating Thickness "GLB_Abs_CuThk" from Table CuPlating_MCP' + #13#13 + errMsg;
     MessageDlg(errMsg, mtWarning, SetOf([mbCancel]), 0);
   end;
-end;                     
+end;
 
 procedure GetCuPlat_RPLS;
-var 
+var
   aFilter: string;
   laser: string;
   CuPlating_RPLS: TSysTable;
   MinDrillSize: float;
-begin          
+begin
   laser := 'No';
 
   if Fnc.SysGetAttrValue('LayerCount') > 2 then
     GLB_NC_Thickness := Fnc.SysGetAttrValue('Press_Thickness')
   else
     GLB_NC_Thickness := Fnc.SysGetAttrValue('LayupThickness');
-    
+
   if NCRUN = 1 then
     GLB_Cur_Cu_Ratio := Fnc.SysGetAttrValue('Cu_Ratio')
-  else if NCRUN = 2 then                            
+  else if NCRUN = 2 then
     GLB_Cur_Cu_Ratio := Fnc.SysGetAttrValue('Cu_Ratio_2');
-    
-  if NCRUN = 1 then  
-  begin                   
-    if Fnc.SysGetAttrValue('LaserBTopHits') + Fnc.SysGetAttrValue('LaserABotHits') + 
-       Fnc.SysGetAttrValue('UVLaserB_Top') + Fnc.SysGetAttrValue('UVLaserA_Bot') > 0 
-    then    
-      laser := 'Yes';        
+
+  if NCRUN = 1 then
+  begin
+    if Fnc.SysGetAttrValue('LaserBTopHits') + Fnc.SysGetAttrValue('LaserABotHits') +
+       Fnc.SysGetAttrValue('UVLaserB_Top') + Fnc.SysGetAttrValue('UVLaserA_Bot') > 0
+    then
+      laser := 'Yes';
   end;
-  
+
   // 1467
   if NCRUN = 1 then
     MinDrillSize := Fnc.SysGetAttrValue('Min_Drill_Size')
   else
     MinDrillSize := Fnc.SysGetAttrValue('Min_Drill_Size_2')
-                                                      
-  aFilter := '     ([LaserVia] = ' + QuotedStr(laser) + ')' 
+
+  aFilter := '     ([LaserVia] = ' + QuotedStr(laser) + ')'
            + Format(' and ([CuRatioMin] <= %s)', ([IntToStr(GLB_Cur_Cu_Ratio)]))
            + Format(' and ([CuRatioMax] > %s)', ([IntToStr(Trunc(GLB_Cur_Cu_Ratio))]))
            + Format(' and ([BoardThicknessMin] <= %s)', ([FloatToStr(GLB_NC_Thickness)]))
            + Format(' and ([BoardThicknessMax] > %s)', ([FloatToStr(GLB_NC_Thickness)]));
-             
+
   //ShowMessage(aFilter);
 
   CuPlating_RPLS := Fnc.CustomTableGet('CuPlating_RPLS_1467'); // 1467
-                                
-  CuPlating_RPLS.Filtered := False;   
+
+  CuPlating_RPLS.Filtered := False;
   CuPlating_RPLS.Filter := aFilter;
-  CuPlating_RPLS.Filtered := True;                
-                                  
+  CuPlating_RPLS.Filtered := True;
+
   //Fnc.OpenDataGrid(CuPlating_RPLS);
-                           
+
   if not CuPlating_RPLS.isEmpty then
-  begin                  
+  begin
     CuPlating_RPLS.First;
     if MinDrillSize <= 0.3 then
       GLB_Ave_CuThk := CuPlating_RPLS.FieldByName('ThicknessSurfacePlated').AsFloat
-    else       
+    else
       GLB_Ave_CuThk := CuPlating_RPLS.FieldByName('ThicknessSurfacePlated2').AsFloat
   end;
 
   GLB_Abs_CuThk := GLB_Ave_CuThk;
   //ShowMessage(FloatToStr(MinDrillSize) + '|' + FloatToStr(GLB_Ave_CuThk));
   // cleanup
-  CuPlating_RPLS.Filtered := False;             
+  CuPlating_RPLS.Filtered := False;
   CuPlating_RPLS.Filter := '';
 
   if GLB_Ave_CuThk = 0 then
@@ -2241,24 +2210,24 @@ end;
 procedure InsertViaTypeAttributes;
 begin
   if ((Fnc.SysGetAttrValue('BlindVias') = true) and (Fnc.SysGetAttrValue('BuriedVias') = true)) then
-    SysRouteInsAddlParameter('Erp','Via Type', 'Both Vias','','', false, '', '', '');
+    StepParamERP('Via Type', 'Both Vias');
   else if Fnc.SysGetAttrValue('BuriedVias') = false then
-    SysRouteInsAddlParameter('Erp','Via Type', 'Blind Vias','','', false, '', '', '');
+    StepParamERP('Via Type', 'Blind Vias');
 end;
 
 procedure InsertBlindViaAttributes;
 begin
-  SysRouteInsAddlParameter('Erp','Avg Min Blind', Fnc.SysGetAttrValue('Ave_Min_Bl'),'','', false, '', '', '');
-  SysRouteInsAddlParameter('Erp','Abs Min Blind', Fnc.SysGetAttrValue('Abs_Min_Bl'),'','', false, '', '', '');
+  StepParamERP('Avg Min Blind', Fnc.SysGetAttrValue('Ave_Min_Bl'));
+  StepParamERP('Abs Min Blind', Fnc.SysGetAttrValue('Abs_Min_Bl'));
 
   InserBlindViaDepthAspect;
 
-  SysRouteInsAddlParameter('Erp','Conf. Mask Size', Fnc.SysGetAttrValue('ConfMask_Size'),'','', false, '', '', '');
+  StepParamERP('Conf. Mask Size', Fnc.SysGetAttrValue('ConfMask_Size'));
 
   if Fnc.SysGetAttrValue('ConfMask_Size_Skip') > 0 then
-    SysRouteInsAddlParameter('Erp','Conf. Mask Size - Skip', Fnc.SysGetAttrValue('ConfMask_Size_Skip'),'','', false, '', '', '');
+    StepParamERP('Conf. Mask Size - Skip', Fnc.SysGetAttrValue('ConfMask_Size_Skip'));
 
-  SysRouteInsAddlParameter('Erp','Thickness Before Plate', FormatFloat('0.000', Fnc.SysGetAttrValue('Press_Thickness')),'','', false, '', '', '');
+  StepParamERP('Thickness Before Plate', FormatFloat('0.000', Fnc.SysGetAttrValue('Press_Thickness')));
 end;
 
 procedure CalcAndInsert_DECUTHK(UseF_ : boolean; NCRun : integer; process : string);  // (364) Surface Cu thickness calculation correction
@@ -2277,7 +2246,7 @@ begin
   TempVarI_min    := 0;
   TempVarI_max    := 0;
   vDE_Cu_Thk  := '';
-                       
+
   if Fnc.SysGetAttrValue('UEtch_Cu') > 0 then
     Fnc.SysSetAttrValue('Down_Etch_Cu', Fnc.SysGetAttrValue('UEtch_Cu'))
   else
@@ -2285,36 +2254,36 @@ begin
 
   // Use Current Base Cu instead of Down_Etch_Cu
 
-  {if UseF_ then  // 1201 Remove addition 3um Cu for MicroEtch 
+  {if UseF_ then  // 1201 Remove addition 3um Cu for MicroEtch
   begin
     if Fnc.SysGetAttrValue('UEtch_Cu') > 0 then
     begin
       Fnc.SysSetAttrValue('Cal_Abs_Th', 3 + GLB_Abs_CuThk + InProcessCuThk);
       Fnc.SysSetAttrValue('Cal_Ave_Th', 3 + GLB_Ave_CuThk + InProcessCuThk);
-    end        
+    end
     else
-    begin                        
+    begin
       Fnc.SysSetAttrValue('Cal_Abs_Th', GLB_Abs_CuThk + InProcessCuThk);
       Fnc.SysSetAttrValue('Cal_Ave_Th', GLB_Ave_CuThk + InProcessCuThk);
-    end;            
+    end;
   end;}
-  
+
   Fnc.SysSetAttrValue('Cal_Abs_Th', GLB_Abs_CuThk + InProcessCuThk);
   Fnc.SysSetAttrValue('Cal_Ave_Th', GLB_Ave_CuThk + InProcessCuThk);
 
   if UseF_ then
-  begin                
+  begin
     if  Fnc.SysGetAttrValue('Cal_Abs_Th') > Fnc.SysGetAttrValue('Cal_Ave_Th') then
-    begin                                
+    begin
       TempVar := Fnc.SysGetAttrValue('Cal_Abs_Th');
-                  
+
       {if Fnc.SysGetAttrValue('UEtch_Cu') > 0 then
         ShowMessage('DE Cu Thk = ' + 'In Process Cu: ' + IntToStr(InProcessCuThk) + ' + Table Plating: ' + IntToStr(GLB_Abs_CuThk) + ' + 3' + ' = ' + IntToStr(TempVar));
       else
         ShowMessage('DE Cu Thk = ' + 'In Process Cu: ' + IntToStr(InProcessCuThk) + ' + Table Plating: ' + IntToStr(GLB_Abs_CuThk) + ' + 0' + ' = ' + IntToStr(TempVar));}
-    end                      
+    end
     else
-    begin                      
+    begin
       TempVar := Fnc.SysGetAttrValue('Cal_Ave_Th');
 
       {if Fnc.SysGetAttrValue('UEtch_Cu') > 0 then
@@ -2362,24 +2331,24 @@ begin
       begin
         Fnc.SysSetAttrValue('Abs_Fin_Th', GLB_Abs_CuThk + InProcessCuThk );
         Fnc.SysSetAttrValue('Ave_Fin_Th', GLB_Ave_CuThk + InProcessCuThk );
-                               
+
         // Debug Message
         TempVar := Fnc.SysGetAttrValue('Abs_Fin_Th')
         //ShowMessage('DE Cu Thk = ' + 'In Process Cu: ' + IntToStr(InProcessCuThk) + ' + Table Plating: ' + IntToStr(GLB_Ave_CuThk) + ' + 0' + ' = ' + IntToStr(TempVar));
       end
       else
-      begin       
+      begin
         Fnc.SysSetAttrValue('Abs_Fin_Th', 3 + GLB_Abs_CuThk + InProcessCuThk );
         Fnc.SysSetAttrValue('Ave_Fin_Th', 3 + GLB_Ave_CuThk + InProcessCuThk );
 
         // Debug Message
-        TempVar := Fnc.SysGetAttrValue('Abs_Fin_Th') 
+        TempVar := Fnc.SysGetAttrValue('Abs_Fin_Th')
         //ShowMessage('DE Cu Thk = ' + 'In Process Cu: ' + IntToStr(InProcessCuThk) + ' + Table Plating: ' + IntToStr(GLB_Ave_CuThk) + ' + 3' + ' = ' + IntToStr(TempVar));
       end  }
-      
+
       Fnc.SysSetAttrValue('Abs_Fin_Th', GLB_Abs_CuThk + InProcessCuThk );
       Fnc.SysSetAttrValue('Ave_Fin_Th', GLB_Ave_CuThk + InProcessCuThk );
-      TempVar := Fnc.SysGetAttrValue('Abs_Fin_Th') 
+      TempVar := Fnc.SysGetAttrValue('Abs_Fin_Th')
     end
     else  // Capped Via Plating
     begin
@@ -2390,7 +2359,7 @@ begin
       TempVar := Fnc.SysGetAttrValue('Abs_Fin_Th')
         //ShowMessage('Capped DE Cu Thk = ' + 'In Process Cu: ' + IntToStr(InProcessCuThk) + ' + Min  Plating: ' + IntToStr(Surface_Add) + ' + 0' + ' = ' + IntToStr(TempVar));
     end;
-                         
+
     if  Fnc.SysGetAttrValue('Abs_Fin_Th') > Fnc.SysGetAttrValue('Ave_Fin_Th') then
       TempVar := Fnc.SysGetAttrValue('Abs_Fin_Th')
     else
@@ -2400,17 +2369,17 @@ begin
   TempVarI := Round(TempVar);
   //InProcessCuThk := TempVarI;
   UpdateInProcessCuThk(TempVarI);
-                                    
+
   {if process <> 'CappedVia' then  // 839 Electrolytic Cu - Capped Via / 2nd Plating DE Cu Thickness Tolerance
   begin
     TempVarI_min := TempVarI - 7;
     TempVarI_max := TempVarI + 7;
-  end                                       
+  end
   else
   begin
     TempVarI_min := TempVarI - 3;
     TempVarI_max := TempVarI + 3;
-  end;      
+  end;
   }
 
   TempVarI_min := TempVarI - 7;
@@ -2419,28 +2388,28 @@ begin
   vDE_Cu_Thk := IntToStr(TempVarI_min) + ' ~ ' + IntToStr(TempVarI) + ' ~ ' + IntToStr(TempVarI_max);
 
   if NCRun = 1 then
-  begin     
+  begin
     if Fnc.SysGetAttrValue('User_DE_Cu_Thk') <> '' then
     begin
-      SysRouteInsAddlParameter('Erp','User DE Cu Thickness', Fnc.SysGetAttrValue('User_DE_Cu_Thk'),'','', false, '', '', '')
+      StepParamERP('User DE Cu Thickness', Fnc.SysGetAttrValue('User_DE_Cu_Thk'))
       //InProcessCuThk := Conver_UserDE_Cu(Fnc.SysGetAttrValue('User_DE_Cu_Thk'));
       UpdateInProcessCuThk(Conver_UserDE_Cu(Fnc.SysGetAttrValue('User_DE_Cu_Thk')));
       //ShowMessage('User DE Cu Thickness After Plating: ' + IntToStr(InProcessCuThk));
     end
     else
-      SysRouteInsAddlParameter('Erp','DE Cu Thickness', vDE_Cu_Thk,'','', false, '', '', '');
+      StepParamERP('DE Cu Thickness', vDE_Cu_Thk);
   end
   else  // NC RUN must = 2
   begin
     if Fnc.SysGetAttrValue('User_DE_Cu_Thk_2') <> '' then
     begin
-      SysRouteInsAddlParameter('Erp','2nd User DE Cu Thick.', Fnc.SysGetAttrValue('User_DE_Cu_Thk_2'),'','', false, '', '', '')
+      StepParamERP('2nd User DE Cu Thick.', Fnc.SysGetAttrValue('User_DE_Cu_Thk_2'));
       //InProcessCuThk := Conver_UserDE_Cu(Fnc.SysGetAttrValue('User_DE_Cu_Thk_2'));
       UpdateInProcessCuThk(Conver_UserDE_Cu(Fnc.SysGetAttrValue('User_DE_Cu_Thk_2')));
       //ShowMessage('2nd User DE Cu Thickness After Plating: ' + IntToStr(InProcessCuThk));
     end
     else
-      SysRouteInsAddlParameter('Erp','2nd DE Cu Thickness', vDE_Cu_Thk,'','', false, '', '', '');
+      StepParamERP('2nd DE Cu Thickness', vDE_Cu_Thk);
   end;
 
   //ShowMessage( 'After Plating Cu Thk ' + IntToStr(InProcessCuThk) + 'um'  );
@@ -2455,15 +2424,15 @@ Var
   NCX2_OSP : boolean;
 
 begin
-  Plating_Line := '';               
+  Plating_Line := '';
   Alt_Line := '';
   Plating_Line_Selected := '';
   Plating_Line_Alternative := '';
 
-  SysRouteInsDepartment('Erp', 'COPPL-C', '');
+  StepDeptERP('COPPL-C');
 
-  Set_CU_Ratio;               
-  
+  Set_CU_Ratio;
+
   if NCRun = 1 then
   begin
     if Fnc.SysGetAttrValue('Electrolytic_Cu_Line') = 'Auto' then  // 843 Process Override Rule
@@ -2476,15 +2445,15 @@ begin
       else
       begin
         //GetCopperPlating_Line(Plating_Line_Selected, Plating_Line_Alternative);
-        //Plating_Line := Plating_Line_Selected 
-        Plating_Line := SelectPlatingLine; 
-      end;                                                      
+        //Plating_Line := Plating_Line_Selected
+        Plating_Line := SelectPlatingLine;
+      end;
     end
     else
-     Plating_Line := Fnc.SysGetAttrValue('Electrolytic_Cu_Line'); 
+     Plating_Line := Fnc.SysGetAttrValue('Electrolytic_Cu_Line');
   end
   else if NCRun = 2 then
-  begin                       
+  begin
     if Fnc.SysGetAttrValue('Electrolytic_Cu_Line_2') = 'Auto' then  // 843 Process Override Rule
     begin
       if ((CustCode_Rule('Customer') = 'GM') and (Fnc.SysGetAttrValue('Test_ID') <> 'None')) then
@@ -2496,16 +2465,16 @@ begin
       begin
         //GetCopperPlating_Line(Plating_Line_Selected, Plating_Line_Alternative);
         //Plating_Line := Plating_Line_Selected
-        Plating_Line := SelectPlatingLine; 
-      end;         
+        Plating_Line := SelectPlatingLine;
+      end;
     end
     else
-     Plating_Line := Fnc.SysGetAttrValue('Electrolytic_Cu_Line_2');  
+     Plating_Line := Fnc.SysGetAttrValue('Electrolytic_Cu_Line_2');
   end;
 
 
   Fnc.SysSetAttrValue('CuPlatingLine', Plating_Line);
-                              
+
   // 1134 Additional Information
   if NCRun = 1 then
     Fnc.SysSetAttrValue('Plating_Line', Plating_Line)
@@ -2536,18 +2505,18 @@ begin
       GLB_Ave_CuThk := Fnc.SysGetAttrValue('Ave_Min_Th') * 1.2;
     end;
     // 1086 Update Electrolytic Cu Plating Rule  - use MCP for Pal3 & Filled Via
-    //MCP_CU_THK; 
-    
+    //MCP_CU_THK;
+
   end;}
-          
-  {else if (   
+
+  {else if (
            (Plating_Line = 'PAL4') or
            (Plating_Line = 'PAL6') or  // Plating Line PAL5 change to PAL6
            (Plating_Line = 'MCP') or
-           (Plating_Line = 'FILL_VIA')  // 976 Filled Via Plating Line 
+           (Plating_Line = 'FILL_VIA')  // 976 Filled Via Plating Line
           )
   then
-  begin }   
+  begin }
     // Need to confirm the IES logic for '<> BLIND VIA or Total Layer Count = Current Part Layer Count
     if ((Fnc.SysGetAttrValue('BlindVias') = true) and (Fnc.SysGetAttrValue('MfgPartType') <> 'Top'))  then
     begin
@@ -2568,7 +2537,7 @@ begin
       GLB_TGT_Abs_HOLE_CuThk := Fnc.SysGetAttrValue('Abs_Min_Th');
       GLB_TGT_Ave_Hole_CuThk := Fnc.SysGetAttrValue('Ave_Min_Th');
     end;
-    
+
     // For testing, force plating line to RLPS
     // Plating_Line := 'PAL4';
 
@@ -2576,124 +2545,124 @@ begin
       MCP_CU_THK
     else
       GetCuPlat_RPLS;
-  //end;                       
-                        
+  //end;
+
   if Plating_Line = 'FILL_VIA' then
   begin
-    SysRouteInsDepartment('Erp', 'COPPL-F', '');
-    SysRouteInsWorkCenter('Erp', 'COPPL-F', '');
-    
+    StepDeptERP('COPPL-F');
+    StepWCERP('COPPL-F');
+
     // 976 Filled Via plating line missing info
-    SysRouteInsInstruction('Erp', 'COPPL001', ''); // MEASUREMT CU THK : i) ______ii) ______,
-    SysRouteInsAddlParameter('Erp','Plating Line', Plating_Line,'','', false, '', '', '');  // Include the Electrolytic Machine Name on the process step.
-      
-               
+    StepInstructionERP('COPPL001'); // MEASUREMT CU THK : i) ______ii) ______,
+    StepParamERP('Plating Line', Plating_Line);  // Include the Electrolytic Machine Name on the process step.
+
+
     if (( Fnc.SysGetAttrValue('BlindVias') = true ) and ( Fnc.SysGetAttrValue('NCRunX2') = true ) and  ( NCRun = 1 )) or
-       (( Fnc.SysGetAttrValue('BlindVias') = true ) and ( Fnc.SysGetAttrValue('NCRunX2') = false ))  
+       (( Fnc.SysGetAttrValue('BlindVias') = true ) and ( Fnc.SysGetAttrValue('NCRunX2') = false ))
     then //978
     begin
       InsertViaTypeAttributes;
       InsertBlindViaAttributes;
     end;
-               
+
     if NCRun = 2 then
     begin
-      SysRouteInsAddlParameter('Erp','2nd Min Drill Size', Fnc.SysGetAttrValue('Min_Drill_Size_2'),'','', false, '', '', '');
+      StepParamERP('2nd Min Drill Size', Fnc.SysGetAttrValue('Min_Drill_Size_2'));
 
       if ((Fnc.SysGetAttrValue('Ave_Min_Th_2') > 0) or (Fnc.SysGetAttrValue('Abs_Min_Th_2') > 0)) then
       begin
-        SysRouteInsAddlParameter('Erp','2nd Avg Min Thickness', Fnc.SysGetAttrValue('Ave_Min_Th_2'),'','', false, '', '', '');
-        SysRouteInsAddlParameter('Erp','2nd Abs Min Thickness', Fnc.SysGetAttrValue('Abs_Min_Th_2'),'','', false, '', '', '');
-        SysRouteInsAddlParameter('Erp','2nd Ave Max Thickness', Fnc.SysGetAttrValue('Ave_Max_Th_2'),'','', false, '', '', '');
-        SysRouteInsAddlParameter('Erp','2nd Abs Max Thickness', Fnc.SysGetAttrValue('Abs_Max_Th_2'),'','', false, '', '', '');
+        StepParamERP('2nd Avg Min Thickness', Fnc.SysGetAttrValue('Ave_Min_Th_2'));
+        StepParamERP('2nd Abs Min Thickness', Fnc.SysGetAttrValue('Abs_Min_Th_2'));
+        StepParamERP('2nd Ave Max Thickness', Fnc.SysGetAttrValue('Ave_Max_Th_2'));
+        StepParamERP('2nd Abs Max Thickness', Fnc.SysGetAttrValue('Abs_Max_Th_2'));
       end;
 
-      SysRouteInsAddlParameter('Erp','2nd PTH Aspect Ratio', Fnc.SysGetAttrValue('Aspect_Ratio_Val_2'),'','', false, '', '', '');
-      SysRouteInsAddlParameter('Erp','2nd PTH Cu Plate Area', Fnc.SysGetAttrValue('PTH_CuPlt_Area_2'),'','', false, '', '', '');
-      SysRouteInsAddlParameter('Erp','2nd Cu Ratio', Fnc.SysGetAttrValue('Cu_Ratio_2'),'','', false, '', '', '');
+      StepParamERP('2nd PTH Aspect Ratio', Fnc.SysGetAttrValue('Aspect_Ratio_Val_2'));
+      StepParamERP('2nd PTH Cu Plate Area', Fnc.SysGetAttrValue('PTH_CuPlt_Area_2'));
+      StepParamERP('2nd Cu Ratio', Fnc.SysGetAttrValue('Cu_Ratio_2'));
 
       //if Fnc.SysGetAttrValue('User_DE_Cu_Thk_2') <> '' then
-      //  SysRouteInsAddlParameter('Erp','2nd User DE Cu Thick.', Fnc.SysGetAttrValue('User_DE_Cu_Thk_2'),'','', false, '', '', '');
+      //  StepParamERP('2nd User DE Cu Thick.', Fnc.SysGetAttrValue('User_DE_Cu_Thk_2'));
       // 976 Filled Via plating line missing info
       if NCRun = 2 then // not required but copied from other plating line rule - leave for debugging
           CalcAndInsert_DECUTHK(false, 2, '')
-        else        
-          CalcAndInsert_DECUTHK(true, 1, ''); 
-    end                                                                                                                            
+        else
+          CalcAndInsert_DECUTHK(true, 1, '');
+    end
     else
     begin
-      SysRouteInsAddlParameter('Erp','Min Drill Size', Fnc.SysGetAttrValue('Min_Drill_Size'),'','', false, '', '', '');
+      StepParamERP('Min Drill Size', Fnc.SysGetAttrValue('Min_Drill_Size'));
 
       if ((Fnc.SysGetAttrValue('Ave_Min_Th') > 0) or (Fnc.SysGetAttrValue('Abs_Min_Th') > 0)) then
       begin
-        SysRouteInsAddlParameter('Erp','Avg Min Thickness', Fnc.SysGetAttrValue('Ave_Min_Th'),'','', false, '', '', '');
-        SysRouteInsAddlParameter('Erp','Abs Min Thickness', Fnc.SysGetAttrValue('Abs_Min_Th'),'','', false, '', '', '');
-        SysRouteInsAddlParameter('Erp','Ave Max Thickness', Fnc.SysGetAttrValue('Ave_Max_Th'),'','', false, '', '', '');
-        SysRouteInsAddlParameter('Erp','Abs Max Thickness', Fnc.SysGetAttrValue('Abs_Max_Th'),'','', false, '', '', '');
+        StepParamERP('Avg Min Thickness', Fnc.SysGetAttrValue('Ave_Min_Th'));
+        StepParamERP('Abs Min Thickness', Fnc.SysGetAttrValue('Abs_Min_Th'));
+        StepParamERP('Ave Max Thickness', Fnc.SysGetAttrValue('Ave_Max_Th'));
+        StepParamERP('Abs Max Thickness', Fnc.SysGetAttrValue('Abs_Max_Th'));
       end;
-                             
-      SysRouteInsAddlParameter('Erp','Aspect Ratio', Fnc.SysGetAttrValue('Aspect_Ratio_Val'),'','', false, '', '', '');
-      SysRouteInsAddlParameter('Erp','PTH Cu Plate Area', Fnc.SysGetAttrValue('PTH_CuPlt_Area'),'','', false, '', '', '');
-      SysRouteInsAddlParameter('Erp','Cu Ratio', Fnc.SysGetAttrValue('Cu_Ratio'),'','', false, '', '', '');
+
+      StepParamERP('Aspect Ratio', Fnc.SysGetAttrValue('Aspect_Ratio_Val'));
+      StepParamERP('PTH Cu Plate Area', Fnc.SysGetAttrValue('PTH_CuPlt_Area'));
+      StepParamERP('Cu Ratio', Fnc.SysGetAttrValue('Cu_Ratio'));
 
       //if Fnc.SysGetAttrValue('User_DE_Cu_Thk') <> '' then
-      //  SysRouteInsAddlParameter('Erp','User DE Cu Thickness', Fnc.SysGetAttrValue('User_DE_Cu_Thk'),'','', false, '', '', '');
+      //  StepParamERP('User DE Cu Thickness', Fnc.SysGetAttrValue('User_DE_Cu_Thk'));
       // 976 Filled Via plating line missing info
-      if ((Fnc.SysGetAttrValue('UEtch_Cu') > 0) or (Fnc.SysGetAttrValue('Min_Surf_Plt') > 0)) then 
+      if ((Fnc.SysGetAttrValue('UEtch_Cu') > 0) or (Fnc.SysGetAttrValue('Min_Surf_Plt') > 0)) then
           CalcAndInsert_DECUTHK(true, 1, '')  // (364) Surface Cu thickness calculation correction
         else
           CalcAndInsert_DECUTHK(false, 1, '');
 
-      SysRouteInsAddlParameter('Erp','Dimple Spec', Fnc.SysGetAttrValue('Dimple_Spec'),'','', false, '', '', '');
+      StepParamERP('Dimple Spec', Fnc.SysGetAttrValue('Dimple_Spec'));
 
       if ((Fnc.SysGetAttrValue('Application') = 'AUTOMOTIVE') or (Fnc.SysGetAttrValue('Application') = 'AUTOMOTIVE NO INKJET')) then
       begin
         if Fnc.SysGetAttrValue('ApplicationSP') <> 'NONE' then
-          SysRouteInsAddlParameter('Erp','Specific Application', Fnc.SysGetAttrValue('ApplicationSP'),'','', false, '', '', '');
+          StepParamERP('Specific Application', Fnc.SysGetAttrValue('ApplicationSP'));
       end;
 
-    end;
-  end
+    end;            
+  end 
   else
   begin
-    if Plating_Line = 'MCP' then
+    if Plating_Line = 'MCP' then  
     begin
-      SysRouteInsDepartment('Erp', 'COPPL-E', '');
-                       
+      StepDeptERP('COPPL-E');
+
       if CustCode_Rule('Customer') = 'FA' then
-        SysRouteInsWorkCenter('Erp', 'COPPL-E01', '');
+        StepWCERP('COPPL-E01');
       else
-        SysRouteInsWorkCenter('Erp', 'COPPL-E0', '');
+        StepWCERP('COPPL-E0');
 
       if Extra_Plt_Step then
-        SysRouteInsWorkCenter('Erp', 'COPPL-E0', '');
+        StepWCERP('COPPL-E0');
     end;
 
     if Plating_Line = 'PAL3' then
     begin
-      SysRouteInsDepartment('Erp', 'COPPL-B', '');
-      SysRouteInsWorkCenter('Erp', 'COPPL-B', '');
+      StepDeptERP('COPPL-B');
+      StepWCERP('COPPL-B');
     end;
 
     if Plating_Line = 'PAL4' then
     begin
-      SysRouteInsDepartment('Erp', 'COPPL-C', '');
-      SysRouteInsWorkCenter('Erp', 'COPPL-C1', '');
+      StepDeptERP('COPPL-C');
+      StepWCERP('COPPL-C1');
     end;
-                                           
+
     if Plating_Line = 'PAL6' then
     begin
-      //SysRouteInsDepartment('Erp', 'COPPL-C', '');
-      SysRouteInsWorkCenter('Erp', 'COPPL-C22', ''); // Plating Line PAL5 change to PAL6
+      //StepDeptERP('COPPL-C');
+      StepWCERP('COPPL-C22'); // Plating Line PAL5 change to PAL6
     end;
 
-    SysRouteInsAddlParameter('Erp','Plating Line', Plating_Line,'','', false, '', '', '');  // Include the Electrolytic Machine Name on the process step.
+    StepParamERP('Plating Line', Plating_Line);  // Include the Electrolytic Machine Name on the process step.
 
-    if ( MechBlindViaSide <> 'None' ) and ( NCRun = 1 ) then    // MEch Blind Vias 1356 
+    if ( MechBlindViaSide <> 'None' ) and ( NCRun = 1 ) then    // MEch Blind Vias 1356
     begin
-      SysRouteInsAddlParameter('Erp','Remark', 'With Mech Blind Vias','','', false, '', '', '');
-      SysRouteInsAddlParameter('Erp', 'Mech Blind Via Depth', FormatFloat('0.000', MechBlindViaMaxDepth),'','', false, '', '', '');
-      SysRouteInsAddlParameter('Erp', 'Mech Blind Via Aspect', FormatFloat('0.000',MechBlindViaMaxAspectRatio),'','', false, '', '', '');
+      StepParamERP('Remark', 'With Mech Blind Vias');
+      StepParamERP('Mech Blind Via Depth', FormatFloat('0.000', MechBlindViaMaxDepth));
+      StepParamERP('Mech Blind Via Aspect', FormatFloat('0.000',MechBlindViaMaxAspectRatio));
     end;
 
     if Plating_Line = 'PAL3 + MCP' then
@@ -2704,20 +2673,20 @@ begin
       if Fnc.SysGetAttrValue('Press_Thickness') > 3.5 then
       begin
         ShowMessage('ERROR! : Thickness > 3.5mm. NO CU PLATING LINE SELECTED FROM TABLE.' + #13 + 'Resource set to COPPL-C2 Copper Plating 5 Reverse Pulse');
-        SysRouteInsWorkCenter('Erp', 'COPPL-C2', '');
-      end                      
+        StepWCERP('COPPL-C2');
+      end
       else
         ShowMessage('ERROR! : NO CU PLATING LINE SELECTED OR A NEW CU PLATING LINE CREATED IN TABLE PLEASE CHECK!');
     end;
 
     if Extra_Plt_Step then
     begin
-      SysRouteInsAddlParameter('Erp','Surface Plating Spec', Fnc.SysGetAttrValue('Surf_Plt_Spec'),'','', false, '', '', '');
+      StepParamERP('Surface Plating Spec', Fnc.SysGetAttrValue('Surf_Plt_Spec'));
       if ((Fnc.SysGetAttrValue('Aspect_Ratio_Val') > 5.67) or (Fnc.SysGetAttrValue('Press_Thickness') > 1.7)) then
-        SysRouteInsInstruction('Erp', 'COPPL002', ''); // REMARKS:REFER TO PE FOR CONDITION.
+        StepInstructionERP('COPPL002'); // REMARKS:REFER TO PE FOR CONDITION.
     end
     else
-    begin // 978         
+    begin // 978
       if (( Fnc.SysGetAttrValue('BlindVias') = true ) and ( Fnc.SysGetAttrValue('NCRunX2') = true ) and  ( NCRun = 1 )) or
          (( Fnc.SysGetAttrValue('BlindVias') = true ) and ( Fnc.SysGetAttrValue('NCRunX2') = false ))
       then
@@ -2735,19 +2704,19 @@ begin
         if Fnc.SysGetAttrValue('LayerCount') > 2 then // 2 Layer Fixes
         begin
           if NCRun = 1 then
-            SysRouteInsAddlParameter('Erp','Thickness Before Plate', FormatFloat('0.000', Fnc.SysGetAttrValue('Press_Thickness')),'','', false, '', '', '')
+            StepParamERP('Thickness Before Plate', FormatFloat('0.000', Fnc.SysGetAttrValue('Press_Thickness')));
           else if NCRun > 1 then
-            SysRouteInsAddlParameter('Erp','Thickness Before Plate', FormatFloat('0.000', Fnc.SysGetAttrValue('LayupThickness')),'','', false, '', '', '')
+            StepParamERP('Thickness Before Plate', FormatFloat('0.000', Fnc.SysGetAttrValue('LayupThickness')));
         end
         else
-          SysRouteInsAddlParameter('Erp','Thickness Before Plate', FormatFloat('0.000', DSThicknessB4Plating),'','', false, '', '', '');
+          StepParamERP('Thickness Before Plate', FormatFloat('0.000', DSThicknessB4Plating));
       end;
-                           
+
      // IES LOGIC = Level[VIA_TYPE$]="BLIND AND BURIED" OR LPTH? doens;t seem to make sense LPTH = Drilled = everything that gets plated???
 
      // Fix for Surface Plating not being set until Capped Via step:
       if ((Fnc.SysGetAttrValue('CappedVia') = true) and (Fnc.SysGetAttrValue('NCRunX2') = false)) then
-      begin     
+      begin
         if Fnc.SysGetAttrValue('Min_Surf_Plt') = 0 then
           Fnc.SysSetAttrValue('Min_Surf_Plt', 15.0);
       end;
@@ -2765,7 +2734,7 @@ begin
           CalcAndInsert_DECUTHK(false, 2, '')
         else
           CalcAndInsert_DECUTHK(true, 1, '');
-      end;         
+      end;
 
       if Fnc.SysGetAttrValue('BlindVias') = true then
       begin
@@ -2773,45 +2742,45 @@ begin
         begin
           if NCRun = 2 then
           begin
-            SysRouteInsAddlParameter('Erp','2nd Min Drill Size', Fnc.SysGetAttrValue('Min_Drill_Size_2'),'','', false, '', '', '');
-            SysRouteInsAddlParameter('Erp','Ave Min PTH', Fnc.SysGetAttrValue('Ave_Min_Th_2'),'','', false, '', '', '');  // 1513
-            SysRouteInsAddlParameter('Erp','Abs Min PTH', Fnc.SysGetAttrValue('Abs_Min_Th_2'),'','', false, '', '', '');  // 1513
+            StepParamERP('2nd Min Drill Size', Fnc.SysGetAttrValue('Min_Drill_Size_2'));
+            StepParamERP('Ave Min PTH', Fnc.SysGetAttrValue('Ave_Min_Th_2'));  // 1513
+            StepParamERP('Abs Min PTH', Fnc.SysGetAttrValue('Abs_Min_Th_2'));  // 1513
           end
           else
           begin
-            SysRouteInsAddlParameter('Erp','Min Drill Size', Fnc.SysGetAttrValue('Min_Drill_Size'),'','', false, '', '', '');
-            SysRouteInsAddlParameter('Erp','Ave Min PTH', Fnc.SysGetAttrValue('Ave_Min_Th'),'','', false, '', '', ''); // 1513
-            SysRouteInsAddlParameter('Erp','Abs Min PTH', Fnc.SysGetAttrValue('Abs_Min_Th'),'','', false, '', '', ''); // 1513
+            StepParamERP('Min Drill Size', Fnc.SysGetAttrValue('Min_Drill_Size'));
+            StepParamERP('Ave Min PTH', Fnc.SysGetAttrValue('Ave_Min_Th')); // 1513
+            StepParamERP('Abs Min PTH', Fnc.SysGetAttrValue('Abs_Min_Th')); // 1513
           end
-          
+
         end;
       end
       else
       begin
         if CustCode_Rule('Customer') <> 'FA' then
         begin
-          if NCRun = 2 then                             
+          if NCRun = 2 then
           begin
-            SysRouteInsAddlParameter('Erp','2nd Min Drill Size', Fnc.SysGetAttrValue('Min_Drill_Size_2'),'','', false, '', '', '');
+            StepParamERP('2nd Min Drill Size', Fnc.SysGetAttrValue('Min_Drill_Size_2'));
 
             if ((Fnc.SysGetAttrValue('Ave_Min_Th_2') > 0 ) or (Fnc.SysGetAttrValue('Abs_Min_Th_2') > 0 )) then
             begin
-              SysRouteInsAddlParameter('Erp','2nd Ave Min PTH', Fnc.SysGetAttrValue('Ave_Min_Th_2'),'','', false, '', '', '');
-              SysRouteInsAddlParameter('Erp','2nd Abs Min PTH', Fnc.SysGetAttrValue('Abs_Min_Th_2'),'','', false, '', '', '');
-              SysRouteInsAddlParameter('Erp','2nd Ave Max PTH', Fnc.SysGetAttrValue('Ave_Max_Th_2'),'','', false, '', '', '');
-              SysRouteInsAddlParameter('Erp','2nd Abs Max PTH', Fnc.SysGetAttrValue('Abs_Max_Th_2'),'','', false, '', '', '');
+              StepParamERP('2nd Ave Min PTH', Fnc.SysGetAttrValue('Ave_Min_Th_2'));
+              StepParamERP('2nd Abs Min PTH', Fnc.SysGetAttrValue('Abs_Min_Th_2'));
+              StepParamERP('2nd Ave Max PTH', Fnc.SysGetAttrValue('Ave_Max_Th_2'));
+              StepParamERP('2nd Abs Max PTH', Fnc.SysGetAttrValue('Abs_Max_Th_2'));
             end;
           end
           else
           begin
-            SysRouteInsAddlParameter('Erp','Min Drill Size', Fnc.SysGetAttrValue('Min_Drill_Size'),'','', false, '', '', '');
-            SysRouteInsAddlParameter('Erp','Ave Min PTH', Fnc.SysGetAttrValue('Ave_Min_Th'),'','', false, '', '', '');
-            SysRouteInsAddlParameter('Erp','Abs Min PTH', Fnc.SysGetAttrValue('Abs_Min_Th'),'','', false, '', '', '');
+            StepParamERP('Min Drill Size', Fnc.SysGetAttrValue('Min_Drill_Size'));
+            StepParamERP('Ave Min PTH', Fnc.SysGetAttrValue('Ave_Min_Th'));
+            StepParamERP('Abs Min PTH', Fnc.SysGetAttrValue('Abs_Min_Th'));
 
             if Fnc.SysGetAttrValue('Abs_Max_Th') > 0 then
             begin
-              SysRouteInsAddlParameter('Erp','Ave Max PTH', Fnc.SysGetAttrValue('Ave_Max_Th'),'','', false, '', '', '');
-              SysRouteInsAddlParameter('Erp','Abs Max PTH', Fnc.SysGetAttrValue('Abs_Max_Th'),'','', false, '', '', '');
+              StepParamERP('Ave Max PTH', Fnc.SysGetAttrValue('Ave_Max_Th'));
+              StepParamERP('Abs Max PTH', Fnc.SysGetAttrValue('Abs_Max_Th'));
             end;
           end;
         end;
@@ -2821,25 +2790,25 @@ begin
       if CustCode_Rule('Customer') <> 'FA' then
       begin
         if Fnc.SysGetAttrValue('Surf_Plt_Spec') > 0 then
-          SysRouteInsAddlParameter('Erp','Surface Plating Spec', Fnc.SysGetAttrValue('Surf_Plt_Spec'),'','', false, '', '', '');
+          StepParamERP('Surface Plating Spec', Fnc.SysGetAttrValue('Surf_Plt_Spec'));
 
         if NCRun = 2 then
         begin
-          SysRouteInsAddlParameter('Erp','2nd PTH Aspect Ratio', Fnc.SysGetAttrValue('Aspect_Ratio_Val_2'),'','', false, '', '', '');
-          SysRouteInsAddlParameter('Erp','2nd PTH Cu Plate Area', Fnc.SysGetAttrValue('PTH_CuPlt_Area_2'),'','', false, '', '', '');
-          SysRouteInsAddlParameter('Erp','2nd Cu Ratio', Fnc.SysGetAttrValue('Cu_Ratio_2'),'','', false, '', '', '');
+          StepParamERP('2nd PTH Aspect Ratio', Fnc.SysGetAttrValue('Aspect_Ratio_Val_2'));
+          StepParamERP('2nd PTH Cu Plate Area', Fnc.SysGetAttrValue('PTH_CuPlt_Area_2'));
+          StepParamERP('2nd Cu Ratio', Fnc.SysGetAttrValue('Cu_Ratio_2'));
         end
         else
         begin
-          SysRouteInsAddlParameter('Erp','PTH Aspect Ratio', Fnc.SysGetAttrValue('Aspect_Ratio_Val'),'','', false, '', '', '');
-          SysRouteInsAddlParameter('Erp','PTH Cu Plating Area', Fnc.SysGetAttrValue('PTH_CuPlt_Area'),'','', false, '', '', '');
-          SysRouteInsAddlParameter('Erp','Cu Ratio', Fnc.SysGetAttrValue('Cu_Ratio'),'','', false, '', '', '');
+          StepParamERP('PTH Aspect Ratio', Fnc.SysGetAttrValue('Aspect_Ratio_Val'));
+          StepParamERP('PTH Cu Plating Area', Fnc.SysGetAttrValue('PTH_CuPlt_Area'));
+          StepParamERP('Cu Ratio', Fnc.SysGetAttrValue('Cu_Ratio'));
         end;
       end;
 
       if ((CustCode_Rule('Customer') = 'GM') and (Fnc.SysGetAttrValue('Test_ID') <> 'None')) then
       begin
-        SysRouteInsAddlParameter('Erp','Test ID', Fnc.SysGetAttrValue('Test_ID'),'','', false, '', '', '');
+        StepParamERP('Test ID', Fnc.SysGetAttrValue('Test_ID'));
       end
       else
       begin
@@ -2850,37 +2819,37 @@ begin
       if CustCode_Rule('Customer') <> 'FA' then
       begin
         if Fnc.SysGetAttrValue('Min_Surf_Cu') > 0 then
-          SysRouteInsAddlParameter('Erp','Min Surface Cu', Fnc.SysGetAttrValue('Min_Surf_Cu'),'','', false, '', '', '');
+          StepParamERP('Min Surface Cu', Fnc.SysGetAttrValue('Min_Surf_Cu'));
 
         if Fnc.SysGetAttrValue('Max_Surf_Cu') > 0 then
-          SysRouteInsAddlParameter('Erp','Max Surface Cu', Fnc.SysGetAttrValue('Max_Surf_Cu'),'','', false, '', '', '');
+          StepParamERP('Max Surface Cu', Fnc.SysGetAttrValue('Max_Surf_Cu'));
 
-        // SysRouteInsAddlParameter('Erp','Max Surface Cu', Fnc.SysGetAttrValue('Max_Surf_Cu'),'','', false, '', '', '');  1514
+        // StepParamERP('Max Surface Cu', Fnc.SysGetAttrValue('Max_Surf_Cu'));  1514
 
-        SysRouteInsAddlParameter('Erp','Application', Fnc.SysGetAttrValue('Application'),'','', false, '', '', '');
+        StepParamERP('Application', Fnc.SysGetAttrValue('Application'));
 
         if ((Fnc.SysGetAttrValue('Application') = 'AUTOMOTIVE') or (Fnc.SysGetAttrValue('Application') = 'AUTOMOTIVE NO INKJET')) then
         begin
           if Fnc.SysGetAttrValue('ApplicationSP') <> 'NONE' then
-            SysRouteInsAddlParameter('Erp','Specific Application', Fnc.SysGetAttrValue('ApplicationSP'),'','', false, '', '', '');
+            StepParamERP('Specific Application', Fnc.SysGetAttrValue('ApplicationSP'));
         end;
-      end;                                           
+      end;
 
     end; // End of Insert Attributes etc for standard (single step) plating
 
-    SysRouteInsInstruction('Erp', 'COPPL001', ''); // MEASUREMT CU THK : i) ______ii) ______,
+    StepInstructionERP('COPPL001'); // MEASUREMT CU THK : i) ______ii) ______,
 
     if CustCode_Rule('Customer') = 'FA' then
-      SysRouteInsInstruction('Erp', 'COPPL038', ''); //  REMARK : Sampling copper thickness measurement
+      StepInstructionERP('COPPL038'); //  REMARK : Sampling copper thickness measurement
 
     if Fnc.SysGetAttrValue('NCRunX2') = true then
     begin
       if NCRun = 1 then
-        SysRouteInsInstruction('Erp', '2NC_CUPLT1', ''); // REMARK: FIRST CU PLATING.
+        StepInstructionERP('2NC_CUPLT1'); // REMARK: FIRST CU PLATING.
 
       if NCRun = 2 then
       begin
-        SysRouteInsInstruction('Erp', '2NC_CUPLT2', ''); // REMARK: SECOND CU PLATING.      
+        StepInstructionERP('2NC_CUPLT2'); // REMARK: SECOND CU PLATING.
 
         if ( Fnc.SysGetAttrValue('Board_Finish') = 'ENIG' ) or ( ENIGplusOSP ) then // 1256
         begin
@@ -2890,13 +2859,13 @@ begin
               ((CustCode_Rule('Customer') = 'BF') or (CustCode_Rule('Customer') = 'BC'))
              )
           then
-            SysRouteInsInstruction('Erp', 'DRILL011', ''); // REMARK: OSP + 2X DRILLING.
+            StepInstructionERP('DRILL011'); // REMARK: OSP + 2X DRILLING.
 
         {  Removed per email from alison 10/23
           NCX2_OSP := false;
           ...
         }
-                                               
+
         end;
 
       end;
@@ -2913,57 +2882,58 @@ begin
         InsertPressFitRemarks;
     end;
   end;
-  AddBoardFinishAsAttribute; // 1223 Additional Surface Finish info under Electrolytic Cu step 
-  
-  SysRouteInsAddlParameter('Erp', 'Panel Size', Fnc.SysGetAttrValue('Panel_Size'), '', '', false, '', '', '');  // 2201 Electrolytic Cu Info
-  
-  if Plating_Line = 'FILL_VIA' then  // 2202 Fill Via plating Spec
-    SysRouteInsAddlParameter('Erp', 'Dimple Spec', Fnc.SysGetAttrValue('Fill_Via_DimpleSpec'), '', '', false, '', '', '');
+
+  AddBoardFinishAsAttribute; // 1223 Additional Surface Finish info under Electrolytic Cu step
+
+  StepParamERP('Panel Size', Fnc.SysGetAttrValue('Panel_Size'));  // 2201 Electrolytic Cu Info
+
+  //if Plating_Line = 'FILL_VIA' then  // 2202 Fill Via plating Spec   Duplicate - added earlier.
+  //  StepParamERP('Dimple Spec', Fnc.SysGetAttrValue('Fill_Via_DimpleSpec'));
 End;
 
 Procedure Electrolytic_Cu_1_SD;
-begin
+begin       
   Electrolytic_Cu_SD(false);
 end;
 
 Procedure Electrolytic_Cu_2_SD;
 begin
   Electrolytic_Cu_SD(true);
-end;
+end;                         
 
 Procedure Electrolytic_CappedVia_SD;
 begin
-  SysRouteInsDepartment('Erp', 'COPPL-E01', '');
-  SysRouteInsWorkCenter('Erp', 'COPPL-E01', '');
+  StepDeptERP('COPPL-E01');
+  StepWCERP('COPPL-E01');
 
   if Fnc.SysGetAttrValue('Min_Surf_Plt') = 0 then
     Fnc.SysSetAttrValue('Min_Surf_Plt', 15.0);
-                  
-  SysRouteInsAddlParameter('Erp','Min Surface Plate', Fnc.SysGetAttrValue('Min_Surf_Plt'), '', '', false, '', '', '');
-  SysRouteInsAddlParameter('Erp', 'Process', 'Flash Plating', '', '', false, '', '', '');  
+
+  StepParamERP('Min Surface Plate', Fnc.SysGetAttrValue('Min_Surf_Plt'));
+  StepParamERP('Process', 'Flash Plating');
 
   CalcAndInsert_DECUTHK(false, 2, 'CappedVia');
-  AddBoardFinishAsAttribute; // 1223 Additional Surface Finish info under Electrolytic Cu step 
+  AddBoardFinishAsAttribute; // 1223 Additional Surface Finish info under Electrolytic Cu step
 end;
 
 procedure KK_Drill_SD;
 begin
-  SysRouteInsDepartment('Erp', 'KKDRI-B', '');
-  SysRouteInsWorkCenter('Erp', 'KKDRI-B', '');
-                 
-  Fnc.SysSetAttrValue('KK_Distance', Fnc.SysGetAttrValue('Panel_Length') - 8);
-  SysRouteInsAddlParameter('Erp', 'KK Distance', Fnc.SysGetAttrValue('KK_Distance'), '', '', false, '', '', '');
-         
-  //if Fnc.SysRouteInsGetStepNum = 1 then  // 1471 QR Code information info update    
-  //  InsertQRInfoAtStep1; 
-                  
-end;         
+  StepDeptERP('KKDRI-B');
+  StepWCERP('KKDRI-B');
 
-procedure MechBlindVia_Common;    
+  Fnc.SysSetAttrValue('KK_Distance', Fnc.SysGetAttrValue('Panel_Length') - 8);
+  StepParamERP('KK Distance', Fnc.SysGetAttrValue('KK_Distance'));
+
+  //if Fnc.SysRouteInsGetStepNum = 1 then  // 1471 QR Code information info update
+  //  InsertQRInfoAtStep1;
+
+end;
+
+procedure MechBlindVia_Common;
 begin
-  SysRouteInsDepartment('Erp', 'BACKD-A', '');
-  SysRouteInsWorkCenter('Erp', 'BACKD-A', '');
-  SysRouteInsAddlParameter('Erp', 'Entry Sheet', GetDrillEntrySheet,'','', false, '','', ''); // 912 Mech Blind Via Entry Material 
+  StepDeptERP('BACKD-A');
+  StepWCERP('BACKD-A');
+  StepParamERP('Entry Sheet', GetDrillEntrySheet); // 912 Mech Blind Via Entry Material
 end;
 
 procedure MechBlindVia1_SD;
@@ -2971,9 +2941,9 @@ begin
   MechBlindVia_Common;
 
   case MechBlindViaSide of
-    'Bot'   : SysRouteInsAddlParameter('Erp', 'Side A', Fnc.SysGetAttrValue('BotLayer'),'','', false, '','', '');  // 837 Show Same format as Backdrill
-    'Top'   : SysRouteInsAddlParameter('Erp', 'Side B', Fnc.SysGetAttrValue('TopLayer'),'','', false, '','', '');
-    'Both'  : SysRouteInsAddlParameter('Erp', 'Side A', Fnc.SysGetAttrValue('BotLayer'),'','', false, '','', '');
+    'Bot'   : StepParamERP('Side A', Fnc.SysGetAttrValue('BotLayer'));  // 837 Show Same format as Backdrill
+    'Top'   : StepParamERP('Side B', Fnc.SysGetAttrValue('TopLayer'));
+    'Both'  : StepParamERP('Side A', Fnc.SysGetAttrValue('BotLayer'));
   end;
 
   case MechBlindViaSide of
@@ -2982,86 +2952,86 @@ begin
     'Both'  : InsertMechBlindViaInfo('A');
   end;
 end;
-
+       
 procedure MechBlindVia2_SD;
 begin
   MechBlindVia_Common;
-  SysRouteInsAddlParameter('Erp', 'Side B', Fnc.SysGetAttrValue('TopLayer'),'','', false, '','', '');  // 837 Mechanical Drill should show A & B Format same as backdrill
+  StepParamERP('Side B', Fnc.SysGetAttrValue('TopLayer'));  // 837 Mechanical Drill should show A & B Format same as backdrill
   InsertMechBlindViaInfo('B');
 end;
 
 procedure Beveling_SD;
 begin
-  SysRouteInsDepartment('Erp', 'FINBE-A0', '');
-  SysRouteInsWorkCenter('Erp', 'FINBE-A0', '');
+  StepDeptERP('FINBE-A0');
+  StepWCERP('FINBE-A0');
 end;
 
 procedure ManualBeveling_SD;
 begin
-  SysRouteInsDepartment('Erp', 'FINBE-B0', '');
-  SysRouteInsWorkCenter('Erp', 'FINBE-B0', '');
+  StepDeptERP('FINBE-B0');
+  StepWCERP('FINBE-B0');
 end;
 
 procedure CoreBuild_CT_Buffing1_SD;   // Core Build Cu Thinning
 begin
-  SysRouteInsDepartment('Erp', 'EPBUF-A', '');
-  SysRouteInsWorkCenter('Erp', 'EPBUF-A', '');
-  SysRouteInsAddlParameter('Erp', '1st Buffing Spec', formatCuThinValue('CoreBuild_CuThin_1stBuff','CoreBuild'), '', '', false, '', '', ''); // 799 Surface Cu Thickness value format in runcard
-  //SysRouteInsInstruction('Erp', 'EPXPL002', ''); //REMARKS : CLEAR BUFFING.  (From OL Main Flow) Removed Per request from Herole 9/5
+  StepDeptERP('EPBUF-A');
+  StepWCERP('EPBUF-A');
+  StepParamERP('1st Buffing Spec', formatCuThinValue('CoreBuild_CuThin_1stBuff','CoreBuild')); // 799 Surface Cu Thickness value format in runcard
+  //StepInstructionERP('EPXPL002'); //REMARKS : CLEAR BUFFING.  (From OL Main Flow) Removed Per request from Herole 9/5
 
   {if CoreBuild then // 838 Core Build Buffing Remarks
-    SysRouteInsInstruction('Erp', 'EPXPL014', ''); //Non-Woven Buffing Only
+    StepInstructionERP('EPXPL014'); //Non-Woven Buffing Only
   else if SubAssemblyCoreBuild then
-    SysRouteInsInstruction('Erp', 'EPXPL015', ''); //Ceramic Buffing }  
-    
+    StepInstructionERP('EPXPL015'); //Ceramic Buffing }
+
   if Fnc.SysGetAttrValue('CoreBuild_CuThin_Process') = 'Vertical Buffing' then
-    SysRouteInsInstruction('Erp', 'EPBUF028', ''); // Use Vertical Buffing Machine Only  // 1473
+    StepInstructionERP('EPBUF028'); // Use Vertical Buffing Machine Only  // 1473
   else if Fnc.SysGetAttrValue('CoreBuild_CuThin_Process') <> 'Micro-Etch + Buffing' then
   begin
     if CoreBuild then // 838 Core Build Buffing Remarks
-      SysRouteInsInstruction('Erp', 'EPXPL014', ''); //Non-Woven Buffing Only
+      StepInstructionERP('EPXPL014'); //Non-Woven Buffing Only
     else if SubAssemblyCoreBuild then
-      SysRouteInsInstruction('Erp', 'EPXPL015', ''); //Ceramic Buffing 
+      StepInstructionERP('EPXPL015'); //Ceramic Buffing
   end;
 end;
 
 procedure CoreBuild_MicroEtch_SD; // Core Build Cu Thinning
 begin
-  SysRouteInsDepartment('Erp', 'METCH-A', '');
-  SysRouteInsWorkCenter('Erp', 'METCH-A', '');
-  SysRouteInsAddlParameter('Erp', 'Note', 'Metch for Cu Thin', '', '', false, '', '', '');
-  SysRouteInsAddlParameter('Erp', 'Micro-Etch Spec', formatCuThinValue('CoreBuild_CuThin_MEtch', 'CoreBuild'), '', '', false, '', '', ''); // Buff-Etch-Buff  // 799 Surface Cu Thickness value format in runcard
+  StepDeptERP('METCH-A');
+  StepWCERP('METCH-A');
+  StepParamERP('Note', 'Metch for Cu Thin');
+  StepParamERP('Micro-Etch Spec', formatCuThinValue('CoreBuild_CuThin_MEtch', 'CoreBuild')); // Buff-Etch-Buff  // 799 Surface Cu Thickness value format in runcard
 end;
 
 procedure CoreBuild_CT_Buffing2_SD;  // Core Build Cu Thinning
 begin
-  SysRouteInsDepartment('Erp', 'EPBUF-A', '');
-  SysRouteInsWorkCenter('Erp', 'EPBUF-A', '');
-  SysRouteInsAddlParameter('Erp', '2nd Buffing Spec', formatCuThinValue('CoreBuild_CuThin_2ndBuff','CoreBuild'), '', '', false, '', '', ''); // 799 Surface Cu Thickness value format in runcard
-  //SysRouteInsInstruction('Erp', 'EPXPL002', ''); //REMARKS : CLEAR BUFFING.  (From OL Main Flow) Removed Per request from Herole 9/5
+  StepDeptERP('EPBUF-A');
+  StepWCERP('EPBUF-A');
+  StepParamERP('2nd Buffing Spec', formatCuThinValue('CoreBuild_CuThin_2ndBuff','CoreBuild')); // 799 Surface Cu Thickness value format in runcard
+  //StepInstructionERP('EPXPL002'); //REMARKS : CLEAR BUFFING.  (From OL Main Flow) Removed Per request from Herole 9/5
 
   if CoreBuild then // 838 Core Build Buffing Remarks
-    SysRouteInsInstruction('Erp', 'EPXPL014', ''); //Non-Woven Buffing Only
+    StepInstructionERP('EPXPL014'); //Non-Woven Buffing Only
   else if SubAssemblyCoreBuild then
-    SysRouteInsInstruction('Erp', 'EPXPL015', ''); //Ceramic Buffing
+    StepInstructionERP('EPXPL015'); //Ceramic Buffing
 end;
 
 procedure Baking_After_HP_SD;
 begin
-  SysRouteInsDepartment('Erp', 'DMBAK-A', '');
-  SysRouteInsWorkCenter('Erp', 'DMBAK-A', '');
+  StepDeptERP('DMBAK-A');
+  StepWCERP('DMBAK-A');
 end;
 
 // 910 Addition of Ultrasonic and after VELCP Hole check
 procedure UltraSonicStep_SD;
 begin
-  SysRouteInsDepartment('Erp', 'CURIN-U', '');
-  SysRouteInsWorkCenter('Erp', 'CURIN-U', '');
+  StepDeptERP('CURIN-U');
+  StepWCERP('CURIN-U');
 end;
 
 // 910 Addition of Ultrasonic and after VELCP Hole check
 procedure Hole_Check_AfterEless_SD;
 begin
-  SysRouteInsDepartment('Erp', 'HOLCP-A', '');
-  SysRouteInsWorkCenter('Erp', 'HOLCP-A0', '');
+  StepDeptERP('HOLCP-A');
+  StepWCERP('HOLCP-A0');
 end;

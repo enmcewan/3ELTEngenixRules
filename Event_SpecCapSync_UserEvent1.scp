@@ -1,0 +1,11 @@
+//HeaderImportExport-->
+//SiteId=0
+//Enterprise=True
+//ScriptType=1
+//ScriptGroup=ScapCapSync
+//HeaderImportExport<--
+procedure SpecCapUserEvent1(ParamList: TStringList);
+begin   
+  // custom scripting
+end;
+

@@ -4,7 +4,9 @@
 //ScriptType=1
 //ScriptGroup=Job List Screen
 //HeaderImportExport<--
+uses
+  CNCDrillToolReport5;
 procedure MainFormUserEvent3(ParamList: TStringList);
 begin
-  //
+  GenCNCDrillToolReport; 
 end;

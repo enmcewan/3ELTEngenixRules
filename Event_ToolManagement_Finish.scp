@@ -6,5 +6,5 @@
 //HeaderImportExport<--
 procedure ToolManagement_Finish(ToolTable: TSysTable);
 begin
-  ShowMessage('Tool Finish event');
+  // Custom Script
 end;

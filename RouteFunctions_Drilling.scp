@@ -4,7 +4,7 @@
 //ScriptType=0
 //ScriptGroup=HCS
 //HeaderImportExport<--
-uses                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     
+uses                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      
   Event_RouteGenLibrary,
   Eng_RouteFunctions,
   Eng_DrillFunctions,
@@ -267,10 +267,10 @@ begin
       begin
 
         if DrillStartLayer = LayerTop then
-          SysRouteInsAddlParameter('Erp', 'Stop Thickness B', stopParam, '', '', false, '', '', '');
+          StepParamERP('Stop Thickness B', stopParam);
 
         if DrillStartLayer = LayerBot then
-          SysRouteInsAddlParameter('Erp', 'Stop Thickness A', stopParam, '', '', false, '', '', '');
+          StepParamERP('Stop Thickness A', stopParam);
       end;
     end
     else if BlindViaType = 'Skip_Via' then
@@ -282,9 +282,9 @@ begin
         if layerCount = 2 then  // Skip Layer
         begin
           if DrillStartLayer = LayerTop then
-            SysRouteInsAddlParameter('Erp', 'SKIP_THK_B', skipParam, '')
+            StepParamERP('SKIP_THK_B', skipParam, '')
           else if DrillStartLayer = LayerBot then
-            SysRouteInsAddlParameter('Erp', 'SKIP_THK_A', skipParam, '');
+            StepParamERP('SKIP_THK_A', skipParam, '');
         end;
       }
       if skipPadThk_u > 0 then // User overrride
@@ -295,10 +295,10 @@ begin
       if aTable.FieldByName('LandingLayer').AsBoolean = true then
       begin
         if DrillStartLayer = LayerTop then
-          SysRouteInsAddlParameter('Erp', 'Skip Thickness B', stopParam, '', '', false, '', '', '');
+          StepParamERP('Skip Thickness B', stopParam);
 
         if DrillStartLayer = LayerBot then
-          SysRouteInsAddlParameter('Erp', 'Skip Thickness A', stopParam, '', '', false, '', '', '');
+          StepParamERP('Skip Thickness A', stopParam);
       end;
       //end;
     end;
@@ -336,7 +336,7 @@ begin
   LayerBot := Fnc.SysGetAttrValue('BotLayer');
 
   for i := 0 to DrillList.Count -1 do
-  begin                          
+  begin                     
     DrillValues := TStringList.Create;
     DrillValues.Text := DrillList.Strings[i];
     //ShowMessage(DrillValues.Text);
@@ -361,11 +361,11 @@ begin
 
         //SysRouteInsInstruction('', depthInstr, ''); 1307
         //SysRouteInsinstruction('', GetDrilledMaterialandLayerInfo(DrillName, DrillStartLayer, DrillEndLayer, LayerTop, LayerBot), '');
-        SysRouteInsAddlParameter('Erp', 'Laser Depth', depthInstr, '', '', false, '', '', '');
-        SysRouteInsAddlParameter('Erp', 'Laser Material', GetDrilledMaterialandLayerInfo(DrillName, DrillStartLayer, DrillEndLayer, LayerTop, LayerBot), '', '', false, '', '', '');
+        StepParamERP('Laser Depth', depthInstr);
+        StepParamERP('Laser Material', GetDrilledMaterialandLayerInfo(DrillName, DrillStartLayer, DrillEndLayer, LayerTop, LayerBot));
       
         if Fnc.SysGetAttrValue('Direct_Laser') then
-          SysRouteInsAddlParameter('Erp', 'Laser Size',  SmallestDrillOneFile(DrillName, 'ALL'), '', '', false, '', '', '');
+          StepParamERP('Laser Size',  SmallestDrillOneFile(DrillName, 'ALL'));
       end;
                                   
       if (( Side = 'B' ) and ( DrillStartLayer = LayerTop )) then
@@ -380,11 +380,11 @@ begin
 
         //SysRouteInsInstruction('', depthInstr, '');
         //SysRouteInsinstruction('', GetDrilledMaterialandLayerInfo(DrillName, DrillStartLayer, DrillEndLayer, LayerTop, LayerBot), '');
-        SysRouteInsAddlParameter('Erp', 'Laser Depth', depthInstr, '', '', false, '', '', '');
-        SysRouteInsAddlParameter('Erp', 'Laser Material', GetDrilledMaterialandLayerInfo(DrillName, DrillStartLayer, DrillEndLayer, LayerTop, LayerBot), '', '', false, '', '', '');
+        StepParamERP('Laser Depth', depthInstr);
+        StepParamERP('Laser Material', GetDrilledMaterialandLayerInfo(DrillName, DrillStartLayer, DrillEndLayer, LayerTop, LayerBot));
         
         if Fnc.SysGetAttrValue('Direct_Laser') then
-          SysRouteInsAddlParameter('Erp', 'Laser Size',  SmallestDrillOneFile(DrillName, 'ALL'), '', '', false, '', '', '');
+          StepParamERP('Laser Size',  SmallestDrillOneFile(DrillName, 'ALL'));
       end;                                             
     end;                      
   end;
@@ -445,7 +445,7 @@ begin
                     DrillStartLayer + ' - ' + DrillEndLayer + ' = ' + DrillDepthStr;
 
         //SysRouteInsInstruction('', depthInstr, '');
-        SysRouteInsAddlParameter('Erp', 'Via Depth', depthInstr, '', '', false, '', '', '');
+        StepParamERP('Via Depth', depthInstr);
         //SysRouteInsinstruction('', GetDrilledMaterialandLayerInfo(DrillName, DrillStartLayer, DrillEndLayer, LayerTop, LayerBot), '');
       end;                   
 
@@ -460,7 +460,7 @@ begin
                     DrillStartLayer + ' - ' + DrillEndLayer + ' = ' + DrillDepthStr;
 
         //SysRouteInsInstruction('', depthInstr, '');
-        SysRouteInsAddlParameter('Erp', 'Via Depth', depthInstr, '', '', false, '', '', '');
+        StepParamERP('Via Depth', depthInstr);
        // SysRouteInsinstruction('', GetDrilledMaterialandLayerInfo(DrillName, DrillStartLayer, DrillEndLayer, LayerTop, LayerBot), '');
       end;
     end;
@@ -602,20 +602,20 @@ begin
           if aspect_Ratio > aspect_Skip then
             aspect_Skip := aspect_Ratio;
         end;
-      end;
+      end;                         
     end;
                                      
     if aspect_Blind > 0 then
-      SysRouteInsAddlParameter('Erp','Aspect Ratio Blind', FormatFloat('0.000', aspect_Blind),'','', false, '', '', '');
+      StepParamERP('Aspect Ratio Blind', FormatFloat('0.000', aspect_Blind));
 
     if aspect_Skip > 0 then
-      SysRouteInsAddlParameter('Erp','Aspect Ratio Skip', FormatFloat('0.000',aspect_Skip),'','', false, '', '', '');
+      StepParamERP('Aspect Ratio Skip', FormatFloat('0.000',aspect_Skip));
 
     if depth_Blind > 0 then
-      SysRouteInsAddlParameter('Erp','Depth Blind', FormatFloat('0.000', depth_Blind),'','', false, '', '', '');
+      StepParamERP('Depth Blind', FormatFloat('0.000', depth_Blind));
 
     if depth_Skip > 0 then
-      SysRouteInsAddlParameter('Erp','Depth Skip', FormatFloat('0.000',depth_Skip),'','', false, '', '', '');
+      StepParamERP('Depth Skip', FormatFloat('0.000',depth_Skip));
   end;
 
   //showmessage(FloatToStr(result));
