@@ -4,7 +4,7 @@
 //ScriptType=0
 //ScriptGroup=HCS
 //HeaderImportExport<--
-uses                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      
+uses                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     
   Event_RouteGenLibrary,
   Eng_RouteFunctions,
   Eng_DrillFunctions,
@@ -86,7 +86,7 @@ begin
   begin          
     drillType := Fnc.SysGetItemAttrValue('DrillDefID', true, CStackupDrill, i);
                                  
-    if (( drillType = 2 ) or ( drillType = 8 )) and ( Fnc.SysGetAttrValue('LayerCount') > 2 ) then
+    if (( drillType = 2 ) or ( drillType = 8 )) and ( MfgAttr('LayerCount') > 2 ) then
     begin
       DrillName := Fnc.SysGetItemAttrValue('ItemLayerName', true, cStackupDrill, i);
       DrillStartLayer := Fnc.SysGetItemAttrValue('START_NAME', true, cStackupDrill, i);
@@ -96,8 +96,8 @@ begin
       LayerTop := Trim(LayerTop);
       LayerBot := Trim(LayerBot);
 
-      LayerTop := Fnc.SysGetAttrValue('TopLayer');
-      LayerBot := Fnc.SysGetAttrValue('BotLayer');
+      LayerTop := MfgAttr('TopLayer');
+      LayerBot := MfgAttr('BotLayer');
                            
       if DrillStartLayer = LayerTop then
       begin
@@ -214,14 +214,14 @@ begin
   begin
     Fnc.SysSetAttrValue('Surface_BVH', true);
                            
-    if (( Fnc.SysGetAttrValue('MfgPartType') = 'Sub' ) and ( SubLayersAreOnTopMfgPart )) then
+    if (( MfgAttr('MfgPartType') = 'Sub' ) and ( SubLayersAreOnTopMfgPart )) then
       Fnc.SysSetAttrValueTopLevel('Surface_BVH', true);
   end                    
   else if BlindViaType = 'Skip_Via' then
   begin
     Fnc.SysSetAttrValue('Skip_BVH', true);
     
-    if (( Fnc.SysGetAttrValue('MfgPartType') = 'Sub' ) and ( SubLayersAreOnTopMfgPart )) then
+    if (( MfgAttr('MfgPartType') = 'Sub' ) and ( SubLayersAreOnTopMfgPart )) then
       Fnc.SysSetAttrValueTopLevel('Skip_BVH', true); 
   end;   
                                     
@@ -267,10 +267,10 @@ begin
       begin
 
         if DrillStartLayer = LayerTop then
-          StepParamERP('Stop Thickness B', stopParam);
+          SysRouteInsAddlParameter('Erp', 'Stop Thickness B', stopParam, '', '', false, '', '', '');
 
         if DrillStartLayer = LayerBot then
-          StepParamERP('Stop Thickness A', stopParam);
+          SysRouteInsAddlParameter('Erp', 'Stop Thickness A', stopParam, '', '', false, '', '', '');
       end;
     end
     else if BlindViaType = 'Skip_Via' then
@@ -282,9 +282,9 @@ begin
         if layerCount = 2 then  // Skip Layer
         begin
           if DrillStartLayer = LayerTop then
-            StepParamERP('SKIP_THK_B', skipParam, '')
+            SysRouteInsAddlParameter('Erp', 'SKIP_THK_B', skipParam, '')
           else if DrillStartLayer = LayerBot then
-            StepParamERP('SKIP_THK_A', skipParam, '');
+            SysRouteInsAddlParameter('Erp', 'SKIP_THK_A', skipParam, '');
         end;
       }
       if skipPadThk_u > 0 then // User overrride
@@ -295,10 +295,10 @@ begin
       if aTable.FieldByName('LandingLayer').AsBoolean = true then
       begin
         if DrillStartLayer = LayerTop then
-          StepParamERP('Skip Thickness B', stopParam);
+          SysRouteInsAddlParameter('Erp', 'Skip Thickness B', stopParam, '', '', false, '', '', '');
 
         if DrillStartLayer = LayerBot then
-          StepParamERP('Skip Thickness A', stopParam);
+          SysRouteInsAddlParameter('Erp', 'Skip Thickness A', stopParam, '', '', false, '', '', '');
       end;
       //end;
     end;
@@ -332,8 +332,8 @@ begin
   DrillList := Fnc.SysGetItemAttrValueList('ItemLayerName;ForceBlindVia;START_NAME;END_NAME;DrillDepth;DrillDefID', cStackupDrill, 0);            
  
  // Fnc.SysStackupItemTypeCount(cStackupLayer, true, LayerCount, LayerTop, LayerBot);
-  LayerTop := Fnc.SysGetAttrValue('TopLayer');
-  LayerBot := Fnc.SysGetAttrValue('BotLayer');
+  LayerTop := MfgAttr('TopLayer');
+  LayerBot := MfgAttr('BotLayer');
 
   for i := 0 to DrillList.Count -1 do
   begin                     
@@ -361,11 +361,11 @@ begin
 
         //SysRouteInsInstruction('', depthInstr, ''); 1307
         //SysRouteInsinstruction('', GetDrilledMaterialandLayerInfo(DrillName, DrillStartLayer, DrillEndLayer, LayerTop, LayerBot), '');
-        StepParamERP('Laser Depth', depthInstr);
-        StepParamERP('Laser Material', GetDrilledMaterialandLayerInfo(DrillName, DrillStartLayer, DrillEndLayer, LayerTop, LayerBot));
+        SysRouteInsAddlParameter('Erp', 'Laser Depth', depthInstr, '', '', false, '', '', '');
+        SysRouteInsAddlParameter('Erp', 'Laser Material', GetDrilledMaterialandLayerInfo(DrillName, DrillStartLayer, DrillEndLayer, LayerTop, LayerBot), '', '', false, '', '', '');
       
-        if Fnc.SysGetAttrValue('Direct_Laser') then
-          StepParamERP('Laser Size',  SmallestDrillOneFile(DrillName, 'ALL'));
+        if MfgAttr('Direct_Laser') then
+          SysRouteInsAddlParameter('Erp', 'Laser Size',  SmallestDrillOneFile(DrillName, 'ALL'), '', '', false, '', '', '');
       end;
                                   
       if (( Side = 'B' ) and ( DrillStartLayer = LayerTop )) then
@@ -380,11 +380,11 @@ begin
 
         //SysRouteInsInstruction('', depthInstr, '');
         //SysRouteInsinstruction('', GetDrilledMaterialandLayerInfo(DrillName, DrillStartLayer, DrillEndLayer, LayerTop, LayerBot), '');
-        StepParamERP('Laser Depth', depthInstr);
-        StepParamERP('Laser Material', GetDrilledMaterialandLayerInfo(DrillName, DrillStartLayer, DrillEndLayer, LayerTop, LayerBot));
+        SysRouteInsAddlParameter('Erp', 'Laser Depth', depthInstr, '', '', false, '', '', '');
+        SysRouteInsAddlParameter('Erp', 'Laser Material', GetDrilledMaterialandLayerInfo(DrillName, DrillStartLayer, DrillEndLayer, LayerTop, LayerBot), '', '', false, '', '', '');
         
-        if Fnc.SysGetAttrValue('Direct_Laser') then
-          StepParamERP('Laser Size',  SmallestDrillOneFile(DrillName, 'ALL'));
+        if MfgAttr('Direct_Laser') then
+          SysRouteInsAddlParameter('Erp', 'Laser Size',  SmallestDrillOneFile(DrillName, 'ALL'), '', '', false, '', '', '');
       end;                                             
     end;                      
   end;
@@ -418,8 +418,8 @@ begin
   DrillList := Fnc.SysGetItemAttrValueList('ItemLayerName;ForceBlindVia;START_NAME;END_NAME;DrillDepth;DrillDefID', cStackupDrill, 0);
 
  // Fnc.SysStackupItemTypeCount(cStackupLayer, true, LayerCount, LayerTop, LayerBot);
-  LayerTop := Fnc.SysGetAttrValue('TopLayer');
-  LayerBot := Fnc.SysGetAttrValue('BotLayer');
+  LayerTop := MfgAttr('TopLayer');
+  LayerBot := MfgAttr('BotLayer');
 
   for i := 0 to DrillList.Count -1 do
   begin
@@ -445,7 +445,7 @@ begin
                     DrillStartLayer + ' - ' + DrillEndLayer + ' = ' + DrillDepthStr;
 
         //SysRouteInsInstruction('', depthInstr, '');
-        StepParamERP('Via Depth', depthInstr);
+        SysRouteInsAddlParameter('Erp', 'Via Depth', depthInstr, '', '', false, '', '', '');
         //SysRouteInsinstruction('', GetDrilledMaterialandLayerInfo(DrillName, DrillStartLayer, DrillEndLayer, LayerTop, LayerBot), '');
       end;                   
 
@@ -460,7 +460,7 @@ begin
                     DrillStartLayer + ' - ' + DrillEndLayer + ' = ' + DrillDepthStr;
 
         //SysRouteInsInstruction('', depthInstr, '');
-        StepParamERP('Via Depth', depthInstr);
+        SysRouteInsAddlParameter('Erp', 'Via Depth', depthInstr, '', '', false, '', '', '');
        // SysRouteInsinstruction('', GetDrilledMaterialandLayerInfo(DrillName, DrillStartLayer, DrillEndLayer, LayerTop, LayerBot), '');
       end;
     end;
@@ -602,20 +602,20 @@ begin
           if aspect_Ratio > aspect_Skip then
             aspect_Skip := aspect_Ratio;
         end;
-      end;                         
+      end;
     end;
                                      
     if aspect_Blind > 0 then
-      StepParamERP('Aspect Ratio Blind', FormatFloat('0.000', aspect_Blind));
+      SysRouteInsAddlParameter('Erp','Aspect Ratio Blind', FormatFloat('0.000', aspect_Blind),'','', false, '', '', '');
 
     if aspect_Skip > 0 then
-      StepParamERP('Aspect Ratio Skip', FormatFloat('0.000',aspect_Skip));
+      SysRouteInsAddlParameter('Erp','Aspect Ratio Skip', FormatFloat('0.000',aspect_Skip),'','', false, '', '', '');
 
     if depth_Blind > 0 then
-      StepParamERP('Depth Blind', FormatFloat('0.000', depth_Blind));
+      SysRouteInsAddlParameter('Erp','Depth Blind', FormatFloat('0.000', depth_Blind),'','', false, '', '', '');
 
     if depth_Skip > 0 then
-      StepParamERP('Depth Skip', FormatFloat('0.000',depth_Skip));
+      SysRouteInsAddlParameter('Erp','Depth Skip', FormatFloat('0.000',depth_Skip),'','', false, '', '', '');
   end;
 
   //showmessage(FloatToStr(result));
@@ -664,8 +664,8 @@ begin
   DrillList := TStringList.Create;
   DrillList := Fnc.SysGetItemAttrValueList('ItemLayerName;ForceBlindVia;START_NAME;END_NAME;DrillDepth;DrillDefID', cStackupDrill, 0);
 
-  LayerTop := Fnc.SysGetAttrValue('TopLayer');
-  LayerBot := Fnc.SysGetAttrValue('BotLayer');
+  LayerTop := MfgAttr('TopLayer');
+  LayerBot := MfgAttr('BotLayer');
 
   for i := 0 to DrillList.Count -1 do
   begin               
@@ -906,8 +906,8 @@ begin
   DrillList := Fnc.SysGetItemAttrValueList('ItemLayerName;ForceBlindVia;START_NAME;END_NAME;DrillDepth;DrillDefID', cStackupDrill, 0);
                
  // Fnc.SysStackupItemTypeCount(cStackupLayer, true, LayerCount, LayerTop, LayerBot);
-  LayerTop := Fnc.SysGetAttrValue('TopLayer');
-  LayerBot := Fnc.SysGetAttrValue('BotLayer');
+  LayerTop := MfgAttr('TopLayer');
+  LayerBot := MfgAttr('BotLayer');
                      
   for i := 0 to DrillList.Count -1 do
   begin        
@@ -939,15 +939,15 @@ begin
   
   if NCRun = 1 then
     begin          
-    laserHits := Fnc.SysGetAttrValue('LaserBTopHits') +
-                   Fnc.SysGetAttrValue('LaserABotHits') +
-                   Fnc.SysGetAttrValue('UVLaserB_Top') +
-                   Fnc.SysGetAttrValue('UVLaserA_Bot');
+    laserHits := MfgAttr('LaserBTopHits') +
+                   MfgAttr('LaserABotHits') +
+                   MfgAttr('UVLaserB_Top') +
+                   MfgAttr('UVLaserA_Bot');
   
     if (
         ( laserHits > 30000 ) or  
         ( MechBlindViaSide <> 'None' ) or
-        //( Fnc.SysGetAttrValue('Skip_BVH') = true )
+        //( MfgAttr('Skip_BVH') = true )
         MfgPartHasSkipBlindVias
        )
     then 

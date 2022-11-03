@@ -11,14 +11,14 @@ uses
   
 procedure Back_Drill_Epoxy; // 844 Backdrill after electrolytic Cu
 begin
-  SysRouteInsertStepExt('Scope_Drilling_BDEP', 'Scope_Drilling_BDEP01');
+  AddStep('Scope_Drilling_BDEP', 'Scope_Drilling_BDEP01');
 
   if BKDRwEpoxyTop = true then
-    SysRouteInsertStepExt('Back_Drill_B_Epoxy', 'Back_Drill_B00');
+    AddStep('Back_Drill_B_Epoxy', 'Back_Drill_B00');
                                                    
   if BKDRwEpoxyBot = true then
-    SysRouteInsertStepExt('Back_Drill_A_Epoxy', 'Back_Drill_A00');
+    AddStep('Back_Drill_A_Epoxy', 'Back_Drill_A00');
 
-  SysRouteInsertStepExt('HighPressAirBlow', 'HighPressAirBlow00');
-  SysRouteInsertStepExt('Hole_Check_BDB4M', 'Hole_Check_BD00');
+  AddStep('HighPressAirBlow', 'HighPressAirBlow00');
+  AddStep('Hole_Check_BDB4M', 'Hole_Check_BD00');
 end; 

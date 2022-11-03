@@ -147,19 +147,19 @@ begin
 
       ToolRow := ToolRow + 1;
 
-      if Fnc.SysGetAttrValue('LayerCount') > 2 then
+      if MfgAttr('LayerCount') > 2 then
       begin
         if Fnc.SysGetLayerAttrValue(DrillName, 'DrillDefID') = 1 then
-          WorkSheet.Cells[ToolRow,10].Value := Fnc.SysGetAttrValue('Press_Thickness')
+          WorkSheet.Cells[ToolRow,10].Value := MfgAttr('Press_Thickness')
         else
-          WorkSheet.Cells[ToolRow,10].Value := Fnc.SysGetAttrValue('LayupThickness');
+          WorkSheet.Cells[ToolRow,10].Value := MfgAttr('LayupThickness');
       end
       else
         WorkSheet.Cells[ToolRow,10].Value := DSThicknessB4Plating;
 
       WorkSheet.Cells[ToolRow,11].Value := DrillName;
 
-      WorkSheet.Cells[ToolRow,14].Value := Fnc.SysGetAttrValue('ItemMatrlDesc');
+      WorkSheet.Cells[ToolRow,14].Value := MfgAttr('ItemMatrlDesc');
 
       DrillDetails.First;
       while not DrillDetails.Eof do
@@ -193,7 +193,7 @@ begin
   OutputList.SaveToFile(WorkingDir + 
                         Fnc.GetJobData.Values['JobId'] + 
                         CleanFileName(Fnc.GetJobData.Values['JobName']) + 
-                        CleanFileName(Fnc.SysGetAttrValue('ItemMatrlDesc')) + '.txt');
+                        CleanFileName(MfgAttr('ItemMatrlDesc')) + '.txt');
   
   DrillList.Free;        
   SlotToolsList.Free;
@@ -215,11 +215,11 @@ begin
   WorkSheet.Cells[row,6].Value  := Eng_JobType;
   WorkSheet.Cells[row,7].Value  := DateToStr(Date);   
   WorkSheet.Cells[row,8].Value  := GenMaterialType;
-  WorkSheet.Cells[row,9].Value := Fnc.SysGetAttrValue('LayerCount');
-  WorkSheet.Cells[row,12].Value  := Fnc.SysGetAttrValue('NC_Drill_1_EntryMat'); // Will need to figure out 1st Drill v 2nd Drill
-  WorkSheet.Cells[row,13].Value := Fnc.SysGetAttrValue('Stack_Hgt'); // Will need to figure out 1st Drill v 2nd Drill
-  WorkSheet.Cells[row,15].Value := Fnc.SysGetAttrValue('Panel_Length');
-  WorkSheet.Cells[row,16].Value := Fnc.SysGetAttrValue('Panel_Width');
+  WorkSheet.Cells[row,9].Value := MfgAttr('LayerCount');
+  WorkSheet.Cells[row,12].Value  := MfgAttr('NC_Drill_1_EntryMat'); // Will need to figure out 1st Drill v 2nd Drill
+  WorkSheet.Cells[row,13].Value := MfgAttr('Stack_Hgt'); // Will need to figure out 1st Drill v 2nd Drill
+  WorkSheet.Cells[row,15].Value := MfgAttr('Panel_Length');
+  WorkSheet.Cells[row,16].Value := MfgAttr('Panel_Width');
 end;
 
 procedure CreateJobFileFromTemplate;

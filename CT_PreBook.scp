@@ -36,13 +36,13 @@ begin
         Table_PreBook_1B.Filtered := False;
         Table_PreBook_1B.Filter := '';
 
-        //LengthAndWidth := IntToStr(Fnc.SysGetAttrValue('Panel_Length_Yield'));
-        LengthAndWidth := IntToStr(Fnc.SysGetAttrValue('Panel_Length_Press')); 
+        //LengthAndWidth := IntToStr(MfgAttr('Panel_Length_Yield'));
+        LengthAndWidth := IntToStr(MfgAttr('Panel_Length_Press')); 
         if LengthAndWidth = '616' then
           LengthAndWidth := '617';
 
-        //LengthAndWidth :=  LengthAndWidth + IntToStr(Fnc.SysGetAttrValue('Panel_Width_Yield'));             
-        LengthAndWidth :=  LengthAndWidth + IntToStr(Fnc.SysGetAttrValue('Panel_Width_Press'));
+        //LengthAndWidth :=  LengthAndWidth + IntToStr(MfgAttr('Panel_Width_Yield'));             
+        LengthAndWidth :=  LengthAndWidth + IntToStr(MfgAttr('Panel_Width_Press'));
         
         Result := Table_PreBook_1B.Locate('XY', LengthAndWidth, SetOf([]));
       end;

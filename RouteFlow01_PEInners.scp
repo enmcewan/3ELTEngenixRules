@@ -4,7 +4,7 @@
 //ScriptType=0
 //ScriptGroup=HCS
 //HeaderImportExport<--
-uses
+uses        
   Event_RouteGenLibrary, //Route System Scripts
   Eng_RouteFunctions,    //Route System Functions
   RouteFunctions;
@@ -16,22 +16,22 @@ begin
   //Sub-Assembly Rules Done with Outer Layers
   
   if ( SandwichCore ) and ( not Fnc.SysGetAttrValueTopLevel('Alt_PEP_Process') ) then  // 1229 New PEP Flow   // 1470                                            
-    SysRouteInsertStepExt('NC_Drill_PEP_IL', 'NC_Drill_PEP_IL01');
+    AddStep('NC_Drill_PEP_IL', 'NC_Drill_PEP_IL01');
 
-  SysRouteInsertStepExt('IL_Exposure', 'IL_Exposure01');
-  SysRouteInsertStepExt('IL_DES', 'IL_DES01');
+  AddStep('IL_Exposure', 'IL_Exposure01'); 
+  AddStep('IL_DES', 'IL_DES01');
 
-  if Fnc.SysGetAttrValue('MfgPartType') = 'Inn' then
+  if MfgAttr('MfgPartType') = 'Inn' then
   begin
-    if (( CoreGetsHiPot = true ) or ( Fnc.SysGetAttrValue('HiPotTest') = true )) then
-      SysRouteInsertStepExt('HiPotTest', 'HiPotTest01');
+    if (( CoreGetsHiPot = true ) or ( MfgAttr('HiPotTest') = true )) then
+      AddStep('HiPotTest', 'HiPotTest01');
                       
-    SysRouteInsertStepExt('IL_AOI', 'IL_AOI01');
+    AddStep('IL_AOI', 'IL_AOI01');
     
     {if ( SandwichCore ) and ( not Fnc.SysGetAttrValueTopLevel('Alt_PEP_Process') ) then  // 1229 New PEP Flow   // 1470
     begin                                             
-      SysRouteInsertStepExt('IL_PEP', 'IL_PEP01');
-      SysRouteInsertStepExt('IL_SSP', 'IL_SSP01'); 
+      AddStep('IL_PEP', 'IL_PEP01');
+      AddStep('IL_SSP', 'IL_SSP01'); 
     end;}
     
   end;

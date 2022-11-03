@@ -87,12 +87,12 @@ begin
 
   bCont := True;
 
-  if Fnc.SysGetAttrValue('LayerCount') > 2 then // 2 Layer Fixes
-    Thickness := Fnc.SysGetAttrValue('Press_Thickness')
+  if MfgAttr('LayerCount') > 2 then // 2 Layer Fixes
+    Thickness := MfgAttr('Press_Thickness')
   else
     Thickness := DSThicknessB4Plating;
 
-  if not Fnc.SysGetAttrValue('CuFilledVias') then
+  if not MfgAttr('CuFilledVias') then
   begin
     bCont := GetCopperPlatingValidLines(CuPlating_Line, LineList, errMsg);
   end
@@ -100,14 +100,14 @@ begin
   begin
     bCont := (Thickness >= 0.1) and
              (Thickness <= 2) and
-             (Fnc.SysGetAttrValue('ConfMask_Size') <= 100) and
-             (Fnc.SysGetAttrValue('Blind_AspectRatio') <= 0.8);
+             (MfgAttr('ConfMask_Size') <= 100) and
+             (MfgAttr('Blind_AspectRatio') <= 0.8);
 
     if bCont then
       LineList.Add('LineE');
     else
       errMsg := 'Error: Condition not meet for FILL VIA PLATING LINE(BT<=2|CMK<=100|VALUE_BL<=0.8)'
-        + #13 + '[' + FloatToStr(Fnc.SysGetAttrValue('Press_Thickness')) + ' | ' + FloatToStr(Fnc.SysGetAttrValue('ConfMask_Size')) + ' | ' + FloatToStr(Fnc.SysGetAttrValue('Blind_AspectRatio')) + '].'
+        + #13 + '[' + FloatToStr(MfgAttr('Press_Thickness')) + ' | ' + FloatToStr(MfgAttr('ConfMask_Size')) + ' | ' + FloatToStr(MfgAttr('Blind_AspectRatio')) + '].'
         + #13 + 'PLS DISCUSS WITH PE.';
   end;
 

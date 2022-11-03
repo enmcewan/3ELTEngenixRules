@@ -15,7 +15,7 @@ var
 begin
   Result := '';
 
-  TestId := Fnc.SysGetAttrValue('Test_ID');
+  TestId := MfgAttr('Test_ID');
 
   CuPlating_GM := Fnc.CustomTableGet('CuPlating_GM');
 

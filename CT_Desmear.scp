@@ -4,7 +4,7 @@
 //ScriptType=0
 //ScriptGroup=HCS
 //HeaderImportExport<--
-uses
+       uses
   CT_SearchLibrary;
 
 const
@@ -216,9 +216,9 @@ begin
 //-->        SpreadsheetColumnList;
 
         if not assigned(DesmearTab.FindField(FieldName)) then
-          i := -1
+          i := -1                                         
         else
-        begin
+        begin                                                                                                                        
           FieldValue := LowerCase(DesmearTab.FieldByName(FieldName).AsString);
                   
           if (FieldValue <> 'none') and (FieldValue <> '') then

@@ -31,7 +31,7 @@ procedure SysRouteInsCrpParameter(Source: string; CrpQueueTime: integer; CrpSetU
 begin                      
   Fnc.SysRouteGenInsCrp(Fnc.SysRouteInsGetStepNum, Source, CrpQueueTime, CrpSetUpTime, CrpProcessUnits, ReportFlag);
 end;
-
+                     
 procedure SysRouteInsCosting(Source: string; CostType: integer; CostName: string; CostValue: double; ReportFlag: string);
 begin
   Fnc.SysRouteGenInsCosting(Fnc.SysRouteInsGetStepNum, Source, CostType, CostName, CostValue, ReportFlag);
@@ -113,6 +113,11 @@ begin
 end;
 
 procedure SysRouteInsertStepExt(StepProcName: string; UniqueId: string);
+begin
+  Fnc.SysRouteGenInsStep(StepProcName, UniqueId);
+end;
+
+procedure AddStep(StepProcName: string; UniqueId: string);
 begin
   Fnc.SysRouteGenInsStep(StepProcName, UniqueId);
 end;

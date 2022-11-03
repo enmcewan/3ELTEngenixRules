@@ -370,7 +370,7 @@ begin
 
   if VarNames = 'NUMLAYERS' then
   begin
-    VarValueList.Add(IntToStr(Fnc.SysGetAttrValue('LayerCount')));
+    VarValueList.Add(IntToStr(MfgAttr('LayerCount')));
 
     Result := CheckConditionsAndValues('N', Condition, VarValueList);
     bDone := True;
@@ -428,7 +428,7 @@ begin
   //-----
   if VarNames = 'AIR_GAP' then
   begin
-    VarValueList.Add(FloatToStr(Fnc.SysGetAttrValue('Air_Gap')));
+    VarValueList.Add(FloatToStr(MfgAttr('Air_Gap')));
 
     Result := CheckConditionsAndValues('N', Condition, VarValueList);
     bDone := True;
@@ -446,7 +446,7 @@ begin
   //---
   if VarNames = 'ASPECT_' then
   begin
-    VarValueList.Add(FloatToStr(Fnc.SysGetAttrValue('Aspect_Ratio_Val')));
+    VarValueList.Add(FloatToStr(MfgAttr('Aspect_Ratio_Val')));
 
     Result := CheckConditionsAndValues('N', Condition, VarValueList);
     bDone := True;
@@ -455,8 +455,8 @@ begin
   //-----
   if VarNames = 'BLIND_ASPECT' then
   begin
-    if (Fnc.SysGetAttrValue('ConfMask_Size') > 0) and (Fnc.SysGetAttrValue('Blind_Via_Depth') > 0) then
-      VarValueList.Add(FloatToStr(Fnc.SysGetAttrValue('Blind_AspectRatio')))
+    if (MfgAttr('ConfMask_Size') > 0) and (MfgAttr('Blind_Via_Depth') > 0) then
+      VarValueList.Add(FloatToStr(MfgAttr('Blind_AspectRatio')))
     else
       VarValueList.Add('0.0');
 
@@ -467,7 +467,7 @@ begin
   //-----
   if VarNames = 'BLOWN_GAP' then
   begin
-    VarValueList.Add(FloatToStr(Fnc.SysGetAttrValue('Air_Gap_Blown')))
+    VarValueList.Add(FloatToStr(MfgAttr('Air_Gap_Blown')))
 
     Result := CheckConditionsAndValues('N', Condition, VarValueList);
     bDone := True;
@@ -476,7 +476,7 @@ begin
   //-----
   if VarNames = 'BLOWN_WID' then
   begin
-    VarValueList.Add(FloatToStr(Fnc.SysGetAttrValue('Line_Width_Blown')))
+    VarValueList.Add(FloatToStr(MfgAttr('Line_Width_Blown')))
 
     Result := CheckConditionsAndValues('N', Condition, VarValueList);
     bDone := True;
@@ -487,10 +487,10 @@ begin
   // or LASCHKHOLE = Laser size, and usually, LASCHKHOLE > CONFORMAL_
   if VarNames = 'CONFORMAL_' then
   begin
-    if Fnc.SysGetAttrValue('Conf_Mask') = false then
+    if MfgAttr('Conf_Mask') = false then
       VarValueList.Add('0.0')
     else
-      VarValueList.Add(FloatToStr(Fnc.SysGetAttrValue('ConfMask_Size')));
+      VarValueList.Add(FloatToStr(MfgAttr('ConfMask_Size')));
 
     Result := CheckConditionsAndValues('N', Condition, VarValueList);
     bDone := True;
@@ -499,7 +499,7 @@ begin
   //-----
   if VarNames = 'CONFORMAL_&X_PRESS' then
   begin
-    VarValueList.Add(FloatToStr(Fnc.SysGetAttrValue('ConfMask_Size')));
+    VarValueList.Add(FloatToStr(MfgAttr('ConfMask_Size')));
 
     VarValueList.Add(IntToStr(NumTimesPress));
 
@@ -546,7 +546,7 @@ begin
   if VarNames = 'CUSTOMER_&LAYER' then
   begin
     VarValueList.Add(CustCode_Rule('Customer'));
-    VarValueList.Add(IntToStr(Fnc.SysGetAttrValue('LayerCount')));
+    VarValueList.Add(IntToStr(MfgAttr('LayerCount')));
     //ShowMessage(CustCode_Rule('Customer'));
     Result := CheckConditionsAndValues('S;N', Condition, VarValueList);
     bDone := True;
@@ -555,7 +555,7 @@ begin
   //-----
   if VarNames = 'DEPTH_BL' then
   begin
-    VarValueList.Add(FloatToStr(Fnc.SysGetAttrValue('Blind_Via_Depth')));
+    VarValueList.Add(FloatToStr(MfgAttr('Blind_Via_Depth')));
 
     Result := CheckConditionsAndValues('N', Condition, VarValueList);
     bDone := True;
@@ -564,7 +564,7 @@ begin
   //-----
   if VarNames = 'DESIGN_' then
   begin
-    VarValueList.Add(FloatToStr(Fnc.SysGetAttrValue('LayupThickness')));
+    VarValueList.Add(FloatToStr(MfgAttr('LayupThickness')));
 
     Result := CheckConditionsAndValues('N', Condition, VarValueList);
     bDone := True;
@@ -573,7 +573,7 @@ begin
   //-----
   if VarNames = 'DYNAMIC_' then
   begin
-    if Fnc.SysGetAttrValue('DynamicEtch') then
+    if MfgAttr('DynamicEtch') then
       VarValueList.Add('Y')
     else
       VarValueList.Add('N');
@@ -585,7 +585,7 @@ begin
   //-----
   if VarNames = 'FILL_VIA' then
   begin
-    if Fnc.SysGetAttrValue('CuFilledVias') then
+    if MfgAttr('CuFilledVias') then
       VarValueList.Add('Y')
     else
       VarValueList.Add('N');
@@ -612,10 +612,10 @@ begin
   //-----
   if VarNames = 'GLB_KK_EDGE' then
   begin
-    if Fnc.SysGetAttrValue('LayerCount') = 2 then
+    if MfgAttr('LayerCount') = 2 then
       tmpVar := 4
     else
-      tmpVar := (Fnc.SysGetAttrValue('Panel_Length') - Fnc.SysGetAttrValue('KK_Distance'))/2;
+      tmpVar := (MfgAttr('Panel_Length') - MfgAttr('KK_Distance'))/2;
 
     VarValueList.Add(IntToStr(tmpVar));
     Result := CheckConditionsAndValues('N', Condition, VarValueList);
@@ -640,7 +640,7 @@ begin
   //-----
   if VarNames = 'LAND_' then
   begin
-    VarValueList.Add(FloatToStr(Fnc.SysGetAttrValue('Land_Area')));
+    VarValueList.Add(FloatToStr(MfgAttr('Land_Area')));
 
     Result := CheckConditionsAndValues('N', Condition, VarValueList);
     bDone := True;
@@ -649,7 +649,7 @@ begin
   //-----
   if VarNames = 'LINE_WIDTH' then
   begin
-    VarValueList.Add(FloatToStr(Fnc.SysGetAttrValue('Line_Width')));
+    VarValueList.Add(FloatToStr(MfgAttr('Line_Width')));
 
     Result := CheckConditionsAndValues('N', Condition, VarValueList);
     bDone := True;
@@ -670,10 +670,10 @@ begin
   //-----
   if VarNames = 'MAT_TYPE2' then       // MAT_TYPE IS Also used in the Drill Entry Sheet Table. Different format so new variable created.
   begin
-    if Fnc.SysGetAttrValue('CoreMat') = '' then
-      VarValueList.Add(Fnc.SysGetAttrValue('PPGMat'))
+    if MfgAttr('CoreMat') = '' then
+      VarValueList.Add(MfgAttr('PPGMat'))
     else
-      VarValueList.Add(Fnc.SysGetAttrValue('CoreMat'));
+      VarValueList.Add(MfgAttr('CoreMat'));
 
     Result := CheckConditionsAndValues('S', Condition, VarValueList);
     bDone := True;
@@ -682,7 +682,7 @@ begin
   //-----
   if VarNames = 'MAX_P_HOLE' then
   begin
-    VarValueList.Add(FloatToStr(Fnc.SysGetAttrValue('Max_PHole_Size')));
+    VarValueList.Add(FloatToStr(MfgAttr('Max_PHole_Size')));
 
     Result := CheckConditionsAndValues('N', Condition, VarValueList);
     bDone := True;
@@ -692,9 +692,9 @@ begin
   if VarNames = 'MIN_DRILL_' then
   begin
     if NCRun = 2 then
-      VarValueList.Add(FloatToStr(Fnc.SysGetAttrValue('Min_Drill_Size_2')))
+      VarValueList.Add(FloatToStr(MfgAttr('Min_Drill_Size_2')))
     else
-      VarValueList.Add(FloatToStr(Fnc.SysGetAttrValue('Min_Drill_Size')));
+      VarValueList.Add(FloatToStr(MfgAttr('Min_Drill_Size')));
 
     Result := CheckConditionsAndValues('N', Condition, VarValueList);
     bDone := True;
@@ -702,7 +702,7 @@ begin
 
   if VarNames = 'MIN_RES_CL' then
   begin
-    VarValueList.Add(FloatToStr(Fnc.SysGetAttrValue('Min_Res_Cl')));
+    VarValueList.Add(FloatToStr(MfgAttr('Min_Res_Cl')));
 
     Result := CheckConditionsAndValues('N', Condition, VarValueList);
     bDone := True;
@@ -712,9 +712,9 @@ begin
   if VarNames = 'PLT_SP_MIN' then
   begin
     if  NCRun = 2 then
-      tmpVar := Max(Fnc.SysGetAttrValue('Abs_Min_Th_2'), Fnc.SysGetAttrValue('Ave_Min_Th_2'))
+      tmpVar := Max(MfgAttr('Abs_Min_Th_2'), MfgAttr('Ave_Min_Th_2'))
     else
-      tmpVar := Max(Fnc.SysGetAttrValue('Abs_Min_Th'), Fnc.SysGetAttrValue('Ave_Min_Th'));
+      tmpVar := Max(MfgAttr('Abs_Min_Th'), MfgAttr('Ave_Min_Th'));
 
     VarValueList.Add(FloatToStr(tmpVar));
     //VarValueList.Add(FloatToStr(GLB_ASPECT_VAL));
@@ -727,12 +727,12 @@ begin
   if VarNames = 'PLT_SP_MIN&ASPECT' then
   begin
     if  NCRun = 2 THEN
-      tmpVar := Max(Fnc.SysGetAttrValue('Abs_Min_Th_2'), Fnc.SysGetAttrValue('Ave_Min_Th_2'))
+      tmpVar := Max(MfgAttr('Abs_Min_Th_2'), MfgAttr('Ave_Min_Th_2'))
     else
-      tmpVar := Max(Fnc.SysGetAttrValue('Abs_Min_Th'), Fnc.SysGetAttrValue('Ave_Min_Th'));
+      tmpVar := Max(MfgAttr('Abs_Min_Th'), MfgAttr('Ave_Min_Th'));
 
     VarValueList.Add(FloatToStr(tmpVar));
-    VarValueList.Add(FloatToStr(Fnc.SysGetAttrValue('Aspect_Ratio_Val')));
+    VarValueList.Add(FloatToStr(MfgAttr('Aspect_Ratio_Val')));
 
     Result := CheckConditionsAndValues('N', Condition, VarValueList);
     bDone := True;
@@ -741,7 +741,7 @@ begin
   //-----
   if VarNames = 'PNLEN_' then
   begin
-    VarValueList.Add(IntToStr(Fnc.SysGetAttrValue('Panel_Length')));
+    VarValueList.Add(IntToStr(MfgAttr('Panel_Length')));
 
     Result := CheckConditionsAndValues('N', Condition, VarValueList);
     bDone := True;
@@ -750,7 +750,7 @@ begin
   //-----
   if VarNames = 'PNLWID_' then
   begin
-    VarValueList.Add(IntToStr(Fnc.SysGetAttrValue('Panel_Width')));
+    VarValueList.Add(IntToStr(MfgAttr('Panel_Width')));
 
     Result := CheckConditionsAndValues('N', Condition, VarValueList);
     bDone := True;
@@ -759,10 +759,10 @@ begin
   //-----
   if VarNames = 'POST_DIST' then
   begin
-    if Fnc.SysGetAttrValue('OPE_DIST') = 0.0 then
+    if MfgAttr('OPE_DIST') = 0.0 then
       VarValueList.Add('19.05')
     else
-      VarValueList.Add(FloatToStr(Fnc.SysGetAttrValue('OPE_DIST')));
+      VarValueList.Add(FloatToStr(MfgAttr('OPE_DIST')));
 
     Result := CheckConditionsAndValues('N', Condition, VarValueList);
     bDone := True;
@@ -781,8 +781,8 @@ begin
   if VarNames = 'PRESS_EDGE_LEN' then
   begin
     try
-      //TmpVar := Fnc.SysGetAttrValue('Panel_Length_Yield') - (Fnc.SysGetAttrValue('Panel_Length') / 2) + Fnc.SysGetAttrValueTopLevel('Panel_LengthEA');
-      TmpVar := Fnc.SysGetAttrValue('Panel_Length_Press') - (Fnc.SysGetAttrValue('Panel_Length') / 2) + Fnc.SysGetAttrValueTopLevel('Panel_LengthEA');
+      //TmpVar := MfgAttr('Panel_Length_Yield') - (MfgAttr('Panel_Length') / 2) + Fnc.SysGetAttrValueTopLevel('Panel_LengthEA');
+      TmpVar := MfgAttr('Panel_Length_Press') - (MfgAttr('Panel_Length') / 2) + Fnc.SysGetAttrValueTopLevel('Panel_LengthEA');
     except
       TmpVar := 0.0;
       Fnc.SysShowException('', mtWarning); // will show the Delphi exception message
@@ -798,9 +798,9 @@ begin
   if VarNames = 'PRESS_EDGE_WID' then
   begin
     try
-      //TmpVar := Fnc.SysGetAttrValue('Panel_Width_Yield') - (Fnc.SysGetAttrValue('Panel_Width') / 2) + Fnc.SysGetAttrValueTopLevel('Panel_WidthEA');
+      //TmpVar := MfgAttr('Panel_Width_Yield') - (MfgAttr('Panel_Width') / 2) + Fnc.SysGetAttrValueTopLevel('Panel_WidthEA');
       // Replaced Panel_Width_Yield with Panel_Width_Press per request from Alison 10/30/14
-      TmpVar := Fnc.SysGetAttrValue('Panel_Width_Press') - (Fnc.SysGetAttrValue('Panel_Width') / 2) + Fnc.SysGetAttrValueTopLevel('Panel_WidthEA');
+      TmpVar := MfgAttr('Panel_Width_Press') - (MfgAttr('Panel_Width') / 2) + Fnc.SysGetAttrValueTopLevel('Panel_WidthEA');
     except
       TmpVar := 0.0;
       Fnc.SysShowException('', mtWarning); // will show the Delphi exception message
@@ -827,7 +827,7 @@ begin
   //-----
   if VarNames = 'PROD_CODE' then
   begin
-    if ((Fnc.SysGetAttrValue('MfgPartType') = 'Sub') and (HasSubAssembliesFormingOuterOL)) then
+    if ((MfgAttr('MfgPartType') = 'Sub') and (HasSubAssembliesFormingOuterOL)) then
       VarValueList.Add('IC')
     else
       VarValueList.Add(ProdCodeLTC);
@@ -862,7 +862,7 @@ begin
   //-----
   if VarNames = 'SLOTLEN_' then
   begin
-    VarValueList.Add(FloatToStr(Fnc.SysGetAttrValue('Slot_Length_PTH')));
+    VarValueList.Add(FloatToStr(MfgAttr('Slot_Length_PTH')));
 
     Result := CheckConditionsAndValues('N', Condition, VarValueList);
     bDone := True;
@@ -871,7 +871,7 @@ begin
   //-----
   if VarNames = 'SLOTWID_' then
   begin
-    VarValueList.Add(FloatToStr(Fnc.SysGetAttrValue('Slot_Width_PTH')));
+    VarValueList.Add(FloatToStr(MfgAttr('Slot_Width_PTH')));
 
     Result := CheckConditionsAndValues('N', Condition, VarValueList);
     bDone := True;
@@ -880,7 +880,7 @@ begin
   //-----
   if VarNames = 'TG_CLASS' then
   begin
-    VarValueList.Add(Fnc.SysGetAttrValue('TG_Class'));
+    VarValueList.Add(MfgAttr('TG_Class'));
 
     Result := CheckConditionsAndValues('S', Condition, VarValueList);
     bDone := True;
@@ -890,8 +890,8 @@ begin
   // many case, use THK_B4_PLT not DESIGN_ to decide process, such as prebook
   if VarNames = 'THK_B4_PLT' then
   begin
-    if Fnc.SysGetAttrValue('LayerCount') > 2 then // 2 Layer Fixes
-      VarValueList.Add(FloatToStr(Fnc.SysGetAttrValue('Press_Thickness')));
+    if MfgAttr('LayerCount') > 2 then // 2 Layer Fixes
+      VarValueList.Add(FloatToStr(MfgAttr('Press_Thickness')));
     else
       VarValueList.Add(FloatToStr(DSThicknessB4Plating));
 
@@ -902,8 +902,8 @@ begin
   //-----
   if VarNames = 'Y_PNLEN_' then
   begin
-    //VarValueList.Add(FloatToStr(Fnc.SysGetAttrValue('Panel_Length_Yield')));
-    VarValueList.Add(FloatToStr(Fnc.SysGetAttrValue('Panel_Length_Press')));
+    //VarValueList.Add(FloatToStr(MfgAttr('Panel_Length_Yield')));
+    VarValueList.Add(FloatToStr(MfgAttr('Panel_Length_Press')));
 
     Result := CheckConditionsAndValues('N', Condition, VarValueList);
     bDone := True;
@@ -912,8 +912,8 @@ begin
   //-----
   if VarNames = 'Y_PNLWID_' then
   begin
-    //VarValueList.Add(FloatToStr(Fnc.SysGetAttrValue('Panel_Width_Yield')));
-    VarValueList.Add(FloatToStr(Fnc.SysGetAttrValue('Panel_Width_Press')));
+    //VarValueList.Add(FloatToStr(MfgAttr('Panel_Width_Yield')));
+    VarValueList.Add(FloatToStr(MfgAttr('Panel_Width_Press')));
 
     Result := CheckConditionsAndValues('N', Condition, VarValueList);
     bDone := True;
@@ -922,14 +922,14 @@ begin
   //-----
   if VarNames = 'Y_PNLEN_Y_PNLWID' then
   begin
-    //if Fnc.SysGetAttrValue('Panel_Length_Yield') = 616 then
-    if Fnc.SysGetAttrValue('Panel_Length_Press') = 616 then
+    //if MfgAttr('Panel_Length_Yield') = 616 then
+    if MfgAttr('Panel_Length_Press') = 616 then
       VarValueList.Add('617')
     else
-      //VarValueList.Add(IntToStr(Fnc.SysGetAttrValue('Panel_Length_Yield')));
-      VarValueList.Add(IntToStr(Fnc.SysGetAttrValue('Panel_Length_Press')));
+      //VarValueList.Add(IntToStr(MfgAttr('Panel_Length_Yield')));
+      VarValueList.Add(IntToStr(MfgAttr('Panel_Length_Press')));
 
-    VarValueList.Add(IntToStr(Fnc.SysGetAttrValue('Panel_Width_Press')));
+    VarValueList.Add(IntToStr(MfgAttr('Panel_Width_Press')));
 
     Result := CheckConditionsAndValues('N', Condition, VarValueList);
     bDone := True;
