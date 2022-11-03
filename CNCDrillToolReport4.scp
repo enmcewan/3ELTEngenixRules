@@ -60,28 +60,28 @@ begin
       
       ToolData.Add(DrillName); 
 
-      if MfgAttr('LayerCount') > 2 then
+      if Fnc.SysGetAttrValue('LayerCount') > 2 then
       begin
         if Fnc.SysGetLayerAttrValue(DrillName, 'DrillDefID') = 1 then
-          Thickness := MfgAttr('Press_Thickness')
+          Thickness := PressThickness
         else
-          Thickness := MfgAttr('LayupThickness');
+          Thickness := Fnc.SysGetAttrValue('LayupThickness');
       end                                                                               
       else                            
         Thickness := DSThicknessB4Plating;
         
       ToolData.Add(FloatToStr(Thickness));
-      ToolData.Add(MfgAttr('ItemMatrlDesc'));
+      ToolData.Add(Fnc.SysGetAttrValue('ItemMatrlDesc'));
       
       if Fnc.SysGetLayerAttrValue(DrillName, 'DrillDefID') = 1 then
       begin
-        ToolData.Add(MfgAttr('NC_Drill_1_EntryMat'));
-        ToolData.Add(IntToStr(MfgAttr('Stack_Hgt')));
+        ToolData.Add(Fnc.SysGetAttrValue('NC_Drill_1_EntryMat'));
+        ToolData.Add(IntToStr(Fnc.SysGetAttrValue('Stack_Hgt')));
       end                    
       else
       begin
-        ToolData.Add(MfgAttr('Drill_Entry_Sht_2'));
-        ToolData.Add(IntToStr(MfgAttr('Stack_Hgt_2'))); 
+        ToolData.Add(Fnc.SysGetAttrValue('Drill_Entry_Sht_2'));
+        ToolData.Add(IntToStr(Fnc.SysGetAttrValue('Stack_Hgt_2'))); 
       end;
 
       DrillDetails.First;
@@ -115,10 +115,10 @@ procedure GenReportFilePath;
 begin
   ForceDirectories(WorkingDir);        
   ReportFilePath := WorkingDir +
-                    IntToStr(MfgAttr('ItemSeq')) + '-' +
+                    IntToStr(Fnc.SysGetAttrValue('ItemSeq')) + '-' +
                     CleanFileName(Fnc.GetJobData.Values['JobName'] + ' Rev-' +
                     CleanFileName(Fnc.GetJobData.Values['Revision'])) + ' ' +                                            
-                    CleanFileName(MfgAttr('ItemMatrlDesc'));
+                    CleanFileName(Fnc.SysGetAttrValue('ItemMatrlDesc'));
 end;
                                                  
 procedure GenDrillReportData             

@@ -36,7 +36,7 @@ begin
   //LayerTypeTop := copy(Dummy_SysGetAttrValue('LAYER_DESC'), 1, 1);
  // LayerTypeBot := copy(Dummy_SysGetAttrValue('LAYER_DESC'), 2, 1);
                          
-  if MfgAttr('TopLayer') <> '' then
+  if Fnc.SysGetAttrValue('TopLayer') <> '' then
   begin
     LayerTypeTop := Fnc.SysGetItemAttrValue('TYPE', True, cStackupLayer, 1);
     LayerTypeTop := GetLayerTypeAbbr(LayerTypeTop);
@@ -44,7 +44,7 @@ begin
   else
     LayerTypeTop := 'G';
 
-  if MfgAttr('BotLayer') <> '' then
+  if Fnc.SysGetAttrValue('BotLayer') <> '' then
   begin
     LayerTypeBot := Fnc.SysGetItemAttrValue('TYPE', False, cStackupLayer, 1);
     LayerTypeBot := GetLayerTypeAbbr(LayerTypeBot);
@@ -248,7 +248,7 @@ begin
        end;}                              
     'DES5/4/3/1':
        begin
-         if MfgAttr('LayupThickness') < 0.05 then
+         if Fnc.SysGetAttrValue('LayupThickness') < 0.05 then
            DesLine := 'DESIL-E'
          else
            DesLine := 'DESIL-G0';

@@ -2,6 +2,12 @@
 //SiteId=0
 //Enterprise=True
 //ScriptType=0
+//ScriptGroup=
+//HeaderImportExport<--
+//HeaderImportExport-->
+//SiteId=0
+//Enterprise=True
+//ScriptType=0
 //ScriptGroup=HCS
 //HeaderImportExport<--
 Uses                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      
@@ -17,13 +23,13 @@ Var
   BKDRwEpoxyTop : boolean;  // 844 Backdrill after Electrolytic Cu
   BKDRwEpoxyBot : boolean;
   PANEL_VCUT_DONE : boolean;
-  BackDrillDone : boolean;         
+  BackDrillDone : boolean;
   ImpedanceDone : boolean;
   PressThickness : float;                                             
   VCutDone : boolean;         
   //ImmersionSilverDone: boolean;   1256
   VCUT_TYPE : string;                           
-  BaseCuTopUM : integer;           
+  BaseCuTopUM : integer;  
   BaseCuBotUM : integer;               
   AOIforCMK : boolean;                         
   NCRun : integer;
@@ -45,25 +51,21 @@ Var
   Au_Plt_Count : integer;
 
   CU_RATIO_WARNING : integer;
-                  
+
   MechBVHTop : boolean;
   MechBVHBot : boolean;
 
   InProcessCuThk : integer;  //364 Surface Cu Calculation
 
   HoleCheckDone : boolean; //ENIG Changes
-                 
+
   photoStepList : TStringList;  // Photo Sequence
 
   MetalizationRun : integer;
   
   epoxyPlugDone : boolean; //978
-  verticalDesmear : boolean;
-  DirectLaser: boolean;
-  
-  LaserABotHits,
-  LaserBTopHits: integer;
-  
+  verticalDesmear : boolean;  
+
 procedure StepParam(Source: string; ParamCode: string; ParamValue: string) // Added with 2269
 begin
   Fnc.SysRouteGenInsAddlParam(Fnc.SysRouteInsGetStepNum, Source, ParamCode, ParamValue, '', '', false, '', '', '' );
@@ -107,58 +109,7 @@ end;
 procedure StepInstructionERP(InstrCode: string);
 begin
   Fnc.SysRouteGenInsInstruction(Fnc.SysRouteInsGetStepNum, 'Erp', InstrCode, '');
-end;
-
-procedure ErrorMessageGenAndLog(ErrorMsg, ErrorType: variant);
-var              
-  ErrorTypeStr,
-  ErrorMsgStr: String;
-begin
-  ErrorMsgStr := MfgPartType + #13#13 + ErrorMsg;
-  MessageDlg(ErrorMsgStr, ErrorType, Setof([mbOK]), 0);
-                                        
-  if ErrorType = mtWarning then ErrorTypeStr := 'Warning' else  
-  if ErrorType = mtError then ErrorTypeStr := 'Error' else
-  if ErrorType = mtInformation then ErrorTypeStr := 'Information'
-  
-  Fnc.JobJournalUpdate(Fnc.JobID, ErrorMsg, ErrorTypeStr, 'Route GenX' ); 
-end;     
-                            
-procedure StepERPDept(DeptCode: string);
-begin                
-  Fnc.SysRouteGenInsDepartment(Fnc.SysRouteInsGetStepNum, 'Erp', DeptCode, '');
 end; 
- 
-procedure StepERPWrkC(WCCode: string);
-begin                                  
-  Fnc.SysRouteGenInsWorkCenter(Fnc.SysRouteInsGetStepNum, 'Erp', WCCode, ''); 
-end;      
-
-procedure StepERPDptAndWrkC(ResourceCode: string);
-begin
-  Fnc.SysRouteGenInsDepartment(Fnc.SysRouteInsGetStepNum, 'Erp', ResourceCode, '');
-  Fnc.SysRouteGenInsWorkCenter(Fnc.SysRouteInsGetStepNum, 'Erp', ResourceCode, ''); 
-end;
-
-function MfgAttr(AttributeName: string) : variant;
-begin                                      
-  result := Fnc.SysGetAttrValue(AttributeName);
-end;
-                           
-function MfgAttrTL(AttributeName: string) : variant;
-begin
-  result := Fnc.SysGetAttrValueTopLevel(AttributeName);
-end;
-
-function MfgAttrParent(AttributeName: string) : variant;
-begin
-  result := Fnc.SysGetAttrValueParent(AttributeName);
-end;
-
-function LayerAttr(AttrName: string; TopLayer: boolean; ItemType: string; ItemSequence: integer) : variant;
-begin                              
-  result := Fnc.SysGetItemAttrValue(AttrName, TopLayer, ItemType, ItemSequence);   
-end;
 
 procedure GET_VCUT_TYPE;
 begin
@@ -1533,7 +1484,7 @@ begin
 
   if (
       (Fnc.SysFindAttrValue('Registration', false) < 100) or
-      (PressThickness > 3.5) or
+      (Fnc.SysGetAttrValue('Press_Thickness') > 3.5) or
       (NumOfCores > 13) or
       (SequentialBuildAndThk040Plus = true) or
       (ThreeCores05ThkOrMore = true)
@@ -1797,27 +1748,43 @@ begin
   PressThickness := 0.0;
   ReqTable := Fnc.SysRequirementTable;
 
-  if Fnc.SysGetAttrValue('MfgPartType') = 'Top' then
+  ReqTable.First;
+  while not ReqTable.EOF do
   begin
-    ReqTable.First;
-    while not ReqTable.EOF do
+  {
+    if ReqTable.FieldByName('Lock').AsBoolean = true then
     begin
-  
-      if ReqTable.FieldByName('LayerNameTop').AsString = 'Press Thickness' then
-      begin        
-        PressThickness := ReqTable.FieldByName('GapReq').AsFloat;
-        Break;
-      end;
-  
-      ReqTable.next; //
-    end; 
-  end                               
-  else
-    PressThickness := Fnc.SysGetAttrValue('LayupThickness');
-    
-  Fnc.SysSetAttrValue('Press_Thickness', PressThickness);
-  
-end;                                   
+      ReqThk := ReqTable.FieldByName('GapReq').AsString;
+      MeasOver := ReqTable.FieldByName('LayerNameTop').AsString;
+      TolPlus := ReqTable.FieldByName('TolPlus').AsString;
+      TolMin := ReqTable.FieldByName('TolMin').AsString;
+      // Put your attribute assignments here.
+      Break;
+    end;
+   }
+    if ReqTable.FieldByName('LayerNameTop').AsString = 'Press Thickness' then
+    begin
+      PressThickness := ReqTable.FieldByName('GapReq').AsFloat;
+
+      if Fnc.SysGetAttrValue('MfgPartType') = 'Top' then
+        Fnc.SysSetAttrValue('Press_Thickness', PressThickness)
+      else                      
+        Fnc.SysSetAttrValue('Press_Thickness', Fnc.SysGetAttrValue('LayupThickness'));
+
+      //ShowMessage('Pressed Thickness = ' + FloatToStr(PressThickness));
+      Break;
+    end;
+
+    ReqTable.next; //
+  end; //end while
+    //ShowMessage('Measure Over: ' + MeasOver);
+   // Fnc.SysSetAttrValue('PPP_THK', ReqThk + ' ' + '+' + TolPlus + '' + '-' + TolMin);
+
+  //  if MeasOver = 'Total Incl.Mask' then MeasOver := 'SOLDERMASK';
+  //  if MeasOver = 'Total Incl.Plating' then MeasOver := 'PLATING';
+  //  if MeasOver = 'Total Over Laminate' then MeasOver := 'DIELECTRIC';
+  //  Fnc.SysSetAttrValue('PPP_MEAS_OVER', MeasOver)
+end; //end table                                     
 
 
 function ThicknessOverMask : float;  //ENIG Changes
@@ -2185,7 +2152,7 @@ begin
   Total_Hole_Circle_Panel := Overlay_Hole_Circle + Hole_Circle * Fnc.SysGetAttrValueTopLevel('Panel_Cavity');
 
   if Fnc.SysGetAttrValue('LayerCount') > 2 then // 2 Layer Fixes
-    Thickness := PressThickness
+    Thickness := Fnc.SysGetAttrValue('Press_Thickness')
   else
     Thickness := DSThicknessB4Plating;
 
@@ -2196,7 +2163,7 @@ begin
   Total_Plating_Area := (Total_Surface_Nohole - Total_Hole_Area_Panel * 2 + (Total_Hole_Circle_Panel * Thickness)) / 10000;
 
   if Fnc.SysGetAttrValue('NCRunX2') = false then
-    Total_Plating_Area := Total_Plating_Area + (LaserABotHits + LaserBTopHits) * 3.14159
+    Total_Plating_Area := Total_Plating_Area + (fnc.SysGetAttrValue('LaserABotHits') + fnc.SysGetAttrValue('LaserBTopHits')) * 3.14159
                           * Fnc.SysGetAttrValue('ConfMask_Size')/100000 * Fnc.SysGetAttrValue('Blind_Via_Depth')/100;
 
   Total_Plating_Area := Round1000(Total_Plating_Area);
@@ -2291,7 +2258,7 @@ begin
   Blown_Temp := 0.0;
 
   if Fnc.SysGetAttrValue('LayerCount') > 2 then // 2 Layer Fixes
-    Thickness := PressThickness
+    Thickness := Fnc.SysGetAttrValue('Press_Thickness')
   else
     Thickness := DSThicknessB4Plating;
 
@@ -3417,7 +3384,7 @@ begin
 // 756 Update Aspect ratio calculation for OL layer photo process
   if (
       ( Fnc.SysGetAttrValue('EpoxySide') <> 'None' ) or
-      ((pos('Primary',Fnc.SysGetAttrValue('SMPlugType')) > 0) and ( Fnc.SysGetAttrValue('PrimaryPlugProcess') = 'Before Pattern' ))
+      ((pos('Primary',fnc.SysGetAttrValue('SMPlugType')) > 0) and ( Fnc.SysGetAttrValue('PrimaryPlugProcess') = 'Before Pattern' ))
      )
   then
     result := true
@@ -3703,7 +3670,7 @@ begin
       if Fnc.SysGetAttrValue('LayerCount') > 2 then
       begin
         if NCRun <= 1 then
-          result := PressThickness 
+          result := Fnc.SysGetAttrValue('Press_Thickness') 
         else if NCRun > 1 then
           result := Fnc.SysGetAttrValue('LayupThickness'); 
       end; 
@@ -3723,7 +3690,7 @@ begin
       result := 'HDI'
     else
     begin
-      if (( not Fnc.SysGetAttrValue('BlindVias') ) and ( not Fnc.SysGetAttrValue('Mech_BlindVias') )) then
+      if (( not fnc.SysGetAttrValue('BlindVias') ) and ( not Fnc.SysGetAttrValue('Mech_BlindVias') )) then
         result := 'MLB'
       else
         result := 'HDI';
@@ -4489,7 +4456,7 @@ begin
 end;
 
 function GenMaterialType: string;
- begin                             
+ begin                                                  
   result := '';
   if Fnc.SysGetAttrValue('CoreMat') <> '' then
     result := Fnc.SysGetAttrValue('CoreMat')
@@ -4514,3 +4481,4 @@ function LaserShearSize: string;  // 2269 Shearing After Laser
 begin
   result := IntToStr(Fnc.SysGetAttrValue('Panel_Length')) + ' X ' + IntToStr(Fnc.SysGetAttrValue('Panel_Width'));
 end; 
+;

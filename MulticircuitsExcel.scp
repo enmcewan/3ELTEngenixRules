@@ -362,7 +362,7 @@ Begin
       OutsideServiceRequired := Fnc.SysGetAttrValueTopLevel('OutsideServiceReq');
                                                       
       // Following statement is rewritten.
-      //      GoldFingers := StrtoInt(MfgAttr('GoldTabCount')) > 0;
+      //      GoldFingers := StrtoInt(Fnc.SysGetAttrValue('GoldTabCount')) > 0;
                                       
       if (GoldFingerCount > 0) then
          GoldFingers := 'True';                                    

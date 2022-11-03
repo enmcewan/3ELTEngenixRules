@@ -144,17 +144,17 @@ begin
       
       ExcelQuery.FieldByName('Drill Name').AsString := DrillName;
                
-      if MfgAttr('LayerCount') > 2 then
+      if Fnc.SysGetAttrValue('LayerCount') > 2 then
       begin 
         if Fnc.SysGetLayerAttrValue(DrillName, 'DrillDefID') = 1 then
-          Excelquery.FieldByName('Board Thickness').AsFloat := MfgAttr('Press_Thickness') 
+          Excelquery.FieldByName('Board Thickness').AsFloat := PressThickness 
         else
-          Excelquery.FieldByName('Board Thickness').AsFloat := MfgAttr('LayupThickness'); 
+          Excelquery.FieldByName('Board Thickness').AsFloat := Fnc.SysGetAttrValue('LayupThickness'); 
       end
       else
         Excelquery.FieldByName('Board Thickness').AsFloat := DSThicknessB4Plating;
         
-      Excelquery.FieldByName('Build Stage').AsString := MfgAttr('ItemMatrlDesc');
+      Excelquery.FieldByName('Build Stage').AsString := Fnc.SysGetAttrValue('ItemMatrlDesc');
             
       DrillDetails.First;
       while not DrillDetails.Eof do
@@ -201,13 +201,13 @@ begin
   Excelquery.FieldByName('Job Type').AsString := Eng_JobType;
   Excelquery.FieldByName('Export to ERP Date').AsString := DateToStr(Date);
   Excelquery.FieldByName('Material type').AsString := GenMaterialType;
-  Excelquery.FieldByName('Layer Count').AsInteger := MfgAttr('LayerCount');      
-  //Excelquery.FieldByName('Board Thickness').AsFloat := MfgAttr('LayupThickness'); // Value at Drill Stage!
-  Excelquery.FieldByName('NC Drill Entry Material').AsString := MfgAttr('NC_Drill_1_EntryMat'); // Will need to figure out 1st Drill v 2nd Drill
-  Excelquery.FieldByName('NC Stack Height').AsInteger := MfgAttr('Stack_Hgt'); // Will need to figure out 1st Drill v 2nd Drill
-  //Excelquery.FieldByName('Build Stage').AsString := MfgAttr('ItemMatrlDesc');
-  Excelquery.FieldByName('Panel Length').AsFloat := MfgAttr('Panel_Length');
-  Excelquery.FieldByName('Panel Width').AsFloat := MfgAttr('Panel_Width');
+  Excelquery.FieldByName('Layer Count').AsInteger := Fnc.SysGetAttrValue('LayerCount');      
+  //Excelquery.FieldByName('Board Thickness').AsFloat := Fnc.SysGetAttrValue('LayupThickness'); // Value at Drill Stage!
+  Excelquery.FieldByName('NC Drill Entry Material').AsString := Fnc.SysGetAttrValue('NC_Drill_1_EntryMat'); // Will need to figure out 1st Drill v 2nd Drill
+  Excelquery.FieldByName('NC Stack Height').AsInteger := Fnc.SysGetAttrValue('Stack_Hgt'); // Will need to figure out 1st Drill v 2nd Drill
+  //Excelquery.FieldByName('Build Stage').AsString := Fnc.SysGetAttrValue('ItemMatrlDesc');
+  Excelquery.FieldByName('Panel Length').AsFloat := Fnc.SysGetAttrValue('Panel_Length');
+  Excelquery.FieldByName('Panel Width').AsFloat := Fnc.SysGetAttrValue('Panel_Width');
 end;
 
 procedure CreateJobFileFromTemplate;

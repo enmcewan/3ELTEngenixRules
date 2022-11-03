@@ -23,7 +23,7 @@ var
   AltLine: string;
   Material : TStringlist;                    
 begin                         
-  if MfgAttr('MfgPartType') = 'Inn' then
+  if Fnc.SysGetAttrValue('MfgPartType') = 'Inn' then
   begin                                   
     Dept_Erp := '';
     Group_Erp := '';
@@ -70,8 +70,8 @@ begin
       StepParamERP('Remark', 'Faradflex Core, Panel Leader Taping needed');
       
     if ( SandwichCore ) and ( not Fnc.SysGetAttrValueTopLevel('Alt_PEP_Process') ) then // 1470 
-      StepParamERP('4 Hole Alignment', 'X: ' + FloatToStr(MfgAttr('FourHoleAlign_X')) + 'mm / Y: ' +
-                                                                  FloatToStr(MfgAttr('FourHoleAlign_Y')) + 'mm'
+      StepParamERP('4 Hole Alignment', 'X: ' + FloatToStr(Fnc.SysGetAttrValue('FourHoleAlign_X')) + 'mm / Y: ' +
+                                                                  FloatToStr(Fnc.SysGetAttrValue('FourHoleAlign_Y')) + 'mm'
                                                                 );
   end                                         
   else //Dummy Core
@@ -93,7 +93,7 @@ var
   DesLine: string;
   AltLine: string;
 begin
-  if MfgAttr('MfgPartType') = 'Inn' then
+  if Fnc.SysGetAttrValue('MfgPartType') = 'Inn' then
   begin
     //InitGlobalVariables;
     GetRes(Group_Erp, DesLine, AltLine);
@@ -109,7 +109,7 @@ begin
       
     if (
         (CustCode_Rule('Customer') = 'FA') and
-        ((MfgAttr('Line_Width') > 0.0) or (MfgAttr('Air_Gap') > 0.0))
+        ((Fnc.SysGetAttrValue('Line_Width') > 0.0) or (Fnc.SysGetAttrValue('Air_Gap') > 0.0))
        )
     then
       StepInstructionERP('DESIL007'); //'Remark : Sampling check line width'
@@ -124,7 +124,7 @@ end;
                                                                                                                               
 procedure HiPotTest_SD;
 begin
-  if MfgAttr('MfgPartType') = 'Inn' then
+  if Fnc.SysGetAttrValue('MfgPartType') = 'Inn' then
   begin
     StepDeptERP('HIPIL-A');
     StepWCERP('HIPIL-A');
@@ -137,19 +137,19 @@ begin
   
   
   // 1391 Add unit Name for Hi Pot Parameters
-  if ((MfgAttr('Volt') > 0) and (MfgAttr('Ramp') > 0)) then
+  if ((Fnc.SysGetAttrValue('Volt') > 0) and (Fnc.SysGetAttrValue('Ramp') > 0)) then
   begin
-    StepParamERP('Volt', FloatToStr(MfgAttr('Volt')) + ' KV');
-    StepParamERP('Ramp', IntToStr(MfgAttr('Ramp')) + ' V/sec');
+    StepParamERP('Volt', FloatToStr(Fnc.SysGetAttrValue('Volt')) + ' KV');
+    StepParamERP('Ramp', IntToStr(Fnc.SysGetAttrValue('Ramp')) + ' V/sec');
                                                                                                                        
-    Fnc.SysSetAttrValue('Wait', (MfgAttr('Volt') / MfgAttr('Ramp')) * 1000 ); // 1308
-    StepParamERP('Wait', FloatToStr(MfgAttr('Wait')) + ' sec');
+    Fnc.SysSetAttrValue('Wait', (Fnc.SysGetAttrValue('Volt') / Fnc.SysGetAttrValue('Ramp')) * 1000 ); // 1308
+    StepParamERP('Wait', FloatToStr(Fnc.SysGetAttrValue('Wait')) + ' sec');
 
-    if MfgAttr('Hold') > 0 then
-      StepParamERP('Hold', IntToStr(MfgAttr('Hold')) + ' sec');                            
+    if Fnc.SysGetAttrValue('Hold') > 0 then
+      StepParamERP('Hold', IntToStr(Fnc.SysGetAttrValue('Hold')) + ' sec');                            
                                      
-    if MfgAttr('Leak_New') > 0 then
-      StepParamERP('Leak', IntToStr(MfgAttr('Leak_New')) + ' uA'); // 1308
+    if Fnc.SysGetAttrValue('Leak_New') > 0 then
+      StepParamERP('Leak', IntToStr(Fnc.SysGetAttrValue('Leak_New')) + ' uA'); // 1308
   end;
 
 end;                                                                                                                    
@@ -163,9 +163,9 @@ begin
     StepInstructionERP('INSIL004'); // "CROSS_OUT : NOT ALLOWED"
     
   // 2199 IL AOI Step Additional Info
-  StepParamERP('Min Air Gap', MfgAttr('Air_Gap'));
-  StepParamERP('Min Line Width', MfgAttr('Line_Width')); 
-  StepParamERP('Thickness', FormatFloat('0.000',MfgAttr('LayupThickness')));
+  StepParamERP('Min Air Gap', Fnc.SysGetAttrValue('Air_Gap'));
+  StepParamERP('Min Line Width', Fnc.SysGetAttrValue('Line_Width')); 
+  StepParamERP('Thickness', FormatFloat('0.000',Fnc.SysGetAttrValue('LayupThickness')));
 end;
 
 procedure IL_PEP_SD;  // 1229 PEP Flow option for Sub-assembly build. 
@@ -186,5 +186,5 @@ begin
   StepWCERP('EXPSM-A');
   StepInstructionERP('EXPSM012'); // Remarks: Measure PEP OffSet Value
   StepInstructionERP('EXPSM013'); // Send back panels to IL AOI for matching
-  StepParamERP('Panel Size',MfgAttr('Panel_Size')); 
+  StepParamERP('Panel Size',Fnc.SysGetAttrValue('Panel_Size')); 
 end;

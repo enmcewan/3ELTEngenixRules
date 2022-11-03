@@ -169,18 +169,18 @@ procedure Core_Build_Buffing_SD;     // Herole added on 21-Jul-2018
 begin
   StepDeptERP('EPBUF-A');
   StepWCERP('EPBUF-A');
-  StepParamERP('1st Buffing Spec', MfgAttr('CoreBuild_CuThin_1stBuff'));
+  StepParamERP('1st Buffing Spec', Fnc.SysGetAttrValue('CoreBuild_CuThin_1stBuff'));
 end;
                                                       
 procedure NC_Drill_PEP_SD;     // Herole added on 21-Jul-2018
 begin
   StepDeptERP('DRILL-E');
   StepWCERP('DRILL-E');
-  StepParamERP('Stack Height', MfgAttr('Stack_Hgt'));
+  StepParamERP('Stack Height', Fnc.SysGetAttrValue('Stack_Hgt'));
   StepParamERP('Entry Sheet Material', 'Aluminum');  
-  StepParamERP('Material Tg', MfgAttr('TG_Class'));
-  StepParamERP('Thickness', FormatFloat('0.000', MfgAttr('LayupThickness')));
-  StepParamERP('Drill Side', MfgAttr('Drill_Side'));
+  StepParamERP('Material Tg', Fnc.SysGetAttrValue('TG_Class'));
+  StepParamERP('Thickness', FormatFloat('0.000', Fnc.SysGetAttrValue('LayupThickness')));
+  StepParamERP('Drill Side', Fnc.SysGetAttrValue('Drill_Side'));
 end;     
 
 procedure Photo_L4_SD;     // herole added on 23-Jul-2018                                                                     
@@ -189,17 +189,17 @@ begin
   StepWCERP('EXPOL-A4');
   StepParamERP('Alternative Line','L4');                              
   StepParamERP('Photo Type','Pattern Formation');
-  StepParamERP('Blown Width',MfgAttr('Line_Width_Blown'));
-  StepParamERP('Blown Gap',MfgAttr('Air_Gap_Blown')); 
-  StepParamERP('Land Area',MfgAttr('Land_Area')); 
-  StepParamERP('Annular', MfgAttr('Annular')); 
-  StepParamERP('Design Thickness', FormatFloat('0.000', MfgAttr('LayupThickness')));
-  StepParamERP('Min Hole Size NP', MfgAttr('Min_Drill_Size_NP'));
-  StepParamERP('Max Hole Size', MfgAttr('Max_Hole_Size'));  
-  StepParamERP('Max P-Hole Size', MfgAttr('Max_PHole_Size'));  
-  StepParamERP('Pre-preg Material', MfgAttr('PPGMat'));  
-  StepParamERP('Core Material', MfgAttr('CoreMat'));  
-  StepParamERP('Panel Size', MfgAttr('Panel_Size'));  
+  StepParamERP('Blown Width',Fnc.SysGetAttrValue('Line_Width_Blown'));
+  StepParamERP('Blown Gap',Fnc.SysGetAttrValue('Air_Gap_Blown')); 
+  StepParamERP('Land Area',Fnc.SysGetAttrValue('Land_Area')); 
+  StepParamERP('Annular', Fnc.SysGetAttrValue('Annular')); 
+  StepParamERP('Design Thickness', FormatFloat('0.000', Fnc.SysGetAttrValue('LayupThickness')));
+  StepParamERP('Min Hole Size NP', Fnc.SysGetAttrValue('Min_Drill_Size_NP'));
+  StepParamERP('Max Hole Size', Fnc.SysGetAttrValue('Max_Hole_Size'));  
+  StepParamERP('Max P-Hole Size', Fnc.SysGetAttrValue('Max_PHole_Size'));  
+  StepParamERP('Pre-preg Material', Fnc.SysGetAttrValue('PPGMat'));  
+  StepParamERP('Core Material', Fnc.SysGetAttrValue('CoreMat'));  
+  StepParamERP('Panel Size', Fnc.SysGetAttrValue('Panel_Size'));  
   end;          
                                                                            
 procedure Hole_Analyzer_SD;     // Herole added on 24-Jul-2018                                                            
@@ -235,12 +235,12 @@ procedure ENEPIG_Man_SD;     // Herole added on 26-Jul-2018
 begin
   StepDeptERP('AUPIG-A');                                   
   StepWCERP('AUPIG-A'); 
-  StepParamERP('Type', MfgAttr('Board_Finish'));  
+  StepParamERP('Type', Fnc.SysGetAttrValue('Board_Finish'));  
   StepParamERP('Note', 'Use ENEPIG Bath');   
-  StepParamERP('Area 2', MfgAttr('Sel_Gold_Area2'));
-  StepParamERP('Au Spec 2', MfgAttr('Sel_Gold_AuSpec2'));
-  StepParamERP('Ni Spec 2', MfgAttr('Sel_Gold_NiSpec2'));
-  StepParamERP('Palladium', MfgAttr('Palladium_Spec'));                                                                      
+  StepParamERP('Area 2', Fnc.SysGetAttrValue('Sel_Gold_Area2'));
+  StepParamERP('Au Spec 2', Fnc.SysGetAttrValue('Sel_Gold_AuSpec2'));
+  StepParamERP('Ni Spec 2', Fnc.SysGetAttrValue('Sel_Gold_NiSpec2'));
+  StepParamERP('Palladium', Fnc.SysGetAttrValue('Palladium_Spec'));                                                                      
 end;    
         
 procedure PAL4_Man_SD;     // Herole added on 26-Jul-2018                                                            
@@ -248,14 +248,14 @@ begin
   StepDeptERP('COPPL-C');                                   
   StepWCERP('COPPL-C1');                    
   StepParamERP('Plating Line', 'PAL4');   
-  StepParamERP('Thickness Before Plate', MfgAttr('Press_Thickness'));
-  StepParamERP('2nd DE Cu Thickness', MfgAttr('User_DE_Cu_Thk_2')); 
-  StepParamERP('2nd Min Drill Size', MfgAttr('Min_Drill_Size_2'));
-  StepParamERP('Ave Min PTH', MfgAttr('Ave_Min_Th_2'));    
-  StepParamERP('Abs Min PTH', MfgAttr('Abs_Min_Th_2'));  
-  StepParamERP('2nd PTH Aspect Ratio', MfgAttr('Aspect_Ratio_Val_2'));  
-  StepParamERP('2nd PTH Cu Plate Area', MfgAttr('PTH_CuPlt_Area_2'));    
-  StepParamERP('2nd Cu Ratio', MfgAttr('Cu_Ratio_2'));  
+  StepParamERP('Thickness Before Plate', PressThickness);
+  StepParamERP('2nd DE Cu Thickness', Fnc.SysGetAttrValue('User_DE_Cu_Thk_2')); 
+  StepParamERP('2nd Min Drill Size', Fnc.SysGetAttrValue('Min_Drill_Size_2'));
+  StepParamERP('Ave Min PTH', Fnc.SysGetAttrValue('Ave_Min_Th_2'));    
+  StepParamERP('Abs Min PTH', Fnc.SysGetAttrValue('Abs_Min_Th_2'));  
+  StepParamERP('2nd PTH Aspect Ratio', Fnc.SysGetAttrValue('Aspect_Ratio_Val_2'));  
+  StepParamERP('2nd PTH Cu Plate Area', Fnc.SysGetAttrValue('PTH_CuPlt_Area_2'));    
+  StepParamERP('2nd Cu Ratio', Fnc.SysGetAttrValue('Cu_Ratio_2'));  
   StepInstructionERP('COPPL001'); 
   StepInstructionERP('2NC_CUPLT2');
 end;   
@@ -264,8 +264,8 @@ procedure Epoxy_Plug_B_Man_SD;     // Herole added on 1-Aug-2018
 begin
   StepDeptERP('EPXPL-A');                                   
   StepWCERP('EPXPL-B0'); 
-  StepParamERP('Plug Ink', MfgAttr('EpoxyPlugInk'));   
-  StepParamERP('Top B Layer', MfgAttr('TopLayer'));                                                                   
+  StepParamERP('Plug Ink', Fnc.SysGetAttrValue('EpoxyPlugInk'));   
+  StepParamERP('Top B Layer', Fnc.SysGetAttrValue('TopLayer'));                                                                   
 end;  
 
 procedure Photo_Ledia_Manual_SD;     // herole added on 23-Jul-2018  // Updated on 2-Aug-18                                                                   
@@ -274,20 +274,20 @@ begin
   StepWCERP('EXPOL-A7');
   StepParamERP('Alternative Line','Ledia');                              
   StepParamERP('Photo Type','Pattern Formation');
-  StepParamERP('Blown Width',MfgAttr('Line_Width_Blown'));
-  StepParamERP('Blown Gap',MfgAttr('Air_Gap_Blown')); 
-  StepParamERP('Land Area',MfgAttr('Land_Area')); 
-  StepParamERP('Annular', MfgAttr('Annular')); 
-  StepParamERP('Min Hole Size', MfgAttr('Min_Drill_Size'));
-  StepParamERP('Design Thickness', FormatFloat('0.000', MfgAttr('LayupThickness')));
-  StepParamERP('Min Hole Size NP', MfgAttr('Min_Drill_Size_NP'));
-  StepParamERP('Max Hole Size', MfgAttr('Max_Hole_Size'));  
-  StepParamERP('Max P-Hole Size', MfgAttr('Max_PHole_Size')); 
-  StepParamERP('Max Slot Length', MfgAttr('Slot_Length_PTH')); 
+  StepParamERP('Blown Width',Fnc.SysGetAttrValue('Line_Width_Blown'));
+  StepParamERP('Blown Gap',Fnc.SysGetAttrValue('Air_Gap_Blown')); 
+  StepParamERP('Land Area',Fnc.SysGetAttrValue('Land_Area')); 
+  StepParamERP('Annular', Fnc.SysGetAttrValue('Annular')); 
+  StepParamERP('Min Hole Size', Fnc.SysGetAttrValue('Min_Drill_Size'));
+  StepParamERP('Design Thickness', FormatFloat('0.000', Fnc.SysGetAttrValue('LayupThickness')));
+  StepParamERP('Min Hole Size NP', Fnc.SysGetAttrValue('Min_Drill_Size_NP'));
+  StepParamERP('Max Hole Size', Fnc.SysGetAttrValue('Max_Hole_Size'));  
+  StepParamERP('Max P-Hole Size', Fnc.SysGetAttrValue('Max_PHole_Size')); 
+  StepParamERP('Max Slot Length', Fnc.SysGetAttrValue('Slot_Length_PTH')); 
   StepParamERP('Board Type', 'MLB');                                        
-  StepParamERP('Pre-preg Material', MfgAttr('PPGMat'));  
-  StepParamERP('Core Material', MfgAttr('CoreMat'));  
-  StepParamERP('Panel Size', MfgAttr('Panel_Size'));  
+  StepParamERP('Pre-preg Material', Fnc.SysGetAttrValue('PPGMat'));  
+  StepParamERP('Core Material', Fnc.SysGetAttrValue('CoreMat'));  
+  StepParamERP('Panel Size', Fnc.SysGetAttrValue('Panel_Size'));  
   end;     
   
 procedure Milling_Vcut_B_Man_SD;     // Herole added on 1-Aug-2018                                                            
@@ -310,7 +310,7 @@ procedure Pri_Plug_Buff_Man_SD;     // Herole added on 2-Aug-2018
 begin
   StepDeptERP('EPBUF-A');                                   
   StepWCERP('EPBUF-A');   
-  StepParamERP('Buffing Spec', MfgAttr('PrimaryPlug_CuThin_1stBuff')); 
+  StepParamERP('Buffing Spec', Fnc.SysGetAttrValue('PrimaryPlug_CuThin_1stBuff')); 
   StepInstructionERP('COPPL001');                                                             
 end;    
 
@@ -319,15 +319,15 @@ begin
   StepDeptERP('RESCO-B');
   StepWCERP('RESCO-B'); 
   StepParamERP('Resist Ink', 'PSR2000-SP300HFM');  
-  StepParamERP('Min Resist Clearance', MfgAttr('Min_Res_Cl')); 
-  StepParamERP('Min Resist Thickness', MfgAttr('Min_Res_Th'));
-  StepParamERP('Max Resist Thickness', MfgAttr('Max_Res_Th'));
-  StepParamERP('Min Resist Partition', MfgAttr('Min_Res_Pa')); 
+  StepParamERP('Min Resist Clearance', Fnc.SysGetAttrValue('Min_Res_Cl')); 
+  StepParamERP('Min Resist Thickness', Fnc.SysGetAttrValue('Min_Res_Th'));
+  StepParamERP('Max Resist Thickness', Fnc.SysGetAttrValue('Max_Res_Th'));
+  StepParamERP('Min Resist Partition', Fnc.SysGetAttrValue('Min_Res_Pa')); 
   StepParamERP('Smudges', 'Not Allowed');    
   StepParamERP('Exposed Cu', 'Not Allowed');
-  StepParamERP('Cu Thickness', MfgAttr('Ave_Fin_Th'));  
-  StepParamERP('Board Thickness', MfgAttr('LayupThickness')); 
-  StepParamERP('Panel Size', MfgAttr('Panel_Size'));  
+  StepParamERP('Cu Thickness', Fnc.SysGetAttrValue('Ave_Fin_Th'));  
+  StepParamERP('Board Thickness', Fnc.SysGetAttrValue('LayupThickness')); 
+  StepParamERP('Panel Size', Fnc.SysGetAttrValue('Panel_Size'));  
   StepInstructionERP('RESIS001'); 
 end;   
 
@@ -343,13 +343,13 @@ begin
   StepWCERP('COPPL-F');                    
   StepParamERP('Plating Line', 'FILL_VIA');   
   StepParamERP('Via Type', 'Blind');   
-  StepParamERP('Ave Min Blind', MfgAttr('Ave_Min_Bl'));    
-  StepParamERP('Abs Min Blind', MfgAttr('Abs_Min_Bl'));  
-  StepParamERP('Aspect Ratio Blind', MfgAttr('Blind_AspectRatio'));  
-  StepParamERP('Depth Blind', MfgAttr('Blind_Via_Depth'));    
-  StepParamERP('Conf. Mask Size', MfgAttr('ConfMask_Size'));   
-  StepParamERP('Thickness Before Plate', MfgAttr('Press_Thickness'));
-  StepParamERP('DE Cu Thickness', MfgAttr('User_DE_Cu_Thk'));  
+  StepParamERP('Ave Min Blind', Fnc.SysGetAttrValue('Ave_Min_Bl'));    
+  StepParamERP('Abs Min Blind', Fnc.SysGetAttrValue('Abs_Min_Bl'));  
+  StepParamERP('Aspect Ratio Blind', Fnc.SysGetAttrValue('Blind_AspectRatio'));  
+  StepParamERP('Depth Blind', Fnc.SysGetAttrValue('Blind_Via_Depth'));    
+  StepParamERP('Conf. Mask Size', Fnc.SysGetAttrValue('ConfMask_Size'));   
+  StepParamERP('Thickness Before Plate', PressThickness);
+  StepParamERP('DE Cu Thickness', Fnc.SysGetAttrValue('User_DE_Cu_Thk'));  
   StepInstructionERP('COPPL001');      
 end;    
 
@@ -364,12 +364,12 @@ procedure NC_Drill_Man_SD;     // Herole added on 16-Aug-2018
 begin
   StepDeptERP('DRILL-E');
   StepWCERP('DRILL-E');
-  StepParamERP('Stack Height', MfgAttr('Stack_Hgt')); 
-  StepParamERP('Flute Length', MfgAttr('Flute_Len'));
-  StepParamERP('Min Drill Size', MfgAttr('Min_Drill_Size'));
-  StepParamERP('Entry Sheet Material', MfgAttr('Drill_Entry_Sht'));
-  StepParamERP('Material Tg', MfgAttr('TG_Class'));
-  StepParamERP('Thickness', FormatFloat('0.000', MfgAttr('LayupThickness')));  
+  StepParamERP('Stack Height', Fnc.SysGetAttrValue('Stack_Hgt')); 
+  StepParamERP('Flute Length', Fnc.SysGetAttrValue('Flute_Len'));
+  StepParamERP('Min Drill Size', Fnc.SysGetAttrValue('Min_Drill_Size'));
+  StepParamERP('Entry Sheet Material', Fnc.SysGetAttrValue('Drill_Entry_Sht'));
+  StepParamERP('Material Tg', Fnc.SysGetAttrValue('TG_Class'));
+  StepParamERP('Thickness', FormatFloat('0.000', Fnc.SysGetAttrValue('LayupThickness')));  
   StepParamERP('Drill Side', 'Side B Top');
 end;
 
@@ -378,37 +378,37 @@ begin
   StepDeptERP('EXPIL-K');
   StepWCERP('EXPIL-K');                             
   StepParamERP('Photo Type','Pattern Formation');
-  StepParamERP('Blown Width',MfgAttr('Line_Width_Blown'));
-  StepParamERP('Blown Gap',MfgAttr('Air_Gap_Blown')); 
-  StepParamERP('Land Area',MfgAttr('Land_Area')); 
-  StepParamERP('Annular', MfgAttr('Annular')); 
-  StepParamERP('Min Hole Size', MfgAttr('Min_Drill_Size'));
-  StepParamERP('Design Thickness', FormatFloat('0.000', MfgAttr('LayupThickness')));
-  StepParamERP('Max Hole Size', MfgAttr('Max_Hole_Size'));  
-  StepParamERP('Max P-Hole Size', MfgAttr('Max_PHole_Size')); 
-  StepParamERP('Max Slot Length', MfgAttr('Slot_Length_PTH')); 
+  StepParamERP('Blown Width',Fnc.SysGetAttrValue('Line_Width_Blown'));
+  StepParamERP('Blown Gap',Fnc.SysGetAttrValue('Air_Gap_Blown')); 
+  StepParamERP('Land Area',Fnc.SysGetAttrValue('Land_Area')); 
+  StepParamERP('Annular', Fnc.SysGetAttrValue('Annular')); 
+  StepParamERP('Min Hole Size', Fnc.SysGetAttrValue('Min_Drill_Size'));
+  StepParamERP('Design Thickness', FormatFloat('0.000', Fnc.SysGetAttrValue('LayupThickness')));
+  StepParamERP('Max Hole Size', Fnc.SysGetAttrValue('Max_Hole_Size'));  
+  StepParamERP('Max P-Hole Size', Fnc.SysGetAttrValue('Max_PHole_Size')); 
+  StepParamERP('Max Slot Length', Fnc.SysGetAttrValue('Slot_Length_PTH')); 
   StepParamERP('Board Type', 'MLB');                                        
-  StepParamERP('Pre-preg Material', MfgAttr('PPGMat'));  
-  StepParamERP('Core Material', MfgAttr('CoreMat'));  
-  StepParamERP('Panel Size', MfgAttr('Panel_Size'));  
+  StepParamERP('Pre-preg Material', Fnc.SysGetAttrValue('PPGMat'));  
+  StepParamERP('Core Material', Fnc.SysGetAttrValue('CoreMat'));  
+  StepParamERP('Panel Size', Fnc.SysGetAttrValue('Panel_Size'));  
 end;     
 
 procedure IL_DES_Man_SD;     // Herole added on 16-Aug-2018                                                            
 begin
   StepDeptERP('DESIL-A');                                                            
   StepWCERP('DESIL-A');  
-  StepParamERP('Dynamic', MfgAttr('DynamicEtch'));   
+  StepParamERP('Dynamic', Fnc.SysGetAttrValue('DynamicEtch'));   
 end;     
        
 procedure IL_AOI_Man_SD;     // Herole added on 16-Aug-2018                                                            
 begin                                                                                                             
   StepDeptERP('INSIL-A');                                                            
   StepWCERP('INSIL-A');  
-  StepParamERP('Thickness', FormatFloat('0.000',MfgAttr('LayupThickness')));   
-  StepParamERP('Annular', MfgAttr('Annular'));                            
-  StepParamERP('Land Area', MfgAttr('Land_Area'));   
-  StepParamERP('Line Width', MfgAttr('Line_Width')); 
-  StepParamERP('Min Gap', MfgAttr('Air_Gap'));  
+  StepParamERP('Thickness', FormatFloat('0.000',Fnc.SysGetAttrValue('LayupThickness')));   
+  StepParamERP('Annular', Fnc.SysGetAttrValue('Annular'));                            
+  StepParamERP('Land Area', Fnc.SysGetAttrValue('Land_Area'));   
+  StepParamERP('Line Width', Fnc.SysGetAttrValue('Line_Width')); 
+  StepParamERP('Min Gap', Fnc.SysGetAttrValue('Air_Gap'));  
   StepInstructionERP('INSOL002');   
 end;  
 
@@ -417,15 +417,15 @@ begin
   StepDeptERP('RESCO-C');                                                                                         
   StepWCERP('RESCO-C'); 
   StepParamERP('Resist Ink', 'PSR4000-BNDG');                                           
-  StepParamERP('Min Resist Clearance', MfgAttr('Min_Res_Cl')); 
-  StepParamERP('Min Resist Thickness', MfgAttr('Min_Res_Th'));
-  StepParamERP('Max Resist Thickness', MfgAttr('Max_Res_Th'));
-  StepParamERP('Min Resist Partition', MfgAttr('Min_Res_Pa')); 
+  StepParamERP('Min Resist Clearance', Fnc.SysGetAttrValue('Min_Res_Cl')); 
+  StepParamERP('Min Resist Thickness', Fnc.SysGetAttrValue('Min_Res_Th'));
+  StepParamERP('Max Resist Thickness', Fnc.SysGetAttrValue('Max_Res_Th'));
+  StepParamERP('Min Resist Partition', Fnc.SysGetAttrValue('Min_Res_Pa')); 
   StepParamERP('Smudges', 'Not Allowed');    
   StepParamERP('Exposed Cu', 'Not Allowed');
-  StepParamERP('Cu Thickness', MfgAttr('Ave_Fin_Th'));            
-  StepParamERP('Board Thickness', MfgAttr('LayupThickness')); 
-  StepParamERP('Panel Size', MfgAttr('Panel_Size'));  
+  StepParamERP('Cu Thickness', Fnc.SysGetAttrValue('Ave_Fin_Th'));            
+  StepParamERP('Board Thickness', Fnc.SysGetAttrValue('LayupThickness')); 
+  StepParamERP('Panel Size', Fnc.SysGetAttrValue('Panel_Size'));  
 end;                        
 
 procedure Dewarp_Man_SD;     // Herole added on 24-Aug-2018                                                            
@@ -459,14 +459,14 @@ begin
   StepWCERP('EXPOL-A3');
   StepParamERP('Alternative Line','L3/L5/L6');                              
   StepParamERP('Photo Type','Pattern Formation');
-  StepParamERP('Blown Width',MfgAttr('Line_Width_Blown'));
-  StepParamERP('Blown Gap',MfgAttr('Air_Gap_Blown')); 
-  StepParamERP('Land Area',MfgAttr('Land_Area')); 
-  StepParamERP('Annular', MfgAttr('Annular')); 
-  StepParamERP('Design Thickness', FormatFloat('0.000', MfgAttr('LayupThickness')));                                        
-  StepParamERP('Pre-preg Material', MfgAttr('PPGMat'));  
-  StepParamERP('Core Material', MfgAttr('CoreMat'));  
-  StepParamERP('Panel Size', MfgAttr('Panel_Size'));  
+  StepParamERP('Blown Width',Fnc.SysGetAttrValue('Line_Width_Blown'));
+  StepParamERP('Blown Gap',Fnc.SysGetAttrValue('Air_Gap_Blown')); 
+  StepParamERP('Land Area',Fnc.SysGetAttrValue('Land_Area')); 
+  StepParamERP('Annular', Fnc.SysGetAttrValue('Annular')); 
+  StepParamERP('Design Thickness', FormatFloat('0.000', Fnc.SysGetAttrValue('LayupThickness')));                                        
+  StepParamERP('Pre-preg Material', Fnc.SysGetAttrValue('PPGMat'));  
+  StepParamERP('Core Material', Fnc.SysGetAttrValue('CoreMat'));  
+  StepParamERP('Panel Size', Fnc.SysGetAttrValue('Panel_Size'));  
   end;   
   
 procedure PEP_Man_SD;     // Herole added on 26-Sep-2018                                                            
@@ -481,7 +481,7 @@ begin
   StepDeptERP('EXPSM-A');                                                            
   StepWCERP('EXPSM-A');
   StepInstructionERP('EXPSM012');   
-  StepParamERP('Panel Size',MfgAttr('Panel_Size')); 
+  StepParamERP('Panel Size',Fnc.SysGetAttrValue('Panel_Size')); 
 end;                
 
 
@@ -491,7 +491,7 @@ begin
   StepWCERP('DMEAR-C0'); 
   StepParamERP('Pre-preg Material', 'TU-933');                                           
   StepParamERP('Core Material', 'TU-933'); 
-  StepParamERP('Thickness', FormatFloat('0.000',MfgAttr('LayupThickness'))); 
+  StepParamERP('Thickness', FormatFloat('0.000',Fnc.SysGetAttrValue('LayupThickness'))); 
   StepParamERP('Buffing', '1.7m/min');
   StepParamERP('HP Rinse', 'OFF'); 
   StepParamERP('Sweller', 'OFF');    
@@ -529,7 +529,7 @@ begin
   StepDeptERP('EPXPL-A');                                                                                         
   StepWCERP('EPXPL-B0'); 
   StepParamERP('Plug Ink', 'TAIYO THP100DX1');                                           
-  StepParamERP('Top B Layer', MfgAttr('TopLayer'));          
+  StepParamERP('Top B Layer', Fnc.SysGetAttrValue('TopLayer'));          
 end;   
 
 procedure Epoxy_A_Man_SD;     // Herole added on 22-Oct-2018                   
@@ -537,7 +537,7 @@ begin
   StepDeptERP('EPXPL-A');                                                                                         
   StepWCERP('EPXPL-B0'); 
   StepParamERP('Plug Ink', 'TAIYO THP100DX1');                                           
-  StepParamERP('Bottom A Layer', MfgAttr('BotLayer'));          
+  StepParamERP('Bottom A Layer', Fnc.SysGetAttrValue('BotLayer'));          
 end;                     
                                                                                                                                    
 procedure Secondary_Plug_Man_SD;     // Herole added on 24-Oct-2018                                                            
@@ -585,10 +585,10 @@ begin
   StepDeptERP('METAL-C');                                                                                         
   StepWCERP('METAL-C'); 
   StepParamERP('VELCP Line', 'V2 only');                                           
-  StepParamERP('Pre-preg Material', MfgAttr('PPGMat'));   
-  StepParamERP('Core Material', MfgAttr('CoreMat'));  
-  StepParamERP('Thickness', FormatFloat('0.000',MfgAttr('Press_Thickness'))); 
-  StepParamERP('Min Drill Size', MfgAttr('Min_Drill_Size'));
+  StepParamERP('Pre-preg Material', Fnc.SysGetAttrValue('PPGMat'));   
+  StepParamERP('Core Material', Fnc.SysGetAttrValue('CoreMat'));  
+  StepParamERP('Thickness', FormatFloat('0.000',PressThickness)); 
+  StepParamERP('Min Drill Size', Fnc.SysGetAttrValue('Min_Drill_Size'));
 end;    
 
 procedure ResScreen_BNPUR_Man_SD;     // Herole added on 7-Nov-2018                   
@@ -596,15 +596,15 @@ begin
   StepDeptERP('RESCO-C');                                                                                         
   StepWCERP('RESCO-C'); 
   StepParamERP('Resist Ink', 'PSR4000-BN(PUR)');                                           
-  StepParamERP('Min Resist Clearance', MfgAttr('Min_Res_Cl')); 
-  StepParamERP('Min Resist Thickness', MfgAttr('Min_Res_Th'));
-  StepParamERP('Max Resist Thickness', MfgAttr('Max_Res_Th'));
-  StepParamERP('Min Resist Partition', MfgAttr('Min_Res_Pa')); 
+  StepParamERP('Min Resist Clearance', Fnc.SysGetAttrValue('Min_Res_Cl')); 
+  StepParamERP('Min Resist Thickness', Fnc.SysGetAttrValue('Min_Res_Th'));
+  StepParamERP('Max Resist Thickness', Fnc.SysGetAttrValue('Max_Res_Th'));
+  StepParamERP('Min Resist Partition', Fnc.SysGetAttrValue('Min_Res_Pa')); 
   StepParamERP('Smudges', 'Not Allowed');    
   StepParamERP('Exposed Cu', 'Not Allowed');
-  StepParamERP('Cu Thickness', MfgAttr('Ave_Fin_Th'));            
-  StepParamERP('Board Thickness', MfgAttr('LayupThickness')); 
-  StepParamERP('Panel Size', MfgAttr('Panel_Size'));  
+  StepParamERP('Cu Thickness', Fnc.SysGetAttrValue('Ave_Fin_Th'));            
+  StepParamERP('Board Thickness', Fnc.SysGetAttrValue('LayupThickness')); 
+  StepParamERP('Panel Size', Fnc.SysGetAttrValue('Panel_Size'));  
 end;   
 
 procedure IL_Shearing_Man_SD;     // Herole added on 16-Nov-2018                                                            
@@ -617,11 +617,11 @@ procedure NC_Drill_PEP_SANDWICH_SD;     // Herole added on 30-Nov-2018
 begin
   StepDeptERP('DRILL-E');
   StepWCERP('DRILL-E');
-  StepParamERP('Stack Height', MfgAttr('Stack_Hgt')); 
+  StepParamERP('Stack Height', Fnc.SysGetAttrValue('Stack_Hgt')); 
   StepParamERP('Entry Sheet Material', 'Aluminum');  
-  StepParamERP('Material Tg', MfgAttr('TG_Class')); 
-  StepParamERP('Thickness', FormatFloat('0.000', MfgAttr('LayupThickness')));  
-  StepParamERP('Drill Side', MfgAttr('Drill_Side'));
+  StepParamERP('Material Tg', Fnc.SysGetAttrValue('TG_Class')); 
+  StepParamERP('Thickness', FormatFloat('0.000', Fnc.SysGetAttrValue('LayupThickness')));  
+  StepParamERP('Drill Side', Fnc.SysGetAttrValue('Drill_Side'));
   StepInstructionERP('DRILL123');
 end;      
 
@@ -636,14 +636,14 @@ begin
   StepDeptERP('RESCO-C');                                                                                         
   StepWCERP('RESCO-C'); 
   StepParamERP('Resist Ink', 'Greentec 600AA S70V(PUR)');                                           
-  StepParamERP('Min Resist Clearance', MfgAttr('Min_Res_Cl')); 
-  StepParamERP('Min Resist Thickness', MfgAttr('Min_Res_Th'));
-  StepParamERP('Max Resist Thickness', MfgAttr('Max_Res_Th'));
-  StepParamERP('Min Resist Partition', MfgAttr('Min_Res_Pa')); 
+  StepParamERP('Min Resist Clearance', Fnc.SysGetAttrValue('Min_Res_Cl')); 
+  StepParamERP('Min Resist Thickness', Fnc.SysGetAttrValue('Min_Res_Th'));
+  StepParamERP('Max Resist Thickness', Fnc.SysGetAttrValue('Max_Res_Th'));
+  StepParamERP('Min Resist Partition', Fnc.SysGetAttrValue('Min_Res_Pa')); 
   StepParamERP('Smudges', 'Not Allowed');    
   StepParamERP('Exposed Cu', 'Not Allowed');                     
-  StepParamERP('Board Thickness', MfgAttr('LayupThickness')); 
-  StepParamERP('Panel Size', MfgAttr('Panel_Size'));  
+  StepParamERP('Board Thickness', Fnc.SysGetAttrValue('LayupThickness')); 
+  StepParamERP('Panel Size', Fnc.SysGetAttrValue('Panel_Size'));  
 end;      
 
 procedure Photo_L6_Manual_SD;     // herole added on 13-Dec-2018                                                                    
@@ -651,27 +651,27 @@ begin
   StepDeptERP('EXPOL-A');
   StepWCERP('EXPOL-A6');                                                                                             
   StepParamERP('Photo Type','Pattern Formation');  
-  StepParamERP('Blown Width',MfgAttr('Line_Width_Blown'));
-  StepParamERP('Blown Gap',MfgAttr('Air_Gap_Blown')); 
-  StepParamERP('Land Area',MfgAttr('Land_Area'));                   
-  StepParamERP('Annular', MfgAttr('Annular')); 
-  StepParamERP('Design Thickness', FormatFloat('0.000', MfgAttr('LayupThickness')));
-  StepParamERP('Min Hole Size NP', MfgAttr('Min_Drill_Size_NP'));
-  StepParamERP('Aspect Ratio', MfgAttr('Aspect_Ratio_Val')); 
-  StepParamERP('Max Hole Size', MfgAttr('Max_Hole_Size'));  
-  StepParamERP('Max P-Hole Size', MfgAttr('Max_PHole_Size')); 
-  StepParamERP('Max Slot Length', MfgAttr('Slot_Length_PTH'));                                     
-  StepParamERP('Pre-preg Material', MfgAttr('PPGMat'));  
-  StepParamERP('Core Material', MfgAttr('CoreMat'));  
-  StepParamERP('Panel Size', MfgAttr('Panel_Size'));  
+  StepParamERP('Blown Width',Fnc.SysGetAttrValue('Line_Width_Blown'));
+  StepParamERP('Blown Gap',Fnc.SysGetAttrValue('Air_Gap_Blown')); 
+  StepParamERP('Land Area',Fnc.SysGetAttrValue('Land_Area'));                   
+  StepParamERP('Annular', Fnc.SysGetAttrValue('Annular')); 
+  StepParamERP('Design Thickness', FormatFloat('0.000', Fnc.SysGetAttrValue('LayupThickness')));
+  StepParamERP('Min Hole Size NP', Fnc.SysGetAttrValue('Min_Drill_Size_NP'));
+  StepParamERP('Aspect Ratio', Fnc.SysGetAttrValue('Aspect_Ratio_Val')); 
+  StepParamERP('Max Hole Size', Fnc.SysGetAttrValue('Max_Hole_Size'));  
+  StepParamERP('Max P-Hole Size', Fnc.SysGetAttrValue('Max_PHole_Size')); 
+  StepParamERP('Max Slot Length', Fnc.SysGetAttrValue('Slot_Length_PTH'));                                     
+  StepParamERP('Pre-preg Material', Fnc.SysGetAttrValue('PPGMat'));  
+  StepParamERP('Core Material', Fnc.SysGetAttrValue('CoreMat'));  
+  StepParamERP('Panel Size', Fnc.SysGetAttrValue('Panel_Size'));  
   end;  
   
   procedure OL_DES3_Man_SD;     // Herole added on 13-Dec-2018                                                            
 begin
   StepDeptERP('DESOL-A');                                                            
   StepWCERP('DESOL-A2');  
-  StepParamERP('Impedance', MfgAttr('Has_Impedance'));
-  StepParamERP('Dynamic', MfgAttr('DynamicEtch'));   
+  StepParamERP('Impedance', Fnc.SysGetAttrValue('Has_Impedance'));
+  StepParamERP('Dynamic', Fnc.SysGetAttrValue('DynamicEtch'));   
   StepInstructionERP('DESOL022');
 end;         
 
@@ -700,17 +700,17 @@ begin
   StepDeptERP('COPPL-E');                                                        
   StepWCERP('COPPL-E');                    
   StepParamERP('Plating Line', 'MCP');      
-  StepParamERP('Thickness Before Plate', MfgAttr('Press_Thickness'));
-  StepParamERP('Min Drill Size', MfgAttr('Min_Drill_Size'));
-  StepParamERP('Ave Min PTH', MfgAttr('Ave_Min_Th'));  
-  StepParamERP('Abs Min PTH', MfgAttr('Abs_Min_Th'));    
-  StepParamERP('Surface Plating Spec', MfgAttr('Surf_Plt_Spec'));  
-  StepParamERP('PTH Aspect Ratio', MfgAttr('AspectRatio'));  
-  StepParamERP('PTH Cu Plating Area', MfgAttr('PTH_CuPlt_Area'));  
-  StepParamERP('Cu Ratio', MfgAttr('Cu_Ratio'));     
-  StepParamERP('Min Surface Cu', MfgAttr('Min_Surf_Cu'));   
-  StepParamERP('Max Surface Cu', MfgAttr('Max_Surf_Cu'));   
-  StepParamERP('Application', MfgAttr('Application'));     
+  StepParamERP('Thickness Before Plate', PressThickness);
+  StepParamERP('Min Drill Size', Fnc.SysGetAttrValue('Min_Drill_Size'));
+  StepParamERP('Ave Min PTH', Fnc.SysGetAttrValue('Ave_Min_Th'));  
+  StepParamERP('Abs Min PTH', Fnc.SysGetAttrValue('Abs_Min_Th'));    
+  StepParamERP('Surface Plating Spec', Fnc.SysGetAttrValue('Surf_Plt_Spec'));  
+  StepParamERP('PTH Aspect Ratio', Fnc.SysGetAttrValue('AspectRatio'));  
+  StepParamERP('PTH Cu Plating Area', Fnc.SysGetAttrValue('PTH_CuPlt_Area'));  
+  StepParamERP('Cu Ratio', Fnc.SysGetAttrValue('Cu_Ratio'));     
+  StepParamERP('Min Surface Cu', Fnc.SysGetAttrValue('Min_Surf_Cu'));   
+  StepParamERP('Max Surface Cu', Fnc.SysGetAttrValue('Max_Surf_Cu'));   
+  StepParamERP('Application', Fnc.SysGetAttrValue('Application'));     
   StepInstructionERP('COPPL001'); 
 end;    
 
@@ -719,10 +719,10 @@ begin
   StepDeptERP('METAL-C');                                                                                         
   StepWCERP('METAL-C'); 
   StepParamERP('VELCP Line', 'V1 or V2 only');                                           
-  StepParamERP('Pre-preg Material', MfgAttr('PPGMat'));   
-  StepParamERP('Core Material', MfgAttr('CoreMat'));  
-  StepParamERP('Thickness', FormatFloat('0.000',MfgAttr('LayupThickness'))); 
-  StepParamERP('Min Drill Size', MfgAttr('Min_Drill_Size'));
+  StepParamERP('Pre-preg Material', Fnc.SysGetAttrValue('PPGMat'));   
+  StepParamERP('Core Material', Fnc.SysGetAttrValue('CoreMat'));  
+  StepParamERP('Thickness', FormatFloat('0.000',Fnc.SysGetAttrValue('LayupThickness'))); 
+  StepParamERP('Min Drill Size', Fnc.SysGetAttrValue('Min_Drill_Size'));
 end;   
 
 procedure Washing_Man_SD;     // Herole added on 3-May-2019                   
@@ -735,9 +735,9 @@ procedure FI_ENIG_OSP_Man_SD;     // Herole added on 3-May-2019
 begin
   StepDeptERP('FINAL-A');                                                                                         
   StepWCERP('FINAL-A');                                        
-  StepParamERP('Marking-A', MfgAttr('Marking_A'));   
-  StepParamERP('Marking-B', MfgAttr('Marking_B'));   
-  StepParamERP('Capped Via', MfgAttr('CappedVia')); 
+  StepParamERP('Marking-A', Fnc.SysGetAttrValue('Marking_A'));   
+  StepParamERP('Marking-B', Fnc.SysGetAttrValue('Marking_B'));   
+  StepParamERP('Capped Via', Fnc.SysGetAttrValue('CappedVia')); 
   StepParamERP('Gold Type', 'ENIG');
   StepParamERP('OSP Type', 'LEAD FREE WPF21 ORGNC');
 end;             
@@ -747,14 +747,14 @@ begin
   StepDeptERP('RESCO-B');
   StepWCERP('RESCO-B'); 
   StepParamERP('Resist Ink', 'PSR2000-SP300HFM');  
-  StepParamERP('Min Resist Clearance', MfgAttr('Min_Res_Cl')); 
-  StepParamERP('Min Resist Thickness', MfgAttr('Min_Res_Th'));
-  StepParamERP('Max Resist Thickness', MfgAttr('Max_Res_Th'));
-  StepParamERP('Min Resist Partition', MfgAttr('Min_Res_Pa')); 
+  StepParamERP('Min Resist Clearance', Fnc.SysGetAttrValue('Min_Res_Cl')); 
+  StepParamERP('Min Resist Thickness', Fnc.SysGetAttrValue('Min_Res_Th'));
+  StepParamERP('Max Resist Thickness', Fnc.SysGetAttrValue('Max_Res_Th'));
+  StepParamERP('Min Resist Partition', Fnc.SysGetAttrValue('Min_Res_Pa')); 
   StepParamERP('Smudges', 'Not Allowed');    
   StepParamERP('Exposed Cu', 'Not Allowed');
-  StepParamERP('Board Thickness', MfgAttr('LayupThickness')); 
-  StepParamERP('Panel Size', MfgAttr('Panel_Size'));  
+  StepParamERP('Board Thickness', Fnc.SysGetAttrValue('LayupThickness')); 
+  StepParamERP('Panel Size', Fnc.SysGetAttrValue('Panel_Size'));  
   StepInstructionERP('RESIS001');
 end;   
 
@@ -782,9 +782,9 @@ procedure ResScreen_Man_SD;     // Herole added on 5-Aug-2019
 begin
   StepDeptERP('RESCO-C');                                                                                         
   StepWCERP('RESCO-C');  
-  StepParamERP('Cu Thickness', MfgAttr('Ave_Fin_Th'));            
-  StepParamERP('Board Thickness', MfgAttr('LayupThickness')); 
-  StepParamERP('Panel Size', MfgAttr('Panel_Size'));
+  StepParamERP('Cu Thickness', Fnc.SysGetAttrValue('Ave_Fin_Th'));            
+  StepParamERP('Board Thickness', Fnc.SysGetAttrValue('LayupThickness')); 
+  StepParamERP('Panel Size', Fnc.SysGetAttrValue('Panel_Size'));
 end;
 
 procedure Plasma02_Man_SD;     // Herole added on 31-Oct-2019                   
@@ -806,8 +806,8 @@ begin
   StepDeptERP('COPPL-F');                                   
   StepWCERP('COPPL-F');                    
   StepParamERP('Plating Line', 'FILL_VIA');    
-  StepParamERP('Thickness Before Plate', MfgAttr('Press_Thickness'));
-  StepParamERP('DE Cu Thickness', MfgAttr('User_DE_Cu_Thk'));  
+  StepParamERP('Thickness Before Plate', PressThickness);
+  StepParamERP('DE Cu Thickness', Fnc.SysGetAttrValue('User_DE_Cu_Thk'));  
   StepInstructionERP('COPPL001');      
 end;                                              
 
@@ -851,19 +851,19 @@ begin
   StepDeptERP('EXPOL-A');
   StepWCERP('EXPOL-A3');                                                                                             
   StepParamERP('Photo Type','Alkaline Pattern Etch');  
-  StepParamERP('Blown Width',MfgAttr('Line_Width_Blown'));
-  StepParamERP('Blown Gap',MfgAttr('Air_Gap_Blown')); 
-  StepParamERP('Land Area',MfgAttr('Land_Area'));                   
-  StepParamERP('Annular', MfgAttr('Annular')); 
-  StepParamERP('Design Thickness', FormatFloat('0.000', MfgAttr('LayupThickness')));
-  StepParamERP('Min Hole Size NP', MfgAttr('Min_Drill_Size_NP'));
-  StepParamERP('Aspect Ratio', MfgAttr('Aspect_Ratio_Val')); 
-  StepParamERP('Max Hole Size', MfgAttr('Max_Hole_Size'));  
-  StepParamERP('Max P-Hole Size', MfgAttr('Max_PHole_Size')); 
-  StepParamERP('Max Slot Length', MfgAttr('Slot_Length_PTH'));                                     
-  StepParamERP('Pre-preg Material', MfgAttr('PPGMat'));  
-  StepParamERP('Core Material', MfgAttr('CoreMat'));  
-  StepParamERP('Panel Size', MfgAttr('Panel_Size'));  
+  StepParamERP('Blown Width',Fnc.SysGetAttrValue('Line_Width_Blown'));
+  StepParamERP('Blown Gap',Fnc.SysGetAttrValue('Air_Gap_Blown')); 
+  StepParamERP('Land Area',Fnc.SysGetAttrValue('Land_Area'));                   
+  StepParamERP('Annular', Fnc.SysGetAttrValue('Annular')); 
+  StepParamERP('Design Thickness', FormatFloat('0.000', Fnc.SysGetAttrValue('LayupThickness')));
+  StepParamERP('Min Hole Size NP', Fnc.SysGetAttrValue('Min_Drill_Size_NP'));
+  StepParamERP('Aspect Ratio', Fnc.SysGetAttrValue('Aspect_Ratio_Val')); 
+  StepParamERP('Max Hole Size', Fnc.SysGetAttrValue('Max_Hole_Size'));  
+  StepParamERP('Max P-Hole Size', Fnc.SysGetAttrValue('Max_PHole_Size')); 
+  StepParamERP('Max Slot Length', Fnc.SysGetAttrValue('Slot_Length_PTH'));                                     
+  StepParamERP('Pre-preg Material', Fnc.SysGetAttrValue('PPGMat'));  
+  StepParamERP('Core Material', Fnc.SysGetAttrValue('CoreMat'));  
+  StepParamERP('Panel Size', Fnc.SysGetAttrValue('Panel_Size'));  
   end;   
   
 procedure Alkaline_Developing_Man_SD;     // Herole added on 18-May-2020
@@ -925,15 +925,15 @@ begin
   StepDeptERP('EPBUF-A');                                   
   StepWCERP('EPBUF-A');                    
   StepInstructionERP('EPBUF015'); 
-  StepParamERP('Buffing Spec', MfgAttr('CoreBuild_CuThin_1stBuff'));    
+  StepParamERP('Buffing Spec', Fnc.SysGetAttrValue('CoreBuild_CuThin_1stBuff'));    
 end;   
 
 procedure Epoxy_A_SidebySide_Man_SD;     // Herole added on 12-Jan-2021                                                            
 begin
   StepDeptERP('EPXPL-A');                                   
   StepWCERP('EPXPL-B0');   
-  StepParamERP('Plug Ink', MfgAttr('EpoxyPlugInk')); 
-  StepParamERP('Plug to Non-plug', MfgAttr('EpoxyPlug_PlugToNonPlugSpacing'));   
+  StepParamERP('Plug Ink', Fnc.SysGetAttrValue('EpoxyPlugInk')); 
+  StepParamERP('Plug to Non-plug', Fnc.SysGetAttrValue('EpoxyPlug_PlugToNonPlugSpacing'));   
   StepParamERP('Plugging Side', 'A side');    
 end;   
 
@@ -941,8 +941,8 @@ procedure Epoxy_B_SidebySide_Man_SD;     // Herole added on 12-Jan-2021
 begin
   StepDeptERP('EPXPL-A');                                   
   StepWCERP('EPXPL-B0');   
-  StepParamERP('Plug Ink', MfgAttr('EpoxyPlugInk')); 
-  StepParamERP('Plug to Non-plug', MfgAttr('EpoxyPlug_PlugToNonPlugSpacing'));   
+  StepParamERP('Plug Ink', Fnc.SysGetAttrValue('EpoxyPlugInk')); 
+  StepParamERP('Plug to Non-plug', Fnc.SysGetAttrValue('EpoxyPlug_PlugToNonPlugSpacing'));   
   StepParamERP('Plugging Side', 'B side');    
 end;        
 
@@ -951,10 +951,10 @@ begin
   StepDeptERP('METAL-C');                                                                                         
   StepWCERP('METAL-C'); 
   StepParamERP('VELCP Line', 'V2 only');                                           
-  StepParamERP('Pre-preg Material', MfgAttr('PPGMat'));   
-  StepParamERP('Core Material', MfgAttr('CoreMat'));  
-  StepParamERP('Thickness', FormatFloat('0.000',MfgAttr('Press_Thickness'))); 
-  StepParamERP('Min Drill Size', MfgAttr('Min_Drill_Size_2'));
+  StepParamERP('Pre-preg Material', Fnc.SysGetAttrValue('PPGMat'));   
+  StepParamERP('Core Material', Fnc.SysGetAttrValue('CoreMat'));  
+  StepParamERP('Thickness', FormatFloat('0.000',PressThickness)); 
+  StepParamERP('Min Drill Size', Fnc.SysGetAttrValue('Min_Drill_Size_2'));
 end;   
 
 procedure OL_Photo_Acidetch_Man_SD;     // herole added on 20-Jan-2021
@@ -962,19 +962,19 @@ begin
   StepDeptERP('EXPOL-A');
   StepWCERP('EXPOL-A3');
   StepParamERP('Photo Type','Pattern Formation');
-  StepParamERP('Blown Width',MfgAttr('Line_Width_Blown'));
-  StepParamERP('Blown Gap',MfgAttr('Air_Gap_Blown'));
-  StepParamERP('Land Area',MfgAttr('Land_Area'));
-  StepParamERP('Annular', MfgAttr('Annular'));
-  StepParamERP('Design Thickness', FormatFloat('0.000', MfgAttr('LayupThickness')));
-  StepParamERP('Min Hole Size NP', MfgAttr('Min_Drill_Size_NP'));
-  StepParamERP('Aspect Ratio', MfgAttr('Aspect_Ratio_Val'));
-  StepParamERP('Max Hole Size', MfgAttr('Max_Hole_Size'));
-  StepParamERP('Max P-Hole Size', MfgAttr('Max_PHole_Size')); 
-  StepParamERP('Max Slot Length', MfgAttr('Slot_Length_PTH'));                                     
-  StepParamERP('Pre-preg Material', MfgAttr('PPGMat'));
-  StepParamERP('Core Material', MfgAttr('CoreMat'));  
-  StepParamERP('Panel Size', MfgAttr('Panel_Size'));
+  StepParamERP('Blown Width',Fnc.SysGetAttrValue('Line_Width_Blown'));
+  StepParamERP('Blown Gap',Fnc.SysGetAttrValue('Air_Gap_Blown'));
+  StepParamERP('Land Area',Fnc.SysGetAttrValue('Land_Area'));
+  StepParamERP('Annular', Fnc.SysGetAttrValue('Annular'));
+  StepParamERP('Design Thickness', FormatFloat('0.000', Fnc.SysGetAttrValue('LayupThickness')));
+  StepParamERP('Min Hole Size NP', Fnc.SysGetAttrValue('Min_Drill_Size_NP'));
+  StepParamERP('Aspect Ratio', Fnc.SysGetAttrValue('Aspect_Ratio_Val'));
+  StepParamERP('Max Hole Size', Fnc.SysGetAttrValue('Max_Hole_Size'));
+  StepParamERP('Max P-Hole Size', Fnc.SysGetAttrValue('Max_PHole_Size')); 
+  StepParamERP('Max Slot Length', Fnc.SysGetAttrValue('Slot_Length_PTH'));                                     
+  StepParamERP('Pre-preg Material', Fnc.SysGetAttrValue('PPGMat'));
+  StepParamERP('Core Material', Fnc.SysGetAttrValue('CoreMat'));  
+  StepParamERP('Panel Size', Fnc.SysGetAttrValue('Panel_Size'));
   end;
   
 procedure VELCP_V1V2CAPPED_Man_SD;     // Herole added on 07-Apr-2021
@@ -1027,11 +1027,11 @@ begin
   StepDeptERP('DRILL-E');
   StepWCERP('DRILL-E');
   StepInstructionERP('DRILL009');
-  StepParamERP('2nd Stack Height', MfgAttr('Stack_Hgt_2'));
-  StepParamERP('2nd Flute Length', MfgAttr('Flute_Len_2'));
-  StepParamERP('2nd Min Drill Size', MfgAttr('Min_Drill_Size_2'));
-  StepParamERP('Material Tg', MfgAttr('TG_Class'));
-  StepParamERP('Thickness', FormatFloat('0.000', MfgAttr('LayupThickness')));
+  StepParamERP('2nd Stack Height', Fnc.SysGetAttrValue('Stack_Hgt_2'));
+  StepParamERP('2nd Flute Length', Fnc.SysGetAttrValue('Flute_Len_2'));
+  StepParamERP('2nd Min Drill Size', Fnc.SysGetAttrValue('Min_Drill_Size_2'));
+  StepParamERP('Material Tg', Fnc.SysGetAttrValue('TG_Class'));
+  StepParamERP('Thickness', FormatFloat('0.000', Fnc.SysGetAttrValue('LayupThickness')));
 end;
 
 procedure ScopeDrill_8Hole_Man_SD;     // Herole added on 18-Aug-2021
@@ -1045,7 +1045,7 @@ procedure HotPress_Meiki_Man_SD;     // Herole added on 19-Oct-2021
 begin
   StepDeptERP('PRESS-B');
   StepWCERP('PRESS-B0');
-  StepParamERP('Press Thickness', FormatFloat('0.000', MfgAttr('Press_Thickness')));
+  StepParamERP('Press Thickness', FormatFloat('0.000', PressThickness));
 end;
 
 procedure Mechanical_DualDrill_Man_SD;     // Herole added on 14-Dec-2021
@@ -1067,16 +1067,16 @@ begin
   StepDeptERP('SCPDR-A');
   StepWCERP('SCPDR-A');
   StepInstructionERP('SCPDR001');
-  StepParamERP('KK Distance', MfgAttr('KK_Distance'));
-  StepParamERP('X Distance Length', MfgAttr('Panel_Length_XD'));
-  StepParamERP('Y Distance Width', MfgAttr('Panel_Width_XD'));
+  StepParamERP('KK Distance', Fnc.SysGetAttrValue('KK_Distance'));
+  StepParamERP('X Distance Length', Fnc.SysGetAttrValue('Panel_Length_XD'));
+  StepParamERP('Y Distance Width', Fnc.SysGetAttrValue('Panel_Width_XD'));
 end;
 
 procedure Countersunk_B_NPTH_Man_SD;     // Herole added on 22-Feb-2022
 begin
   StepDeptERP('ROUTE-A');
   StepWCERP('ROUTE-D0');
-  StepParamERP('Thickness', MfgAttr('LayupThickness'));
+  StepParamERP('Thickness', Fnc.SysGetAttrValue('LayupThickness'));
   StepParamERP('Angle', 'REFER TO PDD');
   StepParamERP('Drill Side', 'Side B');
 end;
@@ -1099,8 +1099,8 @@ begin
 begin
   StepDeptERP('BACKD-A');
   StepWCERP('BACKD-A');
-  StepParamERP('Thickness',MfgAttr('LayupThickness'));
-  StepParamERP('Machine',MfgAttr('BackDrill_Mch'));
+  StepParamERP('Thickness',Fnc.SysGetAttrValue('LayupThickness'));
+  StepParamERP('Machine',Fnc.SysGetAttrValue('BackDrill_Mch'));
   StepParamERP('Backdrill Side', 'A Side');
   StepInstructionERP('BACKD001');
   StepInstructionERP('BACKD002');
@@ -1110,8 +1110,8 @@ begin
 begin
   StepDeptERP('BACKD-A');
   StepWCERP('BACKD-A');
-  StepParamERP('Thickness',MfgAttr('LayupThickness'));
-  StepParamERP('Machine',MfgAttr('BackDrill_Mch'));
+  StepParamERP('Thickness',Fnc.SysGetAttrValue('LayupThickness'));
+  StepParamERP('Machine',Fnc.SysGetAttrValue('BackDrill_Mch'));
   StepParamERP('Backdrill Side', 'B Side');
   StepInstructionERP('BACKD001');
   StepInstructionERP('BACKD002');

@@ -11,9 +11,9 @@ RouteFunctions;
 
 procedure SecondaryPlug;
 begin
-  if pos('Secondary',MfgAttr('SMPlugType')) > 0 then
+  if pos('Secondary',Fnc.SysGetAttrValue('SMPlugType')) > 0 then
     begin     
-    case MfgAttr('SMPlugType') of
+    case Fnc.SysGetAttrValue('SMPlugType') of
       'Secondary SM Plug A' : AddStep('Secondary_PlugA', 'Secondary_PlugA01');
       'Secondary SM Plug AB' : begin AddStep('Secondary_PlugA', 'Secondary_PlugA01'); AddStep('Secondary_PlugB', 'Secondary_PlugB01'); end;
       'Secondary SM Plug B' : AddStep('Secondary_PlugB', 'Secondary_PlugB01');
@@ -53,9 +53,9 @@ begin
   AddStep('HighPressAirBlow', 'HighPressAirBlow01');
   
   // 1213 Additional Hole Check after Backdrill step condition 
-  if ( MfgAttr('SMPlugType') <> 'None' ) or ( MfgAttr('EpoxySide') <> 'None' ) then 
+  if ( Fnc.SysGetAttrValue('SMPlugType') <> 'None' ) or ( Fnc.SysGetAttrValue('EpoxySide') <> 'None' ) then 
   begin
-    if MfgAttr('BackDrill_Hole_Type') = 'Non-Plugged Holes' then
+    if Fnc.SysGetAttrValue('BackDrill_Hole_Type') = 'Non-Plugged Holes' then
       AddStep('Hole_Check_BD', 'Hole_Check_BD01');
   end;               
   
@@ -66,7 +66,7 @@ begin
   if (
       (
        (MaterialGetsBaking = true) or
-       (MfgAttr('Lead_Free') = true) or
+       (Fnc.SysGetAttrValue('Lead_Free') = true) or
        (CustCode_Rule('Customer') = 'HJ')
       )
   and
@@ -78,8 +78,8 @@ begin
     AddStep('Baking', 'Baking01');
     BakingDone := true;
 
-    if ( MfgAttr('Board_Finish') = 'OSP' ) and 
-       ( MfgAttr('Sel_Gold_Type') <> 'ENIG') then //) or ( ENIGplusOSP ) then // 1173 Additional Surface Finishing. Selective ENIG + OSP   // 1256 - removed ENIG + OSP per Herole comment
+    if ( Fnc.SysGetAttrValue('Board_Finish') = 'OSP' ) and 
+       ( Fnc.SysGetAttrValue('Sel_Gold_Type') <> 'ENIG') then //) or ( ENIGplusOSP ) then // 1173 Additional Surface Finishing. Selective ENIG + OSP   // 1256 - removed ENIG + OSP per Herole comment
       AddStep('OSP_Bake_Wash', 'OSP_Bake_Wash01');  // 761 - Add Washing step after baking for OSP finishing
   end;
 end;
@@ -152,15 +152,15 @@ end;
 procedure VCut;
 begin
   if (
-      (MfgAttr('LayupThickness') <= 0.65) or
-      (MfgAttr('DeWarp') = true) or
+      (Fnc.SysGetAttrValue('LayupThickness') <= 0.65) or
+      (Fnc.SysGetAttrValue('DeWarp') = true) or
       (
        (
-        ((MfgAttr('CoreMat') = 'MCL-BE-67G(H)') or (MfgAttr('PPGMat') = 'MCL-BE-67G(H)')) or
-        ((MfgAttr('CoreMat') = 'NPG-TL') or (MfgAttr('PPGMat') = 'NPG-TL'))
+        ((Fnc.SysGetAttrValue('CoreMat') = 'MCL-BE-67G(H)') or (Fnc.SysGetAttrValue('PPGMat') = 'MCL-BE-67G(H)')) or
+        ((Fnc.SysGetAttrValue('CoreMat') = 'NPG-TL') or (Fnc.SysGetAttrValue('PPGMat') = 'NPG-TL'))
        )
        and
-       (MfgAttr('LayupThickness') <= 1.0)
+       (Fnc.SysGetAttrValue('LayupThickness') <= 1.0)
       )
      )                        
   then
@@ -177,24 +177,24 @@ begin
   if BakingDone = false then
     Baking;
 
-  if ((MfgAttr('BackDrill') = true) and (BackDrillDone = false)) then  //Make sure this does not get done multiple times
+  if ((Fnc.SysGetAttrValue('BackDrill') = true) and (BackDrillDone = false)) then  //Make sure this does not get done multiple times
     Back_Drill;
 
   if (     
-      (MfgAttr('Gold_Tab_Rows') <= 2) and
+      (Fnc.SysGetAttrValue('Gold_Tab_Rows') <= 2) and
       (VCUT_TYPE = 'Panel') and
       (VCutDone = false)
      )
   then
     VCut;
 
-  if MfgAttr('LayupThickness') <= 3 then
+  if Fnc.SysGetAttrValue('LayupThickness') <= 3 then
   begin
     AddStep('ImmTin_AlkRinse', 'ImmTin_AlkRinse01');
 
-    if MfgAttr('CappedVia') = true then
+    if Fnc.SysGetAttrValue('CappedVia') = true then
     begin
-      if MfgAttr('Min_Surf_Plt') >= 18 then
+      if Fnc.SysGetAttrValue('Min_Surf_Plt') >= 18 then
         AddStep('MicroEtch_ImmTin', 'MicroEtch_ImmTin01');
     end
     else
@@ -215,36 +215,36 @@ begin
   if (
       (
        (MaterialGetsBaking = true) or
-       (MfgAttr('Lead_Free') = true) or
+       (Fnc.SysGetAttrValue('Lead_Free') = true) or
        (CustCode_Rule('Customer') = 'HJ')
       )
       or
       (                                      
-       (MfgAttr('Board_Finish') = 'Full Body Gold') or 
-       (MfgAttr('Board_Finish') = 'Thin/Thick Au Plate') or // 1256 NEED TO CHECK THIS
-       //(MfgAttr('Sel_Gold_Type') = 'BGA, Encapsulation') or  1256
-       // (MfgAttr('Sel_Gold_Type') = 'Pattern (Overhang)') or 1256
-       (MfgAttr('Sel_Gold_Type') = 'Pattern Overhang / PTH') or  // 1256 Need to check this
-       //(MfgAttr('Gold_Fgr_Type') = 'Lead Line Etching B4 Res (Sel)') or 1256
+       (Fnc.SysGetAttrValue('Board_Finish') = 'Full Body Gold') or 
+       (Fnc.SysGetAttrValue('Board_Finish') = 'Thin/Thick Au Plate') or // 1256 NEED TO CHECK THIS
+       //(Fnc.SysGetAttrValue('Sel_Gold_Type') = 'BGA, Encapsulation') or  1256
+       // (Fnc.SysGetAttrValue('Sel_Gold_Type') = 'Pattern (Overhang)') or 1256
+       (Fnc.SysGetAttrValue('Sel_Gold_Type') = 'Pattern Overhang / PTH') or  // 1256 Need to check this
+       //(Fnc.SysGetAttrValue('Gold_Fgr_Type') = 'Lead Line Etching B4 Res (Sel)') or 1256
        (Fnc.SysAttrEditGetAttrValue('Gold_Fgr_Type') = 'Lead Line Etching') or
-       //(MfgAttr('Gold_Fgr_Type') = 'Chamfer B4 Res (Sel)') or 911 
-       // (MfgAttr('Gold_Fgr_Type') = 'After Pattern (Sel)') or   1256
-       (MfgAttr('Gold_Fgr_Type') = 'NO Lead Line Etching') or
-       //(MfgAttr('Gold_Fgr_Type') = 'Lead Line Etching Af Res (Sel)') or 1256
-       (MfgAttr('Gold_Fgr_Type') = 'Au Finger Plate after SM') or
-       //(MfgAttr('Gold_Fgr_Type') = 'Chamfer Af Res (Sel)') or 1256
-       (MfgAttr('Board_Finish') = 'ENIG') or
-       //(MfgAttr('Board_Finish') = 'ENIG + OSP') or // 1173 Additional Surface Finishing. Selective ENIG + OSP 
+       //(Fnc.SysGetAttrValue('Gold_Fgr_Type') = 'Chamfer B4 Res (Sel)') or 911 
+       // (Fnc.SysGetAttrValue('Gold_Fgr_Type') = 'After Pattern (Sel)') or   1256
+       (Fnc.SysGetAttrValue('Gold_Fgr_Type') = 'NO Lead Line Etching') or
+       //(Fnc.SysGetAttrValue('Gold_Fgr_Type') = 'Lead Line Etching Af Res (Sel)') or 1256
+       (Fnc.SysGetAttrValue('Gold_Fgr_Type') = 'Au Finger Plate after SM') or
+       //(Fnc.SysGetAttrValue('Gold_Fgr_Type') = 'Chamfer Af Res (Sel)') or 1256
+       (Fnc.SysGetAttrValue('Board_Finish') = 'ENIG') or
+       //(Fnc.SysGetAttrValue('Board_Finish') = 'ENIG + OSP') or // 1173 Additional Surface Finishing. Selective ENIG + OSP 
        ( ENIGplusOSP ) or // 1256
-       (MfgAttr('Board_Finish') = 'ENEPIG') //or
-       // (MfgAttr('Gold_Fgr_Type') = 'Thin/Thick - Lead Line Etching B4 Res (Sel)') or 1256
-       //(MfgAttr('Gold_Fgr_Type') = 'Thin/Thick - Chamfer B4 Res (Sel)')  911
-       // (MfgAttr('Gold_Fgr_Type') = 'Thin/Thick - After Pattern (Sel)') 1256
+       (Fnc.SysGetAttrValue('Board_Finish') = 'ENEPIG') //or
+       // (Fnc.SysGetAttrValue('Gold_Fgr_Type') = 'Thin/Thick - Lead Line Etching B4 Res (Sel)') or 1256
+       //(Fnc.SysGetAttrValue('Gold_Fgr_Type') = 'Thin/Thick - Chamfer B4 Res (Sel)')  911
+       // (Fnc.SysGetAttrValue('Gold_Fgr_Type') = 'Thin/Thick - After Pattern (Sel)') 1256
       )
       or                                  
-      ((MfgAttr('Board_Finish') = 'HAL') or  
-       (MfgAttr('Board_Finish') = 'Lead Free HAL') or 
-       (MfgAttr('Board_Finish') = 'LB Free HAL + Immersion silver')) // 1322
+      ((Fnc.SysGetAttrValue('Board_Finish') = 'HAL') or  
+       (Fnc.SysGetAttrValue('Board_Finish') = 'Lead Free HAL') or 
+       (Fnc.SysGetAttrValue('Board_Finish') = 'LB Free HAL + Immersion silver')) // 1322
   and                             
       (HasSolderMaskType('PSR4000-AM10') = false )
      )
@@ -256,9 +256,9 @@ function LeadFreeHALWithGoldTaping : boolean;
 begin
   result := false;                          
   
-  if ( MfgAttr('Board_Finish') = 'Lead Free HAL' ) and
+  if ( Fnc.SysGetAttrValue('Board_Finish') = 'Lead Free HAL' ) and
      ( SelectiveGoldorFinger ) and
-     ( MfgAttr('Lead_Free_HAL_Process') = 'Taping' )
+     ( Fnc.SysGetAttrValue('Lead_Free_HAL_Process') = 'Taping' )
   then
     result := true;
 end
@@ -269,27 +269,27 @@ procedure RouteFlow04;
 begin                                 
  // HoleCheckDone := false;  ENIG Changes
 
-  if ((MfgAttr('Board_Finish') <> 'HAL') and  (MfgAttr('Board_Finish') <> 'Lead Free HAL')) then
+  if ((Fnc.SysGetAttrValue('Board_Finish') <> 'HAL') and  (Fnc.SysGetAttrValue('Board_Finish') <> 'Lead Free HAL')) then
     SecondaryPlug;
 
-  if MfgAttr('Gold_Fgr_Type') = 'Tab Plating' then
+  if Fnc.SysGetAttrValue('Gold_Fgr_Type') = 'Tab Plating' then
   begin
-    if MfgAttr('BackDrill') = true then
+    if Fnc.SysGetAttrValue('BackDrill') = true then
     begin
       if (
-          ((MfgAttr('OSP_Type') = 'LEAD FREE WPF21') or
-          (MfgAttr('OSP_Type') = 'LEAD FREE WPF21 ORGNC') or
-          (MfgAttr('OSP_Type') = 'LEAD FREE F2LX'))
+          ((Fnc.SysGetAttrValue('OSP_Type') = 'LEAD FREE WPF21') or
+          (Fnc.SysGetAttrValue('OSP_Type') = 'LEAD FREE WPF21 ORGNC') or
+          (Fnc.SysGetAttrValue('OSP_Type') = 'LEAD FREE F2LX'))
          and
           (
-           ( MfgAttr('Board_Finish') = 'OSP' ) or 
-           //( MfgAttr('Board_Finish') = 'ENIG + OSP' ) // 1173 Additional Surface Finishing. Selective ENIG + OSP 
+           ( Fnc.SysGetAttrValue('Board_Finish') = 'OSP' ) or 
+           //( Fnc.SysGetAttrValue('Board_Finish') = 'ENIG + OSP' ) // 1173 Additional Surface Finishing. Selective ENIG + OSP 
            ( ENIGplusOSP ) //1256
           ) 
          )
       then
       begin
-        if ((MfgAttr('BackDrill') = true) and (BackDrillDone = false)) then
+        if ((Fnc.SysGetAttrValue('BackDrill') = true) and (BackDrillDone = false)) then
           Back_Drill;
       end;
       else
@@ -298,7 +298,7 @@ begin
 
     if VCUT_TYPE = 'Panel' then
     begin
-      if MfgAttr('Gold_Tab_Rows') > 2 then
+      if Fnc.SysGetAttrValue('Gold_Tab_Rows') > 2 then
       begin
         if Fnc.HasImpedance = true then
         begin            
@@ -321,7 +321,7 @@ begin
     else
       AddStep('Gold_Tab_Plating', 'Gold_Tab_Plating01');
                                                         
-    {if ( MfgAttr('Board_Finish') = 'Immersion Silver' ) and ( MfgAttr('Imm_Silver_Process') = 'Taping' )      // 1256
+    {if ( Fnc.SysGetAttrValue('Board_Finish') = 'Immersion Silver' ) and ( Fnc.SysGetAttrValue('Imm_Silver_Process') = 'Taping' )      // 1256
     begin
       AddStep('Gold_Finger_Taping', 'Gold_Finger_Taping01'); 
       AddStep('Baking', 'BakingGFT');
@@ -330,12 +330,12 @@ begin
   end;                         
 
   // 1322 LB Free HAL + Imm Ag
-  if MfgAttr('Board_Finish') = 'LB Free HAL + Immersion silver' then
+  if Fnc.SysGetAttrValue('Board_Finish') = 'LB Free HAL + Immersion silver' then
     AddStep('Immersion_Silver', 'Immersion_Silver01');    
 
-  if (MfgAttr('Board_Finish') = 'HAL') or  
-     ((MfgAttr('Board_Finish') = 'Lead Free HAL') and ( Not SelectiveGoldorFinger )) or
-     (MfgAttr('Board_Finish') = 'LB Free HAL + Immersion silver') then
+  if (Fnc.SysGetAttrValue('Board_Finish') = 'HAL') or  
+     ((Fnc.SysGetAttrValue('Board_Finish') = 'Lead Free HAL') and ( Not SelectiveGoldorFinger )) or
+     (Fnc.SysGetAttrValue('Board_Finish') = 'LB Free HAL + Immersion silver') then
   begin 
     AddStep('HAL', 'HAL01');
 
@@ -346,11 +346,11 @@ begin
   end
   else
   begin
-    //if ((ENIG_NFluxDone = true) and (MfgAttr('BackDrill') = true)) then
+    //if ((ENIG_NFluxDone = true) and (Fnc.SysGetAttrValue('BackDrill') = true)) then
     //  AddStep('Hole_Check');
     if ( not ENIG_NFluxDone ) and ( not LeadFreeHALWithGoldTaping ) then
     begin
-      //if MfgAttr('BackDrill') = false then    973 - Hole Check After Backdrill Step
+      //if Fnc.SysGetAttrValue('BackDrill') = false then    973 - Hole Check After Backdrill Step
       //begin
         if not HoleCheckDone then
         begin
@@ -361,25 +361,25 @@ begin
     end;
   end;
   
-  //if ( MfgAttr('Board_Finish') = 'Immersion Silver' ) and ( MfgAttr('Imm_Silver_Process') = 'Taping' ) then      // 1256
+  //if ( Fnc.SysGetAttrValue('Board_Finish') = 'Immersion Silver' ) and ( Fnc.SysGetAttrValue('Imm_Silver_Process') = 'Taping' ) then      // 1256
   //  AddStep('Gold_Finger_Taping', 'Gold_Finger_Taping01'); 
                    
-  if MfgAttr('Carbon_Ink') = true then
+  if Fnc.SysGetAttrValue('Carbon_Ink') = true then
     AddStep('Carbon_Ink', 'Carbon_Ink01');
 
   if (
-      ((MfgAttr('BackDrill') = true) and (BackDrillDone = false)) and
-      (MfgAttr('Board_Finish') <> 'Immersion Tin')
+      ((Fnc.SysGetAttrValue('BackDrill') = true) and (BackDrillDone = false)) and
+      (Fnc.SysGetAttrValue('Board_Finish') <> 'Immersion Tin')
      )               
   then //Check reverse condition is true
     Back_Drill;
 
-  if MfgAttr('Board_Finish') = 'Immersion Tin' then
+  if Fnc.SysGetAttrValue('Board_Finish') = 'Immersion Tin' then
     Immersion_TinPt2;
                              
-  if ( MfgAttr('Board_Finish') = 'Immersion Silver' ) and
+  if ( Fnc.SysGetAttrValue('Board_Finish') = 'Immersion Silver' ) and
      ( SelectiveGoldorFinger ) and
-     ( MfgAttr('Imm_Silver_Process') = 'Taping' ) then    // 1256 - Comment from Herole
+     ( Fnc.SysGetAttrValue('Imm_Silver_Process') = 'Taping' ) then    // 1256 - Comment from Herole
   begin                    
     AddStep('Imm_Silv_Taping', 'Imm_Silv_Taping01'); 
     Immersion_Silver_Sel_Gold('Taping');                    
@@ -392,12 +392,12 @@ begin
     SecondaryPlug; // 1469
   end;
                              
-  if (MfgAttr('Has_Impedance') = true) and (ImpedanceDone <> true) then
+  if (Fnc.SysGetAttrValue('Has_Impedance') = true) and (ImpedanceDone <> true) then
     AddStep('Impedance', 'Impedance01');
                                
   if (
-      ((MfgAttr('Comp_Type') = 'RESISTANCE') and (MfgAttr('Line_Width') <> 0.0)) or
-      (MfgAttr('Comp_Type') = 'CAPACITANCE & RESISTANCE')
+      ((Fnc.SysGetAttrValue('Comp_Type') = 'RESISTANCE') and (Fnc.SysGetAttrValue('Line_Width') <> 0.0)) or
+      (Fnc.SysGetAttrValue('Comp_Type') = 'CAPACITANCE & RESISTANCE')
      )
   then
      AddStep('Resistance_Test', 'Resistance_Test01');
@@ -406,46 +406,46 @@ begin
   then
     VCut;                  
 
-  if MfgAttr('NPCountersink') = true then
+  if Fnc.SysGetAttrValue('NPCountersink') = true then
     AddStep('NPCounterSink', 'NPCounterSink01');             
 
-  if MfgAttr('Chamfer_Type') = 'Panel Routed' then
+  if Fnc.SysGetAttrValue('Chamfer_Type') = 'Panel Routed' then
   begin
     AddStep('PnlRte_Chamfer_PR', 'PnlRte_Chamfer_PR01');
     AddStep('PnlRte_Chamfer', 'PnlRte_Chamfer01');
   end;
 
-  if MfgAttr('Milling_Type') = 'Edge Milling'  then
+  if Fnc.SysGetAttrValue('Milling_Type') = 'Edge Milling'  then
   begin
     AddStep('Edge_Milling_PR', 'Edge_Milling_PR01');
     AddStep('Edge_Milling', 'Edge_Milling01');
   end;
 
-  if MfgAttr('Milling_Type') = 'Milling'  then
+  if Fnc.SysGetAttrValue('Milling_Type') = 'Milling'  then
     AddStep('Milling', 'Milling01');
 
-  if MfgAttr('Counterbore') = true  then
+  if Fnc.SysGetAttrValue('Counterbore') = true  then
     AddStep('Counterbore', 'Counterbore01');
 
-  if MfgAttr('PunchB4EC') = true  then
+  if Fnc.SysGetAttrValue('PunchB4EC') = true  then
   begin
     AddStep('Punching', 'Punching01');
 
-    if MfgAttr('Punch_Type') = '2 Stage Punch' then
+    if Fnc.SysGetAttrValue('Punch_Type') = '2 Stage Punch' then
       AddStep('Punching_X2', 'Punching_X2');
   end;
 
   if (
-      (MfgAttr('EC_Type') = 'Panel - Before Primary Routing') or
-      (MfgAttr('EC_Type') = 'Panel - Before Routing') or
-      (MfgAttr('EC_Type') = 'Panel - Before Punching')
+      (Fnc.SysGetAttrValue('EC_Type') = 'Panel - Before Primary Routing') or
+      (Fnc.SysGetAttrValue('EC_Type') = 'Panel - Before Routing') or
+      (Fnc.SysGetAttrValue('EC_Type') = 'Panel - Before Punching')
      )
   then
      AddStep('Panel_EC', 'Panel_EC01');
 
-  if (MfgAttr('Board_Finish') <> 'HAL') and  
-     (MfgAttr('Board_Finish') <> 'Lead Free HAL') and
-     (MfgAttr('Board_Finish') <> 'LB Free HAL + Immersion silver') // 1322
+  if (Fnc.SysGetAttrValue('Board_Finish') <> 'HAL') and  
+     (Fnc.SysGetAttrValue('Board_Finish') <> 'Lead Free HAL') and
+     (Fnc.SysGetAttrValue('Board_Finish') <> 'LB Free HAL + Immersion silver') // 1322
   then
   begin
     if HoleCheckDone = false then
@@ -454,60 +454,60 @@ begin
 
   AddStep('Routing', 'Routing01');
 
-  if ((MfgAttr('PunchB4EC') = false) and (MfgAttr('Punch_Type') <> 'None'))  then
+  if ((Fnc.SysGetAttrValue('PunchB4EC') = false) and (Fnc.SysGetAttrValue('Punch_Type') <> 'None'))  then
   begin
     AddStep('Punching', 'Punching01');
 
-    if MfgAttr('Punch_Type') = '2 Stage Punch' then
+    if Fnc.SysGetAttrValue('Punch_Type') = '2 Stage Punch' then
       AddStep('Punching_X2', 'Punching_X201');
   end;
 
-  if ((MfgAttr('VCut_Type') = 'PIECE V-CUT') and (VCutDone = false))  then
+  if ((Fnc.SysGetAttrValue('VCut_Type') = 'PIECE V-CUT') and (VCutDone = false))  then
     VCut;
 
-  if MfgAttr('Chamfer_Type') = 'Piece' then
+  if Fnc.SysGetAttrValue('Chamfer_Type') = 'Piece' then
     AddStep('Piece_Chamfer', 'Piece_Chamfer01');
 
   AddStep('Final_Rinse', 'Final_Rinse01');
 
   AddStep('InkJet', 'InkJet01');
 
-  if MfgAttr('EC_Type') = 'Part' then
+  if Fnc.SysGetAttrValue('EC_Type') = 'Part' then
     AddStep('Part_EC', 'Part_EC01');
 
   // 1310 Additiona Backdrill EC
-  if ( MfgAttr('BackDrill') ) and
-     ( MfgAttr('BackDrill_EC') ) and 
+  if ( Fnc.SysGetAttrValue('BackDrill') ) and
+     ( Fnc.SysGetAttrValue('BackDrill_EC') ) and 
      ( not GetsHiPot )
   then
     AddStep('BackDrill_EC', 'BackDrill_EC01');
 
-  if MfgAttr('FourWireMsm') then
+  if Fnc.SysGetAttrValue('FourWireMsm') then
     AddStep('EC_FlyingProbe', 'EC_FlyingProbe01');
                     
   if GetsHiPot then // 1310 Additiona Backdrill EC
   begin
     AddStep('HiPotTest', 'HiPotTest01');
                                    
-    if ( MfgAttr('BackDrill') ) and ( MfgAttr('BackDrill_EC') ) then
+    if ( Fnc.SysGetAttrValue('BackDrill') ) and ( Fnc.SysGetAttrValue('BackDrill_EC') ) then
       AddStep('BackDrill_EC', 'BackDrill_EC01');  
   end;
 
-  if MfgAttr('TwoDBarcode') = true then
+  if Fnc.SysGetAttrValue('TwoDBarcode') = true then
     AddStep('TwoDBarcode', 'TwoDBarcode01');
 
-  if  (( CustCode_Rule('Customer') = 'HQ' ) and ( MfgAttr('LayupThickness') >= 2.29 )) or
+  if  (( CustCode_Rule('Customer') = 'HQ' ) and ( Fnc.SysGetAttrValue('LayupThickness') >= 2.29 )) or
       ( WarpageLessThanPointFivePct ) or
-      (MfgAttr('LayupThickness') <= 0.6) or
-      (MfgAttr('DeWarp') = true)
+      (Fnc.SysGetAttrValue('LayupThickness') <= 0.6) or
+      (Fnc.SysGetAttrValue('DeWarp') = true)
   then
     AddStep('DeWarp', 'DeWarp02');
 
    //Per Immersion Silver changes from Mani  Jan 2016
-   if ( MfgAttr('Board_Finish') = 'Immersion Silver' ) and ( not SelectiveGoldorFinger ) then
+   if ( Fnc.SysGetAttrValue('Board_Finish') = 'Immersion Silver' ) and ( not SelectiveGoldorFinger ) then
      Immersion_Silver; 
 
-  if ( MfgAttr('Board_Finish') = 'OSP' ) or ( ENIGplusOSP ) then // 1173 Additional Surface Finishing. // 1256
+  if ( Fnc.SysGetAttrValue('Board_Finish') = 'OSP' ) or ( ENIGplusOSP ) then // 1173 Additional Surface Finishing. // 1256
   begin
     if BakingDone = false then          
       Baking;                                                                 
@@ -529,42 +529,42 @@ begin
       AddStep('Baking', 'Baking01');
       BakingDone := true;
 
-      if  (( MfgAttr('Gold_Fgr_Type') <> 'None' ) and ( MfgAttr('Gold_Fgr_Type') <> 'Tab Plating' )) or
-          ( MfgAttr('Sel_Gold_Type') <> 'None' ) or
-          (( MfgAttr('Board_Finish') = 'Immersion Silver' ) and ( MfgAttr('Imm_Silver_Process') = 'Taping' ))  
+      if  (( Fnc.SysGetAttrValue('Gold_Fgr_Type') <> 'None' ) and ( Fnc.SysGetAttrValue('Gold_Fgr_Type') <> 'Tab Plating' )) or
+          ( Fnc.SysGetAttrValue('Sel_Gold_Type') <> 'None' ) or
+          (( Fnc.SysGetAttrValue('Board_Finish') = 'Immersion Silver' ) and ( Fnc.SysGetAttrValue('Imm_Silver_Process') = 'Taping' ))  
       then                              
         AddStep('OffLine_PreTreat', 'OffLine_PreTreat02');
     end;
   end;
 
-  if (( MfgAttr('Board_Finish') = 'Immersion Silver' ) and (MfgAttr('CM_Plus') = true )) then
+  if (( Fnc.SysGetAttrValue('Board_Finish') = 'Immersion Silver' ) and (Fnc.SysGetAttrValue('CM_Plus') = true )) then
     AddStep('PreFinish_Insp', 'PreFinish_Insp01')
   else
     AddStep('Final_Insp', 'Final_Insp01');
 
   if (
       (                                             
-       //(MfgAttr('Gold_Fgr_Type') = 'Lead Line Etching B4 Res (Sel)') or  1256
-       (MfgAttr('Gold_Fgr_Type') = 'Lead Line Etching') or
-       (MfgAttr('Gold_Fgr_Type') = 'No Horn - Lead Line Etching B4 Res (Sel)') or
-       //(MfgAttr('Gold_Fgr_Type') = 'Chamfer B4 Res (Sel)') or  911
-       // (MfgAttr('Gold_Fgr_Type') = 'After Pattern (Sel)') or 1256
-       (MfgAttr('Gold_Fgr_Type') = 'NO Lead Line Etching') or
-       //(MfgAttr('Gold_Fgr_Type') = 'Thin/Thick - Lead Line Etching B4 Res (Sel)') or 1256
-       //(MfgAttr('Gold_Fgr_Type') = 'Thin/Thick - Chamfer B4 Res (Sel)') or 
-       //(MfgAttr('Gold_Fgr_Type') = 'Thin/Thick - After Pattern (Sel)') or  1256
-       (MfgAttr('Sel_Gold_Type') <> 'None')
+       //(Fnc.SysGetAttrValue('Gold_Fgr_Type') = 'Lead Line Etching B4 Res (Sel)') or  1256
+       (Fnc.SysGetAttrValue('Gold_Fgr_Type') = 'Lead Line Etching') or
+       (Fnc.SysGetAttrValue('Gold_Fgr_Type') = 'No Horn - Lead Line Etching B4 Res (Sel)') or
+       //(Fnc.SysGetAttrValue('Gold_Fgr_Type') = 'Chamfer B4 Res (Sel)') or  911
+       // (Fnc.SysGetAttrValue('Gold_Fgr_Type') = 'After Pattern (Sel)') or 1256
+       (Fnc.SysGetAttrValue('Gold_Fgr_Type') = 'NO Lead Line Etching') or
+       //(Fnc.SysGetAttrValue('Gold_Fgr_Type') = 'Thin/Thick - Lead Line Etching B4 Res (Sel)') or 1256
+       //(Fnc.SysGetAttrValue('Gold_Fgr_Type') = 'Thin/Thick - Chamfer B4 Res (Sel)') or 
+       //(Fnc.SysGetAttrValue('Gold_Fgr_Type') = 'Thin/Thick - After Pattern (Sel)') or  1256
+       (Fnc.SysGetAttrValue('Sel_Gold_Type') <> 'None')
       )                                                                       
       or
       (ProdCodeLXType) or
-      (MfgAttr('Design_Type') = 'Flip Chip') or
+      (Fnc.SysGetAttrValue('Design_Type') = 'Flip Chip') or
       ((Eng_JobType = 'Production') and (CustCode_Rule('Customer') = 'BC')) or
       (HardGoldB4Resist)                      
      )
   then
     AddStep('Final_Scope_Ins', 'Final_Scope_Ins01');
 
-  if (( MfgAttr('Board_Finish') = 'Immersion Silver' ) and (MfgAttr('CM_Plus') = true )) then
+  if (( Fnc.SysGetAttrValue('Board_Finish') = 'Immersion Silver' ) and (Fnc.SysGetAttrValue('CM_Plus') = true )) then
   begin
     AddStep('CMPlus_Coating', 'CMPlus_Coating01');
     AddStep('Final_Insp', 'Final_Insp01');

@@ -170,9 +170,9 @@ begin
   WorkSheet.Cells[row,5].Value := Fnc.GetJobData.Values['PartNumberName'];
   WorkSheet.Cells[row,6].Value  := Eng_JobType;  
   WorkSheet.Cells[row,8].Value  := GenMaterialType;    
-  WorkSheet.Cells[row,9].Value := MfgAttr('LayerCount');
-  WorkSheet.Cells[row,15].Value := MfgAttr('Panel_Length');
-  WorkSheet.Cells[row,16].Value := MfgAttr('Panel_Width');
+  WorkSheet.Cells[row,9].Value := Fnc.SysGetAttrValue('LayerCount');
+  WorkSheet.Cells[row,15].Value := Fnc.SysGetAttrValue('Panel_Length');
+  WorkSheet.Cells[row,16].Value := Fnc.SysGetAttrValue('Panel_Width');
 end;
 
 procedure GenExcelReport(ExportDateMode: boolean);

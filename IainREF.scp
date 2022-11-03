@@ -26,8 +26,8 @@ function CheckForSmallHoleInsp : boolean;
 begin
   result := false;
   if (
-      ((MfgAttr('LayupThickness') < 0.080) and (MfgAttr('AspectRatio') >= 6.9)) or
-      ((MfgAttr('LayupThickness') >= 0.080) and (MfgAttr('AspectRatio') > 6.9))
+      ((Fnc.SysGetAttrValue('LayupThickness') < 0.080) and (Fnc.SysGetAttrValue('AspectRatio') >= 6.9)) or
+      ((Fnc.SysGetAttrValue('LayupThickness') >= 0.080) and (Fnc.SysGetAttrValue('AspectRatio') > 6.9))
      )
   then                                         
     result := true;
@@ -37,8 +37,8 @@ function CheckForSmallHoleInspFilledVia : boolean;
 begin
   result := false;
   if (
-      ((MfgAttr('LayupThickness') < 0.080) and (MfgAttr('AspectRatioFV') >= 6.9)) or
-      ((MfgAttr('LayupThickness') >= 0.080) and (MfgAttr('AspectRatioFV') > 6.9))
+      ((Fnc.SysGetAttrValue('LayupThickness') < 0.080) and (Fnc.SysGetAttrValue('AspectRatioFV') >= 6.9)) or
+      ((Fnc.SysGetAttrValue('LayupThickness') >= 0.080) and (Fnc.SysGetAttrValue('AspectRatioFV') > 6.9))
      )
   then
     result := true;
@@ -80,7 +80,7 @@ begin
   //  ShowMessage('PartNumber = ' + Eng_PartNumber);
   //  ShowMessage('Part Revision = ' + Eng_PartRev);
   if Eng_PartNumber <> 'XXXXX' then begin
-    if MfgAttr('MfgPartLayers') <= 4 then
+    if Fnc.SysGetAttrValue('MfgPartLayers') <= 4 then
       StandardScrap := 5
     else
       StandardScrap := 10;
@@ -203,15 +203,15 @@ begin
   sETTest := '';
 
   // Layer count
-  if MfgAttr('MfgPartLayers') = 1 then
+  if Fnc.SysGetAttrValue('MfgPartLayers') = 1 then
     sProcessCd := '1';
-  if MfgAttr('MfgPartLayers') = 2 then
+  if Fnc.SysGetAttrValue('MfgPartLayers') = 2 then
     sProcessCd := '2';
-  if MfgAttr('MfgPartLayers') > 2 then
+  if Fnc.SysGetAttrValue('MfgPartLayers') > 2 then
     sProcessCd := '3';
 
   //Material Type
-{  case MfgAttr('LamType') of
+{  case Fnc.SysGetAttrValue('LamType') of
     'CEM1' : sMaterialType := '1';
     'CEM3' : sMaterialType := '2';
     'FR4' : sMaterialType := '3';
@@ -238,37 +238,37 @@ begin
   sProcessCd := sProcessCd + sMaterialType;
 
   //Gold Type
-  if ((MfgAttr('SurfaceFinish') <> 'Full Body Gold') and
-      (MfgAttr('SurfaceFinish') <> 'ENIG') and
-      (MfgAttr('SurfaceFinish') <> 'ENIG pre-soldermask') and
-      (MfgAttr('SurfaceFinish') <> 'Wire Bondable Gold') and
-      (MfgAttr('SurfaceFinish') <> 'Palladium/Nickel/Gold') and
-      (MfgAttr('GoldTabCount') = 0) and
-      (MfgAttr('SubHardGold') = 'N/A')) then
+  if ((Fnc.SysGetAttrValue('SurfaceFinish') <> 'Full Body Gold') and
+      (Fnc.SysGetAttrValue('SurfaceFinish') <> 'ENIG') and
+      (Fnc.SysGetAttrValue('SurfaceFinish') <> 'ENIG pre-soldermask') and
+      (Fnc.SysGetAttrValue('SurfaceFinish') <> 'Wire Bondable Gold') and
+      (Fnc.SysGetAttrValue('SurfaceFinish') <> 'Palladium/Nickel/Gold') and
+      (Fnc.SysGetAttrValue('GoldTabCount') = 0) and
+      (Fnc.SysGetAttrValue('SubHardGold') = 'N/A')) then
     sGoldType := '0'
   else begin
-    if MfgAttr('GoldTabCount') > 0 then
+    if Fnc.SysGetAttrValue('GoldTabCount') > 0 then
       sGoldType := '1';
 
-    if MfgAttr('SurfaceFinish') = 'Full Body Gold' then
+    if Fnc.SysGetAttrValue('SurfaceFinish') = 'Full Body Gold' then
       sGoldType := '2';
 
-    if MfgAttr('SubHardGold') <> 'N/A' then
+    if Fnc.SysGetAttrValue('SubHardGold') <> 'N/A' then
       sGoldType := '3';
 
-    if (MfgAttr('SurfaceFinish') = 'ENIG') or
-       (MfgAttr('SurfaceFinish') = 'ENIG pre-soldermask') then
+    if (Fnc.SysGetAttrValue('SurfaceFinish') = 'ENIG') or
+       (Fnc.SysGetAttrValue('SurfaceFinish') = 'ENIG pre-soldermask') then
       sGoldType := '4';
 
-    if MfgAttr('SurfaceFinish') = 'Palladium/Nickel/Gold' then
+    if Fnc.SysGetAttrValue('SurfaceFinish') = 'Palladium/Nickel/Gold' then
       sGoldType := '5';
 
-    if MfgAttr('SurfaceFinish') = 'Wire Bondable Gold' then
+    if Fnc.SysGetAttrValue('SurfaceFinish') = 'Wire Bondable Gold' then
       sGoldType := '6';
 
-    if (MfgAttr('GoldTabCount') > 0) and
-       ((MfgAttr('SurfaceFinish') = 'ENIG') or
-        (MfgAttr('SurfaceFinish') = 'ENIG pre-soldermask')) then
+    if (Fnc.SysGetAttrValue('GoldTabCount') > 0) and
+       ((Fnc.SysGetAttrValue('SurfaceFinish') = 'ENIG') or
+        (Fnc.SysGetAttrValue('SurfaceFinish') = 'ENIG pre-soldermask')) then
       sGoldType := '7';
   end;
 
@@ -280,19 +280,19 @@ begin
     Fnc.SysSetAttrValue('SMColor','N/A');
     end
   else begin
-    if MfgAttr('SMColor') = 'Green' then begin
-      if MfgAttr('SMFinish') = 'Gloss' then
+    if Fnc.SysGetAttrValue('SMColor') = 'Green' then begin
+      if Fnc.SysGetAttrValue('SMFinish') = 'Gloss' then
         sSMType := '1';
 
-      if MfgAttr('SMFinish') = 'Matte' then
+      if Fnc.SysGetAttrValue('SMFinish') = 'Matte' then
         sSMType := '2';
 
-      if MfgAttr('SMFinish') = 'Matte/Gloss' then
+      if Fnc.SysGetAttrValue('SMFinish') = 'Matte/Gloss' then
         sSMType := '3';
 
       end
     else begin // SMColor <> Green
-      case MfgAttr('SMColor') of
+      case Fnc.SysGetAttrValue('SMColor') of
         'Red' : sSMType := '4';
         'Blue' : sSMType := '5';
         'Black' : sSMType := '8';
@@ -306,7 +306,7 @@ begin
     end; // SMColor <> Green
   end;  // SMSides <> 0
 
-  case MfgAttr('SMType') of
+  case Fnc.SysGetAttrValue('SMType') of
     'Coates' : sSMType := '6';
     'SR1010' : sSMType := '7';
     'Taiyo (any)',
@@ -321,38 +321,38 @@ begin
   sProcessCd := sProcessCd + IntToStr(Engx_LegendCount);
 
   //Electrical Test
-  if MfgAttr('ETType') = 'None' then
+  if Fnc.SysGetAttrValue('ETType') = 'None' then
     sETTest := '0'
   else begin
-    if MfgAttr('SubTest') = true then begin
-      if ((MfgAttr('ETType') = 'Clamshell') or
-          (MfgAttr('ETType') = '3.75')) then
+    if Fnc.SysGetAttrValue('SubTest') = true then begin
+      if ((Fnc.SysGetAttrValue('ETType') = 'Clamshell') or
+          (Fnc.SysGetAttrValue('ETType') = '3.75')) then
         sETTest := '3';
 
-      if MfgAttr('ETType') = 'Probe' then
+      if Fnc.SysGetAttrValue('ETType') = 'Probe' then
         sETTest := '4';
       end // SubTest = True
     else begin
-      if MfgAttr('ETType') = '3.75' then begin
-        if MfgAttr('ETSidesTested') = 1 then
+      if Fnc.SysGetAttrValue('ETType') = '3.75' then begin
+        if Fnc.SysGetAttrValue('ETSidesTested') = 1 then
           sETTest := '1'
         else
           sETTest := '2';
       end;
 
-      if MfgAttr('ETType') = 'Probe' then
+      if Fnc.SysGetAttrValue('ETType') = 'Probe' then
         sETTest := '5';
 
-      if MfgAttr('ETType') = 'Hybrid' then
+      if Fnc.SysGetAttrValue('ETType') = 'Hybrid' then
         sETTest := '6';
 
-      if MfgAttr('ETType') = 'Outside Test or Inhouse Probe' then
+      if Fnc.SysGetAttrValue('ETType') = 'Outside Test or Inhouse Probe' then
         sETTest := '7';
 
-      if MfgAttr('ETType') = 'Clamshell' then
+      if Fnc.SysGetAttrValue('ETType') = 'Clamshell' then
         sETTest := '8';
 
-      if MfgAttr('ETType') = 'Panel Probe' then
+      if Fnc.SysGetAttrValue('ETType') = 'Panel Probe' then
         sETTest := '9';
 
     end; // SubTest = False
@@ -361,7 +361,7 @@ begin
   sProcessCd := sProcessCd + sETTest;
 
   // Mfg Spec
-  case MfgAttr('MfgSpec') of
+  case Fnc.SysGetAttrValue('MfgSpec') of
     'IPC-A-600 Class 2' : sMfgSpec := '1';
     'IPC-A-600 Class 3' : sMfgSpec := '2';
     'IPC-6012 Class 2' : sMfgSpec := '6';
@@ -370,7 +370,7 @@ begin
     'Build/Not Certified to MIL-PRF-55110' : sMfgSpec := '9';
   end;
 
-  if Copy(MfgAttr('MfgSpec'),1,5) = 'MIL-P' then
+  if Copy(Fnc.SysGetAttrValue('MfgSpec'),1,5) = 'MIL-P' then
     sMfgSpec := '5';
 
   sProcessCd := sProcessCd + sMfgSpec;
@@ -378,75 +378,75 @@ begin
   //Options
   sOptions := '';
 
-  if (MfgAttr('NPCBoreLoc') <> 'None') or (MfgAttr('NPCSinkLoc') <> 'None') then
+  if (Fnc.SysGetAttrValue('NPCBoreLoc') <> 'None') or (Fnc.SysGetAttrValue('NPCSinkLoc') <> 'None') then
     sOptions := sOptions + '1';
-  if (MfgAttr('PLCBoreLoc') <> 'None') or (MfgAttr('PLCSinkLoc') <> 'None') then
+  if (Fnc.SysGetAttrValue('PLCBoreLoc') <> 'None') or (Fnc.SysGetAttrValue('PLCSinkLoc') <> 'None') then
     sOptions := sOptions + '2';
-  if MfgAttr('ScoreReq') = true then
+  if Fnc.SysGetAttrValue('ScoreReq') = true then
     sOptions := sOptions + '3';
-  if MfgAttr('BevelReq') = 'true' then
+  if Fnc.SysGetAttrValue('BevelReq') = 'true' then
     sOptions := sOptions + '4';
-  if MfgAttr('BevelReq') = 'Routed' then
+  if Fnc.SysGetAttrValue('BevelReq') = 'Routed' then
     sOptions := sOptions + '4';
-  if MfgAttr('BevelReq') = 'Bevelmate' then
+  if Fnc.SysGetAttrValue('BevelReq') = 'Bevelmate' then
     sOptions := sOptions + '4';
-  if ((MfgAttr('CarbonInkLoc') = 'Comp') or
-      (MfgAttr('CarbonInkLoc') = 'Solder')) then
+  if ((Fnc.SysGetAttrValue('CarbonInkLoc') = 'Comp') or
+      (Fnc.SysGetAttrValue('CarbonInkLoc') = 'Solder')) then
        sOptions := sOptions + '5';
-  if MfgAttr('CarbonInkLoc') = 'Both' then
+  if Fnc.SysGetAttrValue('CarbonInkLoc') = 'Both' then
     sOptions := sOptions + '6';
-  if MfgAttr('PlasmaReq') = True then
+  if Fnc.SysGetAttrValue('PlasmaReq') = True then
     sOptions := sOptions + '8';
-  if MfgAttr('ViaPlugReq') = True then
+  if Fnc.SysGetAttrValue('ViaPlugReq') = True then
     sOptions := sOptions + '9';
-  if MfgAttr('AOIOuters') = True then
+  if Fnc.SysGetAttrValue('AOIOuters') = True then
     sOptions := sOptions + 'A';
-  if MfgAttr('SurfaceFinish') = 'Electrolytic Nickel' then
+  if Fnc.SysGetAttrValue('SurfaceFinish') = 'Electrolytic Nickel' then
     sOptions := sOptions + 'B';
-  if ((MfgAttr('PMaskSide') <> 'None') and
-      (MfgAttr('PMaskSide') <> 'For Gold Tabs')) then
+  if ((Fnc.SysGetAttrValue('PMaskSide') <> 'None') and
+      (Fnc.SysGetAttrValue('PMaskSide') <> 'For Gold Tabs')) then
        sOptions := sOptions + 'C';
-  if (MfgAttr('MinEtchback') > 0) and (MfgAttr('PlasmaReq') = False) then
+  if (Fnc.SysGetAttrValue('MinEtchback') > 0) and (Fnc.SysGetAttrValue('PlasmaReq') = False) then
     sOptions := sOptions + 'D';
-  if MfgAttr('SurfaceFinish') = 'Electroless Nickel' then
+  if Fnc.SysGetAttrValue('SurfaceFinish') = 'Electroless Nickel' then
     sOptions := sOptions + 'E';
-  if MfgAttr('SurfaceFinish') = 'OSP' then
+  if Fnc.SysGetAttrValue('SurfaceFinish') = 'OSP' then
     sOptions := sOptions + 'F';
-  if MfgAttr('SurfaceFinish') = 'Immersion Tin' then
+  if Fnc.SysGetAttrValue('SurfaceFinish') = 'Immersion Tin' then
     sOptions := sOptions + 'W';
-  if MfgAttr('HiPotParams') <> '' then
+  if Fnc.SysGetAttrValue('HiPotParams') <> '' then
     sOptions := sOptions + 'H';
-  if MfgAttr('BackDrillLoc') <> 'None' then
+  if Fnc.SysGetAttrValue('BackDrillLoc') <> 'None' then
     sOptions := sOptions + 'K';
-  if MfgAttr('Punching') = True then
+  if Fnc.SysGetAttrValue('Punching') = True then
     sOptions := sOptions + 'R';
-  if MfgAttr('HasImpedance') <> 'None' then
+  if Fnc.SysGetAttrValue('HasImpedance') <> 'None' then
     sOptions := sOptions + 'I';
-  if MfgAttr('SurfaceFinish') = 'Lead Free Solder' then
+  if Fnc.SysGetAttrValue('SurfaceFinish') = 'Lead Free Solder' then
     sOptions := sOptions + 'L';
-  if (MfgAttr('SubNPMach') = True) or (MfgAttr('SubPLMach') = True) then
+  if (Fnc.SysGetAttrValue('SubNPMach') = True) or (Fnc.SysGetAttrValue('SubPLMach') = True) then
     sOptions := sOptions + 'N';
-  if MfgAttr('SurfaceFinish') = 'Immersion Silver' then
+  if Fnc.SysGetAttrValue('SurfaceFinish') = 'Immersion Silver' then
     sOptions := sOptions + 'S';
-  if MfgAttr('MinHolePlating') > 1.0 then
+  if Fnc.SysGetAttrValue('MinHolePlating') > 1.0 then
     sOptions := sOptions + 'P';
-  if MfgAttr('SolderFilledVias') = true then
+  if Fnc.SysGetAttrValue('SolderFilledVias') = true then
     sOptions := sOptions + 'V';
-  if ((MfgAttr('BuriedVias') = true) or (FoundOutsideDrillInSub = true)) then
+  if ((Fnc.SysGetAttrValue('BuriedVias') = true) or (FoundOutsideDrillInSub = true)) then
     sOptions := sOptions + 'Y';
-  if MfgAttr('BlindViaSide') <> 'None' then
+  if Fnc.SysGetAttrValue('BlindViaSide') <> 'None' then
     sOptions := sOptions + 'X';
-  if MfgAttr('ManagementReview') = true then
+  if Fnc.SysGetAttrValue('ManagementReview') = true then
     sOptions := sOptions + 'M';
-  if MfgAttr('ViaFill') = true then
+  if Fnc.SysGetAttrValue('ViaFill') = true then
     sOptions := sOptions + 'T';
-  if MfgAttr('CdViaFill') = true then
+  if Fnc.SysGetAttrValue('CdViaFill') = true then
     sOptions := sOptions + 'U';
-  if MfgAttr('NCFilledBlind') = true then
+  if Fnc.SysGetAttrValue('NCFilledBlind') = true then
     sOptions := sOptions + 'Q';
-  if MfgAttr('CdFilledBlind') = true then
+  if Fnc.SysGetAttrValue('CdFilledBlind') = true then
     sOptions := sOptions + 'Q';
-  if MfgAttr('LockedProcess') <> 'N/A' then
+  if Fnc.SysGetAttrValue('LockedProcess') <> 'N/A' then
     sOptions := sOptions + 'Z';
 
   if sOptions='' then
@@ -468,45 +468,45 @@ begin
   LayersVar := '';
 
   // Get the matching Custom Table Thickness for the Board Thickness
-  if MfgAttr('FinBoardThk') <= 0.130 then
+  if Fnc.SysGetAttrValue('FinBoardThk') <= 0.130 then
     CTThickness := 0.125;
-  if MfgAttr('FinBoardThk') <= 0.100 then
+  if Fnc.SysGetAttrValue('FinBoardThk') <= 0.100 then
     CTThickness := 0.093;
-  if MfgAttr('FinBoardThk') <= 0.063 then
+  if Fnc.SysGetAttrValue('FinBoardThk') <= 0.063 then
     CTThickness := 0.062;
-  if MfgAttr('FinBoardThk') <= 0.031 then
+  if Fnc.SysGetAttrValue('FinBoardThk') <= 0.031 then
     CTThickness := 0.031;
   //ShowMessage(CTThickness);
 
   // Set the effective MinimumHoleSize
-  if MfgAttr('MinDrillSize') >= 0.0276 then
+  if Fnc.SysGetAttrValue('MinDrillSize') >= 0.0276 then
     MinDrillSizeVar := '>=0276';
-  if ((MfgAttr('MinDrillSize') >= 0.0191) and
-      (MfgAttr('MinDrillSize') <= 0.027)) then
+  if ((Fnc.SysGetAttrValue('MinDrillSize') >= 0.0191) and
+      (Fnc.SysGetAttrValue('MinDrillSize') <= 0.027)) then
     MinDrillSizeVar := '0197-026';
-  if ((MfgAttr('MinDrillSize') >= 0.016) and
-      (MfgAttr('MinDrillSize') <= 0.019)) then
+  if ((Fnc.SysGetAttrValue('MinDrillSize') >= 0.016) and
+      (Fnc.SysGetAttrValue('MinDrillSize') <= 0.019)) then
     MinDrillSizeVar := '016-018';
-  if ((MfgAttr('MinDrillSize') >= 0.0135) and
-      (MfgAttr('MinDrillSize') < 0.016)) then
+  if ((Fnc.SysGetAttrValue('MinDrillSize') >= 0.0135) and
+      (Fnc.SysGetAttrValue('MinDrillSize') < 0.016)) then
     MinDrillSizeVar := '0135-0145';
-  if ((MfgAttr('MinDrillSize') >= 0.012) and
-      (MfgAttr('MinDrillSize') <= 0.013)) then
+  if ((Fnc.SysGetAttrValue('MinDrillSize') >= 0.012) and
+      (Fnc.SysGetAttrValue('MinDrillSize') <= 0.013)) then
     MinDrillSizeVar := '012-013';
-  if MfgAttr('MinDrillSize') <= 0.0118 then
+  if Fnc.SysGetAttrValue('MinDrillSize') <= 0.0118 then
     MinDrillSizeVar := '<=0118';
   //ShowMessage(MinDrillSizeVar);
 
   // Set the effective Layers Value
-  LayersVar := IntToStr(MfgAttr('MfgPartLayers'));
-  if MfgAttr('MfgPartLayers') >= 10 then
+  LayersVar := IntToStr(Fnc.SysGetAttrValue('MfgPartLayers'));
+  if Fnc.SysGetAttrValue('MfgPartLayers') >= 10 then
     LayersVar := '10+';
-  if MfgAttr('MfgPartType') = 'SUB' then
+  if Fnc.SysGetAttrValue('MfgPartType') = 'SUB' then
     LayersVar := 'CStage';
-  if ((CTThickness >= 0.065) and (MfgAttr('MfgPartLayers') > 2)) then
+  if ((CTThickness >= 0.065) and (Fnc.SysGetAttrValue('MfgPartLayers') > 2)) then
     LayersVar := '>2';
   //Treat single-sided as 2 layer
-  if MfgAttr('MfgPartLayers') = 1 then
+  if Fnc.SysGetAttrValue('MfgPartLayers') = 1 then
     LayersVar := '2';
 
   //ShowMessage(LayersVar);
@@ -538,23 +538,23 @@ var
   MaxStackHeight : Float;
   RouteStack : Integer;
 begin
-  if MfgAttr('RoutingReq') = true then begin
-    if ((MfgAttr('MinRouterSize') <= 0.0945) and
-        (MfgAttr('MinRouterSize') >= 0.070)) then
+  if Fnc.SysGetAttrValue('RoutingReq') = true then begin
+    if ((Fnc.SysGetAttrValue('MinRouterSize') <= 0.0945) and
+        (Fnc.SysGetAttrValue('MinRouterSize') >= 0.070)) then
       MaxStackHeight := 0.255;
 
-    if ((MfgAttr('MinRouterSize') <= 0.063) and
-        (MfgAttr('MinRouterSize') >= 0.043)) then
+    if ((Fnc.SysGetAttrValue('MinRouterSize') <= 0.063) and
+        (Fnc.SysGetAttrValue('MinRouterSize') >= 0.043)) then
       MaxStackHeight := 0.190;
 
-    if ((MfgAttr('MinRouterSize') <= 0.040) and
-        (MfgAttr('MinRouterSize') >= 0.020)) then
+    if ((Fnc.SysGetAttrValue('MinRouterSize') <= 0.040) and
+        (Fnc.SysGetAttrValue('MinRouterSize') >= 0.020)) then
       MaxStackHeight := 0.123;
 
-    if Int(MaxStackHeight/MfgAttr('FinBoardThk')) > 6 then
+    if Int(MaxStackHeight/Fnc.SysGetAttrValue('FinBoardThk')) > 6 then
       RouteStack := 5
     else
-      RouteStack := Int(MaxStackHeight/MfgAttr('FinBoardThk'));
+      RouteStack := Int(MaxStackHeight/Fnc.SysGetAttrValue('FinBoardThk'));
 
     Fnc.SysSetAttrValue('RouteStackHeight', RouteStack);
     end
@@ -615,13 +615,13 @@ begin
     Fnc.SysSetAttrValue('LGBotColor', 'N/A');
   end;
 
-  if ((MfgAttr('LGTopColor')<>'White') and (MfgAttr('LGTopColor')<>'N/A')) or
-     ((MfgAttr('LGBotColor')<>'White') and (MfgAttr('LGBotColor')<>'N/A')) then
+  if ((Fnc.SysGetAttrValue('LGTopColor')<>'White') and (Fnc.SysGetAttrValue('LGTopColor')<>'N/A')) or
+     ((Fnc.SysGetAttrValue('LGBotColor')<>'White') and (Fnc.SysGetAttrValue('LGBotColor')<>'N/A')) then
     Fnc.SysSetAttrValue('LPISilkscreenOnly', True);
 
-//  if ((MfgAttr('LGTopColor')<>'White') and (MfgAttr('LGTopColor')<>'N/A')) or
-//     ((MfgAttr('LGBotColor')<>'White') and (MfgAttr('LGBotColor')<>'N/A')) or
-//     (MfgAttr('SilkProcSeq') = 'After Surface Finish') then
+//  if ((Fnc.SysGetAttrValue('LGTopColor')<>'White') and (Fnc.SysGetAttrValue('LGTopColor')<>'N/A')) or
+//     ((Fnc.SysGetAttrValue('LGBotColor')<>'White') and (Fnc.SysGetAttrValue('LGBotColor')<>'N/A')) or
+//     (Fnc.SysGetAttrValue('SilkProcSeq') = 'After Surface Finish') then
 //    Fnc.SysSetAttrValue('LPISilkscreenOnly', True);
 
 
@@ -648,9 +648,9 @@ begin
         if FieldByName('CustomET').AsBoolean = true then begin
           // Assign field value to Attribute
           fnc.SysSetAttrValue('ETStampReq', FieldByName('ET_Stamp').AsBoolean);
-          if MfgAttr('ETSpec')='' then
+          if Fnc.SysGetAttrValue('ETSpec')='' then
             fnc.SysSetAttrValue('ETSpec', FieldByName('ET_Spec').AsString);
-          if MfgAttr('StampSpec')='' then
+          if Fnc.SysGetAttrValue('StampSpec')='' then
             fnc.SysSetAttrValue('StampSpec', FieldByName('ET_StampSpec').AsString);
           break; // stop searching if found
       end;
@@ -662,35 +662,35 @@ end;
 
 Procedure SetMinLinesAndSpacing;
 begin
-  if  MfgAttr('LineWidthTlr') > 0 then
+  if  Fnc.SysGetAttrValue('LineWidthTlr') > 0 then
   begin
-    Fnc.SysSetAttrValue('MinLineWidthTop', MfgAttr('Line W Top') -
-                                           MfgAttr('LineWidthTlr'));
-    Fnc.SysSetAttrValue('MinLineWidthBot', MfgAttr('Line W Bot') -
-                                           MfgAttr('LineWidthTlr'));
+    Fnc.SysSetAttrValue('MinLineWidthTop', Fnc.SysGetAttrValue('Line W Top') -
+                                           Fnc.SysGetAttrValue('LineWidthTlr'));
+    Fnc.SysSetAttrValue('MinLineWidthBot', Fnc.SysGetAttrValue('Line W Bot') -
+                                           Fnc.SysGetAttrValue('LineWidthTlr'));
   end
   else
   begin
-    Fnc.SysSetAttrValue('MinLineWidthTop', MfgAttr('Line W Top') -
-                                          (MfgAttr('Line W Top') *
-                                           MfgAttr('LineWidthTolPer')/100));
-    Fnc.SysSetAttrValue('MinLineWidthBot', MfgAttr('Line W Bot') -
-                                          (MfgAttr('Line W Bot') *
-                                           MfgAttr('LineWidthTolPer')/100));
+    Fnc.SysSetAttrValue('MinLineWidthTop', Fnc.SysGetAttrValue('Line W Top') -
+                                          (Fnc.SysGetAttrValue('Line W Top') *
+                                           Fnc.SysGetAttrValue('LineWidthTolPer')/100));
+    Fnc.SysSetAttrValue('MinLineWidthBot', Fnc.SysGetAttrValue('Line W Bot') -
+                                          (Fnc.SysGetAttrValue('Line W Bot') *
+                                           Fnc.SysGetAttrValue('LineWidthTolPer')/100));
   end;
 
-  Fnc.SysSetAttrValue('MinSpacingTop', MfgAttr('SpacingTop') -
-                                        (MfgAttr('SpacingTop') *
-                                         MfgAttr('SpacingTlr')/100));
+  Fnc.SysSetAttrValue('MinSpacingTop', Fnc.SysGetAttrValue('SpacingTop') -
+                                        (Fnc.SysGetAttrValue('SpacingTop') *
+                                         Fnc.SysGetAttrValue('SpacingTlr')/100));
 
-  Fnc.SysSetAttrValue('MinSpacingBot', MfgAttr('SpacingBot') -
-                                        (MfgAttr('SpacingBot') *
-                                         MfgAttr('SpacingTlr')/100));
+  Fnc.SysSetAttrValue('MinSpacingBot', Fnc.SysGetAttrValue('SpacingBot') -
+                                        (Fnc.SysGetAttrValue('SpacingBot') *
+                                         Fnc.SysGetAttrValue('SpacingTlr')/100));
 end;
 
 {Procedure SetMaterialType;
 begin
-  if MfgAttr('MfgPartLayers') <= 2 then
+  if Fnc.SysGetAttrValue('MfgPartLayers') <= 2 then
     Fnc.SysSetAttrValue('LamType', Engx_CoreMatType);
 end;
 }
@@ -698,13 +698,13 @@ end;
 Procedure SetReportUnitValues;  //IW 09/18/2012
 begin
   // Panels
-  if MfgAttr('BdsPerPanel') > 0 then
+  if Fnc.SysGetAttrValue('BdsPerPanel') > 0 then
   begin
-    Fnc.SysSetAttrValue('ReportUnitValue1', (1 / MfgAttr('BdsPerPanel')));
+    Fnc.SysSetAttrValue('ReportUnitValue1', (1 / Fnc.SysGetAttrValue('BdsPerPanel')));
   // Panel SqFt
-    Fnc.SysSetAttrValue('ReportUnitValue3', ((MfgAttr('PanelLength') *
-                                              MfgAttr('PanelWidth')) / 144) /
-                                              MfgAttr('BdsPerPanel'));
+    Fnc.SysSetAttrValue('ReportUnitValue3', ((Fnc.SysGetAttrValue('PanelLength') *
+                                              Fnc.SysGetAttrValue('PanelWidth')) / 144) /
+                                              Fnc.SysGetAttrValue('BdsPerPanel'));
   end
   else
   ShowMessage('Boards per Panel is 0 - please enter a valid value and re-run the rules');
@@ -1047,7 +1047,7 @@ begin
           )
           and
           (
-           MfgAttr('MfgPartLayers') > 2
+           Fnc.SysGetAttrValue('MfgPartLayers') > 2
           )
          )
       then
@@ -1138,7 +1138,7 @@ begin
             LayerTop := CapTop + LayerTop;
             Fnc.SysSetAttrValue('BlindViaSide', LayerTop);
 
-            //ShowMessage(MfgAttr('BlindViaSide'));
+            //ShowMessage(Fnc.SysGetAttrValue('BlindViaSide'));
             if sides = 1 then sides := 2;
             if Sides = 0 then Sides := 1;
 
@@ -1211,7 +1211,7 @@ begin
             LayerBot := CapBot + LayerBot;
             Fnc.SysSetAttrValue('BlindViaSide', LayerBot);
 
-            //ShowMessage(MfgAttr('BlindViaSide'));
+            //ShowMessage(Fnc.SysGetAttrValue('BlindViaSide'));
             if Sides = 1 then sides := 2;
             if Sides = 0 then Sides := 1;
 
@@ -1229,7 +1229,7 @@ begin
           if Sides = 2 then
           begin
             Fnc.SysSetAttrValue('BlindViaSide', 'Both');
-            //ShowMessage(MfgAttr('BlindViaSide'));
+            //ShowMessage(Fnc.SysGetAttrValue('BlindViaSide'));
           end;
 
           MaterialList.Free;
@@ -1921,7 +1921,7 @@ begin
   //ShowMessage(sDrillMemo.Text);
 
   Fnc.SysSetAttrValue('DrillMemo', sDrillMemo.text);
- // ShowMessage(MfgAttr('DrillMemo'));
+ // ShowMessage(Fnc.SysGetAttrValue('DrillMemo'));
 
 end;
 
@@ -1951,7 +1951,7 @@ begin
   DrillLayerName := Fnc.SysGetItemAttrValue('ItemLayerName', True, cStackupDrill, I);
   IsBlind := Fnc.SysGetItemAttrValue('ForceBlindVia', True, cStackupDrill, I);
   SmallestDrill := SmallestDrillOneFile(Fnc.SysGetItemAttrValue('ItemLayerName', true, cStackupDrill, I), 'ALL');
-  MfgPartThickness := MfgAttr('LayupThickness');
+  MfgPartThickness := Fnc.SysGetAttrValue('LayupThickness');
   AspectRatio := MfgPartThickness/SmallestDrill;
 
   if (
@@ -1967,8 +1967,8 @@ begin
     begin
       if FindNumberOfDrillFiles <= 1 then
       begin
-        if MfgAttr('MinDrillSize') <> 0 then
-          Fnc.SysSetAttrValue('AspectRatio', MfgPartThickness/MfgAttr('MinDrillSize'));
+        if Fnc.SysGetAttrValue('MinDrillSize') <> 0 then
+          Fnc.SysSetAttrValue('AspectRatio', MfgPartThickness/Fnc.SysGetAttrValue('MinDrillSize'));
       end
       else
         ShowMessage('Multiple Drill Files found - Drill Tools are missing. Aspect Ratio Has Not Been Set Correctly!');
@@ -1977,7 +1977,7 @@ begin
     begin
     //  Fnc.SysSetAttrValue('MinDrillSize', 0.0);
       Fnc.SysSetItemAttrValue('AspectRatio', AspectRatio, true, cStackupDrill, I);
-      if MfgAttr('AspectRatio') < AspectRatio then
+      if Fnc.SysGetAttrValue('AspectRatio') < AspectRatio then
         Fnc.SysSetAttrValue('AspectRatio', AspectRatio);
     end;
   end;
@@ -1997,8 +1997,8 @@ begin
     begin
       if FindNumberOfDrillFiles <= 1 then
       begin
-        if MfgAttr('MinDrillSize') <> 0 then
-          Fnc.SysSetAttrValue('AspectRatio', MfgPartThickness/MfgAttr('MinDrillSize'));
+        if Fnc.SysGetAttrValue('MinDrillSize') <> 0 then
+          Fnc.SysSetAttrValue('AspectRatio', MfgPartThickness/Fnc.SysGetAttrValue('MinDrillSize'));
       end
       else
         ShowMessage('Multiple Drill Files found - Drill Tools are missing. Aspect Ratio Has Not Been Set Correctly!');
@@ -2007,7 +2007,7 @@ begin
     begin
    //   Fnc.SysSetAttrValue('MinDrillSize', 0.0);
       Fnc.SysSetItemAttrValue('AspectRatio', AspectRatio, true, cStackupDrill, I);
-      if MfgAttr('AspectRatioFV') < AspectRatio then
+      if Fnc.SysGetAttrValue('AspectRatioFV') < AspectRatio then
         Fnc.SysSetAttrValue('AspectRatioFV', AspectRatio);
     end;
   end;
@@ -2092,7 +2092,7 @@ begin
   TopFormsParentLayer := false;
   BotFormsParentLayer := false;
 
-  MfgPartName := MfgAttr('ItemMatrlDesc');
+  MfgPartName := Fnc.SysGetAttrValue('ItemMatrlDesc');
 
   if (
       (copy(MfgPartName, 1, 13) = 'SubAssembly x') or
@@ -2263,11 +2263,11 @@ end;
 Function MaterialRequiresEtchback: boolean;
 begin
   if (
-      (MfgAttr('LamType') = 'Isola IS640-320') or
-      (MfgAttr('LamType') = 'Isola P95') or
-      (MfgAttr('LamType') = 'Isola P96') or
-      (MfgAttr('LamType') = 'Isola Polyimide') or
-      (MfgAttr('LamType') = 'Polyimide')
+      (Fnc.SysGetAttrValue('LamType') = 'Isola IS640-320') or
+      (Fnc.SysGetAttrValue('LamType') = 'Isola P95') or
+      (Fnc.SysGetAttrValue('LamType') = 'Isola P96') or
+      (Fnc.SysGetAttrValue('LamType') = 'Isola Polyimide') or
+      (Fnc.SysGetAttrValue('LamType') = 'Polyimide')
      )
   then
     Result := true;
@@ -2346,12 +2346,12 @@ begin
       )
      ) or
      (
-      (MfgAttr('ViaFill') = false) and
-      (MfgAttr('BlindViaSide') = 'None')
+      (Fnc.SysGetAttrValue('ViaFill') = false) and
+      (Fnc.SysGetAttrValue('BlindViaSide') = 'None')
      )
   then
   begin
-    if FoundOutsideDrillInSub = false then  //MfgAttr('BuriedVias')
+    if FoundOutsideDrillInSub = false then  //Fnc.SysGetAttrValue('BuriedVias')
       Result := true;
   end;
 end;
@@ -2365,8 +2365,8 @@ begin
        (Engx_CuBot <= 0.0006)
       ) or
       (
-       (MfgAttr('LayupThickness') >= 0.011) and
-       (MfgAttr('BuriedVias') = false)
+       (Fnc.SysGetAttrValue('LayupThickness') >= 0.011) and
+       (Fnc.SysGetAttrValue('BuriedVias') = false)
       )
      )
   then
@@ -2393,11 +2393,11 @@ begin
 
   Fnc.SysSetAttrValue('ArtworkSerialization', 'N/A');
 
-  SerialLoc := MfgAttr('SerialLoc');
-  SerialCol := MfgAttr('SerialColor');
-  LGLoc := MfgAttr('LGLocation');
-  LGTopColor := MfgAttr('LGTopColor');
-  LGBotColor := MfgAttr('LGBotColor');
+  SerialLoc := Fnc.SysGetAttrValue('SerialLoc');
+  SerialCol := Fnc.SysGetAttrValue('SerialColor');
+  LGLoc := Fnc.SysGetAttrValue('LGLocation');
+  LGTopColor := Fnc.SysGetAttrValue('LGTopColor');
+  LGBotColor := Fnc.SysGetAttrValue('LGBotColor');
   if (
       (SerialLoc = 'Comp Side Silkscreen') or
       (SerialLoc = 'Solder Side Silkscreen')
@@ -2451,32 +2451,32 @@ var
 begin
   SubSvcStr := '';
 
-//  if (MfgAttr('SurfaceFinish') = 'ENIG') or
-//     (MfgAttr('SurfaceFinish') = 'ENIG pre-soldermask') then
+//  if (Fnc.SysGetAttrValue('SurfaceFinish') = 'ENIG') or
+//     (Fnc.SysGetAttrValue('SurfaceFinish') = 'ENIG pre-soldermask') then
 //    SubSvcStr := SubSvcStr + 'Imm Gold,';
 
-//  if (MfgAttr('SurfaceFinish') = 'Electroless Nickel') then
+//  if (Fnc.SysGetAttrValue('SurfaceFinish') = 'Electroless Nickel') then
 //    SubSvcStr := SubSvcStr + 'Imm Nickel,';
 
-  if (MfgAttr('SurfaceFinish') = 'Immersion Tin') then
+  if (Fnc.SysGetAttrValue('SurfaceFinish') = 'Immersion Tin') then
     SubSvcStr := SubSvcStr + 'Imm Tin,';
 
-  if (MfgAttr('SurfaceFinish') = 'Wire Bondable Gold') then
+  if (Fnc.SysGetAttrValue('SurfaceFinish') = 'Wire Bondable Gold') then
     SubSvcStr := SubSvcStr + 'WBnd Gold,';
 
-  if (MfgAttr('SurfaceFinish') = 'Full Body Gold') then
+  if (Fnc.SysGetAttrValue('SurfaceFinish') = 'Full Body Gold') then
     SubSvcStr := SubSvcStr + 'FB Gold,';
 
-  if (MfgAttr('SubHardGold') <> 'N/A') then
+  if (Fnc.SysGetAttrValue('SubHardGold') <> 'N/A') then
     SubSvcStr := SubSvcStr + 'Sel Gold,';
 
-  if (MfgAttr('SurfaceFinish') = 'Lead Free Solder') then
+  if (Fnc.SysGetAttrValue('SurfaceFinish') = 'Lead Free Solder') then
     SubSvcStr := SubSvcStr + 'LF HASL,';
 
-  if (MfgAttr('SubNPMach') = True) then
+  if (Fnc.SysGetAttrValue('SubNPMach') = True) then
     SubSvcStr := SubSvcStr + 'NP Mach,';
 
-  if (MfgAttr('SubPLMach') = True) then
+  if (Fnc.SysGetAttrValue('SubPLMach') = True) then
     SubSvcStr := SubSvcStr + 'PL Mach,';
 
   if SubSvcStr <> '' then
@@ -2503,7 +2503,7 @@ Procedure SetPartAttributes;
 begin
   // Set the status to 1 if locked process so it cannot be regenerated without manually
   // setting Locked Process Status to 0
-  if (MfgAttr('LockedProcess')<>'N/A') and (MfgAttr('LockedProcess')<>'') then
+  if (Fnc.SysGetAttrValue('LockedProcess')<>'N/A') and (Fnc.SysGetAttrValue('LockedProcess')<>'') then
     Fnc.SysSetAttrValue('LockedProcessStatus',1)
   else
     Fnc.SysSetAttrValue('LockedProcessStatus',0);
@@ -2534,33 +2534,33 @@ begin
     Fnc.SysSetAttrValue('DaysEarlySchedule', 0);
 
   //Set to zero if blank
-  if MfgAttr('IonicSpec') = '' then
+  if Fnc.SysGetAttrValue('IonicSpec') = '' then
     Fnc.SysSetAttrValue('IonicSpec','0');
 
-  if ((MfgAttr('MfgSpec') = 'IPC-6012 Class 3/A') and (MfgAttr('IonicSpecPSM') = '0')) then
+  if ((Fnc.SysGetAttrValue('MfgSpec') = 'IPC-6012 Class 3/A') and (Fnc.SysGetAttrValue('IonicSpecPSM') = '0')) then
     Fnc.SysSetAttrValue('IonicSpecPSM','10.06');
 
-  if ((Copy(MfgAttr('MfgSpec'),1,5) = 'MIL-P') or
-      (MfgAttr('MfgSpec') = 'Build/Not Certified to MIL-PRF-55110')) and ((MfgAttr('IonicSpecPSM') = '0')) then begin
+  if ((Copy(Fnc.SysGetAttrValue('MfgSpec'),1,5) = 'MIL-P') or
+      (Fnc.SysGetAttrValue('MfgSpec') = 'Build/Not Certified to MIL-PRF-55110')) and ((Fnc.SysGetAttrValue('IonicSpecPSM') = '0')) then begin
     Fnc.SysSetAttrValue('IonicSpec','14');
     Fnc.SysSetAttrValue('IonicSpecPSM','14');
   end;
 
   //Set minimum cu plate in hole
-  if MfgAttr('MinHolePlating') = 0.0 then begin
-    if Pos('Class 3/A',MfgAttr('MfgSpec')) > 0 then
+  if Fnc.SysGetAttrValue('MinHolePlating') = 0.0 then begin
+    if Pos('Class 3/A',Fnc.SysGetAttrValue('MfgSpec')) > 0 then
       Fnc.SysSetAttrValue('MinHolePlating', 1.2)
-    else if Pos('Class 3',MfgAttr('MfgSpec')) > 0 then
+    else if Pos('Class 3',Fnc.SysGetAttrValue('MfgSpec')) > 0 then
       Fnc.SysSetAttrValue('MinHolePlating', 0.8)
-    else if Pos('Class 2',MfgAttr('MfgSpec')) > 0 then
+    else if Pos('Class 2',Fnc.SysGetAttrValue('MfgSpec')) > 0 then
       Fnc.SysSetAttrValue('MinHolePlating', 0.7)
-    else if Pos('MIL-P',MfgAttr('MfgSpec')) > 0 then
+    else if Pos('MIL-P',Fnc.SysGetAttrValue('MfgSpec')) > 0 then
       Fnc.SysSetAttrValue('MinHolePlating', 1.0)
     else
       Fnc.SysSetAttrValue('MinHolePlating', 0.7);
   end;
 
-  if MfgAttr('SurfaceFinish') = 'Lead Free Solder' then
+  if Fnc.SysGetAttrValue('SurfaceFinish') = 'Lead Free Solder' then
     Fnc.SysSetAttrValue('SMType', 'Electra EMP110');
 
   FindBlindBuried;
@@ -2570,7 +2570,7 @@ begin
   if FindNumberofDrillFiles > 0 then
     SetDrillTypes('ALL');
 
-  case MfgAttr('MfgPartType') of
+  case Fnc.SysGetAttrValue('MfgPartType') of
     'TOP': begin
              //ShowMessage('Setting attributes for Top-Level');
              Fnc.SysSetAttrValue('MaskLayers',Engx_SMCount );
@@ -2582,8 +2582,8 @@ begin
              else
                Fnc.SysSetAttrValue('CoreBuild', false);
 
-             if ((MfgAttr('MfgPartLayers') = 1) or
-                 (MfgAttr('NoPlatedHoles') = true)) then begin
+             if ((Fnc.SysGetAttrValue('MfgPartLayers') = 1) or
+                 (Fnc.SysGetAttrValue('NoPlatedHoles') = true)) then begin
                Fnc.SysSetAttrValue('DF Type', 'Etch');
                Fnc.SysSetAttrValue('DF Thick', 1.50);
                end
@@ -2592,49 +2592,49 @@ begin
                Fnc.SysSetAttrValue('DF Thick', 2.00);
              end;
 
-             Fnc.SysSetAttrValue('PanelSize', MfgAttr('PanelWidth') + ' x ' + MfgAttr('PanelLength'));
-             Fnc.SysSetAttrValue('BoardSize', FloatToStr(MfgAttr('BoardWidth')) + ' x ' + FloatToStr(MfgAttr('BoardLength')));
+             Fnc.SysSetAttrValue('PanelSize', Fnc.SysGetAttrValue('PanelWidth') + ' x ' + Fnc.SysGetAttrValue('PanelLength'));
+             Fnc.SysSetAttrValue('BoardSize', FloatToStr(Fnc.SysGetAttrValue('BoardWidth')) + ' x ' + FloatToStr(Fnc.SysGetAttrValue('BoardLength')));
 
-             if (MfgAttr('BoardsPerArray') = 0) and (MfgAttr('BdsPerPanel') >= 50) then
+             if (Fnc.SysGetAttrValue('BoardsPerArray') = 0) and (Fnc.SysGetAttrValue('BdsPerPanel') >= 50) then
                Fnc.SysSetAttrValue('InspectInPanelForm',True);
 
-             if MfgAttr('ArrayWidth') <> 0 then
-               Fnc.SysSetAttrValue('ArraySize', FloatToStr(MfgAttr('ArrayWidth')) + ' x ' + FloatToStr(MfgAttr('ArrayLength')))
+             if Fnc.SysGetAttrValue('ArrayWidth') <> 0 then
+               Fnc.SysSetAttrValue('ArraySize', FloatToStr(Fnc.SysGetAttrValue('ArrayWidth')) + ' x ' + FloatToStr(Fnc.SysGetAttrValue('ArrayLength')))
              else
                Fnc.SysSetAttrValue('ArraySize', 'N/A');
 
-             if ((MfgAttr('SpacingTop') > 0) and (MfgAttr('SpacingTop') <= 0.005)) or
-                ((MfgAttr('SpacingBot') > 0) and (MfgAttr('SpacingBot') <= 0.005)) then
+             if ((Fnc.SysGetAttrValue('SpacingTop') > 0) and (Fnc.SysGetAttrValue('SpacingTop') <= 0.005)) or
+                ((Fnc.SysGetAttrValue('SpacingBot') > 0) and (Fnc.SysGetAttrValue('SpacingBot') <= 0.005)) then
                  Fnc.SysSetAttrValue('AOIOuters', true);
 
              Fnc.SysSetAttrValue('MfgLeadTime', 10);
 
-             if MfgAttr('AOIOuters') = true then
+             if Fnc.SysGetAttrValue('AOIOuters') = true then
                Fnc.SysSetAttrValue('AOISides', 2);
 
-             Fnc.SysSetAttrValue('FinThkPlusTol', FloatToStr(MfgAttr('FinBoardThk')) + ' ' +
-                                                  MfgAttr('FinThkTol'));
+             Fnc.SysSetAttrValue('FinThkPlusTol', FloatToStr(Fnc.SysGetAttrValue('FinBoardThk')) + ' ' +
+                                                  Fnc.SysGetAttrValue('FinThkTol'));
 
-             if MfgAttr('OrderByThePanel') = true then
+             if Fnc.SysGetAttrValue('OrderByThePanel') = true then
                Fnc.SysSetAttrValue('SoQtyUnitPtr', 4)
              else
                Fnc.SysSetAttrValue('SoQtyUnitPtr', 0);
 
-             if MfgAttr('SurfaceFinish')='OSP' then
+             if Fnc.SysGetAttrValue('SurfaceFinish')='OSP' then
                Fnc.SysSetAttrValue('ShelfLife', 90);
 
-             if (MfgAttr('MinHolePlating') >= 2.0) or
-                (MfgAttr('CuTop') = '3') or
-                (MfgAttr('CuTop') = '4') or
-                (MfgAttr('CuTop') = '5') or
-                ((MfgAttr('CuTop') = '2') and (MfgAttr('MinHolePlating') >= 1.4)) or
-                ((MfgAttr('CuTop') = '2') and (MfgAttr('OLCuBuildUp') > 0.0)) then
+             if (Fnc.SysGetAttrValue('MinHolePlating') >= 2.0) or
+                (Fnc.SysGetAttrValue('CuTop') = '3') or
+                (Fnc.SysGetAttrValue('CuTop') = '4') or
+                (Fnc.SysGetAttrValue('CuTop') = '5') or
+                ((Fnc.SysGetAttrValue('CuTop') = '2') and (Fnc.SysGetAttrValue('MinHolePlating') >= 1.4)) or
+                ((Fnc.SysGetAttrValue('CuTop') = '2') and (Fnc.SysGetAttrValue('OLCuBuildUp') > 0.0)) then
                Fnc.SysSetAttrValue('HeavyCoatReq', true);
 
-             if MfgAttr('DoubleCoatReq') = True then
+             if Fnc.SysGetAttrValue('DoubleCoatReq') = True then
                Fnc.SysSetAttrValue('HeavyCoatReq', false);
 
-             if MfgAttr('ViaPlugType') = 'Full - Minimum fill req' then
+             if Fnc.SysGetAttrValue('ViaPlugType') = 'Full - Minimum fill req' then
                Fnc.SysSetAttrValue('ViaPlugInk','Taiyo PIHP 200');
 
             // ImpdedanceLocation;
@@ -2642,7 +2642,7 @@ begin
              SetSoldermaskLocation;
              SetSilkscreenLocation;
 
-             if MfgAttr('SerialLoc') <> 'None' then
+             if Fnc.SysGetAttrValue('SerialLoc') <> 'None' then
                SetArtworkSerialization;
 
              SetETSpecs;
@@ -2678,12 +2678,12 @@ begin
              Fnc.SysSetAttrValue('ITAR', Fnc.SysGetAttrValueParent('ITAR'));
 
 
-             if MfgAttr('MinA/R')=0 then begin
-               if (Copy(MfgAttr('MfgSpec'),1,5)='MIL-P') or
-                  (MfgAttr('MfgSpec') = 'Build/Not Certified to MIL-PRF-55110') then
+             if Fnc.SysGetAttrValue('MinA/R')=0 then begin
+               if (Copy(Fnc.SysGetAttrValue('MfgSpec'),1,5)='MIL-P') or
+                  (Fnc.SysGetAttrValue('MfgSpec') = 'Build/Not Certified to MIL-PRF-55110') then
                  Fnc.SysSetAttrValue('MinA/R', 0.002)
                else begin
-                 if MfgAttr('MfgSpec')='IPC-6012 Class 3' then
+                 if Fnc.SysGetAttrValue('MfgSpec')='IPC-6012 Class 3' then
                    Fnc.SysSetAttrValue('MinA/R', 0.001)
                  else
                    Fnc.SysSetAttrValue('MinA/R', Fnc.SysGetAttrValueParent('MinA/R'));
@@ -2727,12 +2727,12 @@ begin
              Fnc.SysSetAttrValue('ProcessCode', Fnc.SysGetAttrValueParent('ProcessCode'));
              Fnc.SysSetAttrValue('ITAR', Fnc.SysGetAttrValueParent('ITAR'));
 
-             if MfgAttr('MinA/R')=0 then begin
-               if (Copy(MfgAttr('MfgSpec'),1,5)='MIL-P') or
-                  (MfgAttr('MfgSpec') = 'Build/Not Certified to MIL-PRF-55110') then
+             if Fnc.SysGetAttrValue('MinA/R')=0 then begin
+               if (Copy(Fnc.SysGetAttrValue('MfgSpec'),1,5)='MIL-P') or
+                  (Fnc.SysGetAttrValue('MfgSpec') = 'Build/Not Certified to MIL-PRF-55110') then
                  Fnc.SysSetAttrValue('MinA/R', 0.002)
                else begin
-                 if MfgAttr('MfgSpec')='IPC-6012 Class 3' then
+                 if Fnc.SysGetAttrValue('MfgSpec')='IPC-6012 Class 3' then
                    Fnc.SysSetAttrValue('MinA/R', 0.001)
                  else
                    Fnc.SysSetAttrValue('MinA/R', Fnc.SysGetAttrValueParent('MinA/R'));
@@ -2757,7 +2757,7 @@ begin
              AOISides;
 
              //Cannot use PEP for cores greater than .050
-             Fnc.SysSetAttrValue('PEP', (MfgAttr('ILCoreThk') < 0.047));
+             Fnc.SysSetAttrValue('PEP', (Fnc.SysGetAttrValue('ILCoreThk') < 0.047));
            end;
 
     'FIL':begin
@@ -2784,7 +2784,7 @@ begin
              Fnc.SysSetAttrValue('MfgLeadTime', 5);
 
              //Cannot use PEP for cores greater than .050
-             Fnc.SysSetAttrValue('PEP', (MfgAttr('ILCoreThk') < 0.047));
+             Fnc.SysSetAttrValue('PEP', (Fnc.SysGetAttrValue('ILCoreThk') < 0.047));
              Fnc.SysSetAttrValue('ITAR', Fnc.SysGetAttrValueParent('ITAR')); //IW 09/20/2012
            end;
     'EXT':begin
@@ -2875,17 +2875,17 @@ Procedure Route_Initialize;
 var MfgFlag, ShortMfgFlag: string;
 
 begin
-//  if ((MfgAttr('LockJob') = false) and (Fnc.SysGetAttrValueTopLevel('LockedProcess') = 'N/A')) or
-//     ((Fnc.SysGetAttrValueTopLevel('LockedProcess') <> 'N/A') and (MfgAttr('LockedProcessStatus') = 0)) then begin
-  if (MfgAttr('LockJob') = false) then begin
+//  if ((Fnc.SysGetAttrValue('LockJob') = false) and (Fnc.SysGetAttrValueTopLevel('LockedProcess') = 'N/A')) or
+//     ((Fnc.SysGetAttrValueTopLevel('LockedProcess') <> 'N/A') and (Fnc.SysGetAttrValue('LockedProcessStatus') = 0)) then begin
+  if (Fnc.SysGetAttrValue('LockJob') = false) then begin
     // Check first 3 characters of system generated 'GenBOMItemValue'
     // to determine type of manufactured part.
     //ShowMessage('Initializing Route Data');
     Engx_ScanBom;
 
     Engx_MfgPartLayerCount;
-//    MfgFlag := MfgAttr('GenBOMItemValue');
-    MfgFlag := MfgAttr('ItemMatrlDesc');
+//    MfgFlag := Fnc.SysGetAttrValue('GenBOMItemValue');
+    MfgFlag := Fnc.SysGetAttrValue('ItemMatrlDesc');
 
     ShortMfgFlag := copy(MfgFlag,1,3);
 
@@ -2924,7 +2924,7 @@ begin
     end // LockJob
   else begin
     Fnc.SysRouteGenAbort := true;
-    if (Fnc.SysGetAttrValueTopLevel('LockedProcess') <> 'N/A') and (MfgAttr('LockedProcessStatus') = 1) then
+    if (Fnc.SysGetAttrValueTopLevel('LockedProcess') <> 'N/A') and (Fnc.SysGetAttrValue('LockedProcessStatus') = 1) then
       ShowMessage('Locked Process: See procedure before regenerating!')
     else
       ShowMessage('Job Locked From Route Generation - Processing Aborted');

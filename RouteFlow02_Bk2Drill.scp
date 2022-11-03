@@ -4,7 +4,7 @@
 //ScriptType=0
 //ScriptGroup=HCS
 //HeaderImportExport<--
-                 uses                                                                                                                                                                                                                                                                                                
+                 uses                                                                                                                                                                                                                                                                                                                                              
   Event_RouteGenLibrary, //Route System Scripts
   Eng_RouteFunctions, //Route System Functions
   RouteFunctions, //Custom Functions for HCS
@@ -21,7 +21,7 @@ begin
 
   if (                             
       (NumOfCores >= 4) or    // 4-13 not required as > 13 will be Pin Lam
-      ((NumOfCores = 3) and (MfgAttr('Panel_Width') > 460))
+      ((NumOfCores = 3) and (Fnc.SysGetAttrValue('Panel_Width') > 460))
      )
   then
   begin     
@@ -33,7 +33,7 @@ begin
 
       if HasSlippage = true then
       begin
-        if ((NumOfCores <= 8) and (MfgAttr('Press_Thickness') <= 2.3)) then
+        if ((NumOfCores <= 8) and (PressThickness <= 2.3)) then
           AddStep('PlasticEye_Riveting', 'PlasticEye_Riveting01');
       end;
     end;
@@ -84,11 +84,11 @@ begin
     AddStep('Post_Oxide_Baking', 'Post_Oxide_Baking01');
 
   // New Pre-Book Steps
-  if ( (( NumOfCores > 1 ) or ( PressCycleMoreThan1 )) and ( MfgAttr('Build_Up') = false ) ) then
+  if ( (( NumOfCores > 1 ) or ( PressCycleMoreThan1 )) and ( Fnc.SysGetAttrValue('Build_Up') = false ) ) then
   begin
     AddStep('Pre_Book', 'Pre_Book01');
 
-    if MfgAttr('Pulse_Bond') = true then  // 797 Pulse Bond
+    if Fnc.SysGetAttrValue('Pulse_Bond') = true then  // 797 Pulse Bond
       AddStep('Pulse_Bond', 'Pulse_Bond01')
     else
       begin
@@ -98,7 +98,7 @@ begin
       begin
         if HasSlippage = true then
         begin
-          if ((NumOfCores <= 8) and (MfgAttr('Press_Thickness') <= 2.3)) then
+          if ((NumOfCores <= 8) and (PressThickness <= 2.3)) then
             Pin_Bond
           else
             AddStep('Pin_Lam', 'Pin_Lam01');
@@ -114,7 +114,7 @@ begin
 
     if HasSlippage = true then
     begin
-      if MfgAttr('Press_Thickness') <= 2.3 then
+      if PressThickness <= 2.3 then
         AddStep('PlasticEye_Riveting', 'PlasticEye_Riveting01');
     end;
 
@@ -127,9 +127,9 @@ begin
   AddStep('Scope_Drilling', 'Scope_Drilling01');
 
   if (
-      (MfgAttr('Press_Thickness') > 1.8) or
-      (MfgAttr('Press_Thickness') < 0.6) or
-      (MfgAttr('IL_Finish_Rout') = true)
+      (PressThickness > 1.8) or
+      (PressThickness < 0.6) or
+      (Fnc.SysGetAttrValue('IL_Finish_Rout') = true)
      )
   then
   begin
@@ -142,9 +142,9 @@ begin
   AddStep('Outgoing', 'Outgoing01');
 
   // 1137 Baking before CNC - Sub-assembly
-  //if MfgAttr('MfgPartType') = 'Top' then // 840 Additional Baking step for EM888 material
+  //if Fnc.SysGetAttrValue('MfgPartType') = 'Top' then // 840 Additional Baking step for EM888 material
   //begin
-    if ( BakeB4CNCDrill ) or ( MfgAttr('Baking_After_HP') = true ) then  // 1106 Baking Before NC
+    if ( BakeB4CNCDrill ) or ( Fnc.SysGetAttrValue('Baking_After_HP') = true ) then  // 1106 Baking Before NC
       AddStep('Bake_After_HP', 'Bake_After_HP01');
   //end;
 
@@ -158,27 +158,27 @@ var
   aspectRatio : float;
 begin                                           
   result := false;
-  partsPerPanel := MfgAttr('Panel');
+  partsPerPanel := Fnc.SysGetAttrValue('Panel');
      
   if NCRun = 1 then
   begin         
-    if MfgAttr('LayerCount') > 2 then
-      thickness := MfgAttr('Press_Thickness')
+    if Fnc.SysGetAttrValue('LayerCount') > 2 then
+      thickness := PressThickness
     else
       thickness := DSThicknessB4Plating;
       
-    minDrillHoleSize := MfgAttr('Min_Drill_Size');
-    aspectRatio := MfgAttr('Aspect_Ratio_Val'); 
+    minDrillHoleSize := Fnc.SysGetAttrValue('Min_Drill_Size');
+    aspectRatio := Fnc.SysGetAttrValue('Aspect_Ratio_Val'); 
   end                          
   else
   begin
-    if MfgAttr('LayerCount') > 2 then
-      thickness := MfgAttr('LayupThickness')
+    if Fnc.SysGetAttrValue('LayerCount') > 2 then
+      thickness := Fnc.SysGetAttrValue('LayupThickness')
     else                 
       thickness := DSThicknessB4Plating;
                                           
-    minDrillHoleSize := MfgAttr('Min_Drill_Size_2');
-    aspectRatio := MfgAttr('Aspect_Ratio_Val_2'); 
+    minDrillHoleSize := Fnc.SysGetAttrValue('Min_Drill_Size_2');
+    aspectRatio := Fnc.SysGetAttrValue('Aspect_Ratio_Val_2'); 
   end;                            
                                     
   if  (( minDrillHoleSize < 0.20 ) and ( thickness > 1.0 )) or // 1204 Updated Desmear flow
@@ -199,21 +199,21 @@ begin
      
   if NCRun = 1 then
   begin         
-    if MfgAttr('LayerCount') > 2 then
-      thickness := MfgAttr('Press_Thickness')
+    if Fnc.SysGetAttrValue('LayerCount') > 2 then
+      thickness := PressThickness
     else
       thickness := DSThicknessB4Plating;                     
       
-    minDrillHoleSize := MfgAttr('Min_Drill_Size');
+    minDrillHoleSize := Fnc.SysGetAttrValue('Min_Drill_Size');
   end                          
   else              
   begin
-    if MfgAttr('LayerCount') > 2 then
-      thickness := MfgAttr('LayupThickness')
+    if Fnc.SysGetAttrValue('LayerCount') > 2 then
+      thickness := Fnc.SysGetAttrValue('LayupThickness')
     else                 
       thickness := DSThicknessB4Plating;
       
-    minDrillHoleSize := MfgAttr('Min_Drill_Size_2'); 
+    minDrillHoleSize := Fnc.SysGetAttrValue('Min_Drill_Size_2'); 
   end;                       
                                     
   if ( minDrillHoleSize < 0.25 ) and ( thickness >= 2.8 ) then
@@ -245,7 +245,7 @@ begin
   
     
   if (
-      ((MfgAttr('CoreMat') = 'FR408') or (MfgAttr('PPGMat') = 'FR408')) and
+      ((Fnc.SysGetAttrValue('CoreMat') = 'FR408') or (Fnc.SysGetAttrValue('PPGMat') = 'FR408')) and
       (NCRun = 2)                          
      )
   then              
@@ -256,11 +256,11 @@ begin
                                                                   
   Material := GetDesmearSearchMaterial;
        
-  if MfgAttr('LayerCount') > 2 then // 2 Layer Fixes
-    Thickness := MfgAttr('Press_Thickness')
+  if Fnc.SysGetAttrValue('LayerCount') > 2 then // 2 Layer Fixes
+    Thickness := PressThickness
   else
     Thickness := DSThicknessB4Plating;
-  //Thickness := MfgAttr('Press_Thickness');
+  //Thickness := PressThickness;
                                      
   StepList := GetDesmearStepList(Material, Thickness);
 
@@ -334,13 +334,13 @@ begin
   AddStep('OL_AOI_CM', 'OL_AOI_CM01');
 end;
 
-procedure MicroEtch; // 1138 Microetch for Laser Via
+function NonUVMicroEtch: boolean; // 1138 Microetch for Laser Via
 var                                            
   confMask_UetchOK : boolean; 
 begin
   confMask_UetchOK := false;  // 1112 Micro-etch for thick board 
   
-  if ( MfgAttr('ConfMask_UEtch_OvR') ) or ( MfgAttr('Press_Thickness') <= 4.0 ) then
+  if ( Fnc.SysGetAttrValue('ConfMask_UEtch_OvR') ) or ( PressThickness <= 4.0 ) then
     confMask_UetchOK := true;
                                   
   if ( BaseCuTopUM > 9 ) and 
@@ -348,80 +348,92 @@ begin
      ( CustCode_Rule('Customer') <> 'FA' ) and
      confMask_UetchOK  // 1112 Micro-etch for thick board 
   then   // (762) For FA Customer code with Conformal mask, the default is without micro etch before laser drill
-    AddStep('MicroEtch', 'MicroEtch01');   
+    result := true else result := false;
+      
+end;
+                    
+function UVLaser: boolean;     
+begin                                      
+  if  (
+       (( Fnc.SysGetAttrValue('UVLaserB_Top') > 0 ) or ( Fnc.SysGetAttrValue('UVLaserA_Bot') > 0 )) and
+       ( Fnc.SysGetAttrValue('UVLaserB_Top') + Fnc.SysGetAttrValue('UVLaserA_Bot') < 3500 ) and
+       ( PinLamination )
+      )                     
+        or Fnc.SysGetAttrValue('ForceUVLaser')             
+  then
+    result := true
+  else
+    result := false;
 end;
 
+function UVLaserMicroEtch: boolean;
+begin 
+                      
+  if ( BaseCuTopUM > 9 ) and ( BaseCuBotUM > 9 ) and ( PressThickness <= 4.0 ) then 
+    result := true else result := false;
 
-procedure BlindVia;             
+end
+                   
+procedure BlindVia;                                               
 begin
-  if not MfgAttr('Direct_Laser') then // 1307 Direct Laser
+  if not DirectLaser then // 1307 Direct Laser
   begin
-    if (
-        (
-         ((MfgAttr('UVLaserB_Top') > 0) or (MfgAttr('UVLaserA_Bot') > 0)) and
-         (MfgAttr('UVLaserB_Top') + MfgAttr('UVLaserA_Bot') < 3500) and
-         (PinLamination = true)
-        )                     
-        or MfgAttr('ForceUVLaser') = true              
-       )
-    then                                               
-    begin
-      if ( BaseCuTopUM > 9 ) and ( BaseCuBotUM > 9 ) and ( MfgAttr('Press_Thickness') <= 4.0 ) then  // 1112 Micro-etch for thick board
+    if UVLaser then                                               
+    begin                       
+      if UVLaserMicroEtch then  // 1112 Micro-etch for thick board
         AddStep('MicroEtch', 'MicroEtch01');
-  
-      if MfgAttr('LaserABotHits') > 0 then
+         
+      if LaserABotHits > 0 then
         AddStep('UV_LaserA', 'UV_LaserA01');
                                                          
-      if MfgAttr('LaserBTopHits') > 0 then
+      if LaserBTopHits > 0 then
         AddStep('UV_LaserB', 'UV_LaserB01');
-    end
+    end                    
     else                          
     begin
-      if SelectPlatingLine <> 'FILL_VIA' then  // 1138 Microetch for Laser Via 
-      begin
-        Conformal_Mask; 
-        //MicroEtch; 
-      end            
+      if SelectPlatingLine = 'FILL_VIA' then  // 1138 Microetch for Laser Via 
+      begin                  
+        if NonUVMicroEtch then AddStep('MicroEtch', 'MicroEtch01'); 
+        Conformal_Mask;
+      end                                   
       else                          
       begin
-        MicroEtch;
+        //MicroEtch;
         Conformal_Mask;                                
-      end;                             
-    end;  
-                                
-    if MfgAttr('LaserABotHits') > 0 then
-      AddStep('CO2_LaserA', 'CO2_LaserA01');
-    if MfgAttr('LaserBTopHits') > 0 then
-      AddStep('CO2_LaserB', 'CO2_LaserB01');
-                          
+      end;
+      
+      if ShearingRequired then  // 2269 Shearing After Laser 
+      begin
+        if  (PressThickness > 1.8) or
+            (PressThickness < 0.6) or
+            (Fnc.SysGetAttrValue('IL_Finish_Rout'))
+        then                                               
+        begin                                                                                                
+          AddStep('IL_Rout_Laser', 'IL_Rout_Laser01');                            
+          AddStep('IL_Bevel_Laser', 'IL_Bevel_Laser01');
+        end                                                       
+        else
+          AddStep('Shearing_Laser', 'Shearing_Laser01');
+      end; 
+    end;                                                                                                    
   end
   else                                
   begin
     AddStep('Hist_Line', 'Hist_Line01');
-    if MfgAttr('LaserABotHits') > 0 then
+    if LaserABotHits > 0 then
       AddStep('Dir_LaserA', 'Dir_LaserA01');
-    if MfgAttr('LaserBTopHits') > 0 then
+    if LaserBTopHits > 0 then
       AddStep('Dir_LaserB', 'Dir_LaserB01');
     
     AddStep('MicroEtch_DirLaser', 'MicroEtch_DirLaser01');   
-  end;
-  
-  //if ShearingRequired then
-  //    AddStep('Shearing_Laser', 'Shearing_Laser01');
-     
-  if ShearingRequired then  // 2269 Shearing After Laser 
-  begin
-    if  (MfgAttr('Press_Thickness') > 1.8) or
-        (MfgAttr('Press_Thickness') < 0.6) or
-        (MfgAttr('IL_Finish_Rout'))
-    then                                               
-    begin                                                                                                
-      AddStep('IL_Rout_Laser', 'IL_Rout_Laser01');                            
-      AddStep('IL_Bevel_Laser', 'IL_Bevel_Laser01');
-    end                                                       
-    else
-      AddStep('Shearing_Laser', 'Shearing_Laser01');
   end; 
+  
+  // CO2 Laser
+  if LaserABotHits > 0 then
+    AddStep('CO2_LaserA', 'CO2_LaserA01');
+  if LaserBTopHits > 0 then
+    AddStep('CO2_LaserB', 'CO2_LaserB01'); 
+  
 end; 
 
 procedure NC_EpxPlug_wFlash;
@@ -435,7 +447,7 @@ begin
   AddStep('Electrolytic_Cu_1', 'Electrolytic_Cu_101');
   AddStep('CuHoleCheck', 'CuHoleCheck01');
   
-  if ( ( MfgAttr('BackDrill_Epoxy') ) and ( MfgAttr('NCRunX2') = true )) then // 844 Backdrill after Electrolytic Cu
+  if ( ( Fnc.SysGetAttrValue('BackDrill_Epoxy') ) and ( Fnc.SysGetAttrValue('NCRunX2') = true )) then // 844 Backdrill after Electrolytic Cu
     Back_Drill_Epoxy; 
                                                                                                 
   Epoxy_Plugging;
@@ -448,39 +460,39 @@ procedure RouteFlow02;
 begin
   NCRun := 0;
 
-  if ((MfgAttr('LayerCount') > 2) or (MfgAttr('MfgPartType') = 'Sub')) then
+  if ((Fnc.SysGetAttrValue('LayerCount') > 2) or (Fnc.SysGetAttrValue('MfgPartType') = 'Sub')) then
   begin
     Booking;
 
     if (( CoreBuild ) or ( SubAssemblyCoreBuild )) then
     begin
       // Core Build Cu Thinning
-      if MfgAttr('CoreBuild_CuThin_Process') <> 'None' then
+      if Fnc.SysGetAttrValue('CoreBuild_CuThin_Process') <> 'None' then
       begin                                          
-        if MfgAttr('CoreBuild_CuThin_Process') = 'Buffing' then
+        if Fnc.SysGetAttrValue('CoreBuild_CuThin_Process') = 'Buffing' then
           AddStep('CoreBuild_CT_Buffing1', 'CoreBuild_CT_Buffing101')
-        else if MfgAttr('CoreBuild_CuThin_Process') = 'Buffing + Micro-Etch + Buffing' then  // 1473 fix attribute
+        else if Fnc.SysGetAttrValue('CoreBuild_CuThin_Process') = 'Buffing + Micro-Etch + Buffing' then  // 1473 fix attribute
         begin
           AddStep('CoreBuild_CT_Buffing1', 'CoreBuild_CT_Buffing101');
           AddStep('CoreBuild_MicroEtch', 'CoreBuild_MicroEtch01');
           AddStep('CoreBuild_CT_Buffing2', 'CoreBuild_CT_Buffing201');
           
-          if MfgAttr('Press_Thickness') > 4.0 then // 1112 Micro-etch for thick board 
+          if PressThickness > 4.0 then // 1112 Micro-etch for thick board 
             MessageDlg('Board too thick for Core Build Cu Thining standard Micro-etch process.', mtWarning, Setof([mbOK]), 0); 
         end
-        else if MfgAttr('CoreBuild_CuThin_Process') = 'Micro-Etch + Buffing' then // 1473
+        else if Fnc.SysGetAttrValue('CoreBuild_CuThin_Process') = 'Micro-Etch + Buffing' then // 1473
         begin
           AddStep('CoreBuild_MicroEtch', 'CoreBuild_MicroEtch01');
           AddStep('CoreBuild_CT_Buffing1', 'CoreBuild_CT_Buffing101');
                   
-          if MfgAttr('Press_Thickness') > 4.0 then // 1112 Micro-etch for thick board 
+          if PressThickness > 4.0 then // 1112 Micro-etch for thick board 
             MessageDlg('Board too thick for Core Build Cu Thining standard Micro-etch process.', mtWarning, Setof([mbOK]), 0); 
         end
-        else if MfgAttr('CoreBuild_CuThin_Process') = 'Vertical Buffing' then // 1473
+        else if Fnc.SysGetAttrValue('CoreBuild_CuThin_Process') = 'Vertical Buffing' then // 1473
         begin               
           AddStep('CoreBuild_CT_Buffing1', 'CoreBuild_CT_Buffing101');
                   
-          if MfgAttr('Press_Thickness') > 4.0 then // 1112 Micro-etch for thick board 
+          if PressThickness > 4.0 then // 1112 Micro-etch for thick board 
             MessageDlg('Board too thick for Core Build Cu Thining standard Micro-etch process.', mtWarning, Setof([mbOK]), 0); 
         end
 
@@ -490,19 +502,19 @@ begin
       end;
     end;      
 
-    if MfgAttr('BlindVias') = true then
+    if Fnc.SysGetAttrValue('BlindVias') = true then
       BlindVia;
 
   end
   else
   begin
-    if MfgAttr('PanelsPerSheet') = 0 then
+    if Fnc.SysGetAttrValue('PanelsPerSheet') = 0 then
     begin
       AddStep('KK_Drill', 'KK_Drill01');
 
-      if MfgAttr('LayupThickness') > 0.6 then
+      if Fnc.SysGetAttrValue('LayupThickness') > 0.6 then
       begin
-        if MfgAttr('LayupThickness') > 3.5 then
+        if Fnc.SysGetAttrValue('LayupThickness') > 3.5 then
           AddStep('Beveling', 'Beveling01')
         else
           AddStep('ManualBeveling', 'ManualBeveling01');
@@ -515,9 +527,9 @@ begin
       AddStep('Shearing', 'Shearing01');
   end;
 
-  if ( MfgAttr('BlindVias') = false ) and 
+  if ( Fnc.SysGetAttrValue('BlindVias') = false ) and 
      ( MicroEtchReqd = true ) and
-     ( MfgAttr('Press_Thickness') <= 4.0 ) 
+     ( PressThickness <= 4.0 ) 
   then  // 1112 Micro-etch for thick board
     AddStep('MicroEtch', 'MicroEtch01');
                     
@@ -527,7 +539,7 @@ begin
   if MechBlindViaSide = 'Both' then // Mech Blind Via
       AddStep('MechBlindVia2', 'MechBlindVia201');
 
-  if ((MfgAttr('NCRunX2') = true) and (MfgAttr('CappedVia') = true)) then
+  if ((Fnc.SysGetAttrValue('NCRunX2') = true) and (Fnc.SysGetAttrValue('CappedVia') = true)) then
     NC_EpxPlug_wFlash;
 
   AddStep('NC_Drill', 'NC_Drill02');
@@ -535,10 +547,10 @@ begin
   if GetsExtraAZBlowerStep then // 1144 Additional AZ Blower Step after CNC Drill 
     AddStep('HighPressAirBlow', 'HighPressAirBlow-1');
 
-  if MfgAttr('PLCountersink') = true then
+  if Fnc.SysGetAttrValue('PLCountersink') = true then
     AddStep('PLCountersink', 'PLCountersink01');
 
-  if MfgAttr('EdgePlating') = true then
+  if Fnc.SysGetAttrValue('EdgePlating') = true then
   begin
     AddStep('EdgePlateRoute', 'EdgePlateRoute01');
     AddStep('WashingStd', 'WashingStd01');

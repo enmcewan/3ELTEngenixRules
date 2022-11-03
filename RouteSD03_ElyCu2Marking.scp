@@ -28,7 +28,7 @@ begin
   UpdateInProcessCuThk(InProcessCuThk + 10);
   
   // 1107 Additional Run Card info - Note sequential build
-  if ( MfgAttr('Seq_Build') = true ) or ( SubParentIsSequential ) then 
+  if ( Fnc.SysGetAttrValue('Seq_Build') = true ) or ( SubParentIsSequential ) then 
     StepParamERP('Remark', 'Sequential Build'); 
 end;                                     
 
@@ -37,29 +37,29 @@ var
   thicknessAfterPlating,
   minHoleSize_NP : float;                          
 begin
-  thicknessAfterPlating := MfgAttr('Press_Thickness') + 
+  thicknessAfterPlating := PressThickness + 
                            ( InProcessCuThk/1000 * 2 ) - 
                            ( StrToFloat(GetBaseCuInMicrons(true, false)) / 1000 );
                            
   if ( not PluggedFilledB4Photo ) or ( process = 'Epoxy' ) then  
   begin
-    StepParamERP('Min Hole Size', MfgAttr('Min_Hole_Size'));
-    StepParamERP('Aspect Ratio', formatFloat('0.0', thicknessAfterPlating / MfgAttr('Min_Hole_Size')));
+    StepParamERP('Min Hole Size', Fnc.SysGetAttrValue('Min_Hole_Size'));
+    StepParamERP('Aspect Ratio', formatFloat('0.0', thicknessAfterPlating / Fnc.SysGetAttrValue('Min_Hole_Size')));
   end
   else                              
   begin
-    if MfgAttr('Abs_Min_Th') > 0 then
-      minHoleSize_NP := MfgAttr('Min_Drill_Size_NP') - (MfgAttr('Abs_Min_Th') / 1000*2 )
+    if Fnc.SysGetAttrValue('Abs_Min_Th') > 0 then
+      minHoleSize_NP := Fnc.SysGetAttrValue('Min_Drill_Size_NP') - (Fnc.SysGetAttrValue('Abs_Min_Th') / 1000*2 )
     else       
-      minHoleSize_NP := MfgAttr('Min_Drill_Size_NP') - (MfgAttr('Ave_Min_Th') / 1000*2 );   
+      minHoleSize_NP := Fnc.SysGetAttrValue('Min_Drill_Size_NP') - (Fnc.SysGetAttrValue('Ave_Min_Th') / 1000*2 );   
                                                                                                                                           
-    if MfgAttr('MfgPartType') = 'Top' then // 961 - removal of NP Holes from subs
+    if Fnc.SysGetAttrValue('MfgPartType') = 'Top' then // 961 - removal of NP Holes from subs
     begin
       StepParamERP('Min Hole Size NP', minHoleSize_NP );
       StepParamERP('Aspect Ratio', formatFloat('0.0', thicknessAfterPlating / minHoleSize_NP));
     end                        
     else                                     
-      StepParamERP('Aspect Ratio', formatFloat('0.0', thicknessAfterPlating / MfgAttr('Min_Hole_Size')));
+      StepParamERP('Aspect Ratio', formatFloat('0.0', thicknessAfterPlating / Fnc.SysGetAttrValue('Min_Hole_Size')));
   
   end;  
 end;
@@ -92,7 +92,7 @@ begin
 
   if ( PhotoProcess <> 'PForm_SBS' ) and (PhotoProcess <> 'IL_Photo_OL_ThinPanel') then    // 1108 OL Photo Process Update  
   begin
-    if MfgAttr('LayupThickness') >= 4.2 then // 793 Update Photo process rule
+    if Fnc.SysGetAttrValue('LayupThickness') >= 4.2 then // 793 Update Photo process rule
       StepWCERP('EXPOL-A7');
     else
       begin
@@ -123,59 +123,59 @@ begin
     'ConformalMask' : ProcessLabel := 'Conformal Mask';
     'DESPattEtchLGA' : ProcessLabel := 'DES Pattern Etch LGA';
     'HoleTentingLGA' : ProcessLabel := 'Hole Tenting LGA';
-    'SelectiveFinishing' : ProcessLabel := 'Selective ' + MfgAttr('Board_Finish'); // 1355
+    'SelectiveFinishing' : ProcessLabel := 'Selective ' + Fnc.SysGetAttrValue('Board_Finish'); // 1355
   end;
 
   StepParamERP('Photo Type', ProcessLabel);
 
   if PhotoProcess <> 'ConformalMask' then
   begin
-    //if NOT ((MfgAttr('BlindVias') = true) and (ProdCodeLBlb = false)) then
+    //if NOT ((Fnc.SysGetAttrValue('BlindVias') = true) and (ProdCodeLBlb = false)) then
     //begin
-      if ((MfgAttr('Overall_Blown_Val') = 0.0) and (MfgAttr('Min_PTrace_Gap') = 0.0)) then
+      if ((Fnc.SysGetAttrValue('Overall_Blown_Val') = 0.0) and (Fnc.SysGetAttrValue('Min_PTrace_Gap') = 0.0)) then
       begin
-        StepParamERP('Line Width', MfgAttr('Line_Width'));
-        StepParamERP('Min Gap', MfgAttr('Min_Gap'));
+        StepParamERP('Line Width', Fnc.SysGetAttrValue('Line_Width'));
+        StepParamERP('Min Gap', Fnc.SysGetAttrValue('Min_Gap'));
       end                       
       else
       begin
-        StepParamERP('Blown Width', MfgAttr('Line_Width_Blown'));
-        StepParamERP('Blown Gap', MfgAttr('Air_Gap_Blown'));
+        StepParamERP('Blown Width', Fnc.SysGetAttrValue('Line_Width_Blown'));
+        StepParamERP('Blown Gap', Fnc.SysGetAttrValue('Air_Gap_Blown'));
       end;
 
-      StepParamERP('Land Area', MfgAttr('Land_Area'));
-      StepParamERP('Annular', MfgAttr('Annular'));
-      StepParamERP('Design Thickness', FormatFloat('0.000', MfgAttr('LayupThickness')));
+      StepParamERP('Land Area', Fnc.SysGetAttrValue('Land_Area'));
+      StepParamERP('Annular', Fnc.SysGetAttrValue('Annular'));
+      StepParamERP('Design Thickness', FormatFloat('0.000', Fnc.SysGetAttrValue('LayupThickness')));
 
-      if MfgAttr('Abs_Min_Th') > 0 then
-        Fnc.SysSetAttrValue('Min_Hole_Size', Min_Drill - (MfgAttr('Abs_Min_Th')/1000*2 ));
+      if Fnc.SysGetAttrValue('Abs_Min_Th') > 0 then
+        Fnc.SysSetAttrValue('Min_Hole_Size', Min_Drill - (Fnc.SysGetAttrValue('Abs_Min_Th')/1000*2 ));
       else
-        Fnc.SysSetAttrValue('Min_Hole_Size', Min_Drill - (MfgAttr('Ave_Min_Th')/1000*2 ));
+        Fnc.SysSetAttrValue('Min_Hole_Size', Min_Drill - (Fnc.SysGetAttrValue('Ave_Min_Th')/1000*2 ));
 
-      Fnc.SysSetAttrValue('Min_Hole_Size', Round100(MfgAttr('Min_Hole_Size')));
+      Fnc.SysSetAttrValue('Min_Hole_Size', Round100(Fnc.SysGetAttrValue('Min_Hole_Size')));
 
-      thicknessAfterPlating := MfgAttr('Press_Thickness') + ( InProcessCuThk/1000 * 2 ) - ( StrToFloat(GetBaseCuInMicrons(true, false)) / 1000 );
+      thicknessAfterPlating := PressThickness + ( InProcessCuThk/1000 * 2 ) - ( StrToFloat(GetBaseCuInMicrons(true, false)) / 1000 );
 
       // 756 Update Aspect ratio calculation for OL layer photo process
       {if not PluggedFilledB4Photo then
       begin
-        StepParamERP('Min Hole Size', MfgAttr('Min_Hole_Size'));
-        StepParamERP('Aspect Ratio', formatFloat('0.0', thicknessAfterPlating / MfgAttr('Min_Hole_Size')));
+        StepParamERP('Min Hole Size', Fnc.SysGetAttrValue('Min_Hole_Size'));
+        StepParamERP('Aspect Ratio', formatFloat('0.0', thicknessAfterPlating / Fnc.SysGetAttrValue('Min_Hole_Size')));
       end
       else
       begin
-        if MfgAttr('Abs_Min_Th') > 0 then
-          minHoleSize_NP := MfgAttr('Min_Drill_Size_NP') - (MfgAttr('Abs_Min_Th') / 1000*2 )
+        if Fnc.SysGetAttrValue('Abs_Min_Th') > 0 then
+          minHoleSize_NP := Fnc.SysGetAttrValue('Min_Drill_Size_NP') - (Fnc.SysGetAttrValue('Abs_Min_Th') / 1000*2 )
         else
-          minHoleSize_NP := MfgAttr('Min_Drill_Size_NP') - (MfgAttr('Ave_Min_Th') / 1000*2 );   
+          minHoleSize_NP := Fnc.SysGetAttrValue('Min_Drill_Size_NP') - (Fnc.SysGetAttrValue('Ave_Min_Th') / 1000*2 );   
                                                                                                                                               
-        if MfgAttr('MfgPartType') = 'Top' then // 961 - removal of NP Holes from subs
+        if Fnc.SysGetAttrValue('MfgPartType') = 'Top' then // 961 - removal of NP Holes from subs
         begin
           StepParamERP('Min Hole Size NP', minHoleSize_NP );
           StepParamERP('Aspect Ratio', formatFloat('0.0', thicknessAfterPlating / minHoleSize_NP));
         end                        
         else                                     
-          StepParamERP('Aspect Ratio', formatFloat('0.0', thicknessAfterPlating / MfgAttr('Min_Hole_Size')));
+          StepParamERP('Aspect Ratio', formatFloat('0.0', thicknessAfterPlating / Fnc.SysGetAttrValue('Min_Hole_Size')));
       
       end;}
       
@@ -183,38 +183,38 @@ begin
       Insert_MinHole_Aspect('OLPhoto'); 
                                                          
       //No Computation required - already done
-      StepParamERP('Max Hole Size', MfgAttr('Max_Hole_Size'));
-      StepParamERP('Max P-Hole Size', MfgAttr('Max_PHole_Size'));
+      StepParamERP('Max Hole Size', Fnc.SysGetAttrValue('Max_Hole_Size'));
+      StepParamERP('Max P-Hole Size', Fnc.SysGetAttrValue('Max_PHole_Size'));
                                                 
-      if MfgAttr('EdgePlating') = true then // 793 Update Photo Process
-        StepParamERP('Edge Plating Max Length', MfgAttr('EdgePlating_Max_Length'));
+      if Fnc.SysGetAttrValue('EdgePlating') = true then // 793 Update Photo Process
+        StepParamERP('Edge Plating Max Length', Fnc.SysGetAttrValue('EdgePlating_Max_Length'));
 
       // 1107 Runcard Process Additional Inf0 - always show slot length
-      //if MfgAttr('Slot_Length_PTH') > 6.0 then // 793 Update Photo Process 
+      //if Fnc.SysGetAttrValue('Slot_Length_PTH') > 6.0 then // 793 Update Photo Process 
       if MfgPartType = 'Top' then 
-        StepParamERP('Max Slot Length', MfgAttr('Slot_Length_PTH'));
+        StepParamERP('Max Slot Length', Fnc.SysGetAttrValue('Slot_Length_PTH'));
                       
-      if MfgAttr('Design_Type') = 'Flip Chip' then
-        StepParamERP('Design', MfgAttr('Design_Type'));
+      if Fnc.SysGetAttrValue('Design_Type') = 'Flip Chip' then
+        StepParamERP('Design', Fnc.SysGetAttrValue('Design_Type'));
                                                            
       // 919 Add MLB or HDI remarks under OL Photo Step
       if PhotoBoardType <> '' then
          StepParamERP('Board Type', PhotoBoardType);
          
       // 972 - Material and Panel size on OL Photo step
-      StepParamERP('Pre-preg Material', MfgAttr('PPGMat'));
-      StepParamERP('Core Material', MfgAttr('CoreMat'));
-      StepParamERP('Panel Size', IntToStr(MfgAttr('Panel_Length')) + ' X ' + IntToStr(MfgAttr('Panel_Width')));
+      StepParamERP('Pre-preg Material', Fnc.SysGetAttrValue('PPGMat'));
+      StepParamERP('Core Material', Fnc.SysGetAttrValue('CoreMat'));
+      StepParamERP('Panel Size', IntToStr(Fnc.SysGetAttrValue('Panel_Length')) + ' X ' + IntToStr(Fnc.SysGetAttrValue('Panel_Width')));
         
 
       if Au_Plt_Count >= 1 then       
       begin
-        Fnc.SysSetAttrValue('Sel_Gold_AuSpec1', trim(MfgAttr('Sel_Gold_AuSpec1')));
-        Fnc.SysSetAttrValue('Sel_Gold_AuSpec2', trim(MfgAttr('Sel_Gold_AuSpec2')));
+        Fnc.SysSetAttrValue('Sel_Gold_AuSpec1', trim(Fnc.SysGetAttrValue('Sel_Gold_AuSpec1')));
+        Fnc.SysSetAttrValue('Sel_Gold_AuSpec2', trim(Fnc.SysGetAttrValue('Sel_Gold_AuSpec2')));
                 
         try
-          Au_Thk1 := StrToFloat('0' + Copy(MfgAttr('Sel_Gold_AuSpec1'),1,4));
-          Au_Thk2 := StrToFloat('0' + Copy(MfgAttr('Sel_Gold_AuSpec2'),1,4));
+          Au_Thk1 := StrToFloat('0' + Copy(Fnc.SysGetAttrValue('Sel_Gold_AuSpec1'),1,4));
+          Au_Thk2 := StrToFloat('0' + Copy(Fnc.SysGetAttrValue('Sel_Gold_AuSpec2'),1,4));
 
           if ( Au_Plt_Count = 1 ) and ( Au_Thk1 <= 0.1 ) then
             StepInstructionERP('AUGAL001'); // REMARK : OFF CHEMICAL
@@ -226,7 +226,7 @@ begin
         end;
       end;
 
-      if ((MfgAttr('Design_Type') = 'Flip Chip') or (ProdCodeLX)) then
+      if ((Fnc.SysGetAttrValue('Design_Type') = 'Flip Chip') or (ProdCodeLX)) then
         StepInstructionERP('EXPOL001'); // REMARK : OFF BUFFING
     //end;
   end;
@@ -238,15 +238,15 @@ var
   controlRange: string;
 begin                                                                                          
   
-  fixedDim := 'X = ' + FormatFloat('0.000', FloatToStr(MfgAttr('OLPhoto_FSF_X'))) + '%; ' +
-              'Y = ' + FormatFloat('0.000', FloatToStr(MfgAttr('OLPhoto_FSF_Y'))) + '%';                                 
+  fixedDim := 'X = ' + FormatFloat('0.000', FloatToStr(Fnc.SysGetAttrValue('OLPhoto_FSF_X'))) + '%; ' +
+              'Y = ' + FormatFloat('0.000', FloatToStr(Fnc.SysGetAttrValue('OLPhoto_FSF_Y'))) + '%';                                 
                      
-  controlRange := 'X = ' + FormatFloat('0.000', FloatToStr(MfgAttr('OLPhoto_FSF_X') - MfgAttr('OLPhoto_FSF_X_Tol'))) + '~' +
-                           FormatFloat('0.000', FloatToStr(MfgAttr('OLPhoto_FSF_X') + MfgAttr('OLPhoto_FSF_X_Tol'))) + '%; ' +
-                  'Y = ' + FormatFloat('0.000', FloatToStr(MfgAttr('OLPhoto_FSF_Y') - MfgAttr('OLPhoto_FSF_Y_Tol'))) + '~' +
-                           FormatFloat('0.000', FloatToStr(MfgAttr('OLPhoto_FSF_Y') + MfgAttr('OLPhoto_FSF_Y_Tol'))) + '%';
+  controlRange := 'X = ' + FormatFloat('0.000', FloatToStr(Fnc.SysGetAttrValue('OLPhoto_FSF_X') - Fnc.SysGetAttrValue('OLPhoto_FSF_X_Tol'))) + '~' +
+                           FormatFloat('0.000', FloatToStr(Fnc.SysGetAttrValue('OLPhoto_FSF_X') + Fnc.SysGetAttrValue('OLPhoto_FSF_X_Tol'))) + '%; ' +
+                  'Y = ' + FormatFloat('0.000', FloatToStr(Fnc.SysGetAttrValue('OLPhoto_FSF_Y') - Fnc.SysGetAttrValue('OLPhoto_FSF_Y_Tol'))) + '~' +
+                           FormatFloat('0.000', FloatToStr(Fnc.SysGetAttrValue('OLPhoto_FSF_Y') + Fnc.SysGetAttrValue('OLPhoto_FSF_Y_Tol'))) + '%';
                            
-  if MfgAttr('OLPhoto_FSF_X') > 0 then
+  if Fnc.SysGetAttrValue('OLPhoto_FSF_X') > 0 then
   begin
     StepParamERP('Fixed Scale Factor', fixedDim);
     StepParamERP('Control Range', controlRange); 
@@ -304,7 +304,7 @@ begin
     if CustCode_Rule('Customer') = 'HR' then
       DESLine := 'DES4';
   
-    if MfgAttr('DynamicEtch') and not SBS then
+    if Fnc.SysGetAttrValue('DynamicEtch') and not SBS then
       StepWCERP('DESOL-A4');
     else
       case DESLine of
@@ -334,14 +334,14 @@ begin
   else
     StepParamERP('Impedance', 'No');
                  
-  if MfgAttr('DynamicEtch') = true then
+  if Fnc.SysGetAttrValue('DynamicEtch') = true then
     StepParamERP('Dynamic', 'True');
 
   if TopFirstPlatingUM >= 41 then
     StepParamERP('Plating Thickness', TopFirstPlatingUM);
 
-  if MfgAttr('Design_Type') = 'Flip Chip' then
-    StepParamERP('Design Type', MfgAttr('Design_Type'));
+  if Fnc.SysGetAttrValue('Design_Type') = 'Flip Chip' then
+    StepParamERP('Design Type', Fnc.SysGetAttrValue('Design_Type'));
 
   if ((AOIforCMK = false) and (CustCode_Rule('Customer') = 'FA')) then
     StepInstructionERP('DESIL007'); // REMARK : Sampling check line width.”
@@ -387,17 +387,17 @@ procedure OL_DES_CM_SD;
 begin
   OL_DES_Common('ConformalMask', false);
 
-  if MfgAttr('UEtch_Cu') = 0.0 then
+  if Fnc.SysGetAttrValue('UEtch_Cu') = 0.0 then
     StepParamERP('Base Cu', IntToStr(BaseCuTopUM));
   else
-    //StepParamERP('Micro-Etch Spec', MfgAttr('UEtch_Spec'));
+    //StepParamERP('Micro-Etch Spec', Fnc.SysGetAttrValue('UEtch_Spec'));
     // 1138 Micro Etch for Laser Via
-    StepParamERP('Micro-Etch Spec', MfgAttr('UEtch_Cu')); 
+    StepParamERP('Micro-Etch Spec', Fnc.SysGetAttrValue('UEtch_Cu')); 
 
-  StepParamERP('Conf Mask Size A/Etch', MfgAttr('ConfMask_Size_AE'));
+  StepParamERP('Conf Mask Size A/Etch', Fnc.SysGetAttrValue('ConfMask_Size_AE'));
 
-  if MfgAttr('ConfMask_Size_AE_Skip') > 0 then
-    StepParamERP('Conf Mask Size AE Skip', MfgAttr('ConfMask_Size_AE_Skip'));
+  if Fnc.SysGetAttrValue('ConfMask_Size_AE_Skip') > 0 then
+    StepParamERP('Conf Mask Size AE Skip', Fnc.SysGetAttrValue('ConfMask_Size_AE_Skip'));
 
 end;
 
@@ -408,10 +408,10 @@ end;
 
 procedure InsertECParameters;  // 1255 EC Parameter Attributes
 begin
-  StepParamERP('Test Voltage', IntToStr(MfgAttr('EC_Test_Voltage')) + ' Volts');
-  StepParamERP('Continuity Resistance', IntToStr(MfgAttr('EC_Cont_Res')) + ' Ohms');
-  StepParamERP('Isolation Resistance', IntToStr(MfgAttr('EC_Isol_Res')) + ' MOhms');
-  //StepParamERP('Current', IntToStr(MfgAttr('EC_Current')) + ' mA'); 1309
+  StepParamERP('Test Voltage', IntToStr(Fnc.SysGetAttrValue('EC_Test_Voltage')) + ' Volts');
+  StepParamERP('Continuity Resistance', IntToStr(Fnc.SysGetAttrValue('EC_Cont_Res')) + ' Ohms');
+  StepParamERP('Isolation Resistance', IntToStr(Fnc.SysGetAttrValue('EC_Isol_Res')) + ' MOhms');
+  //StepParamERP('Current', IntToStr(Fnc.SysGetAttrValue('EC_Current')) + ' mA'); 1309
 end;
 
 procedure Panel_EC_SD;
@@ -439,26 +439,26 @@ begin
   StepDeptERP('EPXPL-A');
 
   if (
-      (MfgAttr('Panel_Width') > 509) or
-      (MfgAttr('Panel_Width') < 200) or
-      (MfgAttr('Panel_Length') > 609) or
-      (MfgAttr('Panel_Length') < 250) or
-      (MfgAttr('LayupThickness') > 5.00) or  // Epoxy Plugging Max Thickness Change
-      (MfgAttr('LayupThickness') < 0.40) or
-      (MfgAttr('BlindVias') = true) or
-      (MfgAttr('BuriedVias') = true) or
-      (MfgAttr('CappedVia') = true)
+      (Fnc.SysGetAttrValue('Panel_Width') > 509) or
+      (Fnc.SysGetAttrValue('Panel_Width') < 200) or
+      (Fnc.SysGetAttrValue('Panel_Length') > 609) or
+      (Fnc.SysGetAttrValue('Panel_Length') < 250) or
+      (Fnc.SysGetAttrValue('LayupThickness') > 5.00) or  // Epoxy Plugging Max Thickness Change
+      (Fnc.SysGetAttrValue('LayupThickness') < 0.40) or
+      (Fnc.SysGetAttrValue('BlindVias') = true) or
+      (Fnc.SysGetAttrValue('BuriedVias') = true) or
+      (Fnc.SysGetAttrValue('CappedVia') = true)
      )
   then
     Onsokki := false;
 
   if (
-      (MfgAttr('Panel_Width') > 525) or
-      (MfgAttr('Panel_Width') < 200) or
-      (MfgAttr('Panel_Length') > 620) or
-      (MfgAttr('Panel_Length') < 200) or
-      (MfgAttr('LayupThickness') > 5.00) or  // Epoxy Plugging Max Thickness Change
-      (MfgAttr('LayupThickness') < 0.40)
+      (Fnc.SysGetAttrValue('Panel_Width') > 525) or
+      (Fnc.SysGetAttrValue('Panel_Width') < 200) or
+      (Fnc.SysGetAttrValue('Panel_Length') > 620) or
+      (Fnc.SysGetAttrValue('Panel_Length') < 200) or
+      (Fnc.SysGetAttrValue('LayupThickness') > 5.00) or  // Epoxy Plugging Max Thickness Change
+      (Fnc.SysGetAttrValue('LayupThickness') < 0.40)
      )
   then                                        
     Noda := false;
@@ -480,35 +480,35 @@ begin
     StepInstructionERP('MISS STEP'); // Missing Precess Step, Please check with DE
   end;
 
-  StepParamERP('Plug Ink', MfgAttr('EpoxyPlugInk'));
+  StepParamERP('Plug Ink', Fnc.SysGetAttrValue('EpoxyPlugInk'));
   
   // 1107 Runcard Additional Info
-  if MfgAttr('MfgPartType') = 'Top' then
-    StepParamERP('Plug to Non-plug', MfgAttr('EpoxyPlug_PlugToNonPlugSpacing'));
+  if Fnc.SysGetAttrValue('MfgPartType') = 'Top' then
+    StepParamERP('Plug to Non-plug', Fnc.SysGetAttrValue('EpoxyPlug_PlugToNonPlugSpacing'));
 
   // 2203 Epoxy Plugging additional Info 
-  StepParamERP('Thickness', FormatFloat('0.000', MfgAttr('LayupThickness')));
-  StepParamERP('Panel Size', MfgAttr('Panel_Size'));
+  StepParamERP('Thickness', FormatFloat('0.000', Fnc.SysGetAttrValue('LayupThickness')));
+  StepParamERP('Panel Size', Fnc.SysGetAttrValue('Panel_Size'));
   Insert_MinHole_Aspect('Epoxy');
 end;
 
 procedure Epoxy_PlugA_SD;
 begin
   Epoxy_Plug_Common;
-  StepParamERP('Bottom A Layer', MfgAttr('BotLayer'));
+  StepParamERP('Bottom A Layer', Fnc.SysGetAttrValue('BotLayer'));
   
-  if ( not MfgAttr('BackDrill_Epoxy') ) and  // 1258 Additional pre-baking b4 Epoxy Plugging 
-     (( MfgAttr('EpoxySide') = 'Epoxy Side A' ) or ( MfgAttr('EpoxySide') = 'Epoxy Side AB' )) then
+  if ( not Fnc.SysGetAttrValue('BackDrill_Epoxy') ) and  // 1258 Additional pre-baking b4 Epoxy Plugging 
+     (( Fnc.SysGetAttrValue('EpoxySide') = 'Epoxy Side A' ) or ( Fnc.SysGetAttrValue('EpoxySide') = 'Epoxy Side AB' )) then
     StepParamERP('Remarks', 'Pre-Bake using Blue Box Oven'); 
 end;
 
 procedure Epoxy_PlugB_SD;
 begin                     
   Epoxy_Plug_Common;
-  StepParamERP('Top B Layer', MfgAttr('TopLayer'));
+  StepParamERP('Top B Layer', Fnc.SysGetAttrValue('TopLayer'));
                
-  if ( not MfgAttr('BackDrill_Epoxy') ) and  // 1258 Additional pre-baking b4 Epoxy Plugging   
-     (( MfgAttr('EpoxySide') = 'Epoxy Side B' ) or ( MfgAttr('EpoxySide') = 'Epoxy Side BA' )) then
+  if ( not Fnc.SysGetAttrValue('BackDrill_Epoxy') ) and  // 1258 Additional pre-baking b4 Epoxy Plugging   
+     (( Fnc.SysGetAttrValue('EpoxySide') = 'Epoxy Side B' ) or ( Fnc.SysGetAttrValue('EpoxySide') = 'Epoxy Side BA' )) then
     StepParamERP('Remarks', 'Pre-Bake using Blue Box Oven');
 end;
 
@@ -517,7 +517,7 @@ begin
   Epoxy_Plug_Common;
   StepParamERP('Epoxy Side', 'A side');
   
-  if not MfgAttr('BackDrill_Epoxy') then // 1504
+  if not Fnc.SysGetAttrValue('BackDrill_Epoxy') then // 1504
   StepInstructionERP('EPXPL071'); // Pre-Bake using Blue Box Oven' 
 end;
                                      
@@ -526,7 +526,7 @@ begin
   Epoxy_Plug_Common;
   StepParamERP('Epoxy Side', 'B side');
   
-  if not MfgAttr('BackDrill_Epoxy') then // 1504
+  if not Fnc.SysGetAttrValue('BackDrill_Epoxy') then // 1504
   StepInstructionERP('EPXPL071'); // Pre-Bake using Blue Box Oven' 
 end;
 
@@ -574,7 +574,7 @@ procedure PrimaryPlug_CT_Buffing1_SD;  // 841 Primary Plu B4 Pattern Cu Thinning
 begin
   StepDeptERP('EPBUF-A');
   StepWCERP('EPBUF-A');
-  StepParamERP('Buffing Spec', MfgAttr('PrimaryPlug_CuThin_1stBuff'));
+  StepParamERP('Buffing Spec', Fnc.SysGetAttrValue('PrimaryPlug_CuThin_1stBuff'));
 end;
 
 procedure SMPlugAttributes;
@@ -584,62 +584,62 @@ begin
   AttrError := false;
 
   if (
-      (MfgAttr('SMPlugDepth') <> 'N/A') and
-      (MfgAttr('SMPlugJig') <> 'N/A') and
-      (MfgAttr('SMPlugMethod') <> 'N/A')
+      (Fnc.SysGetAttrValue('SMPlugDepth') <> 'N/A') and
+      (Fnc.SysGetAttrValue('SMPlugJig') <> 'N/A') and
+      (Fnc.SysGetAttrValue('SMPlugMethod') <> 'N/A')
      )
   then
   begin
-    StepParamERP('Depth', MfgAttr('SMPlugDepth'));
-    StepParamERP('Jig', MfgAttr('SMPlugJig'));
-    StepParamERP('Method', MfgAttr('SMPlugMethod'));
+    StepParamERP('Depth', Fnc.SysGetAttrValue('SMPlugDepth'));
+    StepParamERP('Jig', Fnc.SysGetAttrValue('SMPlugJig'));
+    StepParamERP('Method', Fnc.SysGetAttrValue('SMPlugMethod'));
   end
   else
   begin
    if (
-       (MfgAttr('SMPlugDepth') = 'N/A') and
-       (MfgAttr('SMPlugJig') <> 'N/A') and
-       (MfgAttr('SMPlugMethod') <> 'N/A')
+       (Fnc.SysGetAttrValue('SMPlugDepth') = 'N/A') and
+       (Fnc.SysGetAttrValue('SMPlugJig') <> 'N/A') and
+       (Fnc.SysGetAttrValue('SMPlugMethod') <> 'N/A')
       )
    then
      AttrError := true;
 
    if (
-       (MfgAttr('SMPlugDepth') <> 'N/A') and
-       (MfgAttr('SMPlugJig') = 'N/A') and
-       (MfgAttr('SMPlugMethod') <> 'N/A')
+       (Fnc.SysGetAttrValue('SMPlugDepth') <> 'N/A') and
+       (Fnc.SysGetAttrValue('SMPlugJig') = 'N/A') and
+       (Fnc.SysGetAttrValue('SMPlugMethod') <> 'N/A')
       )
    then
      AttrError := true;
 
    if (
-       (MfgAttr('SMPlugDepth') <> 'N/A') and
-       (MfgAttr('SMPlugJig') <> 'N/A') and
-       (MfgAttr('SMPlugMethod') = 'N/A')
+       (Fnc.SysGetAttrValue('SMPlugDepth') <> 'N/A') and
+       (Fnc.SysGetAttrValue('SMPlugJig') <> 'N/A') and
+       (Fnc.SysGetAttrValue('SMPlugMethod') = 'N/A')
       )
    then
      AttrError := true;
 
    if (
-       (MfgAttr('SMPlugDepth') = 'N/A') and
-       (MfgAttr('SMPlugJig') = 'N/A') and
-       (MfgAttr('SMPlugMethod') <> 'N/A')
+       (Fnc.SysGetAttrValue('SMPlugDepth') = 'N/A') and
+       (Fnc.SysGetAttrValue('SMPlugJig') = 'N/A') and
+       (Fnc.SysGetAttrValue('SMPlugMethod') <> 'N/A')
       )
    then
      AttrError := true;
 
    if (
-       (MfgAttr('SMPlugDepth') <> 'N/A') and
-       (MfgAttr('SMPlugJig') = 'N/A') and
-       (MfgAttr('SMPlugMethod') = 'N/A')
+       (Fnc.SysGetAttrValue('SMPlugDepth') <> 'N/A') and
+       (Fnc.SysGetAttrValue('SMPlugJig') = 'N/A') and
+       (Fnc.SysGetAttrValue('SMPlugMethod') = 'N/A')
       )
    then
      AttrError := true;
 
    if (
-       (MfgAttr('SMPlugDepth') = 'N/A') and
-       (MfgAttr('SMPlugJig') <> 'N/A') and
-       (MfgAttr('SMPlugMethod') = 'N/A')
+       (Fnc.SysGetAttrValue('SMPlugDepth') = 'N/A') and
+       (Fnc.SysGetAttrValue('SMPlugJig') <> 'N/A') and
+       (Fnc.SysGetAttrValue('SMPlugMethod') = 'N/A')
       )
    then
      AttrError := true;
@@ -653,15 +653,15 @@ procedure Primary_Plug_Common;
 begin
   StepDeptERP('SCRPP-A');
   StepWCERP('SCRPP-A0');
-  StepParamERP('Plug Ink', MfgAttr('PrimaryPlugInk'));
+  StepParamERP('Plug Ink', Fnc.SysGetAttrValue('PrimaryPlugInk'));
   {
   if (
-      (MfgAttr('SMPlugDepth') <> 'N/A') and
-      (MfgAttr('SMPlugJig') <> 'N/A') and
-      (MfgAttr('SMPlugMethod') <> 'N/A')
+      (Fnc.SysGetAttrValue('SMPlugDepth') <> 'N/A') and
+      (Fnc.SysGetAttrValue('SMPlugJig') <> 'N/A') and
+      (Fnc.SysGetAttrValue('SMPlugMethod') <> 'N/A')
      )
   then
-    StepParamERP('Plug %', MfgAttr('PrimaryPlugPercent'));
+    StepParamERP('Plug %', Fnc.SysGetAttrValue('PrimaryPlugPercent'));
   else
     SMPlugAttributes;
   }
@@ -670,14 +670,14 @@ end;
 procedure Primary_PlugA_SD;
 begin
   Primary_Plug_Common;
-  StepParamERP('Bottom A Layer', MfgAttr('BotLayer'));
+  StepParamERP('Bottom A Layer', Fnc.SysGetAttrValue('BotLayer'));
   SMPlugAttributes;
 end;
 
 procedure Primary_PlugB_SD;
 begin
   Primary_Plug_Common;
-  StepParamERP('Top B Layer', MfgAttr('TopLayer'));
+  StepParamERP('Top B Layer', Fnc.SysGetAttrValue('TopLayer'));
   SMPlugAttributes;
 end;
 
@@ -702,18 +702,18 @@ var
   Smudges : string;
   ExposedCu : string;
 begin
-  case MfgAttr('SMPlugType') of
+  case Fnc.SysGetAttrValue('SMPlugType') of
     'Primary SM Plug A' ,
     'Primary SM Plug AB',
-    'Primary SM Plug BA': StepParamERP('Side A Down', MfgAttr('BotLayer'));
-    'Primary SM Plug B' : StepParamERP('Side B Down', MfgAttr('TopLayer'));
+    'Primary SM Plug BA': StepParamERP('Side A Down', Fnc.SysGetAttrValue('BotLayer'));
+    'Primary SM Plug B' : StepParamERP('Side B Down', Fnc.SysGetAttrValue('TopLayer'));
   end;
 
   // 1134 Additional Information
   if Res2nd = true then 
   begin
-    StepParamERP('2 Times Resist Ink', MfgAttr('TwoXResist_Ink'));
-    Fnc.SysSetAttrValue('Soldermask_Type', MfgAttr('Soldermask_Type') + '/' + MfgAttr('TwoXResist_Ink')); 
+    StepParamERP('2 Times Resist Ink', Fnc.SysGetAttrValue('TwoXResist_Ink'));
+    Fnc.SysSetAttrValue('Soldermask_Type', Fnc.SysGetAttrValue('Soldermask_Type') + '/' + Fnc.SysGetAttrValue('TwoXResist_Ink')); 
   end
   else
   begin         
@@ -721,20 +721,20 @@ begin
     Fnc.SysSetAttrValue('Soldermask_Type', MaskType ); 
   end; 
 
-  StepParamERP('Min Resist Clearance', MfgAttr('Min_Res_Cl'));
-  StepParamERP('Min Resist Thickness', MfgAttr('Min_Res_Th'));
+  StepParamERP('Min Resist Clearance', Fnc.SysGetAttrValue('Min_Res_Cl'));
+  StepParamERP('Min Resist Thickness', Fnc.SysGetAttrValue('Min_Res_Th'));
 
-  if MfgAttr('Max_Res_Th') > 0 then
-     StepParamERP('Max Resist Thickness', MfgAttr('Max_Res_Th'));
+  if Fnc.SysGetAttrValue('Max_Res_Th') > 0 then
+     StepParamERP('Max Resist Thickness', Fnc.SysGetAttrValue('Max_Res_Th'));
 
-  StepParamERP('Min Resist Partition', MfgAttr('Min_Res_Pa')); 
+  StepParamERP('Min Resist Partition', Fnc.SysGetAttrValue('Min_Res_Pa')); 
 
-  if MfgAttr('Smudges') = true then
+  if Fnc.SysGetAttrValue('Smudges') = true then
     Smudges := 'Allowed'
   else
     Smudges := 'Not Allowed';
 
-  if MfgAttr('Exposed_Cu') = true then
+  if Fnc.SysGetAttrValue('Exposed_Cu') = true then
     ExposedCu := 'Allowed'
   else
     ExposedCu := 'Not Allowed';
@@ -742,22 +742,22 @@ begin
   StepParamERP('Smudges', Smudges);
   StepParamERP('Exposed Cu', ExposedCu);
 
-  if ((MfgAttr('Design_Type') = 'Flip Chip') or (MfgAttr('Design_Type') = 'Egg Crate')) then
-    StepParamERP('Design Type', MfgAttr('Design_Type'));
+  if ((Fnc.SysGetAttrValue('Design_Type') = 'Flip Chip') or (Fnc.SysGetAttrValue('Design_Type') = 'Egg Crate')) then
+    StepParamERP('Design Type', Fnc.SysGetAttrValue('Design_Type'));
 
-  if ((MfgAttr('Min_Res_Pa') <= 0.1) and (MfgAttr('Press_Thickness') > 2.0)) then
+  if ((Fnc.SysGetAttrValue('Min_Res_Pa') <= 0.1) and (PressThickness > 2.0)) then
     StepInstructionERP('RESIS001'); // CC2 DEVELOPING
 
-  if ((MfgAttr('Marking_A') = 'None') and (MfgAttr('Marking_B') = 'None')) then
-  StepParamERP('Curing', MfgAttr('Curing'));
+  if ((Fnc.SysGetAttrValue('Marking_A') = 'None') and (Fnc.SysGetAttrValue('Marking_B') = 'None')) then
+  StepParamERP('Curing', Fnc.SysGetAttrValue('Curing'));
 
-  if MfgAttr('Res_Insp_Diag') = true then
+  if Fnc.SysGetAttrValue('Res_Insp_Diag') = true then
     StepInstructionERP('RESIS007'); // REMARK:REFER TO RESIST INSPECTION DIAGRAM.
     
   // 927 - Add Final OL Cu thickness, board thickness and panel size is Resist step
   StepParamERP('Cu Thickness', InProcessCuThk); 
-  StepParamERP('Board Thickness', FormatFloat('0.000', MfgAttr('LayupThickness'))); 
-  StepParamERP('Panel Size', IntToStr(MfgAttr('Panel_Length')) + ' X ' + IntToStr(MfgAttr('Panel_Width'))); 
+  StepParamERP('Board Thickness', FormatFloat('0.000', Fnc.SysGetAttrValue('LayupThickness'))); 
+  StepParamERP('Panel Size', IntToStr(Fnc.SysGetAttrValue('Panel_Length')) + ' X ' + IntToStr(Fnc.SysGetAttrValue('Panel_Width'))); 
   
   AddBoardFinishAsAttribute; // 1223 Additional Surface Finish info under Electrolytic Cu step  // 1257 Add to SM
 end;
@@ -908,7 +908,7 @@ begin
   begin
     StepParamERP('Customer', 'Brocade');
 
-    if MfgAttr('LayerCount') < 24 then
+    if Fnc.SysGetAttrValue('LayerCount') < 24 then
     begin
       if MaterialMoistureSensitive then
         StepParamERP('Bake Condition', '6 hrs @ 140 deg C');
@@ -919,7 +919,7 @@ begin
       StepParamERP('Bake Condition', '12 hrs @ 120 deg C');
   end;}
 
-  if MfgAttr('Lead_Free') = true then
+  if Fnc.SysGetAttrValue('Lead_Free') = true then
     StepInstructionERP('BAKING001'); // 838 Instruction Code Update
 end;
 
@@ -939,13 +939,13 @@ end;
 procedure InkJet_Legend_A_SD;
 begin
   InkJet_Legend_Common;
-  StepParamERP('Ink Type', MfgAttr('Marking_A'));
+  StepParamERP('Ink Type', Fnc.SysGetAttrValue('Marking_A'));
 end;
 
 procedure InkJet_Legend_B_SD;
 begin
   InkJet_Legend_Common;
-  StepParamERP('Ink Type', MfgAttr('Marking_B'));
+  StepParamERP('Ink Type', Fnc.SysGetAttrValue('Marking_B'));
 end;
 
 procedure InkJet_Legend_SD;
@@ -955,10 +955,10 @@ begin
   StepInstructionERP('RESCO0018'); // Remark: After developing follow by INKJET LEGEND
   StepInstructionERP('SCMRK006'); // Remark: INKJET LEGEND.
 
-  if MfgAttr('Marking_A') = 'INKJET LEGEND' then
+  if Fnc.SysGetAttrValue('Marking_A') = 'INKJET LEGEND' then
     StepParamERP('Side', 'A');
 
-  if MfgAttr('Marking_B') = 'INKJET LEGEND' then
+  if Fnc.SysGetAttrValue('Marking_B') = 'INKJET LEGEND' then
     StepParamERP('Side', 'B');
 end;
 
@@ -970,7 +970,7 @@ end;
 
 procedure MarkingPrint_Common(InkType : string);
 begin
-  if ((MfgAttr('Marking_Clr') >= 0.25) or (InkColorWhite(InkType) = false)) then
+  if ((Fnc.SysGetAttrValue('Marking_Clr') >= 0.25) or (InkColorWhite(InkType) = false)) then
   begin
     StepDeptERP('SCMRK-A');
     StepWCERP('SCMRK-B0');
@@ -986,29 +986,29 @@ begin
   if CustCode_Rule('Customer') = 'FA' then
     StepInstructionERP('SCMRK003'); // REMARK : Sampling scale measurement smart scope ; : No back scraper /: Final cure oven”
 
-  if MfgAttr('Marking_ThkTol') = 1 then
+  if Fnc.SysGetAttrValue('Marking_ThkTol') = 1 then
     StepInstructionERP('SCRNP-001'); // REMARK:MARKING THICKNESS TOLERANCE 15±5µm.
 
 end;
 
 procedure MarkingPrint_A_SD;
 begin
-  MarkingPrint_Common(MfgAttr('Marking_A'));
+  MarkingPrint_Common(Fnc.SysGetAttrValue('Marking_A'));
 end;
 
 procedure MarkingPrint_A1_SD;
 begin
-  MarkingPrint_Common(MfgAttr('Marking_A1'));
+  MarkingPrint_Common(Fnc.SysGetAttrValue('Marking_A1'));
 end;
 
 procedure MarkingPrint_B_SD;
 begin
-  MarkingPrint_Common(MfgAttr('Marking_B'));
+  MarkingPrint_Common(Fnc.SysGetAttrValue('Marking_B'));
 end;
 
 procedure MarkingPrint_B1_SD;
 begin
-  MarkingPrint_Common(MfgAttr('Marking_B1'));
+  MarkingPrint_Common(Fnc.SysGetAttrValue('Marking_B1'));
 end;
 
 procedure Gold_Develop_SD;
@@ -1026,23 +1026,23 @@ end;
 
 procedure Gold_Type_Attr;
 begin
-  if MfgAttr('Board_Finish') = 'Full Body Gold' then
+  if Fnc.SysGetAttrValue('Board_Finish') = 'Full Body Gold' then
     StepParamERP('Gold Type', 'Full Body Gold');
     
-  if MfgAttr('Board_Finish') = 'Thin/Thick Au Plate' then  // 1256
+  if Fnc.SysGetAttrValue('Board_Finish') = 'Thin/Thick Au Plate' then  // 1256
     StepParamERP('Gold Type', 'Thin/Thick Au Plate');
 
-  {if ( MfgAttr('Board_Finish') = 'ENIG' ) or ( ENIGplusOSP ) then   // 1173 Additional Surface Finishing. Selective ENIG + OSP // 1256
+  {if ( Fnc.SysGetAttrValue('Board_Finish') = 'ENIG' ) or ( ENIGplusOSP ) then   // 1173 Additional Surface Finishing. Selective ENIG + OSP // 1256
     StepParamERP('Gold Type', 'ENIG');
 
-  if MfgAttr('Board_Finish') = 'ENEPIG' then
+  if Fnc.SysGetAttrValue('Board_Finish') = 'ENEPIG' then
     StepParamERP('Gold Type', 'ENEPIG');}
 
-  if ((MfgAttr('Gold_Fgr_Type') <> 'None') and (MfgAttr('Gold_Fgr_Type') <> 'Tab Plating')) then
-    StepParamERP('Gold Type', MfgAttr('Gold_Fgr_Type'));
+  if ((Fnc.SysGetAttrValue('Gold_Fgr_Type') <> 'None') and (Fnc.SysGetAttrValue('Gold_Fgr_Type') <> 'Tab Plating')) then
+    StepParamERP('Gold Type', Fnc.SysGetAttrValue('Gold_Fgr_Type'));
 
-  if MfgAttr('Sel_Gold_Type') <> 'None' then
-    StepParamERP('Gold Type', MfgAttr('Sel_Gold_Type'));
+  if Fnc.SysGetAttrValue('Sel_Gold_Type') <> 'None' then
+    StepParamERP('Gold Type', Fnc.SysGetAttrValue('Sel_Gold_Type'));
 
 end;
 
@@ -1074,24 +1074,24 @@ procedure Gold_Elytic_Plt1_SD;
 begin
   Gold_Elytic_Common_SD;                    
   
-  if MfgAttr('Board_Finish') = 'Thin/Thick Au Plate' then
+  if Fnc.SysGetAttrValue('Board_Finish') = 'Thin/Thick Au Plate' then
     StepParamERP('Remark', 'Thin Au Plating');
   
-  StepParamERP('Area', MfgAttr('Sel_Gold_Area1'));
-  StepParamERP('Au Spec', MfgAttr('Sel_Gold_AuSpec1'));
-  StepParamERP('Ni Spec', MfgAttr('Sel_Gold_NiSpec1')); 
+  StepParamERP('Area', Fnc.SysGetAttrValue('Sel_Gold_Area1'));
+  StepParamERP('Au Spec', Fnc.SysGetAttrValue('Sel_Gold_AuSpec1'));
+  StepParamERP('Ni Spec', Fnc.SysGetAttrValue('Sel_Gold_NiSpec1')); 
 end;
 
 procedure Gold_Elytic_Plt2_SD;
 begin
   Gold_Elytic_Common_SD;
   
-   if MfgAttr('Board_Finish') = 'Thin/Thick Au Plate' then
+   if Fnc.SysGetAttrValue('Board_Finish') = 'Thin/Thick Au Plate' then
     StepParamERP('Remark', 'Thick Au Plating');
     
-  StepParamERP('Area 2', MfgAttr('Sel_Gold_Area2'));
-  StepParamERP('Au Spec 2', MfgAttr('Sel_Gold_AuSpec2'));
-  StepParamERP('Ni Spec 2', MfgAttr('Sel_Gold_NiSpec2'));
+  StepParamERP('Area 2', Fnc.SysGetAttrValue('Sel_Gold_Area2'));
+  StepParamERP('Au Spec 2', Fnc.SysGetAttrValue('Sel_Gold_AuSpec2'));
+  StepParamERP('Ni Spec 2', Fnc.SysGetAttrValue('Sel_Gold_NiSpec2'));
 end;
 
 procedure Gold_Strip_SD;
@@ -1219,7 +1219,7 @@ end;
 
 procedure HoleTent_Photo_SD;
 begin
-  {if MfgAttr('Board_Finish') = 'Full Body Gold + LGA' then
+  {if Fnc.SysGetAttrValue('Board_Finish') = 'Full Body Gold + LGA' then
     OL_Photo_Common_SD('HoleTentingLGA')
   else } // 1256
     OL_Photo_Common_SD('HoleTenting');
@@ -1263,7 +1263,7 @@ begin
   StepDeptERP('AUFLA-A');
 
   try
-    AuThk := StrToFloat(MfgAttr('Sel_Gold_AuSpec2'));
+    AuThk := StrToFloat(Fnc.SysGetAttrValue('Sel_Gold_AuSpec2'));
 
     if AuThk >= 0.076 then
       StepWCERP('AUFLA-A0');
@@ -1275,14 +1275,14 @@ begin
     StepWCERP('AUFLA-A');
   end;
 
-  StepParamERP('Type', MfgAttr('Board_Finish'));
+  StepParamERP('Type', Fnc.SysGetAttrValue('Board_Finish'));
 
-  if MfgAttr('Board_Finish') = 'ENEPIG' then
+  if Fnc.SysGetAttrValue('Board_Finish') = 'ENEPIG' then
     StepParamERP('Note', 'Use ENEPIG Bath');
 
-  StepParamERP('Area 2', MfgAttr('Sel_Gold_Area2'));
-  StepParamERP('Au Spec 2', MfgAttr('Sel_Gold_AuSpec2'));
-  StepParamERP('Ni Spec 2', MfgAttr('Sel_Gold_NiSpec2'));
+  StepParamERP('Area 2', Fnc.SysGetAttrValue('Sel_Gold_Area2'));
+  StepParamERP('Au Spec 2', Fnc.SysGetAttrValue('Sel_Gold_AuSpec2'));
+  StepParamERP('Ni Spec 2', Fnc.SysGetAttrValue('Sel_Gold_NiSpec2'));
 end;
 
 procedure ENIG_Baking_SD;
@@ -1310,7 +1310,7 @@ begin
   if HasSolderMaskType('DSR330S-50-99R') then // ENEPIG Finish with DSR330S-50-99R Soldermask Instruction
     StepInstructionERP('AUFLA009');
     
-  StepParamERP('Palladium Spec', MfgAttr('Palladium_Spec'));
+  StepParamERP('Palladium Spec', Fnc.SysGetAttrValue('Palladium_Spec'));
 end;
 
 procedure ENEPIG_Plasma_SD;
@@ -1363,8 +1363,8 @@ var
   slotLength : float;
   remark : string;
 begin
-  edgePlating := MfgAttr('EdgePlating');
-  slotLength := MfgAttr('Slot_Length_PTH');
+  edgePlating := Fnc.SysGetAttrValue('EdgePlating');
+  slotLength := Fnc.SysGetAttrValue('Slot_Length_PTH');
 
   StepDeptERP('DESOL-A');
   StepWCERP('DESOL-A');
@@ -1407,21 +1407,21 @@ begin
   StepDeptERP('SCPDR-A');
   StepWCERP('SCPDR-A');
   StepParamERP('Remark', 'Drill KK');
-  StepParamERP('PEP KK Distance', MfgAttr('KK_Distance_PEP'));
+  StepParamERP('PEP KK Distance', Fnc.SysGetAttrValue('KK_Distance_PEP'));
   
-  if MfgAttr('KK_Offset_PEP') > 0  then
-    StepParamERP('PEP KK Offset', MfgAttr('KK_Offset_PEP'));
+  if Fnc.SysGetAttrValue('KK_Offset_PEP') > 0  then
+    StepParamERP('PEP KK Offset', Fnc.SysGetAttrValue('KK_Offset_PEP'));
 end;
 
 procedure NC_Drill_PEP_SD; // 1229 PEP Flow option for Sub-assembly build. 
 begin
   StepDeptERP('DRILL-E');
   StepWCERP('DRILL-E');  
-  StepParamERP('Stack Height', MfgAttr('Stack_Hgt')); 
+  StepParamERP('Stack Height', Fnc.SysGetAttrValue('Stack_Hgt')); 
   StepParamERP('Entry Sheet Material', 'Aluminum');  
-  StepParamERP('Material Tg', MfgAttr('TG_Class')); 
-  StepParamERP('Thickness', FormatFloat('0.000', MfgAttr('LayupThickness')));  
-  StepParamERP('Drill Side', DrillSide(MfgAttr('Drill_Side')));
+  StepParamERP('Material Tg', Fnc.SysGetAttrValue('TG_Class')); 
+  StepParamERP('Thickness', FormatFloat('0.000', Fnc.SysGetAttrValue('LayupThickness')));  
+  StepParamERP('Drill Side', DrillSide(Fnc.SysGetAttrValue('Drill_Side')));
   
   if SubIsSandwich then                  
     //StepInstructionERP('DRILL123'); // 1470
@@ -1435,8 +1435,8 @@ procedure NC_Drill_PEP_IL_SD; // 1470
 begin
   StepDeptERP('DRILL-E');         
   StepWCERP('DRILL-E');        
-  StepParamERP('Hole to Edge', 'X: ' + FloatToStr(MfgAttr('HoleToEdge_X')) + 'mm / ' +
-                                                  'Y: ' + FloatToStr(MfgAttr('HoleToEdge_Y')) + 'mm'     
+  StepParamERP('Hole to Edge', 'X: ' + FloatToStr(Fnc.SysGetAttrValue('HoleToEdge_X')) + 'mm / ' +
+                                                  'Y: ' + FloatToStr(Fnc.SysGetAttrValue('HoleToEdge_Y')) + 'mm'     
                                                   );
   StepParamERP('Entry Sheet Material', 'Aluminum');
 end;                                                                   
