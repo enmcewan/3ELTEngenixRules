@@ -4,7 +4,7 @@
 //ScriptType=0
 //ScriptGroup=HCS
 //HeaderImportExport<--
-uses   
+uses                                                                                                                                                                                          
   Event_RouteGenLibrary, //Route System Scripts
   Eng_RouteFunctions, Eng_DrillFunctions,    //Route System Functions
   RouteFunctions,
@@ -134,7 +134,7 @@ begin
       Result := false;
       ErrorList.Add('Panel Length or Panel Width Edge Allowance');
     end;
-
+             
     if ((Fnc.SysGetAttrValue('PunchB4EC') = true) and (Fnc.SysGetAttrValue('Punch_Type') = 'None')) then
     begin
       Result := false;
@@ -178,7 +178,7 @@ begin
     
     // 756 Update Aspect ratio calculation for OL layer photo process     
     if PluggedFilledB4Photo then
-    begin     
+    begin                            
       if Fnc.SysGetAttrValue('Min_Drill_Size_NP') = 0.0 then
         begin
         Result := false;
@@ -190,7 +190,15 @@ begin
     begin
       Result := false;
       ErrorList.Add('Back Drill Machine Type');
-    end;
+    end; 
+   
+    if ( Fnc.SysGetAttrValue('BackDrill') or Fnc.SysGetAttrValue('BackDrill_Epoxy') ) and 
+       ( Fnc.SysGetAttrValue('BackDrillStubSpec') = 0.0 ) then
+    begin 
+      Result := false;
+      ErrorList.Add('Back Drill Stub Spec');
+    end; 
+    
 
     if ((Fnc.SysGetAttrValue('TwoXResist_Ink') = 'None') and (Fnc.SysGetAttrValue('TwoXResist') = true)) then
     begin
@@ -202,10 +210,10 @@ begin
     begin
       Result := false;
       ErrorList.Add('PunchB4EC but PunchType = None');
-    end;
+    end;                  
 
     if ((Fnc.SysGetAttrValue('Punch_Type') <> 'None') and (Fnc.SysGetAttrValue('Punch_Die11') = '0')) then
-    begin
+    begin         
       Result := false;
       ErrorList.Add('Punching but Punch Die 1-1 = 0');
     end;
@@ -271,7 +279,7 @@ begin
     end;
     
     if Fnc.SysGetAttrValue('Part_Type') = 'Internal' then
-    begin
+    begin              
       if Fnc.SysGetAttrValue('KT_Number') = '' then
       begin
         result := false;                                       

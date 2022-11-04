@@ -54,7 +54,12 @@ var
   thk : float
 begin
   StepDeptERP('BACKD-A');
-  StepWCERP('BACKD-A');
+  
+  // 2366 Additional Attribute for Backdrill stub length Spec
+  if Fnc.SysGetAttrValue('BackDrillStubSpec') <= 6.0 then
+    StepWCERP('BACKD-B')
+  else
+    StepWCERP('BACKD-A')
   
   thk := 0.0;
   if process = 'epoxy' then  
