@@ -355,8 +355,8 @@ end;
 function UVLaser: boolean;     
 begin                                      
   if  (
-       (( Fnc.SysGetAttrValue('UVLaserB_Top') > 0 ) or ( Fnc.SysGetAttrValue('UVLaserA_Bot') > 0 )) and
-       ( Fnc.SysGetAttrValue('UVLaserB_Top') + Fnc.SysGetAttrValue('UVLaserA_Bot') < 3500 ) and
+       (( UVLaserB_Top > 0 ) or ( UVLaserA_Bot > 0 )) and
+       ( UVLaserB_Top + UVLaserA_Bot < 3500 ) and
        ( PinLamination )
       )                     
         or Fnc.SysGetAttrValue('ForceUVLaser')             
@@ -374,7 +374,7 @@ begin
 
 end
                    
-procedure BlindVia;                                               
+procedure BlindVia;       // 2360 Conformal Mask > Laser > IL Finishing Process Flow Change 
 begin
   if not DirectLaser then // 1307 Direct Laser
   begin

@@ -374,8 +374,8 @@ begin
 
   if (LaserBTopHits > 0 ) or
      (LaserABotHits > 0 ) or
-     (Fnc.SysGetAttrValue('UVLaserB_Top') > 0 ) or
-     (Fnc.SysGetAttrValue('UVLaserB_Top') > 0 )
+     (UVLaserB_Top > 0 ) or
+     (UVLaserB_Top > 0 )
   then
     result := true;
 end
@@ -752,7 +752,7 @@ begin
   StepDeptERP('METCH-A');
   StepWCERP('METCH-A');
 
-  if ((Fnc.SysGetAttrValue('UVLaserB_Top') > 0) or (Fnc.SysGetAttrValue('UVLaserA_Bot') > 0)) then
+  if ((UVLaserB_Top > 0) or (UVLaserA_Bot > 0)) then
   begin
     if BaseCuTopUM = 18 then
     begin
@@ -885,7 +885,7 @@ begin
 
   StepParamERP('Bottom Layer', Fnc.SysGetAttrValue('BotLayer'));
   StepParamERP('Laser Material', GetLaserMaterial('LaserSideA'));
-  StepParamERP('Laser Hits', Fnc.SysGetAttrValue('UVLaserA_Bot'));
+  StepParamERP('Laser Hits', UVLaserA_Bot);
 
 end;
 
@@ -895,7 +895,7 @@ begin
 
   StepParamERP('Top Layer', Fnc.SysGetAttrValue('TopLayer'));
   StepParamERP('Laser Material', GetLaserMaterial('LaserSideB'));
-  StepParamERP('Laser Hits', Fnc.SysGetAttrValue('UVLaserB_Top'));
+  StepParamERP('Laser Hits', UVLaserB_Top);
 
 end;
 
@@ -1009,7 +1009,7 @@ begin
     StepInstructionERP('INSOL030'); //REMARK : Sampling cu pad scale measurement smart scope”
 
   if (
-      ((Fnc.SysGetAttrValue('Board_Finish') = 'Immersion Tin') or (ProdCodeLX)) and
+      ((BoardFinish = 'Immersion Tin') or (ProdCodeLX)) and
       (Fnc.SysGetAttrValue('LayupThickness') <= 3.0)
      )
   then
@@ -1931,17 +1931,6 @@ begin
   StepDeptERP('COPPL-C');
   StepWCERP('COPPL-C');
   StepInstructionERP('COPPL085'); //REMARK: Strike Plating Program
-
-  {if ( Get_Panel_Thickness <= 1.0 ) or ( Get_Panel_Thickness >= 3.5 ) then
-  begin
-    StepWCERP('COPPL-C22');
-    StepParamERP('Plating Line:', 'PAL6');
-  end
-  else
-  begin
-    StepWCERP('COPPL-C1');
-    StepParamERP('Plating Line:', 'PAL4');
-  end;}
 end;
 
 procedure Electroless_SP_SD; // 978 Updated Cu Rule - Metalization
@@ -2159,7 +2148,7 @@ begin
   if NCRUN = 1 then
   begin
     if LaserBTopHits + LaserABotHits +
-       Fnc.SysGetAttrValue('UVLaserB_Top') + Fnc.SysGetAttrValue('UVLaserA_Bot') > 0
+       UVLaserB_Top + UVLaserA_Bot > 0
     then
       laser := 'Yes';
   end;
@@ -2851,7 +2840,7 @@ begin
       begin
         StepInstructionERP('2NC_CUPLT2'); // REMARK: SECOND CU PLATING.
 
-        if ( Fnc.SysGetAttrValue('Board_Finish') = 'ENIG' ) or ( ENIGplusOSP ) then // 1256
+        if ( BoardFinish = 'ENIG' ) or ( ENIGplusOSP ) then // 1256
         begin
           //if ((Fnc.SysGetAttrValue('Cust_Code') = 'WBF') or (Fnc.SysGetAttrValue('Cust_Code') = 'WBC')) then
           if (

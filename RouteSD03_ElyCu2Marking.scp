@@ -123,7 +123,7 @@ begin
     'ConformalMask' : ProcessLabel := 'Conformal Mask';
     'DESPattEtchLGA' : ProcessLabel := 'DES Pattern Etch LGA';
     'HoleTentingLGA' : ProcessLabel := 'Hole Tenting LGA';
-    'SelectiveFinishing' : ProcessLabel := 'Selective ' + Fnc.SysGetAttrValue('Board_Finish'); // 1355
+    'SelectiveFinishing' : ProcessLabel := 'Selective ' + BoardFinish; // 1355
   end;
 
   StepParamERP('Photo Type', ProcessLabel);
@@ -1026,22 +1026,22 @@ end;
 
 procedure Gold_Type_Attr;
 begin
-  if Fnc.SysGetAttrValue('Board_Finish') = 'Full Body Gold' then
+  if BoardFinish = 'Full Body Gold' then
     StepParamERP('Gold Type', 'Full Body Gold');
     
-  if Fnc.SysGetAttrValue('Board_Finish') = 'Thin/Thick Au Plate' then  // 1256
+  if BoardFinish = 'Thin/Thick Au Plate' then  // 1256
     StepParamERP('Gold Type', 'Thin/Thick Au Plate');
 
-  {if ( Fnc.SysGetAttrValue('Board_Finish') = 'ENIG' ) or ( ENIGplusOSP ) then   // 1173 Additional Surface Finishing. Selective ENIG + OSP // 1256
+  {if ( BoardFinish = 'ENIG' ) or ( ENIGplusOSP ) then   // 1173 Additional Surface Finishing. Selective ENIG + OSP // 1256
     StepParamERP('Gold Type', 'ENIG');
 
-  if Fnc.SysGetAttrValue('Board_Finish') = 'ENEPIG' then
+  if BoardFinish = 'ENEPIG' then
     StepParamERP('Gold Type', 'ENEPIG');}
 
-  if ((Fnc.SysGetAttrValue('Gold_Fgr_Type') <> 'None') and (Fnc.SysGetAttrValue('Gold_Fgr_Type') <> 'Tab Plating')) then
-    StepParamERP('Gold Type', Fnc.SysGetAttrValue('Gold_Fgr_Type'));
+  if ((GoldFingerType <> 'None') and (GoldFingerType <> 'Tab Plating')) then
+    StepParamERP('Gold Type', GoldFingerType);
 
-  if Fnc.SysGetAttrValue('Sel_Gold_Type') <> 'None' then
+  if SelectiveGoldType<> 'None' then
     StepParamERP('Gold Type', Fnc.SysGetAttrValue('Sel_Gold_Type'));
 
 end;
@@ -1074,7 +1074,7 @@ procedure Gold_Elytic_Plt1_SD;
 begin
   Gold_Elytic_Common_SD;                    
   
-  if Fnc.SysGetAttrValue('Board_Finish') = 'Thin/Thick Au Plate' then
+  if BoardFinish = 'Thin/Thick Au Plate' then
     StepParamERP('Remark', 'Thin Au Plating');
   
   StepParamERP('Area', Fnc.SysGetAttrValue('Sel_Gold_Area1'));
@@ -1086,7 +1086,7 @@ procedure Gold_Elytic_Plt2_SD;
 begin
   Gold_Elytic_Common_SD;
   
-   if Fnc.SysGetAttrValue('Board_Finish') = 'Thin/Thick Au Plate' then
+   if BoardFinish = 'Thin/Thick Au Plate' then
     StepParamERP('Remark', 'Thick Au Plating');
     
   StepParamERP('Area 2', Fnc.SysGetAttrValue('Sel_Gold_Area2'));
@@ -1219,7 +1219,7 @@ end;
 
 procedure HoleTent_Photo_SD;
 begin
-  {if Fnc.SysGetAttrValue('Board_Finish') = 'Full Body Gold + LGA' then
+  {if BoardFinish = 'Full Body Gold + LGA' then
     OL_Photo_Common_SD('HoleTentingLGA')
   else } // 1256
     OL_Photo_Common_SD('HoleTenting');
@@ -1275,9 +1275,9 @@ begin
     StepWCERP('AUFLA-A');
   end;
 
-  StepParamERP('Type', Fnc.SysGetAttrValue('Board_Finish'));
+  StepParamERP('Type', BoardFinish);
 
-  if Fnc.SysGetAttrValue('Board_Finish') = 'ENEPIG' then
+  if BoardFinish = 'ENEPIG' then
     StepParamERP('Note', 'Use ENEPIG Bath');
 
   StepParamERP('Area 2', Fnc.SysGetAttrValue('Sel_Gold_Area2'));

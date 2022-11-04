@@ -36,7 +36,7 @@ Var
   GLB_NC_Thickness: double;               
   GLB_Ave_CuThk: double;
   GLB_Abs_CuThk: double;
-  GLB_TGT_Ave_Hole_CuThk: double;
+  GLB_TGT_Ave_Hole_CuThk: double;               
   GLB_TGT_Abs_HOLE_CuThk: double;
                       
   Min_Drill : float;
@@ -47,9 +47,9 @@ Var
   CU_RATIO_WARNING : integer;
                   
   MechBVHTop : boolean;
-  MechBVHBot : boolean;
+  MechBVHBot : boolean;                          
 
-  InProcessCuThk : integer;  //364 Surface Cu Calculation
+  InProcessCuThk : integer;  //364 Surface Cu Calculation                  
 
   HoleCheckDone : boolean; //ENIG Changes
                  
@@ -62,7 +62,16 @@ Var
   DirectLaser: boolean;
   
   LaserABotHits,
-  LaserBTopHits: integer;
+  LaserBTopHits,
+  UVLaserB_Top,
+  UVLaserA_Bot : integer;
+  
+  // BoardFinish = 'Thin/Thick Au Plate' )
+  // SelectiveGoldType= 'Pattern Overhang / PTH' )
+  //GoldFingerType = 'Lead Line Etching' )
+  BoardFinish,
+  SelectiveGoldType,
+  GoldFingerType: string; 
   
 procedure StepParam(Source: string; ParamCode: string; ParamValue: string) // Added with 2269
 begin
@@ -72,11 +81,6 @@ end;
 procedure StepParamERP(ParamCode: string; ParamValue: string)
 begin
   Fnc.SysRouteGenInsAddlParam(Fnc.SysRouteInsGetStepNum, 'Erp', ParamCode, ParamValue, '', '', false, '', '', '' );
-end;
-
-procedure StepDept(Source: string; DeptCode: string);
-begin
-  Fnc.SysRouteGenInsDepartment(Fnc.SysRouteInsGetStepNum, Source, DeptCode, '');
 end;
 
 procedure StepDeptERP(DeptCode: string);
@@ -122,28 +126,8 @@ begin
   if ErrorType = mtInformation then ErrorTypeStr := 'Information'
   
   Fnc.JobJournalUpdate(Fnc.JobID, ErrorMsg, ErrorTypeStr, 'Route GenX' ); 
-end;     
-                            
-procedure StepERPDept(DeptCode: string);
-begin                
-  Fnc.SysRouteGenInsDepartment(Fnc.SysRouteInsGetStepNum, 'Erp', DeptCode, '');
-end; 
- 
-procedure StepERPWrkC(WCCode: string);
-begin                                  
-  Fnc.SysRouteGenInsWorkCenter(Fnc.SysRouteInsGetStepNum, 'Erp', WCCode, ''); 
-end;      
-
-procedure StepERPDptAndWrkC(ResourceCode: string);
-begin
-  Fnc.SysRouteGenInsDepartment(Fnc.SysRouteInsGetStepNum, 'Erp', ResourceCode, '');
-  Fnc.SysRouteGenInsWorkCenter(Fnc.SysRouteInsGetStepNum, 'Erp', ResourceCode, ''); 
-end;
-
-function MfgAttr(AttributeName: string) : variant;
-begin                                      
-  result := Fnc.SysGetAttrValue(AttributeName);
-end;
+end;                                   
+                                                 
                            
 function MfgAttrTL(AttributeName: string) : variant;
 begin
@@ -153,12 +137,12 @@ end;
 function MfgAttrParent(AttributeName: string) : variant;
 begin
   result := Fnc.SysGetAttrValueParent(AttributeName);
-end;
+end;      
 
-function LayerAttr(AttrName: string; TopLayer: boolean; ItemType: string; ItemSequence: integer) : variant;
+function LayerAttrTop(AttrName: string; TopLayer: boolean; ItemType: string; ItemSequence: integer) : variant;
 begin                              
   result := Fnc.SysGetItemAttrValue(AttrName, TopLayer, ItemType, ItemSequence);   
-end;
+end; 
 
 procedure GET_VCUT_TYPE;
 begin
@@ -169,7 +153,7 @@ begin
     'JUMP V-CUT'     : VCUT_TYPE := 'Panel';
     'N-V-CUT'        : VCUT_TYPE := 'Panel';
     'PIECE V-CUT'    : VCUT_TYPE := 'Piece';
-  end;
+  end;          
 
 end;
 
@@ -1546,15 +1530,15 @@ function HardGoldB4Resist : boolean;
 begin
   result := false;           
 
-  if ( Fnc.SysGetAttrValue('Sel_Gold_Type') <> 'None' ) and ( Fnc.SysGetAttrValue('Sel_Gold_Type') <> 'ENIG' ) then
+  if ( SelectiveGoldType<> 'None' ) and ( SelectiveGoldType<> 'ENIG' ) then
     result := true;
 
-  if ( Fnc.SysGetAttrValue('Board_Finish') =  'Full Body Gold' ) or
-     ( Fnc.SysGetAttrValue('Board_Finish') =  'Thin/Thick Au Plate' )
-  then // 1256 or (Fnc.SysGetAttrValue('Board_Finish') = 'Full Body Gold + LGA')) then
+  if ( BoardFinish =  'Full Body Gold' ) or
+     ( BoardFinish =  'Thin/Thick Au Plate' )
+  then // 1256 or (BoardFinish = 'Full Body Gold + LGA')) then
     result := true;        
                                                
-  case Fnc.SysGetAttrValue('Gold_Fgr_Type') of
+  case GoldFingerType of
     //'Lead Line Etching B4 Res (Sel)',
     'Lead Line Etching',
     //'No Horn - Lead Line Etching B4 Res (Sel)',  1256
@@ -1566,7 +1550,7 @@ begin
     'NO Lead Line Etching',
     'Soldermask Spray': result := true;
   end;                   
-             
+                                    
 end;                            
 
 procedure TotalThickestCuUM;
@@ -1748,7 +1732,7 @@ begin
   result := false;
 
   SMaskList := Fnc.SysStackupGetMaterialList(0, True, 'Soldermask', 'ItemFamily');
-
+                                                                                                                                                                
   //ShowMessage(SMaskList.Text);
 
   for i := 0 to SMaskList.Count -1 do
@@ -1816,7 +1800,7 @@ begin
     PressThickness := Fnc.SysGetAttrValue('LayupThickness');
     
   Fnc.SysSetAttrValue('Press_Thickness', PressThickness);
-  
+                                                                  
 end;                                   
 
 
@@ -3237,8 +3221,8 @@ function IsSelectiveGold : boolean;
 begin
   result := false;
                            
-  if ( Fnc.SysGetAttrValue('Sel_Gold_Type') <> 'None' ) or
-     (( Fnc.SysGetAttrValue('Gold_Fgr_Type') <> 'None' ) and ( Fnc.SysGetAttrValue('Gold_Fgr_Type') <> 'Tab Plating' )) then
+  if ( SelectiveGoldType<> 'None' ) or
+     (( GoldFingerType <> 'None' ) and ( GoldFingerType <> 'Tab Plating' )) then
     result := true;
 end;
 function ConvertStrtoInt(str : string) : integer;  //364 Surface Cu Calculation
@@ -4198,13 +4182,13 @@ begin
   end
   else                              
   begin // Not Cu Filled Vias
-    if (( Fnc.SysGetAttrValue('Mech_BlindVias') = false ) and ( Fnc.SysGetAttrValue('BlindVias') = false)) then
+    {if (( Fnc.SysGetAttrValue('Mech_BlindVias') = false ) and ( Fnc.SysGetAttrValue('BlindVias') = false)) then
     begin          
       if PAL3(aspectRatio, minDrill) then
         result := 'PAL3';          
-    end;                          
+    end;}                          
 
-    if result = '' then
+    //if result = '' then // 2363 Process Flow Update
     begin                                    
       if MCP(aspectRatio, minDrill, conformal, blindAspect, maxDepthBlind, maxDepthMech) then
         result := 'MCP'
@@ -4237,7 +4221,7 @@ end;
 function ENIGplusOSP : boolean;  // 1256
 begin
   result := false;
-  if ( Fnc.SysGetAttrValue('Board_Finish') = 'OSP' ) and ( Fnc.SysGetAttrValue('Sel_Gold_Type') = 'ENIG') then
+  if ( BoardFinish = 'OSP' ) and ( SelectiveGoldType= 'ENIG') then
     result := true
 end;
 
@@ -4248,13 +4232,13 @@ begin
   
   // 1245 Updated CZ Rule
   if (
-      (( Fnc.SysGetAttrValue('Board_Finish') = 'ENIG' ) or
-       //( Fnc.SysGetAttrValue('Board_Finish') = 'ENIG + OSP' ) or
+      (( BoardFinish = 'ENIG' ) or
+       //( BoardFinish = 'ENIG + OSP' ) or
        ( ENIGplusOSP ) or
-       ( Fnc.SysGetAttrValue('Board_Finish') = 'ENEPIG' ))
+       ( BoardFinish = 'ENEPIG' ))
        and ScreenPrintResist 
      ) 
-     or ( Fnc.SysGetAttrValue('Board_Finish') = 'Immersion Tin' ) 
+     or ( BoardFinish = 'Immersion Tin' ) 
   then
     result := true; 
 end;
@@ -4285,17 +4269,17 @@ procedure AddBoardFinishAsAttribute; // 1223 Additional Surface Finish info unde
 begin
   if MfgPartType = 'Top' then
   begin                     
-    if ( Fnc.SysGetAttrValue('Sel_Gold_Type') = 'None' ) and ( Fnc.SysGetAttrValue('Gold_Fgr_Type') = 'None' ) then
-      StepParamERP('Board Finish', Fnc.SysGetAttrValue('Board_Finish'));
+    if ( SelectiveGoldType= 'None' ) and ( GoldFingerType = 'None' ) then
+      StepParamERP('Board Finish', BoardFinish);
     else          
-      StepParamERP('Board Finish', Fnc.SysGetAttrValue('Board_Finish') + ' + Selective Gold');  
+      StepParamERP('Board Finish', BoardFinish + ' + Selective Gold');  
   end; 
 end;
 
 function SelectiveGoldorFinger : boolean;
 begin     
   result := false; 
-  if ( Fnc.SysGetAttrValue('Sel_Gold_Type') <> 'None' ) or ( Fnc.SysGetAttrValue('Gold_Fgr_Type') <> 'None' ) then
+  if ( SelectiveGoldType<> 'None' ) or ( GoldFingerType <> 'None' ) then
     result := true;
 end;
 

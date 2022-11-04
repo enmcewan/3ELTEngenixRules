@@ -57,10 +57,10 @@ begin
                                                                                                             
     if EGoldB4Res then     
     begin              
-      if //(Fnc.SysGetAttrValue('Sel_Gold_Type') = 'Pattern (Overhang)') or 
-         (Fnc.SysGetAttrValue('Sel_Gold_Type') = 'Pattern Overhang / PTH') or // 1256 Need to check this
-         (Fnc.SysGetAttrValue('Board_Finish') = 'Full Body Gold') or
-         (Fnc.SysGetAttrValue('Board_Finish') = 'Thin/Thick Au Plate') then // 1256 NEED TO CHECK THIS
+      if //(SelectiveGoldType = 'Pattern (Overhang)') or 
+         (SelectiveGoldType = 'Pattern Overhang / PTH') or // 1256 Need to check this
+         (BoardFinish = 'Full Body Gold') or
+         (BoardFinish = 'Thin/Thick Au Plate') then // 1256 NEED TO CHECK THIS
         AddStep('Mdl_Insp', 'Mdl_Insp01')
       else
         AddStep('OL_AOI', 'OL_AOI01');
@@ -73,7 +73,7 @@ begin
                    
     AddStep('OL_Photo_Patt_Form', 'OL_Photo_Patt_Form01');
     
-    if ( EGoldB4Res ) and ( Fnc.SysGetAttrValue('Sel_Gold_Type') = 'BGA/LGA Encapsulation' ) then
+    if ( EGoldB4Res ) and ( SelectiveGoldType = 'BGA/LGA Encapsulation' ) then
       StepParamERP('Remark', 'Selective Etching Only.');
          
      // 793 Update Photo process rule
@@ -91,10 +91,10 @@ begin
 
     AddStep('OL_DES', 'OL_DES01');
     
-    if  ( Fnc.SysGetAttrValue('Sel_Gold_Type') = 'BGA/LGA Encapsulation' ) or
-        ( Fnc.SysGetAttrValue('Gold_Fgr_Type') = 'Lead Line Etching' ) or
-        ( Fnc.SysGetAttrValue('Gold_Fgr_Type') = 'NO Lead Line Etching' ) or
-        ( Fnc.SysGetAttrValue('Gold_Fgr_Type') = 'Soldermask Spray' ) 
+    if  ( SelectiveGoldType = 'BGA/LGA Encapsulation' ) or
+        ( GoldFingerType = 'Lead Line Etching' ) or
+        ( GoldFingerType = 'NO Lead Line Etching' ) or
+        ( GoldFingerType = 'Soldermask Spray' ) 
         then
       AddStep('OL_AOI', 'OL_AOI01');                       
   end;
@@ -103,10 +103,10 @@ end;
 function AOIForGoldPlating : boolean;
 begin
   result := false;
-  if ( Fnc.SysGetAttrValue('Board_Finish') = 'Full Body Gold' ) or
-     ( Fnc.SysGetAttrValue('Board_Finish') = 'Thin/Thick Au Plate' ) or
-     ( Fnc.SysGetAttrValue('Sel_Gold_Type') = 'Pattern Overhang / PTH' ) or
-     ( Fnc.SysGetAttrValue('Sel_Gold_Type') = 'Gold Finger + Pattern Overhang / PTH' )
+  if ( BoardFinish = 'Full Body Gold' ) or
+     ( BoardFinish = 'Thin/Thick Au Plate' ) or
+     ( SelectiveGoldType = 'Pattern Overhang / PTH' ) or
+     ( SelectiveGoldType = 'Gold Finger + Pattern Overhang / PTH' )
   then
     result := true;
 end;
@@ -191,7 +191,7 @@ begin
   AddStep('ResSprayBaking_SF', 'ResSprayBaking_SF01'); 
   AddStep('OffLine_PreTreat', 'OffLine_PreTreat_SF01');
   
-  if Fnc.SysGetAttrValue('Gold_Fgr_Type') <> 'Soldermask Spray' then
+  if GoldFingerType <> 'Soldermask Spray' then
   begin
     AddStep('Gold_Elytic_Plt1', 'Gold_Elytic_Plt101');
     AddStep('ResistStrip_SF', 'ResistStrip_SF01'); 
@@ -217,119 +217,61 @@ end;
 
 procedure ElectrolyticGoldPlatingB4Resist;
 begin
-  if //(Fnc.SysGetAttrValue('Sel_Gold_Type') = 'Thin/Thick Encapsulated Pattern') or  1256
-      //(Fnc.SysGetAttrValue('Sel_Gold_Type') = 'BGA, Encapsulation') or 1256
-      //(Fnc.SysGetAttrValue('Gold_Fgr_Type') = 'Lead Line Etching B4 Res (Sel)') or 1256
-      (Fnc.SysGetAttrValue('Gold_Fgr_Type') = 'Lead Line Etching') or
-      //(Fnc.SysGetAttrValue('Gold_Fgr_Type') = 'No Horn - Lead Line Etching B4 Res (Sel)') or 1256
-      //(Fnc.SysGetAttrValue('Gold_Fgr_Type') = 'Chamfer B4 Res (Sel)') or 911 - Change Chamfer B4 Res (Sel) name to Finger Au After Pattern (Sel)
-      //(Fnc.SysGetAttrValue('Gold_Fgr_Type') = 'After Pattern (Sel)') //or  1256
-      (Fnc.SysGetAttrValue('Gold_Fgr_Type') = 'NO Lead Line Etching') or
-      //(Fnc.SysGetAttrValue('Gold_Fgr_Type') = 'Thin/Thick - Lead Line Etching B4 Res (Sel)') or 1256
-      //(Fnc.SysGetAttrValue('Gold_Fgr_Type') = 'Thin/Thick - Chamfer B4 Res (Sel)') 
-      //(Fnc.SysGetAttrValue('Gold_Fgr_Type') = 'Thin/Thick - After Pattern (Sel)') 1256
-      (Fnc.SysGetAttrValue('Sel_Gold_Type') = 'BGA/LGA Encapsulation') or
-      (Fnc.SysGetAttrValue('Gold_Fgr_Type') = 'Soldermask Spray') 
-  then
+  if (GoldFingerType = 'Lead Line Etching') or 
+     (GoldFingerType = 'NO Lead Line Etching') or
+     (SelectiveGoldType = 'BGA/LGA Encapsulation') or
+     (GoldFingerType = 'Soldermask Spray') 
+  then                                           
   begin //Common Steps for the above                      
       OL_Pattern_Formation(true);
       
-      if Fnc.SysGetAttrValue('Gold_Fgr_Type') <> 'Soldermask Spray' then 
+      if GoldFingerType <> 'Soldermask Spray' then 
         Gold_Photo2Plating(1, true, true);      
   end;
 
-  //if Fnc.SysGetAttrValue('Gold_Fgr_Type') = 'Lead Line Etching B4 Res (Sel)' then 1256
-  if Fnc.SysGetAttrValue('Gold_Fgr_Type') = 'Lead Line Etching' then
+  if GoldFingerType = 'Lead Line Etching' then
     Alk_Lead_Line_Etching; 
-
-  // else if Fnc.SysGetAttrValue('Gold_Fgr_Type') = 'Chamfer B4 Res (Sel)' then  911
-  // else if Fnc.SysGetAttrValue('Gold_Fgr_Type') = 'After Pattern (Sel)' then  1256
-  else if Fnc.SysGetAttrValue('Gold_Fgr_Type') = 'NO Lead Line Etching' then 
-  begin
-  //Nothing Required                   
-  end                    
-
-  {else if Fnc.SysGetAttrValue('Sel_Gold_Type') = 'Thin/Thick Encapsulated Pattern' then
-  begin
-    Gold_Photo2Plating(2, true, true);
-    Alk_Lead_Line_Etching;
-  end;} // 1256
-
-  else if  //(Fnc.SysGetAttrValue('Sel_Gold_Type') = 'Pattern (Overhang)') or
-           (Fnc.SysGetAttrValue('Sel_Gold_Type') = 'Pattern Overhang / PTH') or //Need to check this
-           (Fnc.SysGetAttrValue('Sel_Gold_Type') = 'Gold Finger + Pattern Overhang / PTH') or
-           (Fnc.SysGetAttrValue('Board_Finish') = 'Full Body Gold') or
-           (Fnc.SysGetAttrValue('Board_Finish') = 'Thin/Thick Au Plate') or
-           (Fnc.SysGetAttrValue('Sel_Gold_Type') = 'Soldermask Spray') or
-           //(Fnc.SysGetAttrValue('Board_Finish') = 'Full Body Gold + LGA')  1256
-           (Fnc.SysGetAttrValue('Sel_Gold_Type') = 'BGA/LGA Encapsulation') or
-           (Fnc.SysGetAttrValue('Gold_Fgr_Type') = 'Soldermask Spray') 
+                   
+  else if  (SelectiveGoldType = 'Pattern Overhang / PTH') or 
+           (SelectiveGoldType = 'Gold Finger + Pattern Overhang / PTH') or
+           (BoardFinish = 'Full Body Gold') or
+           (BoardFinish = 'Thin/Thick Au Plate') or     
+           (SelectiveGoldType = 'Soldermask Spray') or
+           (SelectiveGoldType = 'BGA/LGA Encapsulation') or
+           (GoldFingerType = 'Soldermask Spray') 
   then           
-  begin
-    {if Fnc.SysGetAttrValue('Board_Finish') = 'Full Body Gold + LGA' then
-    begin                  
-      AddStep('OL_Photo_LGA', 'OL_Photo_LGA01');
-      AddStep('OL_DES_LGA', 'OL_DES_LGA01');
-      AddStep('OL_AOI', 'OL_AOI03');
-    end; 1256 }        
-    if ( Fnc.SysGetAttrValue('Sel_Gold_Type') = 'Soldermask Spray' ) or 
-       ( Fnc.SysGetAttrValue('Gold_Fgr_Type') = 'Soldermask Spray' )  then
+  begin       
+    if ( SelectiveGoldType = 'Soldermask Spray' ) or ( GoldFingerType = 'Soldermask Spray' )  then
       Soldermask_Spray_Selective_Gold;
       
-    if ( Fnc.SysGetAttrValue('Sel_Gold_Type') <> 'Soldermask Spray' ) and
-       (Fnc.SysGetAttrValue('Sel_Gold_Type') <> 'BGA/LGA Encapsulation' ) then
+    if ( SelectiveGoldType <> 'Soldermask Spray' ) and (SelectiveGoldType <> 'BGA/LGA Encapsulation' ) then
       Gold_Photo2Plating(1, true, true);
       
-    if Fnc.SysGetAttrValue('Gold_Fgr_Type') = 'Soldermask Spray' then
-      AddStep('ResistStrip_SF', 'ResistStrip_SF01');
+    if GoldFingerType = 'Soldermask Spray' then AddStep('ResistStrip_SF', 'ResistStrip_SF01');
     
-    if Fnc.SysGetAttrValue('Board_Finish') = 'Thin/Thick Au Plate' then
-      Gold_Photo2Plating(2, true, true);
+    if BoardFinish = 'Thin/Thick Au Plate' then Gold_Photo2Plating(2, true, true);
+    
+    if (BoardFinish = 'Full Body Gold') or  (BoardFinish = 'Thin/Thick Au Plate') or
+       (SelectiveGoldType = 'Pattern Overhang / PTH') or (SelectiveGoldType = 'Gold Finger + Pattern Overhang / PTH') then
+      AddStep('OffLine_PreTreat', 'OffLine_PreTreat_B4AE'); 
                                          
-    //1256
-    if (Fnc.SysGetAttrValue('Board_Finish') = 'Full Body Gold') or  (Fnc.SysGetAttrValue('Board_Finish') = 'Thin/Thick Au Plate') then
+    if (BoardFinish = 'Full Body Gold') or (BoardFinish = 'Thin/Thick Au Plate') then
       AddStep('HoleTent_Photo', 'HoleTent_Photo01')
-    else if (Fnc.SysGetAttrValue('Sel_Gold_Type') = 'Pattern Overhang / PTH') or 
-            (Fnc.SysGetAttrValue('Sel_Gold_Type') = 'Gold Finger + Pattern Overhang / PTH') or
-            (Fnc.SysGetAttrValue('Sel_Gold_Type') = 'Soldermask Spray' ) or
-            (Fnc.SysGetAttrValue('Sel_Gold_Type') = 'BGA/LGA Encapsulation')
+    else if (SelectiveGoldType = 'Pattern Overhang / PTH') or 
+            (SelectiveGoldType = 'Gold Finger + Pattern Overhang / PTH') or
+            (SelectiveGoldType = 'Soldermask Spray' ) or
+            (SelectiveGoldType = 'BGA/LGA Encapsulation')
     then
       AddStep('AlkEtchPatt_Photo', 'AlkEtchPatt_Photo01')
-    else if ( Fnc.SysGetAttrValue('Gold_Fgr_Type') = 'Soldermask Spray' ) then
+    else if ( GoldFingerType = 'Soldermask Spray' ) then
       AddStep('AELL_Photo', 'AELL_Photo01');
-     
-    Alkaline_DES;  
-  end           
-
-  {else if Fnc.SysGetAttrValue('Sel_Gold_Type') = 'PTH' then
-  begin
-    Gold_Photo2Plating(1, true, true);
-    AddStep('AlkEtchPatt_Photo', 'AlkEtchPatt_Photo01');
-    Alkaline_DES;                    
-  end;} //1256                     
-
-  {else if Fnc.SysGetAttrValue('Sel_Gold_Type') = 'BGA, Encapsulation' then
-  begin
-    //AddStep('Visual_Insp');
-  end;} // 1256
-                              
-  {else if Fnc.SysGetAttrValue('Gold_Fgr_Type') = 'No Horn - Lead Line Etching B4 Res (Sel)' then
-  begin                
-    Gold_Photo2Plating(1, true, true);
-    Alk_Lead_Line_Etching;
-  end; } //1256
-
-  {else if Fnc.SysGetAttrValue('Gold_Fgr_Type') = 'Thin/Thick - Lead Line Etching B4 Res (Sel)' then
-  begin                                                                                
-    Gold_Photo2Plating(2, true, true);
-    Alk_Lead_Line_Etching;
-  end;} //1256                  
-                                                       
-  // else if Fnc.SysGetAttrValue('Gold_Fgr_Type') = 'Thin/Thick - Chamfer B4 Res (Sel)' then 911
-  {else if Fnc.SysGetAttrValue('Gold_Fgr_Type') = 'Thin/Thick - After Pattern (Sel)' then
-  begin
-    Gold_Photo2Plating(2, true, true); 
-  end;} // 1256 
+        
+    Alkaline_DES;
+    
+    if (BoardFinish = 'Full Body Gold') or  (BoardFinish = 'Thin/Thick Au Plate') or
+       (SelectiveGoldType = 'Pattern Overhang / PTH') or (SelectiveGoldType = 'Gold Finger + Pattern Overhang / PTH') then
+      AddStep('OffLine_PreTreat', 'OffLine_PreTreat_AFAE'); 
+  end;                    
 
 End;
 
@@ -553,10 +495,10 @@ begin
   end;
 
   // (804) UV Process Step after Resist for ENIG/ENEPIG
-  if ( Fnc.SysGetAttrValue('Board_Finish') = 'ENIG' ) or
-     // ( Fnc.SysGetAttrValue('Board_Finish') = 'ENIG + OSP' ) or // 1173 Additional Surface Finishing. Selective ENIG + OSP 
+  if ( BoardFinish = 'ENIG' ) or
+     // ( BoardFinish = 'ENIG + OSP' ) or // 1173 Additional Surface Finishing. Selective ENIG + OSP 
      ( ENIGplusOSP ) or
-     ( Fnc.SysGetAttrValue('Board_Finish') = 'ENEPIG' ) then
+     ( BoardFinish = 'ENEPIG' ) then
     AddStep('UV_Cure', 'UV_Cure01');
 
 end;
@@ -597,9 +539,9 @@ var
   SelectiveENIG : boolean;
 begin
   SelectiveENIG := false;
-  if ( Fnc.SysGetAttrValue('Sel_Gold_Type') <> 'None' ) or 
-     ( Fnc.SysGetAttrValue('Gold_Fgr_Type') <> 'None' ) or
-     //( Fnc.SysGetAttrValue('Board_Finish') = 'ENIG + OSP' )  // 1173 Additional Surface Finishing. Selective ENIG + OSP
+  if ( SelectiveGoldType<> 'None' ) or 
+     ( GoldFingerType <> 'None' ) or
+     //( BoardFinish = 'ENIG + OSP' )  // 1173 Additional Surface Finishing. Selective ENIG + OSP
      ( ENIGplusOSP )  // 1256
   then
     SelectiveENIG := true;
@@ -607,7 +549,7 @@ begin
   if BakingDone = false then
     Baking;
 
-  if Fnc.SysGetAttrValue('Board_Finish') = 'ENEPIG' then
+  if BoardFinish = 'ENEPIG' then
   begin
     if (( HasSolderMaskType('DSR330S-50-99R') ) or ( HasSolderMaskType('PSR2000-SP300HFM') )) then
          ENIG_AlkRinseMicroEtch
@@ -618,7 +560,7 @@ begin
       AddStep('ENEPIG_ILPhotoPT', 'ENEPIG_ILPhotoPT01');
     end;
   end
-  else if ( Fnc.SysGetAttrValue('Board_Finish') = 'ENIG' ) or ( ENIGplusOSP ) then  // 1173 Additional Surface Finishing. Selective ENIG + OSP // 1256 
+  else if ( BoardFinish = 'ENIG' ) or ( ENIGplusOSP ) then  // 1173 Additional Surface Finishing. Selective ENIG + OSP // 1256 
   begin
     if (( ThicknessOverMask >= 2.2 ) and ( ThicknessOverMask <= 3.0 )) then
       ENIG_AlkRinseMicroEtch;
@@ -659,9 +601,9 @@ begin
 
   end;
 
-  if ( Fnc.SysGetAttrValue('Board_Finish') = 'ENIG' ) or ( ENIGplusOSP ) then  // 1173 Additional Surface Finishing. Selective ENIG + OSP // 1256 
+  if ( BoardFinish = 'ENIG' ) or ( ENIGplusOSP ) then  // 1173 Additional Surface Finishing. Selective ENIG + OSP // 1256 
     AddStep('ENIG', 'ENIG01')
-  else if Fnc.SysGetAttrValue('Board_Finish') = 'ENEPIG' then
+  else if BoardFinish = 'ENEPIG' then
     AddStep('ENEPIG', 'ENEPIG01');
 
   if SelectiveENIG then
@@ -785,14 +727,14 @@ begin
     if Engx_SMCount > 0 then
       Soldermask;
       
-    if  //(Fnc.SysGetAttrValue('Gold_Fgr_Type') = 'Lead Line Etching Af Res (Sel)') or 1256
-        (Fnc.SysGetAttrValue('Gold_Fgr_Type') = 'Au Finger Plate after SM') //or
-        // (Fnc.SysGetAttrValue('Gold_Fgr_Type') = 'Chamfer Af Res (Sel)')  1256
+    if  //(GoldFingerType = 'Lead Line Etching Af Res (Sel)') or 1256
+        (GoldFingerType = 'Au Finger Plate after SM') //or
+        // (GoldFingerType = 'Chamfer Af Res (Sel)')  1256
     then
     begin                          
       Gold_Photo2Plating(1, true, false);
                 
-      {if Fnc.SysGetAttrValue('Gold_Fgr_Type') = 'Lead Line Etching Af Res (Sel)' then  1256
+      {if GoldFingerType = 'Lead Line Etching Af Res (Sel)' then  1256
       begin   
         Alk_Lead_Line_Etching;          
         AddStep('OL_AOI', 'OL_AOI07');
@@ -801,10 +743,10 @@ begin
         AddStep('OL_AOI', 'OL_AOI07');
     end;                                                                                                
 
-    if ( Fnc.SysGetAttrValue('Board_Finish') = 'ENIG' ) or 
-       //( Fnc.SysGetAttrValue('Board_Finish') = 'ENIG + OSP' ) or // 1173 Additional Surface Finishing. Selective ENIG + OSP 
+    if ( BoardFinish = 'ENIG' ) or 
+       //( BoardFinish = 'ENIG + OSP' ) or // 1173 Additional Surface Finishing. Selective ENIG + OSP 
        ( ENIGplusOSP ) or // 1256
-       ( Fnc.SysGetAttrValue('Board_Finish') = 'ENEPIG' )
+       ( BoardFinish = 'ENEPIG' )
     then
     begin                   
       AddStep('Hole_Check', 'Hole_Check01');
@@ -831,7 +773,7 @@ begin
     if UVMarking = false then                       
       MarkingPrintProcess;       
              
-    if ( Fnc.SysGetAttrValue('Board_Finish') = 'Immersion Silver' ) and
+    if ( BoardFinish = 'Immersion Silver' ) and
        ( SelectiveGoldorFinger ) and
        ( Fnc.SysGetAttrValue('Imm_Silver_Process') = 'Photo' ) then
     begin                
@@ -840,7 +782,7 @@ begin
       Immersion_Silver_Sel_Gold('Photo');
     end;
                             
-    if ( Fnc.SysGetAttrValue('Board_Finish') = 'Lead Free HAL' ) and
+    if ( BoardFinish = 'Lead Free HAL' ) and
        ( SelectiveGoldorFinger ) and
        ( Fnc.SysGetAttrValue('Lead_Free_HAL_Process') = 'Photo' ) then
     begin                      

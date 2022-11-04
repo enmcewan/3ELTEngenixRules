@@ -78,8 +78,8 @@ begin
     AddStep('Baking', 'Baking01');
     BakingDone := true;
 
-    if ( Fnc.SysGetAttrValue('Board_Finish') = 'OSP' ) and 
-       ( Fnc.SysGetAttrValue('Sel_Gold_Type') <> 'ENIG') then //) or ( ENIGplusOSP ) then // 1173 Additional Surface Finishing. Selective ENIG + OSP   // 1256 - removed ENIG + OSP per Herole comment
+    if ( BoardFinish = 'OSP' ) and 
+       ( SelectiveGoldType<> 'ENIG') then //) or ( ENIGplusOSP ) then // 1173 Additional Surface Finishing. Selective ENIG + OSP   // 1256 - removed ENIG + OSP per Herole comment
       AddStep('OSP_Bake_Wash', 'OSP_Bake_Wash01');  // 761 - Add Washing step after baking for OSP finishing
   end;
 end;
@@ -220,31 +220,31 @@ begin
       )
       or
       (                                      
-       (Fnc.SysGetAttrValue('Board_Finish') = 'Full Body Gold') or 
-       (Fnc.SysGetAttrValue('Board_Finish') = 'Thin/Thick Au Plate') or // 1256 NEED TO CHECK THIS
-       //(Fnc.SysGetAttrValue('Sel_Gold_Type') = 'BGA, Encapsulation') or  1256
-       // (Fnc.SysGetAttrValue('Sel_Gold_Type') = 'Pattern (Overhang)') or 1256
-       (Fnc.SysGetAttrValue('Sel_Gold_Type') = 'Pattern Overhang / PTH') or  // 1256 Need to check this
-       //(Fnc.SysGetAttrValue('Gold_Fgr_Type') = 'Lead Line Etching B4 Res (Sel)') or 1256
+       (BoardFinish = 'Full Body Gold') or 
+       (BoardFinish = 'Thin/Thick Au Plate') or // 1256 NEED TO CHECK THIS
+       //(SelectiveGoldType= 'BGA, Encapsulation') or  1256
+       // (SelectiveGoldType= 'Pattern (Overhang)') or 1256
+       (SelectiveGoldType= 'Pattern Overhang / PTH') or  // 1256 Need to check this
+       //(GoldFingerType = 'Lead Line Etching B4 Res (Sel)') or 1256
        (Fnc.SysAttrEditGetAttrValue('Gold_Fgr_Type') = 'Lead Line Etching') or
-       //(Fnc.SysGetAttrValue('Gold_Fgr_Type') = 'Chamfer B4 Res (Sel)') or 911 
-       // (Fnc.SysGetAttrValue('Gold_Fgr_Type') = 'After Pattern (Sel)') or   1256
-       (Fnc.SysGetAttrValue('Gold_Fgr_Type') = 'NO Lead Line Etching') or
-       //(Fnc.SysGetAttrValue('Gold_Fgr_Type') = 'Lead Line Etching Af Res (Sel)') or 1256
-       (Fnc.SysGetAttrValue('Gold_Fgr_Type') = 'Au Finger Plate after SM') or
-       //(Fnc.SysGetAttrValue('Gold_Fgr_Type') = 'Chamfer Af Res (Sel)') or 1256
-       (Fnc.SysGetAttrValue('Board_Finish') = 'ENIG') or
-       //(Fnc.SysGetAttrValue('Board_Finish') = 'ENIG + OSP') or // 1173 Additional Surface Finishing. Selective ENIG + OSP 
+       //(GoldFingerType = 'Chamfer B4 Res (Sel)') or 911 
+       // (GoldFingerType = 'After Pattern (Sel)') or   1256
+       (GoldFingerType = 'NO Lead Line Etching') or
+       //(GoldFingerType = 'Lead Line Etching Af Res (Sel)') or 1256
+       (GoldFingerType = 'Au Finger Plate after SM') or
+       //(GoldFingerType = 'Chamfer Af Res (Sel)') or 1256
+       (BoardFinish = 'ENIG') or
+       //(BoardFinish = 'ENIG + OSP') or // 1173 Additional Surface Finishing. Selective ENIG + OSP 
        ( ENIGplusOSP ) or // 1256
-       (Fnc.SysGetAttrValue('Board_Finish') = 'ENEPIG') //or
-       // (Fnc.SysGetAttrValue('Gold_Fgr_Type') = 'Thin/Thick - Lead Line Etching B4 Res (Sel)') or 1256
-       //(Fnc.SysGetAttrValue('Gold_Fgr_Type') = 'Thin/Thick - Chamfer B4 Res (Sel)')  911
-       // (Fnc.SysGetAttrValue('Gold_Fgr_Type') = 'Thin/Thick - After Pattern (Sel)') 1256
+       (BoardFinish = 'ENEPIG') //or
+       // (GoldFingerType = 'Thin/Thick - Lead Line Etching B4 Res (Sel)') or 1256
+       //(GoldFingerType = 'Thin/Thick - Chamfer B4 Res (Sel)')  911
+       // (GoldFingerType = 'Thin/Thick - After Pattern (Sel)') 1256
       )
       or                                  
-      ((Fnc.SysGetAttrValue('Board_Finish') = 'HAL') or  
-       (Fnc.SysGetAttrValue('Board_Finish') = 'Lead Free HAL') or 
-       (Fnc.SysGetAttrValue('Board_Finish') = 'LB Free HAL + Immersion silver')) // 1322
+      ((BoardFinish = 'HAL') or  
+       (BoardFinish = 'Lead Free HAL') or 
+       (BoardFinish = 'LB Free HAL + Immersion silver')) // 1322
   and                             
       (HasSolderMaskType('PSR4000-AM10') = false )
      )
@@ -256,7 +256,7 @@ function LeadFreeHALWithGoldTaping : boolean;
 begin
   result := false;                          
   
-  if ( Fnc.SysGetAttrValue('Board_Finish') = 'Lead Free HAL' ) and
+  if ( BoardFinish = 'Lead Free HAL' ) and
      ( SelectiveGoldorFinger ) and
      ( Fnc.SysGetAttrValue('Lead_Free_HAL_Process') = 'Taping' )
   then
@@ -269,10 +269,10 @@ procedure RouteFlow04;
 begin                                 
  // HoleCheckDone := false;  ENIG Changes
 
-  if ((Fnc.SysGetAttrValue('Board_Finish') <> 'HAL') and  (Fnc.SysGetAttrValue('Board_Finish') <> 'Lead Free HAL')) then
+  if ((BoardFinish <> 'HAL') and  (BoardFinish <> 'Lead Free HAL')) then
     SecondaryPlug;
 
-  if Fnc.SysGetAttrValue('Gold_Fgr_Type') = 'Tab Plating' then
+  if GoldFingerType = 'Tab Plating' then
   begin
     if Fnc.SysGetAttrValue('BackDrill') = true then
     begin
@@ -282,8 +282,8 @@ begin
           (Fnc.SysGetAttrValue('OSP_Type') = 'LEAD FREE F2LX'))
          and
           (
-           ( Fnc.SysGetAttrValue('Board_Finish') = 'OSP' ) or 
-           //( Fnc.SysGetAttrValue('Board_Finish') = 'ENIG + OSP' ) // 1173 Additional Surface Finishing. Selective ENIG + OSP 
+           ( BoardFinish = 'OSP' ) or 
+           //( BoardFinish = 'ENIG + OSP' ) // 1173 Additional Surface Finishing. Selective ENIG + OSP 
            ( ENIGplusOSP ) //1256
           ) 
          )
@@ -321,7 +321,7 @@ begin
     else
       AddStep('Gold_Tab_Plating', 'Gold_Tab_Plating01');
                                                         
-    {if ( Fnc.SysGetAttrValue('Board_Finish') = 'Immersion Silver' ) and ( Fnc.SysGetAttrValue('Imm_Silver_Process') = 'Taping' )      // 1256
+    {if ( BoardFinish = 'Immersion Silver' ) and ( Fnc.SysGetAttrValue('Imm_Silver_Process') = 'Taping' )      // 1256
     begin
       AddStep('Gold_Finger_Taping', 'Gold_Finger_Taping01'); 
       AddStep('Baking', 'BakingGFT');
@@ -330,12 +330,12 @@ begin
   end;                         
 
   // 1322 LB Free HAL + Imm Ag
-  if Fnc.SysGetAttrValue('Board_Finish') = 'LB Free HAL + Immersion silver' then
+  if BoardFinish = 'LB Free HAL + Immersion silver' then
     AddStep('Immersion_Silver', 'Immersion_Silver01');    
 
-  if (Fnc.SysGetAttrValue('Board_Finish') = 'HAL') or  
-     ((Fnc.SysGetAttrValue('Board_Finish') = 'Lead Free HAL') and ( Not SelectiveGoldorFinger )) or
-     (Fnc.SysGetAttrValue('Board_Finish') = 'LB Free HAL + Immersion silver') then
+  if (BoardFinish = 'HAL') or  
+     ((BoardFinish = 'Lead Free HAL') and ( Not SelectiveGoldorFinger )) or
+     (BoardFinish = 'LB Free HAL + Immersion silver') then
   begin 
     AddStep('HAL', 'HAL01');
 
@@ -361,7 +361,7 @@ begin
     end;
   end;
   
-  //if ( Fnc.SysGetAttrValue('Board_Finish') = 'Immersion Silver' ) and ( Fnc.SysGetAttrValue('Imm_Silver_Process') = 'Taping' ) then      // 1256
+  //if ( BoardFinish = 'Immersion Silver' ) and ( Fnc.SysGetAttrValue('Imm_Silver_Process') = 'Taping' ) then      // 1256
   //  AddStep('Gold_Finger_Taping', 'Gold_Finger_Taping01'); 
                    
   if Fnc.SysGetAttrValue('Carbon_Ink') = true then
@@ -369,15 +369,15 @@ begin
 
   if (
       ((Fnc.SysGetAttrValue('BackDrill') = true) and (BackDrillDone = false)) and
-      (Fnc.SysGetAttrValue('Board_Finish') <> 'Immersion Tin')
+      (BoardFinish <> 'Immersion Tin')
      )               
   then //Check reverse condition is true
     Back_Drill;
 
-  if Fnc.SysGetAttrValue('Board_Finish') = 'Immersion Tin' then
+  if BoardFinish = 'Immersion Tin' then
     Immersion_TinPt2;
                              
-  if ( Fnc.SysGetAttrValue('Board_Finish') = 'Immersion Silver' ) and
+  if ( BoardFinish = 'Immersion Silver' ) and
      ( SelectiveGoldorFinger ) and
      ( Fnc.SysGetAttrValue('Imm_Silver_Process') = 'Taping' ) then    // 1256 - Comment from Herole
   begin                    
@@ -443,9 +443,9 @@ begin
   then
      AddStep('Panel_EC', 'Panel_EC01');
 
-  if (Fnc.SysGetAttrValue('Board_Finish') <> 'HAL') and  
-     (Fnc.SysGetAttrValue('Board_Finish') <> 'Lead Free HAL') and
-     (Fnc.SysGetAttrValue('Board_Finish') <> 'LB Free HAL + Immersion silver') // 1322
+  if (BoardFinish <> 'HAL') and  
+     (BoardFinish <> 'Lead Free HAL') and
+     (BoardFinish <> 'LB Free HAL + Immersion silver') // 1322
   then
   begin
     if HoleCheckDone = false then
@@ -504,10 +504,10 @@ begin
     AddStep('DeWarp', 'DeWarp02');
 
    //Per Immersion Silver changes from Mani  Jan 2016
-   if ( Fnc.SysGetAttrValue('Board_Finish') = 'Immersion Silver' ) and ( not SelectiveGoldorFinger ) then
+   if ( BoardFinish = 'Immersion Silver' ) and ( not SelectiveGoldorFinger ) then
      Immersion_Silver; 
 
-  if ( Fnc.SysGetAttrValue('Board_Finish') = 'OSP' ) or ( ENIGplusOSP ) then // 1173 Additional Surface Finishing. // 1256
+  if ( BoardFinish = 'OSP' ) or ( ENIGplusOSP ) then // 1173 Additional Surface Finishing. // 1256
   begin
     if BakingDone = false then          
       Baking;                                                                 
@@ -529,31 +529,31 @@ begin
       AddStep('Baking', 'Baking01');
       BakingDone := true;
 
-      if  (( Fnc.SysGetAttrValue('Gold_Fgr_Type') <> 'None' ) and ( Fnc.SysGetAttrValue('Gold_Fgr_Type') <> 'Tab Plating' )) or
-          ( Fnc.SysGetAttrValue('Sel_Gold_Type') <> 'None' ) or
-          (( Fnc.SysGetAttrValue('Board_Finish') = 'Immersion Silver' ) and ( Fnc.SysGetAttrValue('Imm_Silver_Process') = 'Taping' ))  
+      if  (( GoldFingerType <> 'None' ) and ( GoldFingerType <> 'Tab Plating' )) or
+          ( SelectiveGoldType<> 'None' ) or
+          (( BoardFinish = 'Immersion Silver' ) and ( Fnc.SysGetAttrValue('Imm_Silver_Process') = 'Taping' ))  
       then                              
         AddStep('OffLine_PreTreat', 'OffLine_PreTreat02');
     end;
   end;
 
-  if (( Fnc.SysGetAttrValue('Board_Finish') = 'Immersion Silver' ) and (Fnc.SysGetAttrValue('CM_Plus') = true )) then
+  if (( BoardFinish = 'Immersion Silver' ) and (Fnc.SysGetAttrValue('CM_Plus') = true )) then
     AddStep('PreFinish_Insp', 'PreFinish_Insp01')
   else
     AddStep('Final_Insp', 'Final_Insp01');
 
   if (
       (                                             
-       //(Fnc.SysGetAttrValue('Gold_Fgr_Type') = 'Lead Line Etching B4 Res (Sel)') or  1256
-       (Fnc.SysGetAttrValue('Gold_Fgr_Type') = 'Lead Line Etching') or
-       (Fnc.SysGetAttrValue('Gold_Fgr_Type') = 'No Horn - Lead Line Etching B4 Res (Sel)') or
-       //(Fnc.SysGetAttrValue('Gold_Fgr_Type') = 'Chamfer B4 Res (Sel)') or  911
-       // (Fnc.SysGetAttrValue('Gold_Fgr_Type') = 'After Pattern (Sel)') or 1256
-       (Fnc.SysGetAttrValue('Gold_Fgr_Type') = 'NO Lead Line Etching') or
-       //(Fnc.SysGetAttrValue('Gold_Fgr_Type') = 'Thin/Thick - Lead Line Etching B4 Res (Sel)') or 1256
-       //(Fnc.SysGetAttrValue('Gold_Fgr_Type') = 'Thin/Thick - Chamfer B4 Res (Sel)') or 
-       //(Fnc.SysGetAttrValue('Gold_Fgr_Type') = 'Thin/Thick - After Pattern (Sel)') or  1256
-       (Fnc.SysGetAttrValue('Sel_Gold_Type') <> 'None')
+       //(GoldFingerType = 'Lead Line Etching B4 Res (Sel)') or  1256
+       (GoldFingerType = 'Lead Line Etching') or
+       (GoldFingerType = 'No Horn - Lead Line Etching B4 Res (Sel)') or
+       //(GoldFingerType = 'Chamfer B4 Res (Sel)') or  911
+       // (GoldFingerType = 'After Pattern (Sel)') or 1256
+       (GoldFingerType = 'NO Lead Line Etching') or
+       //(GoldFingerType = 'Thin/Thick - Lead Line Etching B4 Res (Sel)') or 1256
+       //(GoldFingerType = 'Thin/Thick - Chamfer B4 Res (Sel)') or 
+       //(GoldFingerType = 'Thin/Thick - After Pattern (Sel)') or  1256
+       (SelectiveGoldType<> 'None')
       )                                                                       
       or
       (ProdCodeLXType) or
@@ -564,7 +564,7 @@ begin
   then
     AddStep('Final_Scope_Ins', 'Final_Scope_Ins01');
 
-  if (( Fnc.SysGetAttrValue('Board_Finish') = 'Immersion Silver' ) and (Fnc.SysGetAttrValue('CM_Plus') = true )) then
+  if (( BoardFinish = 'Immersion Silver' ) and (Fnc.SysGetAttrValue('CM_Plus') = true )) then
   begin
     AddStep('CMPlus_Coating', 'CMPlus_Coating01');
     AddStep('Final_Insp', 'Final_Insp01');

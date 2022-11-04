@@ -222,7 +222,7 @@ begin
       ErrorList.Add('Sub-Assemblies and Inners cannot have the same Product Code as the Top-Level');
     end;
 
-    if Fnc.SysGetAttrValue('Board_Finish') = 'ENEPIG' then   // ENIG Changes from Mani Feb 2016
+    if BoardFinish = 'ENEPIG' then   // ENIG Changes from Mani Feb 2016
     begin
       if not
          (
@@ -239,8 +239,8 @@ begin
       end;
     end;
                                   
-    if ( Fnc.SysGetAttrValue('Board_Finish') = 'ENIG' ) or 
-       (( Fnc.SysGetAttrValue('Board_Finish') = 'OSP' ) and ( Fnc.SysGetAttrValue('Sel_Gold_Type') = 'ENIG' )) then  // ENIG Changes from Mani  // 1173 Additional Surface Finishing. Selective ENIG + OSP  // 1256
+    if ( BoardFinish = 'ENIG' ) or 
+       (( BoardFinish = 'OSP' ) and ( SelectiveGoldType= 'ENIG' )) then  // ENIG Changes from Mani  // 1173 Additional Surface Finishing. Selective ENIG + OSP  // 1256
     begin
       if (( HasSolderMaskType('PSR4000-BNDG') ) or ( HasSolderMaskType('PSR4000-AM10') )) and
          ( ThicknessOverMask > 3.0 )
@@ -251,9 +251,9 @@ begin
       end;
     end;
                                 
-    {if Fnc.SysGetAttrValue('Board_Finish') = 'ENEPIG' then   // 1256
+    {if BoardFinish = 'ENEPIG' then   // 1256
     begin
-      if (( Fnc.SysGetAttrValue('Sel_Gold_Type') <> 'None' ) or (Fnc.SysGetAttrValue('Gold_Fgr_Type') <> 'None' )) then
+      if (( SelectiveGoldType<> 'None' ) or (GoldFingerType <> 'None' )) then
       begin
         result := false;
         ErrorList.Add('ENEPIG not compatible with Selective Gold or Gold Finger Plating');
@@ -397,7 +397,7 @@ begin
   CU_RATIO_WARNING := 0; 
           
   MetalizationRun := 0;
-  
+                                                 
   //InProcessCuThk := 0;
   
   epoxyPlugDone := false;  //978 
@@ -569,7 +569,20 @@ begin
 
   // 977 Automate attribute 'Product Code' by rule
   if Fnc.SysGetAttrValue('ProdCode') = 'Auto' then   // 1323
-    Fnc.SysSetAttrValue('ProdCode', GenProductCode); 
+    Fnc.SysSetAttrValue('ProdCode', GenProductCode);
+    
+  DirectLaser := Fnc.SysGetAttrValue('Direct_Laser');
+  LaserABotHits := Fnc.SysGetAttrValue('LaserABotHits');
+  LaserBTopHits := Fnc.SysGetAttrValue('LaserBTopHits');
+  UVLaserB_Top := Fnc.SysGetAttrValue('UVLaserB_Top');
+  UVLaserA_Bot := Fnc.SysGetAttrValue('UVLaserA_Bot'); 
+    
+  // BoardFinish = 'Thin/Thick Au Plate' )
+  // SelectiveGoldType= 'Pattern Overhang / PTH' )
+  //GoldFingerType = 'Lead Line Etching' )
+  BoardFinish := Fnc.SysGetAttrValue('Board_Finish'); 
+  SelectiveGoldType := Fnc.SysGetAttrValue('Sel_Gold_Type'); 
+  GoldFingerType := Fnc.SysGetAttrValue('Gold_Fgr_Type');
 
   if not VerifyKeyAttributesOK(ErrorList) then  //760 - condition for spray coat PSR-2000, If Board thickness>/= 3.6mm, Error will prompt that the board cannot run Spray coat.
   begin
@@ -577,7 +590,7 @@ begin
     MessageDlg('Key Attribute Values have not been entered or there is conflicting data' + #10#13#10#13 + ErrorList.text, mtError, Setof([mbOK]), 0); 
     //ShowMessage('Route Gen Aborted - No changes have been made');
     Fnc.UserRouteGenAbort := true;
-    ErrorList.free;
+    ErrorList.free;            
   end
   else
   begin
@@ -710,10 +723,10 @@ begin
   // 911 Change Chamfer B4 Res (Sel) name to Finger Au After Pattern (Sel)
   if MfgPartType = 'Top' then
   begin
-    if Fnc.SysGetAttrValue('Gold_Fgr_Type') = 'Chamfer B4 Res (Sel)' then
+    if GoldFingerType = 'Chamfer B4 Res (Sel)' then
       Fnc.SysSetAttrValue('Gold_Fgr_Type', 'After Pattern (Sel)');
     
-     if Fnc.SysGetAttrValue('Gold_Fgr_Type') = 'Thin/Thick - Chamfer B4 Res (Sel)' then
+     if GoldFingerType = 'Thin/Thick - Chamfer B4 Res (Sel)' then
       Fnc.SysSetAttrValue('Gold_Fgr_Type', 'Thin/Thick - After Pattern (Sel)');   
   end;
   
@@ -721,18 +734,18 @@ begin
   // Item 1256  
   if MfgPartType = 'Top' then
   begin             
-    if Fnc.SysGetAttrValue('Board_Finish') = 'Full Body Gold + LGA' then
+    if BoardFinish = 'Full Body Gold + LGA' then
     begin                                 
       MessageDlg('The board finish "Full Body Gold + LGA" is no longer valid. Select another option', mtError, Setof([mbOK]), 0); 
       Fnc.UserRouteGenAbort := true;
     end;
     
-    if Fnc.SysGetAttrValue('Board_Finish') = 'ENIG + OSP' then
+    if BoardFinish = 'ENIG + OSP' then
     begin
       MessageDlg('The board finish "ENIG + OSP" is no longer valid. Board Finish set to "OSP" and Selective Gold set to "ENIG"', mtInformation, Setof([mbOK]), 0);
       Fnc.SysSetAttrValue('Board_Finish', 'OSP');
                                                       
-      if Fnc.SysGetAttrValue('Sel_Gold_Type') = 'None' then
+      if SelectiveGoldType= 'None' then
         Fnc.SysSetAttrValue('Sel_Gold_Type', 'ENIG');
       else
       begin
@@ -741,49 +754,49 @@ begin
       end;
     end;
     
-    if ( Fnc.SysGetAttrValue('Sel_Gold_Type') = 'ENIG' ) and ( Fnc.SysGetAttrValue('Board_Finish') <> 'OSP' ) then
+    if ( SelectiveGoldType= 'ENIG' ) and ( BoardFinish <> 'OSP' ) then
     begin
       MessageDlg('ENIG Selective Gold can only have OSP for the Board Finish', mtError, Setof([mbOK]), 0);
       Fnc.UserRouteGenAbort := true;
     end;
     
-    if ( Fnc.SysGetAttrValue('Sel_Gold_Type') = 'BGA, Encapsulation' ) or 
-       ( Fnc.SysGetAttrValue('Sel_Gold_Type') = 'Thin/Thick Encapsulated Pattern' ) then
+    if ( SelectiveGoldType= 'BGA, Encapsulation' ) or 
+       ( SelectiveGoldType= 'Thin/Thick Encapsulated Pattern' ) then
     begin
-      MessageDlg(Fnc.SysGetAttrValue('Sel_Gold_Type') + ' is no longer valid. Select another Selective Gold Type', mtError, Setof([mbOK]), 0); 
+      MessageDlg(SelectiveGoldType+ ' is no longer valid. Select another Selective Gold Type', mtError, Setof([mbOK]), 0); 
       Fnc.UserRouteGenAbort := true; 
     end;
     
-    if ( Fnc.SysGetAttrValue('Sel_Gold_Type') = 'Pattern (Overhang)' ) or 
-       ( Fnc.SysGetAttrValue('Sel_Gold_Type') = 'PTH' ) then
+    if ( SelectiveGoldType= 'Pattern (Overhang)' ) or 
+       ( SelectiveGoldType= 'PTH' ) then
     begin
-      MessageDlg('Selective Gold type: "' + Fnc.SysGetAttrValue('Sel_Gold_Type') + '" is no longer valid. Value set to "Pattern Overhang / PTH"', mtInformation, Setof([mbOK]), 0); 
+      MessageDlg('Selective Gold type: "' + SelectiveGoldType+ '" is no longer valid. Value set to "Pattern Overhang / PTH"', mtInformation, Setof([mbOK]), 0); 
       Fnc.SysSetAttrValue('Sel_Gold_Type', 'Pattern Overhang / PTH'); 
     end;       
     
-    if Fnc.SysGetAttrValue('Gold_Fgr_Type') = 'Lead Line Etching B4 Res (Sel)' then
+    if GoldFingerType = 'Lead Line Etching B4 Res (Sel)' then
     begin
-      MessageDlg('Gold Finger type: "' + Fnc.SysGetAttrValue('Gold_Fgr_Type') + '" is no longer valid. Value set to "Lead Line Etching"', mtInformation, Setof([mbOK]), 0);
+      MessageDlg('Gold Finger type: "' + GoldFingerType + '" is no longer valid. Value set to "Lead Line Etching"', mtInformation, Setof([mbOK]), 0);
       Fnc.SysSetAttrValue('Gold_Fgr_Type', 'Lead Line Etching');
     end;
     
-    if Fnc.SysGetAttrValue('Gold_Fgr_Type') = 'Lead Line Etching Af Res (Sel)' then
+    if GoldFingerType = 'Lead Line Etching Af Res (Sel)' then
     begin 
-      MessageDlg('Gold Finger type: "' + Fnc.SysGetAttrValue('Gold_Fgr_Type') + '" is no longer valid. Value set to "Au Finger Plate after SM"', mtInformation, Setof([mbOK]), 0);
+      MessageDlg('Gold Finger type: "' + GoldFingerType + '" is no longer valid. Value set to "Au Finger Plate after SM"', mtInformation, Setof([mbOK]), 0);
       Fnc.SysSetAttrValue('Gold_Fgr_Type', 'Au Finger Plate after SM');
     end;
                                     
-    if ( Fnc.SysGetAttrValue('Gold_Fgr_Type') = 'Chamfer Af Res (Sel)' ) or
-       ( Fnc.SysGetAttrValue('Gold_Fgr_Type') = 'Thin/Thick - Lead Line Etching B4 Res (Sel)' ) or
-       ( Fnc.SysGetAttrValue('Gold_Fgr_Type') = 'Thin/Thick - After Pattern (Sel)' ) or // Rename of rename - see above
-       ( Fnc.SysGetAttrValue('Gold_Fgr_Type') = 'No Horn - Lead Line Etching B4 Res (Sel)' )
+    if ( GoldFingerType = 'Chamfer Af Res (Sel)' ) or
+       ( GoldFingerType = 'Thin/Thick - Lead Line Etching B4 Res (Sel)' ) or
+       ( GoldFingerType = 'Thin/Thick - After Pattern (Sel)' ) or // Rename of rename - see above
+       ( GoldFingerType = 'No Horn - Lead Line Etching B4 Res (Sel)' )
     then                             
     begin
-      MessageDlg('"' + Fnc.SysGetAttrValue('Gold_Fgr_Type') + '"' + ' is no longer valid. Select another Gold Finger Type', mtError, Setof([mbOK]), 0); 
+      MessageDlg('"' + GoldFingerType + '"' + ' is no longer valid. Select another Gold Finger Type', mtError, Setof([mbOK]), 0); 
       Fnc.UserRouteGenAbort := true;     
     end;
     
-    if ( Fnc.SysGetAttrValue('Board_Finish') = 'Immersion Silver' ) and
+    if ( BoardFinish = 'Immersion Silver' ) and
        ( SelectiveGoldorFinger ) and
        ( Fnc.SysGetAttrValue('Imm_Silver_Process') = '<Not Selected>' ) then
     begin
@@ -791,7 +804,7 @@ begin
       Fnc.UserRouteGenAbort := true;
     end;
     
-    if ( Fnc.SysGetAttrValue('Board_Finish') = 'Lead Free HAL' ) and  // 1355
+    if ( BoardFinish = 'Lead Free HAL' ) and  // 1355
        ( SelectiveGoldorFinger ) and
        ( Fnc.SysGetAttrValue('Lead_Free_HAL_Process') = '<Not Selected>' ) then
     begin
@@ -799,23 +812,23 @@ begin
       Fnc.UserRouteGenAbort := true;
     end;
     
-    if (( Fnc.SysGetAttrValue('Sel_Gold_Type') <> 'None' ) or ( Fnc.SysGetAttrValue('Gold_Fgr_Type') <> 'None' )) and       
-       (( Fnc.SysGetAttrValue('Board_Finish') <> 'Immersion Silver' )  and
-         ( Fnc.SysGetAttrValue('Board_Finish') <> 'ENIG' ) and
-         ( Fnc.SysGetAttrValue('Board_Finish') <> 'ENEPIG' ) and
-         ( Fnc.SysGetAttrValue('Board_Finish') <> 'OSP' ) and 
-         ( Fnc.SysGetAttrValue('Board_Finish') <> 'Lead Free HAL' ))
+    if (( SelectiveGoldType<> 'None' ) or ( GoldFingerType <> 'None' )) and       
+       (( BoardFinish <> 'Immersion Silver' )  and
+         ( BoardFinish <> 'ENIG' ) and
+         ( BoardFinish <> 'ENEPIG' ) and
+         ( BoardFinish <> 'OSP' ) and 
+         ( BoardFinish <> 'Lead Free HAL' ))
     then
     begin
-      MessageDlg('Selective Gold / Gold Finger is not compatible with ' + Fnc.SysGetAttrValue('Board_Finish'), mtError, Setof([mbOK]), 0); 
-      Fnc.UserRouteGenAbort := true;
+      MessageDlg('Selective Gold / Gold Finger is not compatible with ' + BoardFinish, mtError, Setof([mbOK]), 0); 
+      Fnc.UserRouteGenAbort := true;                 
     end;
     
-    if ( Fnc.SysGetAttrValue('Gold_Fgr_Type') = 'Tab Plating' ) and
-       (( Fnc.SysGetAttrValue('Board_Finish') <> 'OSP' ) and ( Fnc.SysGetAttrValue('Board_Finish') <> 'Immersion Silver' )) 
+    if ( GoldFingerType = 'Tab Plating' ) and
+       (( BoardFinish <> 'OSP' ) and ( BoardFinish <> 'Immersion Silver' )) 
     then
     begin
-      MessageDlg('Gold Finger Tab Plating is not comaptible with ' + Fnc.SysGetAttrValue('Board_Finish'), mtError, Setof([mbOK]), 0); 
+      MessageDlg('Gold Finger Tab Plating is not comaptible with ' + BoardFinish, mtError, Setof([mbOK]), 0); 
       Fnc.UserRouteGenAbort := true; 
     end;
                    
@@ -844,8 +857,8 @@ begin
   begin
     if (LaserBTopHits +
        LaserABotHits +
-       Fnc.SysGetAttrValue('UVLaserB_Top') +
-       Fnc.SysGetAttrValue('UVLaserA_Bot') = 0) and                                                                    
+       UVLaserB_Top +
+       UVLaserA_Bot = 0) and                                                                    
        ( Fnc.SysGetAttrValue('Drill_OffsetX_Mode') = 'Auto' ) then
     begin
       if Fnc.SysGetAttrValue('Drill_FSF_X') <> 0 then
@@ -876,9 +889,6 @@ begin
   if Fnc.SysGetItemAttrValue('Layer_Land_Area', false, cStackupLayer, 1) = 0.0 then
     Fnc.SysSetItemAttrValue('Layer_Land_Area', Fnc.SysGetAttrValue('Land_Area'), false, cStackupLayer, 1);
                        
-  DirectLaser := Fnc.SysGetAttrValue('Direct_Laser');
-  LaserABotHits := Fnc.SysGetAttrValue('LaserABotHits');
-  LaserBTopHits := Fnc.SysGetAttrValue('LaserBTopHits'); 
 end;
                   
 procedure InitRouteGeneratedAttributes;
@@ -893,7 +903,7 @@ begin
     
     if InProcessCuThk = 0 then
       InProcessCuThk := BaseCuTopUM; 
-  end             
+  end                                           
   else            
   begin
     if Fnc.SysGetAttrValue('MfgPartType') <> 'DmC' then

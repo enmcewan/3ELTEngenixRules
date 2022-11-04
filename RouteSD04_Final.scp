@@ -175,11 +175,11 @@ end;
 procedure HAL_SD;
 begin
 
-  if Fnc.SysGetAttrValue('Board_Finish') = 'Lead Free HAL' then
+  if BoardFinish = 'Lead Free HAL' then
   begin
     StepDeptERP('HALVL-B');
     StepWCERP('HALVL-B1');
-    //StepParamERP('Board Finish', Fnc.SysGetAttrValue('Board_Finish'));
+    //StepParamERP('Board Finish', BoardFinish);
   end
   else
   begin
@@ -187,7 +187,7 @@ begin
     StepWCERP('HALVL-A');
   end;
   
-  StepParamERP('Board Finish', Fnc.SysGetAttrValue('Board_Finish'));  // 1322
+  StepParamERP('Board Finish', BoardFinish);  // 1322
 
   StepParamERP('Min Thickness', Fnc.SysGetAttrValue('HAL_MinThk'));
   StepParamERP('HAL Cu Area', Fnc.SysGetAttrValue('HAL_CuArea')); // 960 - Additional Cu Area for HAL        
@@ -284,14 +284,14 @@ begin
       {if ((Fnc.SysGetAttrValue('Gold_Type') <> 'None') and (Fnc.SysGetAttrValue('OSP_Type') = 'WATER SOLUBLE')) then}
       if (
           (
-           (Fnc.SysGetAttrValue('Sel_Gold_Type') <> 'None') or
-           (Fnc.SysGetAttrValue('Board_Finish') = 'ENIG') or
-           //(Fnc.SysGetAttrValue('Board_Finish') = 'ENIG + OSP') or // 1173 Additional Surface Finishing. Selective ENIG + OSP 
+           (SelectiveGoldType<> 'None') or
+           (BoardFinish = 'ENIG') or
+           //(BoardFinish = 'ENIG + OSP') or // 1173 Additional Surface Finishing. Selective ENIG + OSP 
            ( ENIGplusOSP ) or // 1256
-           (Fnc.SysGetAttrValue('Board_Finish') = 'ENEPIG') or
-           (Fnc.SysGetAttrValue('Board_Finish') = 'Full Body Gold') or
-           (Fnc.SysGetAttrValue('Board_Finish') = 'Thin/Thick Au Plate') or // 1256 NEED TO CHECK THIS
-           ((Fnc.SysGetAttrValue('Gold_Fgr_Type') <> 'None') and (Fnc.SysGetAttrValue('Gold_Fgr_Type') <> 'Tab Plating'))
+           (BoardFinish = 'ENEPIG') or
+           (BoardFinish = 'Full Body Gold') or
+           (BoardFinish = 'Thin/Thick Au Plate') or // 1256 NEED TO CHECK THIS
+           ((GoldFingerType <> 'None') and (GoldFingerType <> 'Tab Plating'))
           )
           and
           (Fnc.SysGetAttrValue('OSP_Type') = 'WATER SOLUBLE')
@@ -347,19 +347,19 @@ begin
   if (
       {(Fnc.SysGetAttrValue('Gold_Type') <> 'None' ) or}
       (
-       (Fnc.SysGetAttrValue('Sel_Gold_Type') <> 'None') or
-       (Fnc.SysGetAttrValue('Board_Finish') = 'ENIG') or 
-       //(Fnc.SysGetAttrValue('Board_Finish') = 'ENIG + OSP') or // 1173 Additional Surface Finishing. Selective ENIG + OSP
+       (SelectiveGoldType<> 'None') or
+       (BoardFinish = 'ENIG') or 
+       //(BoardFinish = 'ENIG + OSP') or // 1173 Additional Surface Finishing. Selective ENIG + OSP
        ( ENIGplusOSP ) or // 1256
-       (Fnc.SysGetAttrValue('Board_Finish') = 'ENEPIG') or
-       (Fnc.SysGetAttrValue('Board_Finish') = 'Full Body Gold') or
-       (Fnc.SysGetAttrValue('Board_Finish') = 'Thin/Thick Au Plate') or
-       ((Fnc.SysGetAttrValue('Gold_Fgr_Type') <> 'None') and (Fnc.SysGetAttrValue('Gold_Fgr_Type') <> 'Tab Plating'))
+       (BoardFinish = 'ENEPIG') or
+       (BoardFinish = 'Full Body Gold') or
+       (BoardFinish = 'Thin/Thick Au Plate') or
+       ((GoldFingerType <> 'None') and (GoldFingerType <> 'Tab Plating'))
       ) or
-      (Fnc.SysGetAttrValue('Board_Finish') = 'HAL' ) or
-      (Fnc.SysGetAttrValue('Board_Finish') = 'Lead Free HAL' ) or
-      (Fnc.SysGetAttrValue('Board_Finish') = 'LB Free HAL + Immersion silver') or // 1322 
-      (Fnc.SysGetAttrValue('Board_Finish') = 'Immersion Silver' ) or
+      (BoardFinish = 'HAL' ) or
+      (BoardFinish = 'Lead Free HAL' ) or
+      (BoardFinish = 'LB Free HAL + Immersion silver') or // 1322 
+      (BoardFinish = 'Immersion Silver' ) or
       ((Fnc.SysGetAttrValue('OSP_Type') <> 'SOLUBLE AVS' ) and (Fnc.SysGetAttrValue('OSP_Type') <> 'WATER SOLUBLE' )  and (Fnc.SysGetAttrValue('OSP_Type') <> 'None'))
       // or
       //(Fnc.SysGetAttrValue('OSP_Type') <> 'ROSIN FLUX' )
@@ -379,42 +379,42 @@ begin
   if Fnc.SysGetAttrValue('Milling_Type') <> 'None' then
     StepParamERP('Milling', Fnc.SysGetAttrValue('Milling_Type'));
 
-  if Fnc.SysGetAttrValue('Board_Finish') = 'HAL' then
-    StepParamERP('HAL Type', Fnc.SysGetAttrValue('Board_Finish'));
+  if BoardFinish = 'HAL' then
+    StepParamERP('HAL Type', BoardFinish);
 
-  if Fnc.SysGetAttrValue('Board_Finish') = 'Lead Free HAL' then
-    StepParamERP('HAL Type', Fnc.SysGetAttrValue('Board_Finish'));
+  if BoardFinish = 'Lead Free HAL' then
+    StepParamERP('HAL Type', BoardFinish);
     
-  if Fnc.SysGetAttrValue('Board_Finish') = 'LB Free HAL + Immersion silver' then // 1322
-    StepParamERP('HAL Type', Fnc.SysGetAttrValue('Board_Finish'));
+  if BoardFinish = 'LB Free HAL + Immersion silver' then // 1322
+    StepParamERP('HAL Type', BoardFinish);
 
-  if Fnc.SysGetAttrValue('Board_Finish') = 'Immersion Silver' then
+  if BoardFinish = 'Immersion Silver' then
     StepParamERP('Immersion Silver', Fnc.SysGetAttrValue('Imm_Silver'));
 
   if Fnc.SysGetAttrValue('VCut_Type') <> 'None' then
     StepParamERP('V-Cut Type', Fnc.SysGetAttrValue('VCut_Type'));
 
   //Requested by Jenny 8/17/15
-  //if Fnc.SysGetAttrValue('Board_Finish') = 'Full Body Gold + LGA' then   1256 
-  //  StepParamERP('Gold Type', Fnc.SysGetAttrValue('Board_Finish'));
+  //if BoardFinish = 'Full Body Gold + LGA' then   1256 
+  //  StepParamERP('Gold Type', BoardFinish);
 
-  if Fnc.SysGetAttrValue('Sel_Gold_Type') <> 'None' then
+  if SelectiveGoldType<> 'None' then
     StepParamERP('Gold Type', Fnc.SysGetAttrValue('Sel_Gold_Type'));
 
-  if Fnc.SysGetAttrValue('Gold_Fgr_Type') <> 'None' then
-    StepParamERP('Gold Type', Fnc.SysGetAttrValue('Gold_Fgr_Type'));
+  if GoldFingerType <> 'None' then
+    StepParamERP('Gold Type', GoldFingerType);
 
-  if ( Fnc.SysGetAttrValue('Board_Finish') = 'OSP' ) or ( ENIGplusOSP ) then // 1173 Additional Surface Finishing. Selective ENIG + OSP  // 1256
+  if ( BoardFinish = 'OSP' ) or ( ENIGplusOSP ) then // 1173 Additional Surface Finishing. Selective ENIG + OSP  // 1256
     StepParamERP('OSP Type', Fnc.SysGetAttrValue('OSP_Type'));
                               
-  if ( Fnc.SysGetAttrValue('Board_Finish') = 'ENIG' ) or                            
-     //( Fnc.SysGetAttrValue('Board_Finish') = 'ENIG + OSP' ) or // 1173 Additional Surface Finishing. Selective ENIG + OSP 
+  if ( BoardFinish = 'ENIG' ) or                            
+     //( BoardFinish = 'ENIG + OSP' ) or // 1173 Additional Surface Finishing. Selective ENIG + OSP 
      ( ENIGplusOSP ) or
-     ( Fnc.SysGetAttrValue('Board_Finish') = 'ENEPIG' )
+     ( BoardFinish = 'ENEPIG' )
   then
-    StepParamERP('Gold Type', Fnc.SysGetAttrValue('Board_Finish'));
+    StepParamERP('Gold Type', BoardFinish);
 
-  if Fnc.SysGetAttrValue('Board_Finish') = 'Immersion Tin' then
+  if BoardFinish = 'Immersion Tin' then
     StepParamERP('Immersion Tin', Fnc.SysGetAttrValue('Imm_Tin'));
 
   // 844 Backdrill after Electrolytic Cu Option (Call to SetDrillTypes not needed
@@ -440,7 +440,7 @@ end;
 
 procedure Final_Rinse_SD;
 begin
-  if ((Fnc.SysGetAttrValue('Board_Finish') = 'Immersion Tin') and (Fnc.SysGetAttrValue('LayupThickness') > 4.0)) then
+  if ((BoardFinish = 'Immersion Tin') and (Fnc.SysGetAttrValue('LayupThickness') > 4.0)) then
   begin
     StepDeptERP('WASHS-A');
     StepWCERP('WASHS-A');
@@ -455,7 +455,7 @@ begin
         (Fnc.SysGetAttrValue('OSP_Type') = 'SOLUBLE AVS' ) or
         (Fnc.SysGetAttrValue('OSP_Type') = 'WATER SOLUBLE') or
         // Rosin Flux omitted - no longer used
-        (Fnc.SysGetAttrValue('Board_Finish') = 'Immersion Silver')
+        (BoardFinish = 'Immersion Silver')
        )
     then
       StepWCERP('WASHS-B0')
@@ -715,7 +715,7 @@ begin
   if CustCode_Rule('Customer') = 'RB' then
     StepInstructionERP('JETMK001'); // REMARKS :MARK T" OR " MARK "T" & "H""; REFER TO CID.
 
-  if ((Fnc.SysGetAttrValue('Board_Finish') = 'Immersion Tin') and (Fnc.SysGetAttrValue('LayupThickness') > 4)) then
+  if ((BoardFinish = 'Immersion Tin') and (Fnc.SysGetAttrValue('LayupThickness') > 4)) then
        StepInstructionERP('JETMK006'); // Ensure no scratches on the ImmSn surface
 end;
 
@@ -771,7 +771,7 @@ end;
 procedure PreFinish_Insp_SD;
 begin
 
-  if Fnc.SysGetAttrValue('Board_Finish') = 'Immersion Tin' then
+  if BoardFinish = 'Immersion Tin' then
   begin
     StepDeptERP('FINSP-B');
     StepWCERP('FINSP-B');

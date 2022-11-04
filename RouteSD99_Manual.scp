@@ -235,7 +235,7 @@ procedure ENEPIG_Man_SD;     // Herole added on 26-Jul-2018
 begin
   StepDeptERP('AUPIG-A');                                   
   StepWCERP('AUPIG-A'); 
-  StepParamERP('Type', Fnc.SysGetAttrValue('Board_Finish'));  
+  StepParamERP('Type', BoardFinish);  
   StepParamERP('Note', 'Use ENEPIG Bath');   
   StepParamERP('Area 2', Fnc.SysGetAttrValue('Sel_Gold_Area2'));
   StepParamERP('Au Spec 2', Fnc.SysGetAttrValue('Sel_Gold_AuSpec2'));

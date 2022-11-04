@@ -941,8 +941,8 @@ begin
     begin          
     laserHits := LaserBTopHits +
                    LaserABotHits +
-                   Fnc.SysGetAttrValue('UVLaserB_Top') +
-                   Fnc.SysGetAttrValue('UVLaserA_Bot');
+                   UVLaserB_Top +
+                   UVLaserA_Bot;
   
     if (
         ( laserHits > 30000 ) or  
