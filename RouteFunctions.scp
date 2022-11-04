@@ -71,7 +71,8 @@ Var
   //GoldFingerType = 'Lead Line Etching' )
   BoardFinish,
   SelectiveGoldType,
-  GoldFingerType: string; 
+  GoldFingerType,
+  Plating_Line : string;
   
 procedure StepParam(Source: string; ParamCode: string; ParamValue: string) // Added with 2269
 begin
@@ -4133,7 +4134,7 @@ begin
   result := '';
 
   if NCRun <= 1 then // 1138
-  begin
+  begin              
     aspectRatio := Fnc.SysGetAttrValue('Aspect_Ratio_Val');
     minDrill := Fnc.SysGetAttrValue('Min_Drill_Size');
     //conformal := Fnc.SysGetAttrValue('ConfMask_Size');
@@ -4197,10 +4198,10 @@ begin
       else if PAL4(aspectRatio, minDrill, conformal, blindAspect, maxDepthBlind, maxDepthMech, cuRatio) then
         result := 'PAL4'
       else if PAL6(aspectRatio, minDrill, conformal, blindAspect, maxDepthBlind, maxDepthMech, cuRatio) then
-        result := 'PAL6'
+        result := 'PAL6 / PAL7'
     end;                   
   end;
-  
+                                
   if result = '' then                
     MessageDlg('Plating Line not found', mtWarning, Setof([mbOK]), 0);
                    
@@ -4208,7 +4209,7 @@ end;
 
 function GetsExtraAZBlowerStep : boolean;
 begin
-  result := false;
+  result := false;                       
   
   if ( Get_Panel_Thickness >= 3.30 ) or 
      ( Fnc.SysGetAttrValue('LayerCount') >= 14 ) or

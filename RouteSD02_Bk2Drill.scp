@@ -2406,7 +2406,6 @@ End;
 
 procedure Electrolytic_Cu_SD(Extra_Plt_Step : boolean);
 Var
-  Plating_Line : string;
   Alt_Line : string;
   Plating_Line_Selected: string;
   Plating_Line_Alternative: string;
@@ -2418,49 +2417,40 @@ begin
   Plating_Line_Selected := '';
   Plating_Line_Alternative := '';
 
-  StepDeptERP('COPPL-C');
+  StepDeptERP('COPPL-C');                                                
 
   Set_CU_Ratio;
 
   if NCRun = 1 then
-  begin
+  begin 
     if Fnc.SysGetAttrValue('Electrolytic_Cu_Line') = 'Auto' then  // 843 Process Override Rule
     begin
-      if ((CustCode_Rule('Customer') = 'GM') and (Fnc.SysGetAttrValue('Test_ID') <> 'None')) then
+      if (CustCode_Rule('Customer') = 'GM') and (Fnc.SysGetAttrValue('Test_ID') <> 'None') then
       begin
         Plating_Line := GetCuPlat_GM;
         Fnc.SysSetAttrValue('Ave_Min_Th', 0.0);
       end
       else
-      begin
-        //GetCopperPlating_Line(Plating_Line_Selected, Plating_Line_Alternative);
-        //Plating_Line := Plating_Line_Selected
-        Plating_Line := SelectPlatingLine;
-      end;
+        Plating_Line := SelectPlatingLine;                       
     end
     else
      Plating_Line := Fnc.SysGetAttrValue('Electrolytic_Cu_Line');
-  end
+  end 
   else if NCRun = 2 then
   begin
     if Fnc.SysGetAttrValue('Electrolytic_Cu_Line_2') = 'Auto' then  // 843 Process Override Rule
     begin
-      if ((CustCode_Rule('Customer') = 'GM') and (Fnc.SysGetAttrValue('Test_ID') <> 'None')) then
+      if (CustCode_Rule('Customer') = 'GM') and (Fnc.SysGetAttrValue('Test_ID') <> 'None') then
       begin
         Plating_Line := GetCuPlat_GM;
         Fnc.SysSetAttrValue('Ave_Min_Th_2', 0.0);
       end
       else
-      begin
-        //GetCopperPlating_Line(Plating_Line_Selected, Plating_Line_Alternative);
-        //Plating_Line := Plating_Line_Selected
         Plating_Line := SelectPlatingLine;
-      end;
     end
     else
      Plating_Line := Fnc.SysGetAttrValue('Electrolytic_Cu_Line_2');
   end;
-
 
   Fnc.SysSetAttrValue('CuPlatingLine', Plating_Line);
 
@@ -2469,51 +2459,14 @@ begin
     Fnc.SysSetAttrValue('Plating_Line', Plating_Line)
   else if NCRun = 2 then
     Fnc.SysSetAttrValue('Plating_Line', Fnc.SysGetAttrValue('Plating_Line') + '/' + Plating_Line);
-
-  {if Plating_Line = 'PAL3' then
-  begin
-    //ShowMessage('For 3EPCB Only - Need to confirm the IES logic for <> BLIND VIA or Total Layer Count = Current Part Layer Count');
-
-    if ((Fnc.SysGetAttrValue('BlindVias') = true) and (Fnc.SysGetAttrValue('MfgPartType') <> 'Top')) then
-    begin
-      if ((Fnc.SysGetAttrValue('Ave_Min_Bl') > 0.0) or (Fnc.SysGetAttrValue('Abs_Min_Bl') > 0.0)) then
-      begin
-        GLB_Abs_CuThk := Fnc.SysGetAttrValue('Abs_Min_Bl') * 1.4;
-        GLB_Ave_CuThk := Fnc.SysGetAttrValue('Ave_Min_Bl') * 1.2;
-
-        // Per Request from Herole 3/13, blind via plating should be the same as PTH plating
-        GLB_Abs_CuThk := Fnc.SysGetAttrValue('Abs_Min_Th') * 1.4;
-        GLB_Ave_CuThk := Fnc.SysGetAttrValue('Ave_Min_Th') * 1.2;
-      end
-      else
-        ShowMessage('Error: Blind Via but Abs_Min_Bl or Ave_Min_Bl = 0.0');
-    end
-    else
-    begin
-      GLB_Abs_CuThk := Fnc.SysGetAttrValue('Abs_Min_Th') * 1.4;
-      GLB_Ave_CuThk := Fnc.SysGetAttrValue('Ave_Min_Th') * 1.2;
-    end;
-    // 1086 Update Electrolytic Cu Plating Rule  - use MCP for Pal3 & Filled Via
-    //MCP_CU_THK;
-
-  end;}
-
-  {else if (
-           (Plating_Line = 'PAL4') or
-           (Plating_Line = 'PAL6') or  // Plating Line PAL5 change to PAL6
-           (Plating_Line = 'MCP') or
-           (Plating_Line = 'FILL_VIA')  // 976 Filled Via Plating Line
-          )
-  then
-  begin }
-    // Need to confirm the IES logic for '<> BLIND VIA or Total Layer Count = Current Part Layer Count
+  
     if ((Fnc.SysGetAttrValue('BlindVias') = true) and (Fnc.SysGetAttrValue('MfgPartType') <> 'Top'))  then
     begin
       if ((Fnc.SysGetAttrValue('Ave_Min_Bl') > 0.0) or (Fnc.SysGetAttrValue('Abs_Min_Bl') > 0.0)) then
       begin
         GLB_TGT_Abs_HOLE_CuThk := Fnc.SysGetAttrValue('Abs_Min_Bl');
         GLB_TGT_Ave_Hole_CuThk := Fnc.SysGetAttrValue('Ave_Min_Bl');
-
+                                  
         // Per Request from Herole 3/13, blind via plating should be the same as PTH plating
         GLB_TGT_Abs_HOLE_CuThk := Fnc.SysGetAttrValue('Abs_Min_Th');
         GLB_TGT_Ave_Hole_CuThk := Fnc.SysGetAttrValue('Ave_Min_Th');
@@ -2526,9 +2479,6 @@ begin
       GLB_TGT_Abs_HOLE_CuThk := Fnc.SysGetAttrValue('Abs_Min_Th');
       GLB_TGT_Ave_Hole_CuThk := Fnc.SysGetAttrValue('Ave_Min_Th');
     end;
-
-    // For testing, force plating line to RLPS
-    // Plating_Line := 'PAL4';
 
     if ( Plating_Line = 'MCP' ) or ( Plating_Line = 'PAL3' ) or (Plating_Line = 'FILL_VIA') then
       MCP_CU_THK
@@ -2639,7 +2589,7 @@ begin
       StepWCERP('COPPL-C1');
     end;
 
-    if Plating_Line = 'PAL6' then
+    if ( Plating_Line = 'PAL6' ) or ( Plating_Line = 'PAL7' ) or ( Plating_Line = 'PAL6 / PAL7' )  then
     begin
       //StepDeptERP('COPPL-C');
       StepWCERP('COPPL-C22'); // Plating Line PAL5 change to PAL6
@@ -2656,7 +2606,7 @@ begin
 
     if Plating_Line = 'PAL3 + MCP' then
      ShowMessage('ERROR! : NO CU PLATING LINE SELECTED as PAL3 + MCP');
-
+                     
     if Plating_Line = 'NO_PLATING_LINE' then
     begin
       if PressThickness > 3.5 then
