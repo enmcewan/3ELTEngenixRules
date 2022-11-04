@@ -564,7 +564,7 @@ begin
   //-----
   if VarNames = 'DESIGN_' then
   begin
-    VarValueList.Add(FloatToStr(Fnc.SysGetAttrValue('LayupThickness')));
+    VarValueList.Add(FloatToStr(LayupThickness));
 
     Result := CheckConditionsAndValues('N', Condition, VarValueList);
     bDone := True;

@@ -152,7 +152,7 @@ end;
 procedure VCut;
 begin
   if (
-      (Fnc.SysGetAttrValue('LayupThickness') <= 0.65) or
+      (LayupThickness <= 0.65) or
       (Fnc.SysGetAttrValue('DeWarp') = true) or
       (
        (
@@ -160,7 +160,7 @@ begin
         ((Fnc.SysGetAttrValue('CoreMat') = 'NPG-TL') or (Fnc.SysGetAttrValue('PPGMat') = 'NPG-TL'))
        )
        and
-       (Fnc.SysGetAttrValue('LayupThickness') <= 1.0)
+       (LayupThickness <= 1.0)
       )
      )                        
   then
@@ -188,7 +188,7 @@ begin
   then
     VCut;
 
-  if Fnc.SysGetAttrValue('LayupThickness') <= 3 then
+  if LayupThickness <= 3 then
   begin
     AddStep('ImmTin_AlkRinse', 'ImmTin_AlkRinse01');
 
@@ -496,9 +496,9 @@ begin
   if Fnc.SysGetAttrValue('TwoDBarcode') = true then
     AddStep('TwoDBarcode', 'TwoDBarcode01');
 
-  if  (( CustCode_Rule('Customer') = 'HQ' ) and ( Fnc.SysGetAttrValue('LayupThickness') >= 2.29 )) or
+  if  (( CustCode_Rule('Customer') = 'HQ' ) and ( LayupThickness >= 2.29 )) or
       ( WarpageLessThanPointFivePct ) or
-      (Fnc.SysGetAttrValue('LayupThickness') <= 0.6) or
+      (LayupThickness <= 0.6) or
       (Fnc.SysGetAttrValue('DeWarp') = true)
   then
     AddStep('DeWarp', 'DeWarp02');

@@ -179,7 +179,7 @@ begin
   StepParamERP('Stack Height', Fnc.SysGetAttrValue('Stack_Hgt'));
   StepParamERP('Entry Sheet Material', 'Aluminum');  
   StepParamERP('Material Tg', Fnc.SysGetAttrValue('TG_Class'));
-  StepParamERP('Thickness', FormatFloat('0.000', Fnc.SysGetAttrValue('LayupThickness')));
+  StepParamERP('Thickness', FormatFloat('0.000', LayupThickness));
   StepParamERP('Drill Side', Fnc.SysGetAttrValue('Drill_Side'));
 end;     
 
@@ -193,7 +193,7 @@ begin
   StepParamERP('Blown Gap',Fnc.SysGetAttrValue('Air_Gap_Blown')); 
   StepParamERP('Land Area',Fnc.SysGetAttrValue('Land_Area')); 
   StepParamERP('Annular', Fnc.SysGetAttrValue('Annular')); 
-  StepParamERP('Design Thickness', FormatFloat('0.000', Fnc.SysGetAttrValue('LayupThickness')));
+  StepParamERP('Design Thickness', FormatFloat('0.000', LayupThickness));
   StepParamERP('Min Hole Size NP', Fnc.SysGetAttrValue('Min_Drill_Size_NP'));
   StepParamERP('Max Hole Size', Fnc.SysGetAttrValue('Max_Hole_Size'));  
   StepParamERP('Max P-Hole Size', Fnc.SysGetAttrValue('Max_PHole_Size'));  
@@ -279,7 +279,7 @@ begin
   StepParamERP('Land Area',Fnc.SysGetAttrValue('Land_Area')); 
   StepParamERP('Annular', Fnc.SysGetAttrValue('Annular')); 
   StepParamERP('Min Hole Size', Fnc.SysGetAttrValue('Min_Drill_Size'));
-  StepParamERP('Design Thickness', FormatFloat('0.000', Fnc.SysGetAttrValue('LayupThickness')));
+  StepParamERP('Design Thickness', FormatFloat('0.000', LayupThickness));
   StepParamERP('Min Hole Size NP', Fnc.SysGetAttrValue('Min_Drill_Size_NP'));
   StepParamERP('Max Hole Size', Fnc.SysGetAttrValue('Max_Hole_Size'));  
   StepParamERP('Max P-Hole Size', Fnc.SysGetAttrValue('Max_PHole_Size')); 
@@ -326,7 +326,7 @@ begin
   StepParamERP('Smudges', 'Not Allowed');    
   StepParamERP('Exposed Cu', 'Not Allowed');
   StepParamERP('Cu Thickness', Fnc.SysGetAttrValue('Ave_Fin_Th'));  
-  StepParamERP('Board Thickness', Fnc.SysGetAttrValue('LayupThickness')); 
+  StepParamERP('Board Thickness', LayupThickness); 
   StepParamERP('Panel Size', Fnc.SysGetAttrValue('Panel_Size'));  
   StepInstructionERP('RESIS001'); 
 end;   
@@ -369,7 +369,7 @@ begin
   StepParamERP('Min Drill Size', Fnc.SysGetAttrValue('Min_Drill_Size'));
   StepParamERP('Entry Sheet Material', Fnc.SysGetAttrValue('Drill_Entry_Sht'));
   StepParamERP('Material Tg', Fnc.SysGetAttrValue('TG_Class'));
-  StepParamERP('Thickness', FormatFloat('0.000', Fnc.SysGetAttrValue('LayupThickness')));  
+  StepParamERP('Thickness', FormatFloat('0.000', LayupThickness));  
   StepParamERP('Drill Side', 'Side B Top');
 end;
 
@@ -383,7 +383,7 @@ begin
   StepParamERP('Land Area',Fnc.SysGetAttrValue('Land_Area')); 
   StepParamERP('Annular', Fnc.SysGetAttrValue('Annular')); 
   StepParamERP('Min Hole Size', Fnc.SysGetAttrValue('Min_Drill_Size'));
-  StepParamERP('Design Thickness', FormatFloat('0.000', Fnc.SysGetAttrValue('LayupThickness')));
+  StepParamERP('Design Thickness', FormatFloat('0.000', LayupThickness));
   StepParamERP('Max Hole Size', Fnc.SysGetAttrValue('Max_Hole_Size'));  
   StepParamERP('Max P-Hole Size', Fnc.SysGetAttrValue('Max_PHole_Size')); 
   StepParamERP('Max Slot Length', Fnc.SysGetAttrValue('Slot_Length_PTH')); 
@@ -404,7 +404,7 @@ procedure IL_AOI_Man_SD;     // Herole added on 16-Aug-2018
 begin                                                                                                             
   StepDeptERP('INSIL-A');                                                            
   StepWCERP('INSIL-A');  
-  StepParamERP('Thickness', FormatFloat('0.000',Fnc.SysGetAttrValue('LayupThickness')));   
+  StepParamERP('Thickness', FormatFloat('0.000',LayupThickness));   
   StepParamERP('Annular', Fnc.SysGetAttrValue('Annular'));                            
   StepParamERP('Land Area', Fnc.SysGetAttrValue('Land_Area'));   
   StepParamERP('Line Width', Fnc.SysGetAttrValue('Line_Width')); 
@@ -424,7 +424,7 @@ begin
   StepParamERP('Smudges', 'Not Allowed');    
   StepParamERP('Exposed Cu', 'Not Allowed');
   StepParamERP('Cu Thickness', Fnc.SysGetAttrValue('Ave_Fin_Th'));            
-  StepParamERP('Board Thickness', Fnc.SysGetAttrValue('LayupThickness')); 
+  StepParamERP('Board Thickness', LayupThickness); 
   StepParamERP('Panel Size', Fnc.SysGetAttrValue('Panel_Size'));  
 end;                        
 
@@ -463,7 +463,7 @@ begin
   StepParamERP('Blown Gap',Fnc.SysGetAttrValue('Air_Gap_Blown')); 
   StepParamERP('Land Area',Fnc.SysGetAttrValue('Land_Area')); 
   StepParamERP('Annular', Fnc.SysGetAttrValue('Annular')); 
-  StepParamERP('Design Thickness', FormatFloat('0.000', Fnc.SysGetAttrValue('LayupThickness')));                                        
+  StepParamERP('Design Thickness', FormatFloat('0.000', LayupThickness));                                        
   StepParamERP('Pre-preg Material', Fnc.SysGetAttrValue('PPGMat'));  
   StepParamERP('Core Material', Fnc.SysGetAttrValue('CoreMat'));  
   StepParamERP('Panel Size', Fnc.SysGetAttrValue('Panel_Size'));  
@@ -491,7 +491,7 @@ begin
   StepWCERP('DMEAR-C0'); 
   StepParamERP('Pre-preg Material', 'TU-933');                                           
   StepParamERP('Core Material', 'TU-933'); 
-  StepParamERP('Thickness', FormatFloat('0.000',Fnc.SysGetAttrValue('LayupThickness'))); 
+  StepParamERP('Thickness', FormatFloat('0.000',LayupThickness)); 
   StepParamERP('Buffing', '1.7m/min');
   StepParamERP('HP Rinse', 'OFF'); 
   StepParamERP('Sweller', 'OFF');    
@@ -603,7 +603,7 @@ begin
   StepParamERP('Smudges', 'Not Allowed');    
   StepParamERP('Exposed Cu', 'Not Allowed');
   StepParamERP('Cu Thickness', Fnc.SysGetAttrValue('Ave_Fin_Th'));            
-  StepParamERP('Board Thickness', Fnc.SysGetAttrValue('LayupThickness')); 
+  StepParamERP('Board Thickness', LayupThickness); 
   StepParamERP('Panel Size', Fnc.SysGetAttrValue('Panel_Size'));  
 end;   
 
@@ -620,7 +620,7 @@ begin
   StepParamERP('Stack Height', Fnc.SysGetAttrValue('Stack_Hgt')); 
   StepParamERP('Entry Sheet Material', 'Aluminum');  
   StepParamERP('Material Tg', Fnc.SysGetAttrValue('TG_Class')); 
-  StepParamERP('Thickness', FormatFloat('0.000', Fnc.SysGetAttrValue('LayupThickness')));  
+  StepParamERP('Thickness', FormatFloat('0.000', LayupThickness));  
   StepParamERP('Drill Side', Fnc.SysGetAttrValue('Drill_Side'));
   StepInstructionERP('DRILL123');
 end;      
@@ -642,7 +642,7 @@ begin
   StepParamERP('Min Resist Partition', Fnc.SysGetAttrValue('Min_Res_Pa')); 
   StepParamERP('Smudges', 'Not Allowed');    
   StepParamERP('Exposed Cu', 'Not Allowed');                     
-  StepParamERP('Board Thickness', Fnc.SysGetAttrValue('LayupThickness')); 
+  StepParamERP('Board Thickness', LayupThickness); 
   StepParamERP('Panel Size', Fnc.SysGetAttrValue('Panel_Size'));  
 end;      
 
@@ -655,7 +655,7 @@ begin
   StepParamERP('Blown Gap',Fnc.SysGetAttrValue('Air_Gap_Blown')); 
   StepParamERP('Land Area',Fnc.SysGetAttrValue('Land_Area'));                   
   StepParamERP('Annular', Fnc.SysGetAttrValue('Annular')); 
-  StepParamERP('Design Thickness', FormatFloat('0.000', Fnc.SysGetAttrValue('LayupThickness')));
+  StepParamERP('Design Thickness', FormatFloat('0.000', LayupThickness));
   StepParamERP('Min Hole Size NP', Fnc.SysGetAttrValue('Min_Drill_Size_NP'));
   StepParamERP('Aspect Ratio', Fnc.SysGetAttrValue('Aspect_Ratio_Val')); 
   StepParamERP('Max Hole Size', Fnc.SysGetAttrValue('Max_Hole_Size'));  
@@ -721,7 +721,7 @@ begin
   StepParamERP('VELCP Line', 'V1 or V2 only');                                           
   StepParamERP('Pre-preg Material', Fnc.SysGetAttrValue('PPGMat'));   
   StepParamERP('Core Material', Fnc.SysGetAttrValue('CoreMat'));  
-  StepParamERP('Thickness', FormatFloat('0.000',Fnc.SysGetAttrValue('LayupThickness'))); 
+  StepParamERP('Thickness', FormatFloat('0.000',LayupThickness)); 
   StepParamERP('Min Drill Size', Fnc.SysGetAttrValue('Min_Drill_Size'));
 end;   
 
@@ -753,7 +753,7 @@ begin
   StepParamERP('Min Resist Partition', Fnc.SysGetAttrValue('Min_Res_Pa')); 
   StepParamERP('Smudges', 'Not Allowed');    
   StepParamERP('Exposed Cu', 'Not Allowed');
-  StepParamERP('Board Thickness', Fnc.SysGetAttrValue('LayupThickness')); 
+  StepParamERP('Board Thickness', LayupThickness); 
   StepParamERP('Panel Size', Fnc.SysGetAttrValue('Panel_Size'));  
   StepInstructionERP('RESIS001');
 end;   
@@ -783,7 +783,7 @@ begin
   StepDeptERP('RESCO-C');                                                                                         
   StepWCERP('RESCO-C');  
   StepParamERP('Cu Thickness', Fnc.SysGetAttrValue('Ave_Fin_Th'));            
-  StepParamERP('Board Thickness', Fnc.SysGetAttrValue('LayupThickness')); 
+  StepParamERP('Board Thickness', LayupThickness); 
   StepParamERP('Panel Size', Fnc.SysGetAttrValue('Panel_Size'));
 end;
 
@@ -855,7 +855,7 @@ begin
   StepParamERP('Blown Gap',Fnc.SysGetAttrValue('Air_Gap_Blown')); 
   StepParamERP('Land Area',Fnc.SysGetAttrValue('Land_Area'));                   
   StepParamERP('Annular', Fnc.SysGetAttrValue('Annular')); 
-  StepParamERP('Design Thickness', FormatFloat('0.000', Fnc.SysGetAttrValue('LayupThickness')));
+  StepParamERP('Design Thickness', FormatFloat('0.000', LayupThickness));
   StepParamERP('Min Hole Size NP', Fnc.SysGetAttrValue('Min_Drill_Size_NP'));
   StepParamERP('Aspect Ratio', Fnc.SysGetAttrValue('Aspect_Ratio_Val')); 
   StepParamERP('Max Hole Size', Fnc.SysGetAttrValue('Max_Hole_Size'));  
@@ -966,7 +966,7 @@ begin
   StepParamERP('Blown Gap',Fnc.SysGetAttrValue('Air_Gap_Blown'));
   StepParamERP('Land Area',Fnc.SysGetAttrValue('Land_Area'));
   StepParamERP('Annular', Fnc.SysGetAttrValue('Annular'));
-  StepParamERP('Design Thickness', FormatFloat('0.000', Fnc.SysGetAttrValue('LayupThickness')));
+  StepParamERP('Design Thickness', FormatFloat('0.000', LayupThickness));
   StepParamERP('Min Hole Size NP', Fnc.SysGetAttrValue('Min_Drill_Size_NP'));
   StepParamERP('Aspect Ratio', Fnc.SysGetAttrValue('Aspect_Ratio_Val'));
   StepParamERP('Max Hole Size', Fnc.SysGetAttrValue('Max_Hole_Size'));
@@ -1031,7 +1031,7 @@ begin
   StepParamERP('2nd Flute Length', Fnc.SysGetAttrValue('Flute_Len_2'));
   StepParamERP('2nd Min Drill Size', Fnc.SysGetAttrValue('Min_Drill_Size_2'));
   StepParamERP('Material Tg', Fnc.SysGetAttrValue('TG_Class'));
-  StepParamERP('Thickness', FormatFloat('0.000', Fnc.SysGetAttrValue('LayupThickness')));
+  StepParamERP('Thickness', FormatFloat('0.000', LayupThickness));
 end;
 
 procedure ScopeDrill_8Hole_Man_SD;     // Herole added on 18-Aug-2021
@@ -1076,7 +1076,7 @@ procedure Countersunk_B_NPTH_Man_SD;     // Herole added on 22-Feb-2022
 begin
   StepDeptERP('ROUTE-A');
   StepWCERP('ROUTE-D0');
-  StepParamERP('Thickness', Fnc.SysGetAttrValue('LayupThickness'));
+  StepParamERP('Thickness', LayupThickness);
   StepParamERP('Angle', 'REFER TO PDD');
   StepParamERP('Drill Side', 'Side B');
 end;
@@ -1099,7 +1099,7 @@ begin
 begin
   StepDeptERP('BACKD-A');
   StepWCERP('BACKD-A');
-  StepParamERP('Thickness',Fnc.SysGetAttrValue('LayupThickness'));
+  StepParamERP('Thickness',LayupThickness);
   StepParamERP('Machine',Fnc.SysGetAttrValue('BackDrill_Mch'));
   StepParamERP('Backdrill Side', 'A Side');
   StepInstructionERP('BACKD001');
@@ -1110,7 +1110,7 @@ begin
 begin
   StepDeptERP('BACKD-A');
   StepWCERP('BACKD-A');
-  StepParamERP('Thickness',Fnc.SysGetAttrValue('LayupThickness'));
+  StepParamERP('Thickness',LayupThickness);
   StepParamERP('Machine',Fnc.SysGetAttrValue('BackDrill_Mch'));
   StepParamERP('Backdrill Side', 'B Side');
   StepInstructionERP('BACKD001');

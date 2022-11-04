@@ -26,8 +26,8 @@ function CheckForSmallHoleInsp : boolean;
 begin
   result := false;
   if (
-      ((Fnc.SysGetAttrValue('LayupThickness') < 0.080) and (Fnc.SysGetAttrValue('AspectRatio') >= 6.9)) or
-      ((Fnc.SysGetAttrValue('LayupThickness') >= 0.080) and (Fnc.SysGetAttrValue('AspectRatio') > 6.9))
+      ((LayupThickness < 0.080) and (Fnc.SysGetAttrValue('AspectRatio') >= 6.9)) or
+      ((LayupThickness >= 0.080) and (Fnc.SysGetAttrValue('AspectRatio') > 6.9))
      )
   then                                         
     result := true;
@@ -37,8 +37,8 @@ function CheckForSmallHoleInspFilledVia : boolean;
 begin
   result := false;
   if (
-      ((Fnc.SysGetAttrValue('LayupThickness') < 0.080) and (Fnc.SysGetAttrValue('AspectRatioFV') >= 6.9)) or
-      ((Fnc.SysGetAttrValue('LayupThickness') >= 0.080) and (Fnc.SysGetAttrValue('AspectRatioFV') > 6.9))
+      ((LayupThickness < 0.080) and (Fnc.SysGetAttrValue('AspectRatioFV') >= 6.9)) or
+      ((LayupThickness >= 0.080) and (Fnc.SysGetAttrValue('AspectRatioFV') > 6.9))
      )
   then
     result := true;
@@ -1951,7 +1951,7 @@ begin
   DrillLayerName := Fnc.SysGetItemAttrValue('ItemLayerName', True, cStackupDrill, I);
   IsBlind := Fnc.SysGetItemAttrValue('ForceBlindVia', True, cStackupDrill, I);
   SmallestDrill := SmallestDrillOneFile(Fnc.SysGetItemAttrValue('ItemLayerName', true, cStackupDrill, I), 'ALL');
-  MfgPartThickness := Fnc.SysGetAttrValue('LayupThickness');
+  MfgPartThickness := LayupThickness;
   AspectRatio := MfgPartThickness/SmallestDrill;
 
   if (
@@ -2365,7 +2365,7 @@ begin
        (Engx_CuBot <= 0.0006)
       ) or
       (
-       (Fnc.SysGetAttrValue('LayupThickness') >= 0.011) and
+       (LayupThickness >= 0.011) and
        (Fnc.SysGetAttrValue('BuriedVias') = false)
       )
      )

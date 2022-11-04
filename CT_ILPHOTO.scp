@@ -248,7 +248,7 @@ begin
        end;}                              
     'DES5/4/3/1':
        begin
-         if Fnc.SysGetAttrValue('LayupThickness') < 0.05 then
+         if LayupThickness < 0.05 then
            DesLine := 'DESIL-E'
          else
            DesLine := 'DESIL-G0';

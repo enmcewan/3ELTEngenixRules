@@ -18,7 +18,7 @@ var
   DrillSize: float;                          
   DrillList: TStringList;           
                                 
-  SlotToolsList: TStringList;      
+  SlotToolsList: TStringList;       
   DrillToolsList: TStringList;
   DrillToolStr: String;
                                         
@@ -65,7 +65,7 @@ begin
         if Fnc.SysGetLayerAttrValue(DrillName, 'DrillDefID') = 1 then
           Thickness := PressThickness
         else
-          Thickness := Fnc.SysGetAttrValue('LayupThickness');
+          Thickness := LayupThickness;
       end                                                                               
       else                            
         Thickness := DSThicknessB4Plating;

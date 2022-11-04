@@ -26,7 +26,7 @@ end;
 procedure OL_Pattern_Formation(EGoldB4Res : boolean);
 begin
   // 793 Update Photo process rule
-  if ( Fnc.SysGetAttrValue('LayupThickness') >= 4.2 ) and ( photoStepList.Count = 0 ) then  // 1570 After testing comment
+  if ( LayupThickness >= 4.2 ) and ( photoStepList.Count = 0 ) then  // 1570 After testing comment
   begin                                   
     AddStep('DM2_Buff', 'DM2_Buff01');
     AddStep('OffLine_PreTreat', 'OffLine_PreTreat00');
@@ -35,25 +35,15 @@ begin
   end;                    
                      
   // 1108 OL Process Flow Update    
-  if Fnc.SysGetAttrValue('LayupThickness') < 0.60 then // 1198 
-  begin                                        
-    //if SubGetsNewPEP then // 1229 PEP Flow option for Sub-assembly build.   2296
-    //  SubAssemblyPEP;    
-      
+  if LayupThickness < 0.60 then // 1198 
+  begin                                             
     AddStep('IL_Photo_OL_ThinPanel', 'IL_Photo_OL_ThinCore01');                              
     AddStep('IL_DES_OL_ThinPanel', 'IL_DES_OL_ThinPanel01');  
   end                                                 
   else if ((InProcessCuThk > 60) and (Fnc.HasImpedance)) then
   begin                 
-    //ShowMessage(InProcessCuThk); 
-    // 1108 OL Process Flow Update
-    //if SubGetsNewPEP then // 1229 PEP Flow option for Sub-assembly build.   2296
-    //  SubAssemblyPEP;
-      
     AddStep('OL_Photo_PForm_TCI', 'OL_Photo_PForm_TCI01');
-    AddStep('OL_DES_TCI', 'OL_DES_TCI01');  
-                                    
-    //SideBySideDES;                            
+    AddStep('OL_DES_TCI', 'OL_DES_TCI01');                                                            
                                                                                                             
     if EGoldB4Res then     
     begin              
@@ -65,28 +55,22 @@ begin
       else
         AddStep('OL_AOI', 'OL_AOI01');
     end;
-  end
+  end                                                         
   else              
-  begin                 
-    //if SubGetsNewPEP then // 1229 PEP Flow option for Sub-assembly build.
-    //SubAssemblyPEP;                       
-                   
+  begin                                                        
     AddStep('OL_Photo_Patt_Form', 'OL_Photo_Patt_Form01');
     
     if ( EGoldB4Res ) and ( SelectiveGoldType = 'BGA/LGA Encapsulation' ) then
       StepParamERP('Remark', 'Selective Etching Only.');
          
-     // 793 Update Photo process rule
-    if ( Fnc.SysGetAttrValue('EdgePlating') ) or 
-       (
-        (( Fnc.SysGetAttrValue('Slot_Length_PTH') >= 10.00 ) or ( Fnc.SysGetAttrValue('Max_Hole_Size') >= 10.00 )) and 
-        ( Fnc.SysGetAttrValue('LayupThickness') >= 2.5 )
-       )  // 1254 DES Rule Update
-         // 983  Additional Condition to Edge Plating & Slot Length Rule
+    // 2365 OL Photo rule for Max Slot size
+    if Fnc.SysGetAttrValue('EdgePlating') or 
+       ( Fnc.SysGetAttrValue('Slot_Length_PTH') >= 12.00 ) or 
+       ( Fnc.SysGetAttrValue('Max_Hole_Size') >= 12.00 )
     then
     begin
       AddStep('OL_DEV', 'OL_DEV01');
-      AddStep('Mdl_Insp_OLDev', 'Mdl_Insp_OLDev01');
+      AddStep('Mdl_Insp_OLDev', 'Mdl_Insp_OLDev01');   
     end;
 
     AddStep('OL_DES', 'OL_DES01');
@@ -96,7 +80,7 @@ begin
         ( GoldFingerType = 'NO Lead Line Etching' ) or
         ( GoldFingerType = 'Soldermask Spray' ) 
         then
-      AddStep('OL_AOI', 'OL_AOI01');                       
+      AddStep('OL_AOI', 'OL_AOI01');                        
   end;
 end;
 
@@ -116,7 +100,7 @@ begin
   if PltCycle = 1 then
   begin
     
-    if ( Fnc.SysGetAttrValue('LayupThickness') >= 4.2 ) and ( photoStepList.Count = 0 ) then  // 1570 After testing comment
+    if ( LayupThickness >= 4.2 ) and ( photoStepList.Count = 0 ) then  // 1570 After testing comment
     begin                  
       AddStep('DM2_Buff', 'DM2_BuffGP');
       AddStep('OffLine_PreTreat', 'OffLine_PreTreatGP'); // 1570 Duplicate Unique ID error when BGA/LGA Encapsulation Selective Gold Type was selected
@@ -172,13 +156,10 @@ end;
 procedure SMaskGold_Photo2Plating(UVBump : boolean; Plating : boolean);
 begin
   AddStep('Gold_SMPrint_SIT', 'Gold_SMPrint_SIT01'); // (722) Gold Steps Missing Info
-  //AddStep('Gold_SMExp_SIT', 'Gold_SMExp_SIT01');
-  //AddStep('Gold_SMDev_SIT', 'Gold_SMDev_SIT01');
-  //AddStep('Gold_SMInsp_SIT', 'Gold_SMInsp_SIT01'); // This was deleted for Thin/Thick Enc Pattern in the Gold spreadsheet sent in October. Assumed this was an error
 
   if UVBump = true then
     AddStep('Gold_UVBump', 'Gold_UVBump01');
-
+         
   if Plating = true then                                    
     AddStep('Gold_Elytic_Plt1', 'Gold_Elytic_Plt101');
 end;
@@ -187,7 +168,6 @@ procedure Soldermask_Spray_Selective_Gold;
 begin
   AddStep('ResSprayCoat_SF', 'ResSprayCoat_SF01');
   AddStep('ResistExp_Ledia', 'ResistExp_Ledia01');
-  //AddStep('ResistDev_SF', 'ResistDev_SF01');    1256 Testing Request by Herole
   AddStep('ResSprayBaking_SF', 'ResSprayBaking_SF01'); 
   AddStep('OffLine_PreTreat', 'OffLine_PreTreat_SF01');
   
@@ -296,14 +276,14 @@ begin
     begin
       if Fnc.SysGetAttrValue('EpoxyPlug_PlugToNonPlugSpacing') < 1.0 then
       begin     
-        if Fnc.SysGetAttrValue('LayupThickness') > 2.0 then
+        if LayupThickness > 2.0 then
           result := 'Side-by-Side'
         else
           result := 'Standard';
       end              
       else           
       begin                                                                          
-        if Fnc.SysGetAttrValue('LayupThickness') > 3.0 then
+        if LayupThickness > 3.0 then
           result := 'Side-by-Side'
         else
           result := 'Standard';
@@ -385,7 +365,7 @@ begin
          ( Fnc.SysGetAttrValue('EpoxyPlug_CuThin_Process') = 'Buffing + Mirco-Etch + Buffing' )
       then
       begin
-        if Fnc.SysGetAttrValue('LayupThickness') > 4.0 then // 1112 Micro-etch for thick board 
+        if LayupThickness > 4.0 then // 1112 Micro-etch for thick board 
           MessageDlg('Board too thick for Epoxy Plug standard Micro-etch process.', mtWarning, Setof([mbOK]), 0); 
       end;
     end;
@@ -420,7 +400,7 @@ begin
   begin                           
     if FinishGetsCZPreTreat then
     begin                         
-      if Fnc.SysGetAttrValue('LayupThickness') <= 3.20 then
+      if LayupThickness <= 3.20 then
       begin                                 
         AddStep('OffLine_PreTreat', 'OffLine_PreTreatSM01');
         AddStep('CZPretreat', 'CZPretreat01');
@@ -494,13 +474,10 @@ begin
     end;
   end;
 
-  // (804) UV Process Step after Resist for ENIG/ENEPIG
   if ( BoardFinish = 'ENIG' ) or
-     // ( BoardFinish = 'ENIG + OSP' ) or // 1173 Additional Surface Finishing. Selective ENIG + OSP 
      ( ENIGplusOSP ) or
      ( BoardFinish = 'ENEPIG' ) then
     AddStep('UV_Cure', 'UV_Cure01');
-
 end;
                
 procedure MarkingPrintProcess;
@@ -546,7 +523,7 @@ begin
   then
     SelectiveENIG := true;
 
-  if BakingDone = false then
+  if BakingDone = false then                    
     Baking;
 
   if BoardFinish = 'ENEPIG' then
@@ -571,7 +548,7 @@ begin
         if ThicknessOverMask < 2.2 then
         begin
           if ( Fnc.SysGetAttrValue('CZPreTreat') = true ) or  // 1177 Update Soldermask Pre-Treatment
-             ( FinishGetsCZPreTreat ) and ( Fnc.SysGetAttrValue('LayupThickness') <= 3.20 )
+             ( FinishGetsCZPreTreat ) and ( LayupThickness <= 3.20 )
           then
             ENIG_AlkRinseMicroEtch
           else if (( HasSolderMaskType('PSR4000-AM10') ) or ( HasSolderMaskType('PSR4000-BNDG') )) then
@@ -635,7 +612,7 @@ begin
   if (RequiredPlatingThk > 41) and (Fnc.SysGetAttrValue('CuFilledVias') = false) then
     AddStep('Electrolytic_Cu_2', 'Electrolytic_Cu_201');
 
-        
+                                                      
   if  (( Plating_Line = 'PAL4' ) or 
        ( Plating_Line = 'PAL5' ) or 
        ( Plating_Line = 'PAL6' ) or
@@ -653,7 +630,6 @@ begin
     if ( Fnc.SysGetAttrValue('NCRunX2') = true ) or ( Fnc.SysGetAttrValue('EpoxyPlug_CuThin_Process') = 'None' ) then  // 1196 Pre-Photo Cu Thinning
     begin
       AddStep('Pre_Photo_Cu_Thin', 'Pre_Photo_Cu_Thin01');
-      //InProcessCuThk := ConvertStrtoInt( Fnc.SysGetAttrValue('Pre_Photo_CuThin_Spec') );
       UpdateInProcessCuThk(ConvertStrtoInt( Fnc.SysGetAttrValue('Pre_Photo_CuThin_Spec') ));
     end;                                  
   end;
@@ -704,7 +680,7 @@ begin
   begin                   
     AddStep('Panel_EC', 'Panel_EC01');
     
-    if Fnc.SysGetAttrValue('LayupThickness') < 0.60 then  // 1198 OL Process Flow Update 
+    if LayupThickness < 0.60 then  // 1198 OL Process Flow Update 
       AddStep('IL_AOI_OL_ThinPanel', 'IL_AOI_OL_ThinPanel06') // 1108 OL Process Flow Update
     else
       AddStep('OL_AOI', 'OL_AOI06');
@@ -713,13 +689,14 @@ begin
   else
   begin                 
                     
-    if Fnc.SysGetAttrValue('LayupThickness') < 0.60 then   // 1108 OL Process Flow Update  // 1198 OL Process Flow Update 
+    if LayupThickness < 0.60 then   // 1108 OL Process Flow Update  // 1198 OL Process Flow Update 
       AddStep('IL_AOI_OL_ThinPanel', 'IL_AOI_OL_ThinPanel06')
     else
       AddStep('OL_AOI', 'OL_AOI06');
       
     if ((Fnc.SysGetAttrValue('EC_Type') = 'Panel - Before Primary') or (Fnc.SysGetAttrValue('EC_Type') = 'Panel - Before Primary Routing')) then
       AddStep('Panel_EC', 'Panel_EC01');
+      
   end;                    
 
   if Fnc.SysGetAttrValue('MfgPartType') = 'Top' then  //Assuming Subs/Drilled Inners end here
@@ -731,24 +708,13 @@ begin
     if Engx_SMCount > 0 then
       Soldermask;
       
-    if  //(GoldFingerType = 'Lead Line Etching Af Res (Sel)') or 1256
-        (GoldFingerType = 'Au Finger Plate after SM') //or
-        // (GoldFingerType = 'Chamfer Af Res (Sel)')  1256
-    then
+    if (GoldFingerType = 'Au Finger Plate after SM') then
     begin                          
-      Gold_Photo2Plating(1, true, false);
-                
-      {if GoldFingerType = 'Lead Line Etching Af Res (Sel)' then  1256
-      begin   
-        Alk_Lead_Line_Etching;          
-        AddStep('OL_AOI', 'OL_AOI07');
-      end     
-      else}
-        AddStep('OL_AOI', 'OL_AOI07');
+      Gold_Photo2Plating(1, true, false);             
+      AddStep('OL_AOI', 'OL_AOI07');
     end;                                                                                                
 
     if ( BoardFinish = 'ENIG' ) or 
-       //( BoardFinish = 'ENIG + OSP' ) or // 1173 Additional Surface Finishing. Selective ENIG + OSP 
        ( ENIGplusOSP ) or // 1256
        ( BoardFinish = 'ENEPIG' )
     then
@@ -796,5 +762,4 @@ begin
     RouteFlow04;                                                  
 
   end;
-
 End;

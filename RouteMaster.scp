@@ -263,10 +263,10 @@ begin
                                       // 1110 Soldermask Override                                                  
     if ( not ScreenPrintResist ) and (Fnc.SysGetAttrValue('SM_Process') <> 'Spray Coat' ) then    // (760) condition for spray coat PSR-2000, If Board thickness>/= 3.6mm, Error will prompt that the board cannot run Spray coat.
     begin
-      if Fnc.SysGetAttrValue('LayupThickness') >= 3.6 then
+      if LayupThickness >= 3.6 then
       begin
         result := false;                                       
-        ErrorList.Add('Board Thickness: ' + FloatToStr(Fnc.SysGetAttrValue('LayupThickness')) + ' mm is too thick for Spray Coat Soldermask.');
+        ErrorList.Add('Board Thickness: ' + FloatToStr(LayupThickness) + ' mm is too thick for Spray Coat Soldermask.');
       end;  
     end;
     
@@ -556,7 +556,7 @@ begin
     else   
     begin          
       if Fnc.SysGetAttrValue('Min_Drill_Size') > 0 then
-        fnc.SysSetAttrValue('Aspect_Ratio_Val', Round1000(Fnc.SysGetAttrValue('LayupThickness')/Fnc.SysGetAttrValue('Min_Drill_Size')))
+        fnc.SysSetAttrValue('Aspect_Ratio_Val', Round1000(LayupThickness/Fnc.SysGetAttrValue('Min_Drill_Size')))
       else        
         ShowMessage('Warning! : Min_Drill_Size = 0.0');
     end;                       
@@ -583,6 +583,9 @@ begin
   BoardFinish := Fnc.SysGetAttrValue('Board_Finish'); 
   SelectiveGoldType := Fnc.SysGetAttrValue('Sel_Gold_Type'); 
   GoldFingerType := Fnc.SysGetAttrValue('Gold_Fgr_Type');
+  
+  //Fnc.SysGetAttrValue('LayupThickness'ZZZ)
+  LayupThickness := Fnc.SysGetAttrValue('LayupThickness') 
 
   if not VerifyKeyAttributesOK(ErrorList) then  //760 - condition for spray coat PSR-2000, If Board thickness>/= 3.6mm, Error will prompt that the board cannot run Spray coat.
   begin
@@ -713,7 +716,7 @@ begin
   end;
          
   // Max Epoxy Plugging = 5mm
-  if ((Fnc.SysGetAttrValue('EpoxySide') <> 'None') and (Fnc.SysGetAttrValue('LayupThickness') > 5.00)) then
+  if ((Fnc.SysGetAttrValue('EpoxySide') <> 'None') and (LayupThickness > 5.00)) then
     MessageDlg('Max Thickness for Epoxy Plugging is 5.00 MM.', mtWarning, Setof([mbOK]), 0);
                           
   // 757 - Job Type Checking  

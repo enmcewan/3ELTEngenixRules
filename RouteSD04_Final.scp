@@ -58,7 +58,7 @@ begin
   
   thk := 0.0;
   if process = 'epoxy' then  
-    thk := Fnc.SysGetAttrValue('LayupThickness')
+    thk := LayupThickness
   else if process = 'aftermask' then
     thk := ThicknessOverMask;
 
@@ -136,7 +136,7 @@ end;
 procedure Hole_Check_SD;
 begin
 
-  {if Fnc.SysGetAttrValue('LayupThickness') >= 3.5 then    // Change per request from Herole Feb 2016
+  {if LayupThickness >= 3.5 then    // Change per request from Herole Feb 2016
   begin
     StepDeptERP('HOLAN-A');
     StepWCERP('HOLAN-A');
@@ -161,7 +161,7 @@ begin
   if Fnc.SysGetAttrValue('MfgPartType') = 'Top' then
     StepParamERP('Board Thickness', FormatFloat('0.000', ThicknessOverMask));
   else
-    StepParamERP('Board Thickness', FormatFloat('0.000', Fnc.SysGetAttrValue('LayupThickness'))); 
+    StepParamERP('Board Thickness', FormatFloat('0.000', LayupThickness)); 
 end;
 
 procedure Hole_Check_BDB4M_SD;
@@ -169,7 +169,7 @@ begin
   StepDeptERP('HOLCD-A');
   StepWCERP('HOLCD-A0');
   
-  StepParamERP('Board Thickness', FormatFloat('0.000', Fnc.SysGetAttrValue('LayupThickness'))); 
+  StepParamERP('Board Thickness', FormatFloat('0.000', LayupThickness)); 
 end; 
                                 
 procedure HAL_SD;
@@ -271,7 +271,7 @@ begin
   begin
     if (
         (Fnc.SysGetAttrValue('Q1000') = true) or
-        (Fnc.SysGetAttrValue('LayupThickness') <= 1.2) or
+        (LayupThickness <= 1.2) or
         ((Fnc.SysGetAttrValue('PCB_Length') <= 150) and (Fnc.SysGetAttrValue('PCB_Width') <= 150))
        )
     then
@@ -440,7 +440,7 @@ end;
 
 procedure Final_Rinse_SD;
 begin
-  if ((BoardFinish = 'Immersion Tin') and (Fnc.SysGetAttrValue('LayupThickness') > 4.0)) then
+  if ((BoardFinish = 'Immersion Tin') and (LayupThickness > 4.0)) then
   begin
     StepDeptERP('WASHS-A');
     StepWCERP('WASHS-A');
@@ -558,7 +558,7 @@ begin
     'PIECE V-CUT'      : begin StepDeptERP('V-CUT-D'); StepWCERP('V-CUT-D'); end;
     'SHEARING V-CUT'   : begin StepDeptERP('V-CUT-A'); StepWCERP('V-CUT-A'); end;
     'JUMP V-CUT'       : begin StepDeptERP('V-CUT-B0'); StepWCERP('V-CUT-B0'); end;
-    'N-V-CUT'          : if Fnc.SysGetAttrValue('LayupThickness') < 1.0 then
+    'N-V-CUT'          : if LayupThickness < 1.0 then
                          begin
                            StepDeptERP('V-CUT-B0');
                            StepWCERP('V-CUT-B0');
@@ -715,7 +715,7 @@ begin
   if CustCode_Rule('Customer') = 'RB' then
     StepInstructionERP('JETMK001'); // REMARKS :MARK T" OR " MARK "T" & "H""; REFER TO CID.
 
-  if ((BoardFinish = 'Immersion Tin') and (Fnc.SysGetAttrValue('LayupThickness') > 4)) then
+  if ((BoardFinish = 'Immersion Tin') and (LayupThickness > 4)) then
        StepInstructionERP('JETMK006'); // Ensure no scratches on the ImmSn surface
 end;
 
@@ -739,7 +739,7 @@ begin
   StepDeptERP('PACKN-A');
   StepWCERP('PACKN-A');
 
-  if ((CustCode_Rule('Customer') = 'BA') and (Fnc.SysGetAttrValue('LayupThickness') <= 1.0)) then
+  if ((CustCode_Rule('Customer') = 'BA') and (LayupThickness <= 1.0)) then
     StepInstructionERP('PAC0010'); // PUT STIFFENER TO PREVENT WARPAGE.
 end;
 

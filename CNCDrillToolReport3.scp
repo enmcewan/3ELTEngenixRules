@@ -152,7 +152,7 @@ begin
         if Fnc.SysGetLayerAttrValue(DrillName, 'DrillDefID') = 1 then
           WorkSheet.Cells[ToolRow,10].Value := PressThickness
         else
-          WorkSheet.Cells[ToolRow,10].Value := Fnc.SysGetAttrValue('LayupThickness');
+          WorkSheet.Cells[ToolRow,10].Value := LayupThickness;
       end
       else
         WorkSheet.Cells[ToolRow,10].Value := DSThicknessB4Plating;

@@ -43,13 +43,13 @@ end;
 procedure Pre_Oxide_Baking_SD;
 begin
   StepDeptERP('OXBAK-A');
-  StepWCERP('OXBAK-A');
+  StepWCERP('OXBAK-A');                                  
 
   if (( HasMultipleSubAssemblies ) and ( MatPreOxide24HrBake )) then
     StepParamERP('Remarks', '24 Hrs Baking');
 
   StepParamERP('Bake Reason', 'SP Material');
-
+                                     
   //if Fnc.SysRouteInsGetStepNum = 1 then  // 1471 QR Code information info update
   //  InsertQRInfoAtStep1;
 end;
@@ -973,7 +973,7 @@ begin
   if ((AOIforCMK = true) and (CustCode_Rule('Customer') = 'FA')) then
     StepInstructionERP('INSOL010'); // - 100% AOI
 
-  StepParamERP('Thickness', FormatFloat('0.000', Fnc.SysGetAttrValue('LayupThickness')));
+  StepParamERP('Thickness', FormatFloat('0.000', LayupThickness));
   StepParamERP('Annular', Fnc.SysGetAttrValue('Annular'));
   StepParamERP('X Out', Fnc.SysGetAttrValue('X_Out'));
 
@@ -1010,7 +1010,7 @@ begin
 
   if (
       ((BoardFinish = 'Immersion Tin') or (ProdCodeLX)) and
-      (Fnc.SysGetAttrValue('LayupThickness') <= 3.0)
+      (LayupThickness <= 3.0)
      )
   then
     StepInstructionERP('IMTIN002'); // REMARK: Manual masking of resist alignment pads.”
@@ -1167,7 +1167,7 @@ var
 begin
 
   if Fnc.SysGetAttrValue('LayerCount') > 2 then // 2 Layer Fixes
-    Thickness := PressThickness //Fnc.SysGetAttrValue('LayupThickness');   987 Wrong Desmear Flow
+    Thickness := PressThickness //LayupThickness;   987 Wrong Desmear Flow
   else
     Thickness := DSThicknessB4Plating;
 
@@ -1320,7 +1320,7 @@ begin
   StepParamERP('Core Material', Fnc.SysGetAttrValue('CoreMat'));
 
   if Fnc.SysGetAttrValue('LayerCount') > 2 then // 2 Layer Fixes
-    StepParamERP('Thickness', FormatFloat('0.000', Fnc.SysGetAttrValue('LayupThickness')));
+    StepParamERP('Thickness', FormatFloat('0.000', LayupThickness));
   else
     StepParamERP('Thickness', FormatFloat('0.000', DSThicknessB4Plating));
 
@@ -2138,7 +2138,7 @@ begin
   if Fnc.SysGetAttrValue('LayerCount') > 2 then
     GLB_NC_Thickness := PressThickness
   else
-    GLB_NC_Thickness := Fnc.SysGetAttrValue('LayupThickness');
+    GLB_NC_Thickness := LayupThickness;
 
   if NCRUN = 1 then
     GLB_Cur_Cu_Ratio := Fnc.SysGetAttrValue('Cu_Ratio')
@@ -2424,7 +2424,7 @@ begin
   if NCRun = 1 then
   begin 
     if Fnc.SysGetAttrValue('Electrolytic_Cu_Line') = 'Auto' then  // 843 Process Override Rule
-    begin
+    begin                             
       if (CustCode_Rule('Customer') = 'GM') and (Fnc.SysGetAttrValue('Test_ID') <> 'None') then
       begin
         Plating_Line := GetCuPlat_GM;
@@ -2629,13 +2629,13 @@ begin
       if (( Fnc.SysGetAttrValue('BlindVias') = true ) and ( Fnc.SysGetAttrValue('NCRunX2') = true ) and  ( NCRun = 1 )) or
          (( Fnc.SysGetAttrValue('BlindVias') = true ) and ( Fnc.SysGetAttrValue('NCRunX2') = false ))
       then
-      begin
+      begin                              
         if Fnc.SysGetAttrValue('Laser_Check_Hole') = 0.0 then
           ShowMessage('ERROR! : Laser Accuracy Check Hole is ZERO');
 
         InsertViaTypeAttributes;
 
-        if CustCode_Rule('Customer') <> 'FA' then
+        //if CustCode_Rule('Customer') <> 'FA' then  2364 - Remove all FA restrictions for Step Attributes 
           InsertBlindViaAttributes;
       end
       else
@@ -2645,12 +2645,12 @@ begin
           if NCRun = 1 then
             StepParamERP('Thickness Before Plate', FormatFloat('0.000', PressThickness));
           else if NCRun > 1 then
-            StepParamERP('Thickness Before Plate', FormatFloat('0.000', Fnc.SysGetAttrValue('LayupThickness')));
+            StepParamERP('Thickness Before Plate', FormatFloat('0.000', LayupThickness));
         end
         else
           StepParamERP('Thickness Before Plate', FormatFloat('0.000', DSThicknessB4Plating));
       end;
-
+               
      // IES LOGIC = Level[VIA_TYPE$]="BLIND AND BURIED" OR LPTH? doens;t seem to make sense LPTH = Drilled = everything that gets plated???
 
      // Fix for Surface Plating not being set until Capped Via step:
@@ -2675,10 +2675,10 @@ begin
           CalcAndInsert_DECUTHK(true, 1, '');
       end;
 
-      if Fnc.SysGetAttrValue('BlindVias') = true then
+      if Fnc.SysGetAttrValue('BlindVias') then
       begin
-      if CustCode_Rule('Customer') <> 'FA' then
-        begin
+      //if CustCode_Rule('Customer') <> 'FA' then
+        //begin
           if NCRun = 2 then
           begin
             StepParamERP('2nd Min Drill Size', Fnc.SysGetAttrValue('Min_Drill_Size_2'));
@@ -2692,14 +2692,14 @@ begin
             StepParamERP('Abs Min PTH', Fnc.SysGetAttrValue('Abs_Min_Th')); // 1513
           end
 
-        end;
+        //end;
       end
       else
       begin
-        if CustCode_Rule('Customer') <> 'FA' then
-        begin
+        //if CustCode_Rule('Customer') <> 'FA' then
+        //begin
           if NCRun = 2 then
-          begin
+          begin     
             StepParamERP('2nd Min Drill Size', Fnc.SysGetAttrValue('Min_Drill_Size_2'));
 
             if ((Fnc.SysGetAttrValue('Ave_Min_Th_2') > 0 ) or (Fnc.SysGetAttrValue('Abs_Min_Th_2') > 0 )) then
@@ -2722,12 +2722,12 @@ begin
               StepParamERP('Abs Max PTH', Fnc.SysGetAttrValue('Abs_Max_Th'));
             end;
           end;
-        end;
+        //end;
       end;
       //end;
 
-      if CustCode_Rule('Customer') <> 'FA' then
-      begin
+      //if CustCode_Rule('Customer') <> 'FA' then
+      //begin
         if Fnc.SysGetAttrValue('Surf_Plt_Spec') > 0 then
           StepParamERP('Surface Plating Spec', Fnc.SysGetAttrValue('Surf_Plt_Spec'));
 
@@ -2743,7 +2743,7 @@ begin
           StepParamERP('PTH Cu Plating Area', Fnc.SysGetAttrValue('PTH_CuPlt_Area'));
           StepParamERP('Cu Ratio', Fnc.SysGetAttrValue('Cu_Ratio'));
         end;
-      end;
+      //end;
 
       if ((CustCode_Rule('Customer') = 'GM') and (Fnc.SysGetAttrValue('Test_ID') <> 'None')) then
       begin
@@ -2755,8 +2755,8 @@ begin
           ShowMessage('ERROR! : Test ID has no Value');
       end;
 
-      if CustCode_Rule('Customer') <> 'FA' then
-      begin
+      //if CustCode_Rule('Customer') <> 'FA' then
+      //begin
         if Fnc.SysGetAttrValue('Min_Surf_Cu') > 0 then
           StepParamERP('Min Surface Cu', Fnc.SysGetAttrValue('Min_Surf_Cu'));
 
@@ -2772,7 +2772,7 @@ begin
           if Fnc.SysGetAttrValue('ApplicationSP') <> 'NONE' then
             StepParamERP('Specific Application', Fnc.SysGetAttrValue('ApplicationSP'));
         end;
-      end;
+      //end;
                                               
     end; // End of Insert Attributes etc for standard (single step) plating
 
@@ -2797,16 +2797,9 @@ begin
               (Eng_JobType = 'Sample') and
               ((CustCode_Rule('Customer') = 'BF') or (CustCode_Rule('Customer') = 'BC'))
              )
-          then
+          then                  
             StepInstructionERP('DRILL011'); // REMARK: OSP + 2X DRILLING.
-
-        {  Removed per email from alison 10/23
-          NCX2_OSP := false;
-          ...
-        }
-
-        end;
-
+        end; 
       end;
     end;
 
@@ -2826,8 +2819,6 @@ begin
 
   StepParamERP('Panel Size', Fnc.SysGetAttrValue('Panel_Size'));  // 2201 Electrolytic Cu Info
 
-  //if Plating_Line = 'FILL_VIA' then  // 2202 Fill Via plating Spec   Duplicate - added earlier.
-  //  StepParamERP('Dimple Spec', Fnc.SysGetAttrValue('Fill_Via_DimpleSpec'));
 End;
 
 Procedure Electrolytic_Cu_1_SD;

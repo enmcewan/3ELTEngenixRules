@@ -75,7 +75,7 @@ begin
   //MinRoutDiam := GetRoutSmallestDiameter;
   
   MinRoutDiam := Fnc.SysGetAttrValue('Rout_MinBitSize');
-  BoardThickness := Fnc.SysGetAttrValue('LayupThickness');
+  BoardThickness := LayupThickness;
   RoutStackTable := Fnc.CustomTableGet('RoutStackHeight');
 
   // get the name of the Diameter column

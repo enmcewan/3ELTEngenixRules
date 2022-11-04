@@ -173,7 +173,7 @@ begin
   else
   begin
     if Fnc.SysGetAttrValue('LayerCount') > 2 then
-      thickness := Fnc.SysGetAttrValue('LayupThickness')
+      thickness := LayupThickness
     else                 
       thickness := DSThicknessB4Plating;
                                           
@@ -209,7 +209,7 @@ begin
   else              
   begin
     if Fnc.SysGetAttrValue('LayerCount') > 2 then
-      thickness := Fnc.SysGetAttrValue('LayupThickness')
+      thickness := LayupThickness
     else                 
       thickness := DSThicknessB4Plating;
       
@@ -512,9 +512,9 @@ begin
     begin
       AddStep('KK_Drill', 'KK_Drill01');
 
-      if Fnc.SysGetAttrValue('LayupThickness') > 0.6 then
+      if LayupThickness > 0.6 then
       begin
-        if Fnc.SysGetAttrValue('LayupThickness') > 3.5 then
+        if LayupThickness > 3.5 then
           AddStep('Beveling', 'Beveling01')
         else
           AddStep('ManualBeveling', 'ManualBeveling01');

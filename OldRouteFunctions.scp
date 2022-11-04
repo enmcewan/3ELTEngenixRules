@@ -1769,7 +1769,7 @@ begin
       if Fnc.SysGetAttrValue('MfgPartType') = 'Top' then
         Fnc.SysSetAttrValue('Press_Thickness', PressThickness)
       else                      
-        Fnc.SysSetAttrValue('Press_Thickness', Fnc.SysGetAttrValue('LayupThickness'));
+        Fnc.SysSetAttrValue('Press_Thickness', LayupThickness);
 
       //ShowMessage('Pressed Thickness = ' + FloatToStr(PressThickness));
       Break;
@@ -2089,7 +2089,7 @@ var
   firstPltThk : float;
   secPltThk : float;
 begin
-  result := Fnc.SysGetAttrValue('LayupThickness');
+  result := LayupThickness;
   Fnc.SysGetCopperValues(True, True, baseCuThk, firstPltThk, secPltThk);
   result := result - firstPltThk - secPltThk;
   Fnc.SysGetCopperValues(false, True, baseCuThk, firstPltThk, secPltThk);
@@ -3672,13 +3672,13 @@ begin
         if NCRun <= 1 then
           result := Fnc.SysGetAttrValue('Press_Thickness') 
         else if NCRun > 1 then
-          result := Fnc.SysGetAttrValue('LayupThickness'); 
+          result := LayupThickness; 
       end; 
       else
         result := DSThicknessB4Plating;
     end               
     else
-      result := Fnc.SysGetAttrValue('LayupThickness'); 
+      result := LayupThickness; 
 end;
 
 function PhotoBoardType : string;

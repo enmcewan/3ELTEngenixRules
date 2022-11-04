@@ -165,7 +165,7 @@ begin
   // 2199 IL AOI Step Additional Info
   StepParamERP('Min Air Gap', Fnc.SysGetAttrValue('Air_Gap'));
   StepParamERP('Min Line Width', Fnc.SysGetAttrValue('Line_Width')); 
-  StepParamERP('Thickness', FormatFloat('0.000',Fnc.SysGetAttrValue('LayupThickness')));
+  StepParamERP('Thickness', FormatFloat('0.000',LayupThickness));
 end;
 
 procedure IL_PEP_SD;  // 1229 PEP Flow option for Sub-assembly build. 

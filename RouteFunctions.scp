@@ -28,7 +28,7 @@ Var
   AOIforCMK : boolean;                         
   NCRun : integer;
   MicroEtchDone : boolean;
-  TopFirstPlatingUM : float;
+  TopFirstPlatingUM : float;       
   BotFirstPlatingUM : float;          
   Baking_Mtl : string;                       
   OLPhotoLineforDES : string;
@@ -73,6 +73,9 @@ Var
   SelectiveGoldType,
   GoldFingerType,
   Plating_Line : string;
+  
+  // Fnc.SysGetAttrValue('LayupThickness'ZZZ)
+  LayupThickness: float;
   
 procedure StepParam(Source: string; ParamCode: string; ParamValue: string) // Added with 2269
 begin
@@ -1798,7 +1801,7 @@ begin
     end; 
   end                               
   else
-    PressThickness := Fnc.SysGetAttrValue('LayupThickness');
+    PressThickness := LayupThickness;
     
   Fnc.SysSetAttrValue('Press_Thickness', PressThickness);
                                                                   
@@ -2107,7 +2110,7 @@ var
   firstPltThk : float;
   secPltThk : float;
 begin
-  result := Fnc.SysGetAttrValue('LayupThickness');
+  result := LayupThickness;
   Fnc.SysGetCopperValues(True, True, baseCuThk, firstPltThk, secPltThk);
   result := result - firstPltThk - secPltThk;
   Fnc.SysGetCopperValues(false, True, baseCuThk, firstPltThk, secPltThk);
@@ -3690,13 +3693,13 @@ begin
         if NCRun <= 1 then
           result := PressThickness 
         else if NCRun > 1 then
-          result := Fnc.SysGetAttrValue('LayupThickness'); 
+          result := LayupThickness; 
       end; 
       else
         result := DSThicknessB4Plating;
     end               
     else
-      result := Fnc.SysGetAttrValue('LayupThickness'); 
+      result := LayupThickness; 
 end;
 
 function PhotoBoardType : string;

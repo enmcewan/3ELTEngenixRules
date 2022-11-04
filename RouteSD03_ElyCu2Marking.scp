@@ -92,7 +92,7 @@ begin
 
   if ( PhotoProcess <> 'PForm_SBS' ) and (PhotoProcess <> 'IL_Photo_OL_ThinPanel') then    // 1108 OL Photo Process Update  
   begin
-    if Fnc.SysGetAttrValue('LayupThickness') >= 4.2 then // 793 Update Photo process rule
+    if LayupThickness >= 4.2 then // 793 Update Photo process rule
       StepWCERP('EXPOL-A7');
     else
       begin
@@ -145,7 +145,7 @@ begin
 
       StepParamERP('Land Area', Fnc.SysGetAttrValue('Land_Area'));
       StepParamERP('Annular', Fnc.SysGetAttrValue('Annular'));
-      StepParamERP('Design Thickness', FormatFloat('0.000', Fnc.SysGetAttrValue('LayupThickness')));
+      StepParamERP('Design Thickness', FormatFloat('0.000', LayupThickness));
 
       if Fnc.SysGetAttrValue('Abs_Min_Th') > 0 then
         Fnc.SysSetAttrValue('Min_Hole_Size', Min_Drill - (Fnc.SysGetAttrValue('Abs_Min_Th')/1000*2 ));
@@ -443,8 +443,8 @@ begin
       (Fnc.SysGetAttrValue('Panel_Width') < 200) or
       (Fnc.SysGetAttrValue('Panel_Length') > 609) or
       (Fnc.SysGetAttrValue('Panel_Length') < 250) or
-      (Fnc.SysGetAttrValue('LayupThickness') > 5.00) or  // Epoxy Plugging Max Thickness Change
-      (Fnc.SysGetAttrValue('LayupThickness') < 0.40) or
+      (LayupThickness > 5.00) or  // Epoxy Plugging Max Thickness Change
+      (LayupThickness < 0.40) or
       (Fnc.SysGetAttrValue('BlindVias') = true) or
       (Fnc.SysGetAttrValue('BuriedVias') = true) or
       (Fnc.SysGetAttrValue('CappedVia') = true)
@@ -457,8 +457,8 @@ begin
       (Fnc.SysGetAttrValue('Panel_Width') < 200) or
       (Fnc.SysGetAttrValue('Panel_Length') > 620) or
       (Fnc.SysGetAttrValue('Panel_Length') < 200) or
-      (Fnc.SysGetAttrValue('LayupThickness') > 5.00) or  // Epoxy Plugging Max Thickness Change
-      (Fnc.SysGetAttrValue('LayupThickness') < 0.40)
+      (LayupThickness > 5.00) or  // Epoxy Plugging Max Thickness Change
+      (LayupThickness < 0.40)
      )
   then                                        
     Noda := false;
@@ -487,7 +487,7 @@ begin
     StepParamERP('Plug to Non-plug', Fnc.SysGetAttrValue('EpoxyPlug_PlugToNonPlugSpacing'));
 
   // 2203 Epoxy Plugging additional Info 
-  StepParamERP('Thickness', FormatFloat('0.000', Fnc.SysGetAttrValue('LayupThickness')));
+  StepParamERP('Thickness', FormatFloat('0.000', LayupThickness));
   StepParamERP('Panel Size', Fnc.SysGetAttrValue('Panel_Size'));
   Insert_MinHole_Aspect('Epoxy');
 end;
@@ -756,7 +756,7 @@ begin
     
   // 927 - Add Final OL Cu thickness, board thickness and panel size is Resist step
   StepParamERP('Cu Thickness', InProcessCuThk); 
-  StepParamERP('Board Thickness', FormatFloat('0.000', Fnc.SysGetAttrValue('LayupThickness'))); 
+  StepParamERP('Board Thickness', FormatFloat('0.000', LayupThickness)); 
   StepParamERP('Panel Size', IntToStr(Fnc.SysGetAttrValue('Panel_Length')) + ' X ' + IntToStr(Fnc.SysGetAttrValue('Panel_Width'))); 
   
   AddBoardFinishAsAttribute; // 1223 Additional Surface Finish info under Electrolytic Cu step  // 1257 Add to SM
@@ -1420,7 +1420,7 @@ begin
   StepParamERP('Stack Height', Fnc.SysGetAttrValue('Stack_Hgt')); 
   StepParamERP('Entry Sheet Material', 'Aluminum');  
   StepParamERP('Material Tg', Fnc.SysGetAttrValue('TG_Class')); 
-  StepParamERP('Thickness', FormatFloat('0.000', Fnc.SysGetAttrValue('LayupThickness')));  
+  StepParamERP('Thickness', FormatFloat('0.000', LayupThickness));  
   StepParamERP('Drill Side', DrillSide(Fnc.SysGetAttrValue('Drill_Side')));
   
   if SubIsSandwich then                  
