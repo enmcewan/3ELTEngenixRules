@@ -71,9 +71,12 @@ begin
       
     if ( SandwichCore ) and ( not Fnc.SysGetAttrValueTopLevel('Alt_PEP_Process') ) then // 1470 
       StepParamERP('4 Hole Alignment', 'X: ' + FloatToStr(Fnc.SysGetAttrValue('FourHoleAlign_X')) + 'mm / Y: ' +
-                                                                  FloatToStr(Fnc.SysGetAttrValue('FourHoleAlign_Y')) + 'mm'
-                                                                );
-  end                                         
+                                               FloatToStr(Fnc.SysGetAttrValue('FourHoleAlign_Y')) + 'mm' );
+                                                                
+    // 2367 Additional Attribute
+    StepParamERP('CAD File Name', Fnc.SysGetAttrValue('CADFileName'));
+  
+  end
   else //Dummy Core
   begin                                                                                          
     StepDeptERP('EXPIL-D');
@@ -118,7 +121,7 @@ begin
   else
   begin  // Dummy Core
     StepDeptERP('DESIL-D');
-    StepWCERP('DESIL-E');
+    StepWCERP('DESIL-E');      
   end;
 end;
                                                                                                                               

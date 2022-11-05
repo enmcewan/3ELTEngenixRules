@@ -20,16 +20,16 @@ Var
   BackDrillDone : boolean;         
   ImpedanceDone : boolean;
   PressThickness : float;                                             
-  VCutDone : boolean;         
+  VCutDone : boolean;          
   //ImmersionSilverDone: boolean;   1256
   VCUT_TYPE : string;                           
   BaseCuTopUM : integer;           
   BaseCuBotUM : integer;               
   AOIforCMK : boolean;                         
-  NCRun : integer;
+  NCRun : integer;                                                                                 
   MicroEtchDone : boolean;
   TopFirstPlatingUM : float;       
-  BotFirstPlatingUM : float;          
+  BotFirstPlatingUM : float;             
   Baking_Mtl : string;                       
   OLPhotoLineforDES : string;
                                               
@@ -292,7 +292,7 @@ end;
 function LayupCoreCount : integer;
 var
   SubList : TStringList;
-begin
+begin                    
   result := 0;
   SubList := Fnc.SysGetItemAttrValueList('ItemMatrlDesc', cStackupMfgSubAssy  + ';' + cStackupMfgSubLevel, 0, false);
   result := SubList.Count;
@@ -300,7 +300,7 @@ end;
 
 procedure GetCopperInfo;
 var
-  BaseCopper: string;
+  BaseCopper: string;                                 
   FirstPlating: string;
   SecondPlating: string;         
   Msg: string;
@@ -1090,12 +1090,17 @@ Var
 begin
   result := false;
   MatPropertyList := Fnc.SysStackupGetMaterialList(0, False, MatType, MatUProp);
- // ShowMessage(MatPropertyList.Text);
-  for i := 0 to MatPropertyList.Count-1 do
+  //ShowMessage(MatPropertyList.Text); 
+  
+  if MatPropertyList.Count > 0 then
   begin
-    if ((MatPropertyList.strings[0] = MatUPropVal) or (MatPropertyList.strings[MatPropertyList.Count-1] = MatUPropVal)) then
-      result := true;
+    for i := 0 to MatPropertyList.Count - 1 do
+    begin                
+      if ((MatPropertyList.strings[0] = MatUPropVal) or (MatPropertyList.strings[MatPropertyList.Count-1] = MatUPropVal)) then
+        result := true;
+    end; 
   end;
+  
 end;
 
 function ShearingRequired : boolean;
@@ -1109,7 +1114,7 @@ begin
   if Fnc.SysGetAttrValue('CappedVia') = true then
       result := true;
 
-  if (
+  if (                             
       (Fnc.SysGetAttrValue('Shear_Length') = Fnc.SysGetAttrValue('Panel_Length')) and
       (Fnc.SysGetAttrValue('Shear_Width') = Fnc.SysGetAttrValue('Panel_Width'))
      )
@@ -1790,14 +1795,14 @@ begin
     ReqTable.First;
     while not ReqTable.EOF do
     begin
-  
+                                
       if ReqTable.FieldByName('LayerNameTop').AsString = 'Press Thickness' then
-      begin        
+      begin                 
         PressThickness := ReqTable.FieldByName('GapReq').AsFloat;
         Break;
       end;
   
-      ReqTable.next; //
+      ReqTable.next; //                             
     end; 
   end                               
   else
@@ -2745,6 +2750,11 @@ begin
   matPOBList.Free;
 end;
 
+function ParentIsASubAssembly: boolean;
+begin
+  if pos('SubAssembly', Fnc.SysGetAttrValueParent('ItemMatrlDesc')) > 0 then result := true else result := false; 
+end;
+
 function HasN13Material : boolean; // Mech Blind Vias
 var
   i : integer;
@@ -2876,7 +2886,7 @@ begin
   result := false;   // No Sub-Assemblies
   subCount:= 0;
   ValueList := TStringList.Create;
-                  
+                               
   SubList := Fnc.SysGetItemAttrValueList('ItemMatrlDesc;ItemLevel', cStackupMfgTopLevel + ';' + cStackupMfgSubAssy, -2, false);
   
   if SubList.Count > 0 then
@@ -2947,7 +2957,7 @@ begin
   
   if ( AnsiPos('x', ParentLevelList.strings[0]) ) or ( AnsiPos('x', ParentLevelList.strings[ParentLevelList.Count -1]) ) then
     Result := true;
-
+                                   
   //ShowMessage(Result);
   SubList.Free;
 end;
@@ -2963,9 +2973,9 @@ begin
   if SubList.Count >= 2 then
     Result := true;
 
-  //ShowMessage(Result);
+  //ShowMessage(Result);                            
 
-end;
+end;                  
 
 function SubParentIsSequential : boolean;  // Thin Core Remarks
 var
@@ -2975,25 +2985,29 @@ begin
 
   SubList := Fnc.SysGetItemAttrValueList('ItemMatrlDesc', cStackupMfgSubAssy, -1, true);
   //ShowMessage(SubList.Text);
-  if SubList.Count >= 2 then
-    Result := true;
-
-  //ShowMessage(Result);
+  if ParentIsASubAssembly then
+  begin
+   if SubList.Count > 2 then result := true
+  end
+  else
+    if SubList.Count >= 2 then result := true 
+                                                          
+  //ShowMessage(ParentIsSequential);   
 
 end;
 
 function IsFirstSub(mfgPartName: string) : boolean;  // Thin Core Remarks
 var
   SubList : TStringList;
-begin
+begin           
   result := false;   // No Sub-Assemblies
-
+                                            
   SubList := Fnc.SysGetItemAttrValueList('ItemMatrlDesc', cStackupMfgSubAssy, -1, true);
   //ShowMessage(SubList.Text);
   if SubList.Count >= 1 then 
   begin                                                          
     if SubList.Strings[0] = mfgPartName then
-      result := true;
+      result := true;                                     
   end;
   //ShowMessage(Result);
 
@@ -3008,17 +3022,20 @@ begin
   //ShowMessage(SubList.Text);
   if SubList.Count > 1 then
   begin
+    if not ParentIsASubAssembly then
+    begin
     if ( AnsiPos('SubAssembly', SubList.Strings[0]) > 0 ) and
        // cores will be here, doesn't matter how many 
        ( AnsiPos('SubAssembly', SubList.Strings[SubList.Count -1]) > 0 ) then
       result := true;
+    end;
       
     if ( AnsiPos('InnerLayer', SubList.Strings[0]) > 0 ) and
        ( AnsiPos('SubAssembly', SubList.Strings[1]) > 0 ) and 
        ( AnsiPos('InnerLayer', SubList.Strings[SubList.Count -1]) > 0 ) then
       result := true;
   end;
-    
+                                   
   SubList.Free;                         
 end;
                    
@@ -3077,9 +3094,9 @@ begin
                                                  
   if not (( Fnc.SysGetAttrValue('Seq_Build') ) or ( ( Fnc.SysGetAttrValue('MfgPartType') = 'Top' ) and ( SandwichCore ) )) and 
           ( not Fnc.SysGetAttrValueTopLevel('Alt_PEP_Process') )        
-  then  
+  then                        
     result := true;               
-end;                       
+end;                                     
 
 procedure AddSubsAndInnersAtStep;  // 1229 PEP Flow option for Sub-assembly build. 
 var
@@ -3379,7 +3396,7 @@ begin
   matFamilyList.Free;
 end;
 
-
+                  
 function BakeB4CNCDrill : boolean; // 1106 Baking Before NC
 var
   i : integer;
@@ -3387,7 +3404,7 @@ var
 begin
   result := false;
 
-  matFamilyList := Fnc.SysStackupGetMaterialList(0, True, 'PP/Filler;Core', 'User_PreCNCBake');
+  matFamilyList := Fnc.SysStackupGetMaterialList(0, True, 'PP/Filler', 'User_PreCNCBake');  // 2368 Rule for PreCNCBake Rule
   //ShowMessage(matFamilyList.Text);
 
   for i := 0 to matFamilyList.Count - 1 do

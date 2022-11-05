@@ -26,7 +26,7 @@ begin
   begin
     if ((Fnc.SysGetAttrValue('Panel_Length_Press') = 0) or (Fnc.SysGetAttrValue('Panel_Width_Press') = 0)) then
     begin                      
-      Result := false;                     
+      Result := false;                             
       ErrorList.Add('Panel Length Press or Panel Width Press');
     end;                
   end;                        
@@ -364,6 +364,7 @@ begin
   GetPartPPGFamilies;                 
   SetTopBotLayerNames;
   TotalThickestCuUM;
+  LayupThickness := Fnc.SysGetAttrValue('LayupThickness');
   SetThicknessRequirements;
   GET_VCUT_TYPE;
   GetCopperInfo;
@@ -513,7 +514,7 @@ begin
       Fnc.SysSetAttrValue('Min_Gap', Fnc.SysGetAttrValue('Air_Gap'))
     else
       Fnc.SysSetAttrValue('Min_Gap', Fnc.SysGetAttrValue('Min_PTrace_Gap'));
-
+                                
     if (Fnc.SysGetAttrValue('Air_Gap') - Fnc.SysGetAttrValue('Overall_Blown_Val')) < Fnc.SysGetAttrValue('Min_PTrace_Gap') then
       Fnc.SysSetAttrValue('Air_Gap_Blown', Fnc.SysGetAttrValue('Air_Gap') - Fnc.SysGetAttrValue('Overall_Blown_Val'))
     else
@@ -553,7 +554,7 @@ begin
   end;
                                                          
   if FindNumberOfDrillFiles > 0 then
-  begin       
+  begin              
     if Fnc.SysGetAttrValue('LayerCount') > 2 then
     begin
       if Fnc.SysGetAttrValue('Min_Drill_Size') > 0 then
@@ -591,9 +592,9 @@ begin
   BoardFinish := Fnc.SysGetAttrValue('Board_Finish'); 
   SelectiveGoldType := Fnc.SysGetAttrValue('Sel_Gold_Type'); 
   GoldFingerType := Fnc.SysGetAttrValue('Gold_Fgr_Type');
-  
+                              
   //Fnc.SysGetAttrValue('LayupThickness'ZZZ)
-  LayupThickness := Fnc.SysGetAttrValue('LayupThickness') 
+  LayupThickness := Fnc.SysGetAttrValue('LayupThickness'); 
 
   if not VerifyKeyAttributesOK(ErrorList) then  //760 - condition for spray coat PSR-2000, If Board thickness>/= 3.6mm, Error will prompt that the board cannot run Spray coat.
   begin
@@ -606,7 +607,7 @@ begin
   else
   begin
     Fnc.SysSetAttrValue('Rout_LengthPCB', 0.0);
-
+                           
     if MfgPartType = 'Top' then
       Fnc.SysSetAttrValue('Rout_LengthPCB', (Fnc.SysGetAttrValue('PCB_Length') + Fnc.SysGetAttrValue('PCB_Width')) * 2);
 

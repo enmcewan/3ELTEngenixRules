@@ -243,7 +243,7 @@ begin
   AltLine:= '';
 
   StepDeptERP('PBOOK-A');
-  StepWCERP('PBOOK-C0');
+  StepWCERP('PBOOK-C0');               
 
   Material := TStringList.Create;
   Material.add('Prepreg');
@@ -251,6 +251,9 @@ begin
   Material.add('Core');
 
   StepMaterialsERP(Material, 1);
+  
+  // 2367 Additional Engenix Attribute
+  StepParamERP('PCB Orientation', MfgAttrTL('PCBOrientation'));
 end;
 
 procedure Riveting_SD;
@@ -261,7 +264,7 @@ begin
   if Fnc.SysGetAttrValue('Rivet_Thk') <> '' then
     StepParamERP('Rivet Thickness', Fnc.SysGetAttrValue('Rivet_Thk'));
 
-  if NumOfCores > 8 then
+  if NumOfCores > 8 then           
     StepInstructionERP('PBOOK013'); // 4 Rivet
   else
     StepInstructionERP('PBOOK012'); // 2 Rivet
