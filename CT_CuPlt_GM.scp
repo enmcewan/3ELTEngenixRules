@@ -24,12 +24,13 @@ begin
     
   ProdCode := ProdCodeLTC;
                                   
-  if UpperCase(TestId) = 'Q30252 (CLASS C)' then
+  // 2363 Process Step Update  - Remove PAL3
+  {if UpperCase(TestId) = 'Q30252 (CLASS C)' then
   begin
     if LowerCase(ProdCode) = 'ls' then
       Result := 'PAL3';
-  end;                                
-
+  end; }                               
+              
   if Result = '' then
   begin
     Result := 'NO_PLATING_LINE';

@@ -4,7 +4,7 @@
 //ScriptType=0
 //ScriptGroup=HCS
 //HeaderImportExport<--
-uses                                                                                                                                                                                          
+uses                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           
   Event_RouteGenLibrary, //Route System Scripts
   Eng_RouteFunctions, Eng_DrillFunctions,    //Route System Functions
   RouteFunctions,
@@ -17,7 +17,7 @@ begin
   Result := true;
 
   if ((Fnc.SysGetAttrValue('Panel_Length') = 0) or (Fnc.SysGetAttrValue('Panel_Width') = 0)) then                           
-  begin        
+  begin                       
     Result := false;                
     ErrorList.Add('Panel Length or Panel Width');
   end;
@@ -326,7 +326,7 @@ begin
   begin
     Result := false;
     ErrorList.Add('PCB_Width for Top Level Part cannot be 0');
-  end;
+  end;                                 
 
   if Fnc.SysGetAttrValueTopLevel('Parts_Per_PCB') = 0 then
   begin
@@ -604,7 +604,7 @@ begin
     Fnc.UserRouteGenAbort := true;
     ErrorList.free;            
   end
-  else
+  else  
   begin
     Fnc.SysSetAttrValue('Rout_LengthPCB', 0.0);
                            
@@ -679,7 +679,7 @@ begin
                           
     Fnc.SysSetAttrValue('PBS_Part', false);
     Fnc.SysSetAttrValue('RouteCode', 'ENGIX');
-
+                
     if Fnc.SysGetAttrValueTopLevel('SO_Unit') = 'Part'  then
     begin
       Fnc.SysSetAttrValue('Parts_Per_PCB', 1);
@@ -816,6 +816,13 @@ begin
       Fnc.UserRouteGenAbort := true;
     end;
     
+    // 2363
+    if BoardFinish = 'HAL' then
+    begin
+      MessageDlg('HAL is no longer a valid Board Finish. Lead Free HAL has been selected automatically', mtInformation, Setof([mbOK]), 0);
+      Fnc.SysSetAttrValue('Board_Finish', 'Lead Free HAL');
+    end;
+    
     if ( BoardFinish = 'Lead Free HAL' ) and  // 1355
        ( SelectiveGoldorFinger ) and
        ( Fnc.SysGetAttrValue('Lead_Free_HAL_Process') = '<Not Selected>' ) then
@@ -893,20 +900,33 @@ begin
     
   if Fnc.SysGetItemAttrValue('Layer_Min_PadTo', true, cStackupLayer, 1) = 0.0 then
     Fnc.SysSetItemAttrValue('Layer_Min_PadTo', Fnc.SysGetAttrValue('Min_PTrace_Gap'), true, cStackupLayer, 1);
-  if Fnc.SysGetItemAttrValue('Layer_Min_PadTo', false, cStackupLayer, 1) = 0.0 then
+  if Fnc.SysGetItemAttrValue('Layer_Min_PadTo', false, cStackupLayer, 1) = 0.0 then                               
     Fnc.SysSetItemAttrValue('Layer_Min_PadTo', Fnc.SysGetAttrValue('Min_PTrace_Gap'), false, cStackupLayer, 1);
-  
+                                                                      
   if Fnc.SysGetItemAttrValue('Layer_Land_Area', true, cStackupLayer, 1) = 0.0 then
     Fnc.SysSetItemAttrValue('Layer_Land_Area', Fnc.SysGetAttrValue('Land_Area'), true, cStackupLayer, 1);
   if Fnc.SysGetItemAttrValue('Layer_Land_Area', false, cStackupLayer, 1) = 0.0 then
     Fnc.SysSetItemAttrValue('Layer_Land_Area', Fnc.SysGetAttrValue('Land_Area'), false, cStackupLayer, 1);
-                       
+  
+  // 2363 Remove PAL 3
+  if Fnc.SysGetAttrValue('Electrolytic_Cu_Line') = 'PAL3' then
+  begin
+    Fnc.SysSetAttrValue('Electrolytic_Cu_Line', 'Auto');
+    MessageDlg('PAL3 is no longer valid for the Electrolytic Plating Line. "Auto" has been used instead.', mtInformation, Setof([mbOK]), 0);
+  end;
+  
+  if Fnc.SysGetAttrValue('Electrolytic_Cu_Line_2') = 'PAL3' then
+  begin
+    Fnc.SysSetAttrValue('Electrolytic_Cu_Line_2', 'Auto');
+    MessageDlg('PAL3 is no longer valid for the Electrolytic Plating Line 2NC. "Auto" has been used instead.', mtInformation, Setof([mbOK]), 0);
+  end; 
+                      
 end;
                   
 procedure InitRouteGeneratedAttributes;
 begin
   Fnc.SysSetAttrValue('UEtch_Cu', 0.0);
-  Fnc.SysSetAttrValue('UEtch_Spec', '');
+  Fnc.SysSetAttrValue('UEtch_Spec', '');            
                  
   InProcessCuThk := 0;
   if (( CoreBuild or SubAssemblyCoreBuild ) and ( Fnc.SysGetAttrValue('LayerCount') > 2 )) then 

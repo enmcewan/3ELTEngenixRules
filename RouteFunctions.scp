@@ -77,6 +77,21 @@ Var
   // Fnc.SysGetAttrValue('LayupThickness'ZZZ)
   LayupThickness: float;
   
+procedure ErrorMessageGenAndLog(ErrorMsg, ErrorType: variant);
+var              
+  ErrorTypeStr,
+  ErrorMsgStr: String;
+begin
+  ErrorMsgStr := Fnc.SysGetAttrValue('ItemMatrlDesc') + #13#13 + ErrorMsg;
+  MessageDlg(ErrorMsgStr, ErrorType, Setof([mbOK]), 0);
+                                        
+  if ErrorType = mtWarning then ErrorTypeStr := 'Warning' else  
+  if ErrorType = mtError then ErrorTypeStr := 'Error' else
+  if ErrorType = mtInformation then ErrorTypeStr := 'Information'
+  
+  Fnc.JobJournalUpdate(Fnc.JobID, ErrorMsg, ErrorTypeStr, 'Route GenX' ); 
+end; 
+  
 procedure StepParam(Source: string; ParamCode: string; ParamValue: string) // Added with 2269
 begin
   Fnc.SysRouteGenInsAddlParam(Fnc.SysRouteInsGetStepNum, Source, ParamCode, ParamValue, '', '', false, '', '', '' );
@@ -115,22 +130,7 @@ end;
 procedure StepInstructionERP(InstrCode: string);
 begin
   Fnc.SysRouteGenInsInstruction(Fnc.SysRouteInsGetStepNum, 'Erp', InstrCode, '');
-end;
-
-procedure ErrorMessageGenAndLog(ErrorMsg, ErrorType: variant);
-var              
-  ErrorTypeStr,
-  ErrorMsgStr: String;
-begin
-  ErrorMsgStr := MfgPartType + #13#13 + ErrorMsg;
-  MessageDlg(ErrorMsgStr, ErrorType, Setof([mbOK]), 0);
-                                        
-  if ErrorType = mtWarning then ErrorTypeStr := 'Warning' else  
-  if ErrorType = mtError then ErrorTypeStr := 'Error' else
-  if ErrorType = mtInformation then ErrorTypeStr := 'Information'
-  
-  Fnc.JobJournalUpdate(Fnc.JobID, ErrorMsg, ErrorTypeStr, 'Route GenX' ); 
-end;                                   
+end;                                 
                                                  
                            
 function MfgAttrTL(AttributeName: string) : variant;
@@ -146,7 +146,7 @@ end;
 function LayerAttrTop(AttrName: string; TopLayer: boolean; ItemType: string; ItemSequence: integer) : variant;
 begin                              
   result := Fnc.SysGetItemAttrValue(AttrName, TopLayer, ItemType, ItemSequence);   
-end; 
+end;                                           
 
 procedure GET_VCUT_TYPE;
 begin
@@ -159,7 +159,7 @@ begin
     'PIECE V-CUT'    : VCUT_TYPE := 'Piece';
   end;          
 
-end;
+end;                    
 
 function SetTopBotLayerNames: TStringList;
 var
@@ -3061,7 +3061,7 @@ begin
     then
       result := true
                
-    else 
+    else                    
     if SubList.Count > 2 then
     begin
       if ( AnsiPos('SubAssembly', SubList.Strings[0]) > 0 ) and // Hack since parent is a sub  (need to consider levels)
@@ -3090,7 +3090,7 @@ end;
 
 function TopLevelGetsPEP : boolean;  // 1229 PEP Flow option for Sub-assembly build. 
 begin          
-  result := false;                    
+  result := false;                         
                                                  
   if not (( Fnc.SysGetAttrValue('Seq_Build') ) or ( ( Fnc.SysGetAttrValue('MfgPartType') = 'Top' ) and ( SandwichCore ) )) and 
           ( not Fnc.SysGetAttrValueTopLevel('Alt_PEP_Process') )        
@@ -4049,7 +4049,7 @@ begin
   begin
     if (
         ( aspectRatio <= 6.4 ) and
-        ( minDrill >= 0.2 ) and
+        ( minDrill >= 0.2 ) and           
         (( Get_Panel_Thickness >= 0.2 ) and ( Get_Panel_Thickness <= 1.59 )) and
         ( conformal <= 200 ) and
         ( blindAspect <= 0.75 ) and
@@ -4206,7 +4206,7 @@ begin
     {if (( Fnc.SysGetAttrValue('Mech_BlindVias') = false ) and ( Fnc.SysGetAttrValue('BlindVias') = false)) then
     begin          
       if PAL3(aspectRatio, minDrill) then
-        result := 'PAL3';          
+        result := 'PAL3';            
     end;}                          
 
     //if result = '' then // 2363 Process Flow Update
@@ -4237,7 +4237,7 @@ begin
      ( Fnc.SysGetAttrValue('BackDrill_Epoxy') = true )
   then
     result := true;   
-end;
+end;                                         
 
 function ENIGplusOSP : boolean;  // 1256
 begin

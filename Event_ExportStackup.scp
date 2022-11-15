@@ -7,7 +7,7 @@
 uses
   Event_ExportStackup_CreateTables;
 
-
+               
 function CheckForExport(theTable: TSysTable; CheckFieldName: string): boolean;
 begin
   Result := (CheckFieldName = '');
@@ -17,10 +17,10 @@ begin
     if theTable.FieldDefs.IndexOf(CheckFieldName) > -1 then
       Result := theTable.FieldByName(CheckFieldName).AsBoolean;
   end;
-end;
+end; 
 
 procedure ExportToSQLTable(SQLTableName:string; theTable:TSysTable; CheckFieldName:string);
-var
+var                                    
   i: integer;
   FieldName: string;
   Query: TADOQuery;
@@ -34,7 +34,7 @@ begin
 
   Query := TADOQuery.Create(nil);
   Query.Connection := Fnc.DbConnection;
-
+                                   
   // first remove any existing records for this JobID...
   Query.SQL.Clear;               
   Query.SQL.Add('DELETE FROM ' + SQLTableName + ' WHERE JobID = ' + IntToStr(Fnc.JobID));
@@ -62,7 +62,7 @@ begin
           //if Query.FieldDefs.IndexOf(FieldName) > -1 then
           //  Query.FieldByName(FieldName).Value := theTable.FieldByName(FieldName).Value;
 
-          begin
+          begin                          
             case theTable.FieldByName(FieldName).DataType of
               ftFloat: Query.FieldByName(FieldName).AsFloat :=theTable.FieldByName(FieldName).AsFloat;
             else
