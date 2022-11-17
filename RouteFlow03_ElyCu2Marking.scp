@@ -231,8 +231,8 @@ begin
     
     if BoardFinish = 'Thin/Thick Au Plate' then Gold_Photo2Plating(2, true, true);
     
-    if (BoardFinish = 'Full Body Gold') or  (BoardFinish = 'Thin/Thick Au Plate') or
-       (SelectiveGoldType = 'Pattern Overhang / PTH') or (SelectiveGoldType = 'Gold Finger + Pattern Overhang / PTH') then
+    //if (BoardFinish = 'Full Body Gold') or  (BoardFinish = 'Thin/Thick Au Plate') or
+    //   (SelectiveGoldType = 'Pattern Overhang / PTH') or (SelectiveGoldType = 'Gold Finger + Pattern Overhang / PTH') then
       AddStep('OffLine_PreTreat', 'OffLine_PreTreat_B4AE'); 
                                          
     if (BoardFinish = 'Full Body Gold') or (BoardFinish = 'Thin/Thick Au Plate') then
@@ -248,15 +248,15 @@ begin
         
     Alkaline_DES;
     
-    if (BoardFinish = 'Full Body Gold') or  (BoardFinish = 'Thin/Thick Au Plate') or
-       (SelectiveGoldType = 'Pattern Overhang / PTH') or (SelectiveGoldType = 'Gold Finger + Pattern Overhang / PTH') then
+    //if (BoardFinish = 'Full Body Gold') or  (BoardFinish = 'Thin/Thick Au Plate') or
+    //   (SelectiveGoldType = 'Pattern Overhang / PTH') or (SelectiveGoldType = 'Gold Finger + Pattern Overhang / PTH') then
       AddStep('OffLine_PreTreat', 'OffLine_PreTreat_AFAE'); 
   end;                    
 
 End;
 
 function Epoxy_US(process: string; seq_no: integer) : string;
-begin                  
+begin                        
   case process of
     'A' : AddStep('Epoxy_PlugA', 'Epoxy_PlugA0' + IntToStr(seq_no));
     'B' : AddStep('Epoxy_PlugB', 'Epoxy_PlugB0' + IntToStr(seq_no));

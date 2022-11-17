@@ -4,7 +4,7 @@
 //ScriptType=0
 //ScriptGroup=HCS
 //HeaderImportExport<--
-                 uses                                                                                                                                                                                                                                                                                                                                              
+uses                                                                                                                                                                                                                                                                                                                                              
   Event_RouteGenLibrary, //Route System Scripts
   Eng_RouteFunctions, //Route System Functions
   RouteFunctions, //Custom Functions for HCS
@@ -372,7 +372,7 @@ begin
   if ( BaseCuTopUM > 9 ) and ( BaseCuBotUM > 9 ) and ( PressThickness <= 4.0 ) then 
     result := true else result := false;
 
-end
+end;                          
                    
 procedure BlindVia;       // 2360 Conformal Mask > Laser > IL Finishing Process Flow Change 
 begin
@@ -382,23 +382,25 @@ begin
     begin                       
       if UVLaserMicroEtch then  // 1112 Micro-etch for thick board
         AddStep('MicroEtch', 'MicroEtch01');
-         
+                                                         
       if LaserABotHits > 0 then
         AddStep('UV_LaserA', 'UV_LaserA01');
                                                          
-      if LaserBTopHits > 0 then
+      if LaserBTopHits > 0 then    
         AddStep('UV_LaserB', 'UV_LaserB01');
     end                    
     else                          
     begin
       if SelectPlatingLine = 'FILL_VIA' then  // 1138 Microetch for Laser Via 
-      begin                  
-        if NonUVMicroEtch then AddStep('MicroEtch', 'MicroEtch01'); 
+      begin
+                          
+        if NonUVMicroEtch then AddStep('MicroEtch', 'MicroEtch01');
+        
         Conformal_Mask;
       end                                   
       else                          
-      begin
-        //MicroEtch;
+      begin        
+        //MicroEtch; 
         Conformal_Mask;                                
       end;
       
@@ -414,25 +416,27 @@ begin
         end                                                       
         else
           AddStep('Shearing_Laser', 'Shearing_Laser01');
-      end; 
+      end;
+      
+      // 
+      if (SelectPlatingLine <> 'FILL_VIA') and NonUVMicroEtch then AddStep('MicroEtch', 'MicroEtch01');
+      
+      // CO2 Laser
+      if LaserABotHits > 0 then AddStep('CO2_LaserA', 'CO2_LaserA01');   
+      if LaserBTopHits > 0 then AddStep('CO2_LaserB', 'CO2_LaserB01'); 
+        
     end;                                                                                                    
-  end
+  end                                                            
   else                                
   begin
     AddStep('Hist_Line', 'Hist_Line01');
-    if LaserABotHits > 0 then
-      AddStep('Dir_LaserA', 'Dir_LaserA01');
-    if LaserBTopHits > 0 then
-      AddStep('Dir_LaserB', 'Dir_LaserB01');
+    
+    if LaserABotHits > 0 then AddStep('Dir_LaserA', 'Dir_LaserA01');
+    
+    if LaserBTopHits > 0 then AddStep('Dir_LaserB', 'Dir_LaserB01');
     
     AddStep('MicroEtch_DirLaser', 'MicroEtch_DirLaser01');   
-  end; 
-  
-  // CO2 Laser
-  if LaserABotHits > 0 then
-    AddStep('CO2_LaserA', 'CO2_LaserA01');
-  if LaserBTopHits > 0 then
-    AddStep('CO2_LaserB', 'CO2_LaserB01'); 
+  end;  
   
 end; 
 
@@ -500,7 +504,7 @@ begin
         UpdateInProcessCuThk(Cu_Thk_After_CuThin);
         //ShowMessage( 'Cu Thickness After Cu Thinning ' + IntToStr(InProcessCuThk) + 'um'  );
       end;
-    end;      
+    end;         
 
     if Fnc.SysGetAttrValue('BlindVias') = true then
       BlindVia;
