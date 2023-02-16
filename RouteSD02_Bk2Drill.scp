@@ -4,7 +4,7 @@
 //ScriptType=0
 //ScriptGroup=HCS
 //HeaderImportExport<--
-uses                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  
+uses
   Event_RouteGenLibrary,
   Eng_RouteFunctions,
   RouteFunctions,
@@ -2836,19 +2836,24 @@ end;
 
 Procedure Electrolytic_CappedVia_SD;
 begin
+
   //StepDeptERP('COPPL-E01');
   //StepWCERP('COPPL-E01');
   StepDeptERP('COPPL-C'); // 2388
   StepWCERP('COPPL-C');
 
-  if Fnc.SysGetAttrValue('Min_Surf_Plt') = 0 then
-    Fnc.SysSetAttrValue('Min_Surf_Plt', 15.0);
+  if Fnc.SysGetAttrValue('Min_Surf_Plt') = 0 then Fnc.SysSetAttrValue('Min_Surf_Plt', 15.0);
 
   StepParamERP('Min Surface Plate', Fnc.SysGetAttrValue('Min_Surf_Plt'));
   StepParamERP('Process', 'Flash Plating');
                   
   CalcAndInsert_DECUTHK(false, 2, 'CappedVia');
   AddBoardFinishAsAttribute; // 1223 Additional Surface Finish info under Electrolytic Cu step
+
+  StepParamERP('Hole Circle', Fnc.SysGetAttrValue('Hole_Circle_Capped'));
+  StepParamERP('Hole Area', Fnc.SysGetAttrValue('Hole_Area_Capped'));
+  StepParamERP('Cu Ratio', Fnc.SysGetAttrValue('Cu_Ratio_Capped'));
+
 end;
 
 procedure KK_Drill_SD;
