@@ -28,7 +28,7 @@ end;
 
 procedure OL_Photo_L5_SD;                                                                                            
 begin
-  StepDeptERP('EXPOL-A');                                                                                        
+  StepDeptERP('EXPOL-A');
   StepWCERP('EXPOL-A5');                                          
 end;
 
@@ -393,12 +393,12 @@ begin
   StepParamERP('Panel Size', Fnc.SysGetAttrValue('Panel_Size'));  
 end;     
 
-procedure IL_DES_Man_SD;     // Herole added on 16-Aug-2018                                                            
+procedure IL_DES_Man_SD;     // Herole added on 16-Aug-2018
 begin
-  StepDeptERP('DESIL-A');                                                            
-  StepWCERP('DESIL-A');  
-  StepParamERP('Dynamic', Fnc.SysGetAttrValue('DynamicEtch'));   
-end;     
+  StepDeptERP('DESIL-A');
+  StepWCERP('DESIL-A');
+  StepParamERP('Dynamic', Fnc.SysGetAttrValue('DynamicEtch'));
+end;
        
 procedure IL_AOI_Man_SD;     // Herole added on 16-Aug-2018                                                            
 begin                                                                                                             
@@ -463,7 +463,7 @@ begin
   StepParamERP('Blown Gap',Fnc.SysGetAttrValue('Air_Gap_Blown')); 
   StepParamERP('Land Area',Fnc.SysGetAttrValue('Land_Area')); 
   StepParamERP('Annular', Fnc.SysGetAttrValue('Annular')); 
-  StepParamERP('Design Thickness', FormatFloat('0.000', LayupThickness));                                        
+  StepParamERP('Design Thickness', FormatFloat('0.000', LayupThickness));
   StepParamERP('Pre-preg Material', Fnc.SysGetAttrValue('PPGMat'));  
   StepParamERP('Core Material', Fnc.SysGetAttrValue('CoreMat'));  
   StepParamERP('Panel Size', Fnc.SysGetAttrValue('Panel_Size'));  
@@ -485,7 +485,7 @@ begin
 end;                
 
 
-procedure Desmear_Buff_TU933_Man_SD;     // Herole added on 28-Sep-2018                   
+procedure Desmear_Buff_TU933_Man_SD;     // Herole added on 28-Sep-2018
 begin
   StepDeptERP('DMEAR-C0');                                                                                         
   StepWCERP('DMEAR-C0'); 
@@ -499,7 +499,7 @@ begin
   StepParamERP('Rinse and Dry', 'OFF');            
 end;   
 
-procedure Vertical_Desmear_Man_SD;     // Herole added on 28-Sep-2018                                                            
+procedure Vertical_Desmear_Man_SD;     // Herole added on 28-Sep-2018
 begin
   StepDeptERP('DMEAR-V01');                                                            
   StepWCERP('DMEAR-V01');                               
@@ -666,16 +666,16 @@ begin
   StepParamERP('Panel Size', Fnc.SysGetAttrValue('Panel_Size'));  
   end;  
   
-  procedure OL_DES3_Man_SD;     // Herole added on 13-Dec-2018                                                            
+  procedure OL_DES3_Man_SD;     // Herole added on 13-Dec-2018
 begin
-  StepDeptERP('DESOL-A');                                                            
-  StepWCERP('DESOL-A2');  
+  StepDeptERP('DESOL-A');
+  StepWCERP('DESOL-A2');
   StepParamERP('Impedance', Fnc.SysGetAttrValue('Has_Impedance'));
   StepParamERP('Dynamic', Fnc.SysGetAttrValue('DynamicEtch'));   
   StepInstructionERP('DESOL022');
 end;         
 
-procedure Vertical_Des_TU933_Man_SD;     // Herole added on 20-Dec-2018                                                                  
+procedure Vertical_Des_TU933_Man_SD;     // Herole added on 20-Dec-2018
 begin
   StepDeptERP('DMEAR-V01');                                                            
   StepWCERP('DMEAR-V01');  
@@ -850,7 +850,7 @@ procedure Alkaline_Photo_Man_SD;     // herole added on 18-May-2020
 begin                                                                                                                             
   StepDeptERP('EXPOL-A');
   StepWCERP('EXPOL-A3');                                                                                             
-  StepParamERP('Photo Type','Alkaline Pattern Etch');  
+  StepParamERP('Photo Type','Alkaline Pattern Etch');
   StepParamERP('Blown Width',Fnc.SysGetAttrValue('Line_Width_Blown'));
   StepParamERP('Blown Gap',Fnc.SysGetAttrValue('Air_Gap_Blown')); 
   StepParamERP('Land Area',Fnc.SysGetAttrValue('Land_Area'));                   
@@ -970,10 +970,10 @@ begin
   StepParamERP('Min Hole Size NP', Fnc.SysGetAttrValue('Min_Drill_Size_NP'));
   StepParamERP('Aspect Ratio', Fnc.SysGetAttrValue('Aspect_Ratio_Val'));
   StepParamERP('Max Hole Size', Fnc.SysGetAttrValue('Max_Hole_Size'));
-  StepParamERP('Max P-Hole Size', Fnc.SysGetAttrValue('Max_PHole_Size')); 
-  StepParamERP('Max Slot Length', Fnc.SysGetAttrValue('Slot_Length_PTH'));                                     
+  StepParamERP('Max P-Hole Size', Fnc.SysGetAttrValue('Max_PHole_Size'));
+  StepParamERP('Max Slot Length', Fnc.SysGetAttrValue('Slot_Length_PTH'));
   StepParamERP('Pre-preg Material', Fnc.SysGetAttrValue('PPGMat'));
-  StepParamERP('Core Material', Fnc.SysGetAttrValue('CoreMat'));  
+  StepParamERP('Core Material', Fnc.SysGetAttrValue('CoreMat'));
   StepParamERP('Panel Size', Fnc.SysGetAttrValue('Panel_Size'));
   end;
   
@@ -1116,3 +1116,62 @@ begin
   StepInstructionERP('BACKD001');
   StepInstructionERP('BACKD002');
   end;
+  
+procedure Shadow_Moire_Man_SD;     // Herole added on 10-Nov-2022
+begin
+  StepDeptERP('EXPSM-A');
+  StepWCERP('EXPSM-A');
+  StepInstructionERP('FINAL018');
+end;
+
+procedure IL_Photo_IRO_Man_SD;     // herole added on 1-Feb-2023
+begin
+  StepDeptERP('EXPIL-K');
+  StepWCERP('EXPIL-K0');
+  StepParamERP('Photo Type','Pattern Formation');
+  StepParamERP('Blown Width',Fnc.SysGetAttrValue('Line_Width_Blown'));
+  StepParamERP('Blown Gap',Fnc.SysGetAttrValue('Air_Gap_Blown'));
+  StepParamERP('Land Area',Fnc.SysGetAttrValue('Land_Area'));
+  StepParamERP('Annular', Fnc.SysGetAttrValue('Annular'));
+  StepParamERP('Design Thickness', FormatFloat('0.000', LayupThickness));
+  StepParamERP('Aspect Ratio', Fnc.SysGetAttrValue('Aspect_Ratio_Val'));
+  StepParamERP('Max Hole Size', Fnc.SysGetAttrValue('Max_Hole_Size'));
+  StepParamERP('Max P-Hole Size', Fnc.SysGetAttrValue('Max_PHole_Size'));
+  StepParamERP('Pre-preg Material', Fnc.SysGetAttrValue('PPGMat'));
+  StepParamERP('Core Material', Fnc.SysGetAttrValue('CoreMat'));
+  StepParamERP('Panel Size', Fnc.SysGetAttrValue('Panel_Size'));
+  end;
+
+procedure IL_DES_IRO_Man_SD;     // Herole added on 1-Feb-2023
+begin
+  StepDeptERP('DESIL-A');
+  StepWCERP('DESIL-A0');
+  StepParamERP('Dynamic', Fnc.SysGetAttrValue('DynamicEtch'));
+  StepInstructionERP('DESIL022');
+end;
+
+procedure IL_Photo_CMK_Man_SD;     // herole added on 3-Feb-2023
+begin
+  StepDeptERP('EXPIL-K');
+  StepWCERP('EXPIL-K0');
+  StepParamERP('Photo Type','Conformal Mask');
+  StepParamERP('Conf. Mask Size',Fnc.SysGetAttrValue('ConfMask_Size'));
+  StepParamERP('Conf. Mask Size - Skip',Fnc.SysGetAttrValue('ConfMask_Size_Skip'));
+  StepParamERP('Conf. Mask Thickness',Fnc.SysGetAttrValue('ConfMask_Thk'));
+  end;
+
+procedure IL_DES_CMK_Man_SD;     // Herole added on 3-Feb-2023
+begin
+  StepDeptERP('DESIL-A');
+  StepWCERP('DESIL-A0');
+  StepParamERP('Base Cu', '12');
+  StepParamERP('Conf Mask A/Etch', Fnc.SysGetAttrValue('ConfMask_Size_AE'));
+  StepParamERP('Conf Mask AE Skip', Fnc.SysGetAttrValue('ConfMask_Size_AE_Skip'));
+  StepInstructionERP('DESIL022');
+end;
+
+procedure Laser_Inkjet_Man_SD;     // Herole added on 10-Feb-2023
+begin
+  StepDeptERP('LAS2D-A');
+  StepWCERP('LAS2D-A');
+end;

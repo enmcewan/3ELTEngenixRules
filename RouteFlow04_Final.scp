@@ -4,10 +4,10 @@
 //ScriptType=0
 //ScriptGroup=HCS
 //HeaderImportExport<--
-uses                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       
-Event_RouteGenLibrary, //Route System Scripts
-Eng_RouteFunctions, //Route System Functions
-RouteFunctions;
+uses
+  Event_RouteGenLibrary, //Route System Scripts
+  Eng_RouteFunctions, //Route System Functions
+  RouteFunctions;
 
 procedure SecondaryPlug;
 begin
@@ -27,39 +27,39 @@ begin
         AddStep('UV_Cure', 'UV_Cure01');
       end
       else if SecondaryPlugInkType = 'Photo' then
-      begin              
+      begin
         AddStep('Plug_Formation', 'Plug_Formation01');
         AddStep('SP_Final_Cure', 'SP_Final_Cure01');
       end;
 
       AddStep('Hole_Check', 'Hole_CheckSP01');  //This step is independent from the other hole check steps
 
-    end        
-    else                                               
+    end
+    else
       ShowMessage('Warning!!! Secondary Plug Ink Type not selected, process steps will be missing.');
   end;
-end;                  
+end;
 
 procedure Back_Drill;
 begin
   if BKDRTop = true then
     AddStep('Back_Drill_B', 'Back_Drill_B01');
-                                    
+
   if BKDRBot = true then
     AddStep('Back_Drill_A', 'Back_Drill_A01');
 
   BackDrillDone := true;
 
   AddStep('HighPressAirBlow', 'HighPressAirBlow01');
-  
-  // 1213 Additional Hole Check after Backdrill step condition 
-  if ( Fnc.SysGetAttrValue('SMPlugType') <> 'None' ) or ( Fnc.SysGetAttrValue('EpoxySide') <> 'None' ) then 
+
+  // 1213 Additional Hole Check after Backdrill step condition
+  if ( Fnc.SysGetAttrValue('SMPlugType') <> 'None' ) or ( Fnc.SysGetAttrValue('EpoxySide') <> 'None' ) then
   begin
     if Fnc.SysGetAttrValue('BackDrill_Hole_Type') = 'Non-Plugged Holes' then
       AddStep('Hole_Check_BD', 'Hole_Check_BD01');
-  end;               
-  
-end; 
+  end;
+
+end;
 
 procedure Baking;
 begin
@@ -78,7 +78,7 @@ begin
     AddStep('Baking', 'Baking01');
     BakingDone := true;
 
-    if ( BoardFinish = 'OSP' ) and 
+    if ( BoardFinish = 'OSP' ) and
        ( SelectiveGoldType<> 'ENIG') then //) or ( ENIGplusOSP ) then // 1173 Additional Surface Finishing. Selective ENIG + OSP   // 1256 - removed ENIG + OSP per Herole comment
       AddStep('OSP_Bake_Wash', 'OSP_Bake_Wash01');  // 761 - Add Washing step after baking for OSP finishing
   end;
@@ -90,30 +90,30 @@ begin
 
   if BakingDone = false then
   begin
-    Baking;         
+    Baking;
     if BakingDone then
       AddStep('OffLine_PreTreat', 'OffLine_PreTreat01'); // Per Imm Silver Changes from Mani Jan 2016 3EPCB
   end;
 end;
-                                        
+
 procedure Immersion_Silver_Sel_Gold(process: string); // Updated per Changes from Mani Jan 2016
 begin
   if process = 'Taping'  then
-  begin                                                                                                        
+  begin
     AddStep('Immersion_Silver', 'Immersion_Silver01');
-                                  
+
     {if BakingDone = false then  - moved to after electrical test per 1256 reply Word Doc
     begin
-      Baking;                   
+      Baking;
       if BakingDone then
         AddStep('OffLine_PreTreat', 'OffLine_PreTreat01'); // Per Imm Silver Changes from Mani Jan 2016 3EPCB
-    end;}  
+    end;}
     //ImmersionSilverDone := true;  1256
   end
-  else if process = 'Photo' then 
+  else if process = 'Photo' then
   begin
     Baking;
-    
+
     if BakingDone then
       AddStep('OffLine_PreTreat', 'OffLine_PreTreat01');
         
@@ -128,16 +128,16 @@ end;
 procedure Lead_Free_HAL_Sel_Gold(process: string); // 1355 Could maybe consolidate this with Immersion Silver + Gold at some point
 begin
   if process = 'Taping'  then
-  begin                                                                                                        
+  begin
     AddStep('HAL', 'HAL01');
   end
-  else if process = 'Photo' then 
+  else if process = 'Photo' then
   begin
     Baking;
-    
+
     if BakingDone then
       AddStep('OffLine_PreTreat', 'OffLine_PreTreat01');
-                                                                       
+
     AddStep('OL_Photo_Selective_Finishing', 'OL_Photo_Selective_Finishing01');
     AddStep('OL_DEV', 'OL_DEV_IS');
     AddStep('Mdl_Insp_OLDev_IS', 'Mdl_Insp_OLDev_IS');
@@ -162,7 +162,7 @@ begin
        and
        (LayupThickness <= 1.0)
       )
-     )                        
+     )
   then
     AddStep('DeWarp', 'DeWarp01');
 
@@ -180,7 +180,7 @@ begin
   if ((Fnc.SysGetAttrValue('BackDrill') = true) and (BackDrillDone = false)) then  //Make sure this does not get done multiple times
     Back_Drill;
 
-  if (     
+  if (
       (Fnc.SysGetAttrValue('Gold_Tab_Rows') <= 2) and
       (VCUT_TYPE = 'Panel') and
       (VCutDone = false)
@@ -219,15 +219,15 @@ begin
        (CustCode_Rule('Customer') = 'HJ')
       )
       or
-      (                                      
-       (BoardFinish = 'Full Body Gold') or 
+      (
+       (BoardFinish = 'Full Body Gold') or
        (BoardFinish = 'Thin/Thick Au Plate') or // 1256 NEED TO CHECK THIS
        //(SelectiveGoldType= 'BGA, Encapsulation') or  1256
        // (SelectiveGoldType= 'Pattern (Overhang)') or 1256
        (SelectiveGoldType= 'Pattern Overhang / PTH') or  // 1256 Need to check this
        //(GoldFingerType = 'Lead Line Etching B4 Res (Sel)') or 1256
        (Fnc.SysAttrEditGetAttrValue('Gold_Fgr_Type') = 'Lead Line Etching') or
-       //(GoldFingerType = 'Chamfer B4 Res (Sel)') or 911 
+       //(GoldFingerType = 'Chamfer B4 Res (Sel)') or 911
        // (GoldFingerType = 'After Pattern (Sel)') or   1256
        (GoldFingerType = 'NO Lead Line Etching') or
        //(GoldFingerType = 'Lead Line Etching Af Res (Sel)') or 1256
@@ -241,11 +241,11 @@ begin
        //(GoldFingerType = 'Thin/Thick - Chamfer B4 Res (Sel)')  911
        // (GoldFingerType = 'Thin/Thick - After Pattern (Sel)') 1256
       )
-      or                                  
-      ((BoardFinish = 'HAL') or  
-       (BoardFinish = 'Lead Free HAL') or 
+      or
+      ((BoardFinish = 'HAL') or
+       (BoardFinish = 'Lead Free HAL') or
        (BoardFinish = 'LB Free HAL + Immersion silver')) // 1322
-  and                             
+  and
       (HasSolderMaskType('PSR4000-AM10') = false )
      )
   then
@@ -254,19 +254,19 @@ end;
 
 function LeadFreeHALWithGoldTaping : boolean;
 begin
-  result := false;                          
-  
+  result := false;
+
   if ( BoardFinish = 'Lead Free HAL' ) and
      ( SelectiveGoldorFinger ) and
      ( Fnc.SysGetAttrValue('Lead_Free_HAL_Process') = 'Taping' )
   then
     result := true;
 end
-                                   
+
 procedure RouteFlow04;
 //var
-  //HoleCheckDone : boolean;                                          
-begin                                 
+  //HoleCheckDone : boolean;
+begin
  // HoleCheckDone := false;  ENIG Changes
 
   if ((BoardFinish <> 'HAL') and  (BoardFinish <> 'Lead Free HAL')) then
@@ -301,7 +301,7 @@ begin
       if Fnc.SysGetAttrValue('Gold_Tab_Rows') > 2 then
       begin
         if Fnc.HasImpedance = true then
-        begin            
+        begin
           if not HoleCheckDone then
           begin
             AddStep('Hole_Check', 'Hole_Check01');
@@ -312,7 +312,7 @@ begin
         end;
 
         VCut;
-                        
+
         AddStep('Gold_Tab_Plating', 'Gold_Tab_Plating01');
       end
       else
@@ -320,29 +320,29 @@ begin
     end
     else
       AddStep('Gold_Tab_Plating', 'Gold_Tab_Plating01');
-                                                        
+
     {if ( BoardFinish = 'Immersion Silver' ) and ( Fnc.SysGetAttrValue('Imm_Silver_Process') = 'Taping' )      // 1256
     begin
-      AddStep('Gold_Finger_Taping', 'Gold_Finger_Taping01'); 
+      AddStep('Gold_Finger_Taping', 'Gold_Finger_Taping01');
       AddStep('Baking', 'BakingGFT');
-      AddStep('OffLine_PreTreat', 'OffLine_PreTreatGFT');    
-    end;}                  
-  end;                         
+      AddStep('OffLine_PreTreat', 'OffLine_PreTreatGFT');
+    end;}
+  end;
 
   // 1322 LB Free HAL + Imm Ag
   if BoardFinish = 'LB Free HAL + Immersion silver' then
-    AddStep('Immersion_Silver', 'Immersion_Silver01');    
+    AddStep('Immersion_Silver', 'Immersion_Silver01');
 
-  if (BoardFinish = 'HAL') or  
+  if (BoardFinish = 'HAL') or
      ((BoardFinish = 'Lead Free HAL') and ( Not SelectiveGoldorFinger )) or
      (BoardFinish = 'LB Free HAL + Immersion silver') then
-  begin 
+  begin
     AddStep('HAL', 'HAL01');
 
     if HoleCheckDone = false then
       AddStep('Hole_Check', 'Hole_Check01');
-                         
-    SecondaryPlug;        
+
+    SecondaryPlug;
   end
   else
   begin
@@ -356,45 +356,45 @@ begin
         begin
           AddStep('Hole_Check', 'Hole_Check01');
           HoleCheckDone := true;
-        end;                 
+        end;
       //end;
     end;
   end;
   
   //if ( BoardFinish = 'Immersion Silver' ) and ( Fnc.SysGetAttrValue('Imm_Silver_Process') = 'Taping' ) then      // 1256
   //  AddStep('Gold_Finger_Taping', 'Gold_Finger_Taping01'); 
-                   
+
   if Fnc.SysGetAttrValue('Carbon_Ink') = true then
     AddStep('Carbon_Ink', 'Carbon_Ink01');
 
   if (
       ((Fnc.SysGetAttrValue('BackDrill') = true) and (BackDrillDone = false)) and
       (BoardFinish <> 'Immersion Tin')
-     )               
+     )
   then //Check reverse condition is true
     Back_Drill;
 
   if BoardFinish = 'Immersion Tin' then
     Immersion_TinPt2;
-                             
+
   if ( BoardFinish = 'Immersion Silver' ) and
      ( SelectiveGoldorFinger ) and
      ( Fnc.SysGetAttrValue('Imm_Silver_Process') = 'Taping' ) then    // 1256 - Comment from Herole
-  begin                    
-    AddStep('Imm_Silv_Taping', 'Imm_Silv_Taping01'); 
-    Immersion_Silver_Sel_Gold('Taping');                    
+  begin
+    AddStep('Imm_Silv_Taping', 'Imm_Silv_Taping01');
+    Immersion_Silver_Sel_Gold('Taping');
   end;
-  
+
   if LeadFreeHALWithGoldTaping then  // 1355
-  begin                      
-    AddStep('LFH_Taping', 'LFH_Taping01'); 
+  begin
+    AddStep('LFH_Taping', 'LFH_Taping01');
     Lead_Free_HAL_Sel_Gold('Taping');
     SecondaryPlug; // 1469
   end;
-                             
+
   if (Fnc.SysGetAttrValue('Has_Impedance') = true) and (ImpedanceDone <> true) then
     AddStep('Impedance', 'Impedance01');
-                               
+
   if (
       ((Fnc.SysGetAttrValue('Comp_Type') = 'RESISTANCE') and (Fnc.SysGetAttrValue('Line_Width') <> 0.0)) or
       (Fnc.SysGetAttrValue('Comp_Type') = 'CAPACITANCE & RESISTANCE')
@@ -404,10 +404,10 @@ begin
 
   if ((VCUT_TYPE = 'Panel') and (VCutDone = false))
   then
-    VCut;                  
+    VCut;
 
   if Fnc.SysGetAttrValue('NPCountersink') = true then
-    AddStep('NPCounterSink', 'NPCounterSink01');             
+    AddStep('NPCounterSink', 'NPCounterSink01');
 
   if Fnc.SysGetAttrValue('Chamfer_Type') = 'Panel Routed' then
   begin
@@ -450,7 +450,7 @@ begin
   begin
     if HoleCheckDone = false then
       AddStep('Hole_Check', 'Hole_Check01');
-  end;           
+  end;
 
   AddStep('Routing', 'Routing01');
 
@@ -477,7 +477,7 @@ begin
 
   // 1310 Additiona Backdrill EC
   if ( Fnc.SysGetAttrValue('BackDrill') ) and
-     ( Fnc.SysGetAttrValue('BackDrill_EC') ) and 
+     ( Fnc.SysGetAttrValue('BackDrill_EC') ) and
      ( not GetsHiPot )
   then
     AddStep('BackDrill_EC', 'BackDrill_EC01');
@@ -488,7 +488,7 @@ begin
   if GetsHiPot then // 1310 Additiona Backdrill EC
   begin
     AddStep('HiPotTest', 'HiPotTest01');
-                                   
+
     if ( Fnc.SysGetAttrValue('BackDrill') ) and ( Fnc.SysGetAttrValue('BackDrill_EC') ) then
       AddStep('BackDrill_EC', 'BackDrill_EC01');  
   end;
@@ -505,34 +505,34 @@ begin
 
    //Per Immersion Silver changes from Mani  Jan 2016
    if ( BoardFinish = 'Immersion Silver' ) and ( not SelectiveGoldorFinger ) then
-     Immersion_Silver; 
+     Immersion_Silver;
 
   if ( BoardFinish = 'OSP' ) or ( ENIGplusOSP ) then // 1173 Additional Surface Finishing. // 1256
   begin
-    if BakingDone = false then          
-      Baking;                                                                 
+    if BakingDone = false then
+      Baking;
 
     if (( BakingDone = false ) and ( NeedsFinalBaking )) then
     begin
       AddStep('Baking', 'Baking01');
       BakingDone := true;
     end;
-                          
+
     AddStep('OSP', 'OSP01');
-  end;                        
+  end;
 
   {Final Inspection Steps}
   if BakingDone = false then
   begin
     if NeedsFinalBaking then
-    begin           
+    begin
       AddStep('Baking', 'Baking01');
       BakingDone := true;
 
       if  (( GoldFingerType <> 'None' ) and ( GoldFingerType <> 'Tab Plating' )) or
           ( SelectiveGoldType<> 'None' ) or
           (( BoardFinish = 'Immersion Silver' ) and ( Fnc.SysGetAttrValue('Imm_Silver_Process') = 'Taping' ))  
-      then                              
+      then
         AddStep('OffLine_PreTreat', 'OffLine_PreTreat02');
     end;
   end;
@@ -543,7 +543,7 @@ begin
     AddStep('Final_Insp', 'Final_Insp01');
 
   if (
-      (                                             
+      (
        //(GoldFingerType = 'Lead Line Etching B4 Res (Sel)') or  1256
        (GoldFingerType = 'Lead Line Etching') or
        (GoldFingerType = 'No Horn - Lead Line Etching B4 Res (Sel)') or
@@ -551,15 +551,15 @@ begin
        // (GoldFingerType = 'After Pattern (Sel)') or 1256
        (GoldFingerType = 'NO Lead Line Etching') or
        //(GoldFingerType = 'Thin/Thick - Lead Line Etching B4 Res (Sel)') or 1256
-       //(GoldFingerType = 'Thin/Thick - Chamfer B4 Res (Sel)') or 
+       //(GoldFingerType = 'Thin/Thick - Chamfer B4 Res (Sel)') or
        //(GoldFingerType = 'Thin/Thick - After Pattern (Sel)') or  1256
        (SelectiveGoldType<> 'None')
-      )                                                                       
+      )
       or
       (ProdCodeLXType) or
       (Fnc.SysGetAttrValue('Design_Type') = 'Flip Chip') or
       ((Eng_JobType = 'Production') and (CustCode_Rule('Customer') = 'BC')) or
-      (HardGoldB4Resist)                      
+      (HardGoldB4Resist)
      )
   then
     AddStep('Final_Scope_Ins', 'Final_Scope_Ins01');

@@ -4,13 +4,13 @@
 //ScriptType=0
 //ScriptGroup=HCS
 //HeaderImportExport<--
-         uses                                                                                                                                                                                                                                                             
+uses
   Event_RouteGenLibrary, //Route System Scripts
   Eng_RouteFunctions, //Route System Functions
   RouteFlow04_Final,
   RouteFlow_Common,
   RouteFunctions;
-          
+
 procedure SideBySideDES;
 begin
   AddStep('OL_SbS_DES1', 'OL_SbS_DES101');
@@ -33,21 +33,21 @@ begin
     AddStep('Clean_Room_Oven', 'Clean_Room_Oven01');
     AddStep('Man_DF_Lam', 'Man_DF_Lam01');
   end;                    
-                     
-  // 1108 OL Process Flow Update    
+
+  // 1108 OL Process Flow Update
   if LayupThickness < 0.60 then // 1198 
-  begin                                             
-    AddStep('IL_Photo_OL_ThinPanel', 'IL_Photo_OL_ThinCore01');                              
-    AddStep('IL_DES_OL_ThinPanel', 'IL_DES_OL_ThinPanel01');  
-  end                                                 
+  begin
+    AddStep('IL_Photo_OL_ThinPanel', 'IL_Photo_OL_ThinCore01');
+    AddStep('IL_DES_OL_ThinPanel', 'IL_DES_OL_ThinPanel01');
+  end
   else if ((InProcessCuThk > 60) and (Fnc.HasImpedance)) then
-  begin                 
+  begin
     AddStep('OL_Photo_PForm_TCI', 'OL_Photo_PForm_TCI01');
-    AddStep('OL_DES_TCI', 'OL_DES_TCI01');                                                            
-                                                                                                            
-    if EGoldB4Res then     
-    begin              
-      if //(SelectiveGoldType = 'Pattern (Overhang)') or 
+    AddStep('OL_DES_TCI', 'OL_DES_TCI01');
+
+    if EGoldB4Res then
+    begin
+      if //(SelectiveGoldType = 'Pattern (Overhang)') or
          (SelectiveGoldType = 'Pattern Overhang / PTH') or // 1256 Need to check this
          (BoardFinish = 'Full Body Gold') or
          (BoardFinish = 'Thin/Thick Au Plate') then // 1256 NEED TO CHECK THIS
@@ -55,32 +55,32 @@ begin
       else
         AddStep('OL_AOI', 'OL_AOI01');
     end;
-  end                                                         
-  else              
-  begin                                                        
+  end
+  else
+  begin
     AddStep('OL_Photo_Patt_Form', 'OL_Photo_Patt_Form01');
-    
+
     if ( EGoldB4Res ) and ( SelectiveGoldType = 'BGA/LGA Encapsulation' ) then
       StepParamERP('Remark', 'Selective Etching Only.');
-         
+
     // 2365 OL Photo rule for Max Slot size
-    if Fnc.SysGetAttrValue('EdgePlating') or 
-       ( Fnc.SysGetAttrValue('Slot_Length_PTH') >= 12.00 ) or 
+    if Fnc.SysGetAttrValue('EdgePlating') or
+       ( Fnc.SysGetAttrValue('Slot_Length_PTH') >= 12.00 ) or
        ( Fnc.SysGetAttrValue('Max_Hole_Size') >= 12.00 )
     then
     begin
       AddStep('OL_DEV', 'OL_DEV01');
-      AddStep('Mdl_Insp_OLDev', 'Mdl_Insp_OLDev01');   
+      AddStep('Mdl_Insp_OLDev', 'Mdl_Insp_OLDev01');
     end;
 
     AddStep('OL_DES', 'OL_DES01');
-    
+
     if  ( SelectiveGoldType = 'BGA/LGA Encapsulation' ) or
         ( GoldFingerType = 'Lead Line Etching' ) or
         ( GoldFingerType = 'NO Lead Line Etching' ) or
-        ( GoldFingerType = 'Soldermask Spray' ) 
+        ( GoldFingerType = 'Soldermask Spray' )
         then
-      AddStep('OL_AOI', 'OL_AOI01');                        
+      AddStep('OL_AOI', 'OL_AOI01');
   end;
 end;
 
@@ -94,37 +94,37 @@ begin
   then
     result := true;
 end;
-                   
+
 procedure Gold_Photo2Plating(PltCycle : integer; DFStrip : boolean; B4Res : boolean);
 begin
   if PltCycle = 1 then
   begin
-    
+
     if ( LayupThickness >= 4.2 ) and ( photoStepList.Count = 0 ) then  // 1570 After testing comment
-    begin                  
+    begin
       AddStep('DM2_Buff', 'DM2_BuffGP');
       AddStep('OffLine_PreTreat', 'OffLine_PreTreatGP'); // 1570 Duplicate Unique ID error when BGA/LGA Encapsulation Selective Gold Type was selected
       AddStep('Clean_Room_Oven', 'Clean_Room_OvenGP');   // 1570 Duplicate Unique ID error when BGA/LGA Encapsulation Selective Gold Type was selected
       AddStep('Man_DF_Lam', 'Man_DF_LamGP');             // 1570 Duplicate Unique ID error when BGA/LGA Encapsulation Selective Gold Type was selected
-    end;                                                
-                 
+    end;
+
     if B4Res then
       AddStep('Gold_Photo', 'Gold_Photo01')
-    else                   
+    else
       AddStep('Gold_Photo_AR', 'Gold_Photo_AR01');
-                                                                 
+
     AddStep('Gold_Develop', 'Gold_Develop01');
-  end                            
+  end
   else if PltCycle = 2 then
-  begin                                                  
+  begin
     if B4Res then    
       AddStep('Gold_Photo', 'Gold_Photo02')
     else
       AddStep('Gold_Photo_AR', 'Gold_Photo_AR02');
-                     
+
     AddStep('Gold_Develop', 'Gold_Develop02');
-  end;                         
-                                    
+  end;
+
   // 1365 Lead Free HAL with Selective Gold Finishing
   if ( AOIForGoldPlating ) and ( PltCycle = 1 ) then
   begin
@@ -137,14 +137,14 @@ begin
     else if PltCycle = 2 then
       AddStep('Mdl_Insp', 'Mdl_Insp03');
   end;
-                               
+
   if PltCycle = 1 then
     AddStep('Gold_Elytic_Plt1', 'Gold_Elytic_Plt101')
   else if PltCycle = 2 then
     AddStep('Gold_Elytic_Plt2', 'Gold_Elytic_Plt201');
 
   if DFStrip = true then
-  begin                 
+  begin
     if PltCycle = 1 then
       AddStep('Gold_Strip', 'Gold_Strip01')
     else if PltCycle = 2 then
@@ -159,8 +159,8 @@ begin
 
   if UVBump = true then
     AddStep('Gold_UVBump', 'Gold_UVBump01');
-         
-  if Plating = true then                                    
+
+  if Plating = true then
     AddStep('Gold_Elytic_Plt1', 'Gold_Elytic_Plt101');
 end;
 
@@ -168,7 +168,7 @@ procedure Soldermask_Spray_Selective_Gold;
 begin
   AddStep('ResSprayCoat_SF', 'ResSprayCoat_SF01');
   AddStep('ResistExp_Ledia', 'ResistExp_Ledia01');
-  AddStep('ResSprayBaking_SF', 'ResSprayBaking_SF01'); 
+  AddStep('ResSprayBaking_SF', 'ResSprayBaking_SF01');
   AddStep('OffLine_PreTreat', 'OffLine_PreTreat_SF01');
   
   if GoldFingerType <> 'Soldermask Spray' then
@@ -176,7 +176,7 @@ begin
     AddStep('Gold_Elytic_Plt1', 'Gold_Elytic_Plt101');
     AddStep('ResistStrip_SF', 'ResistStrip_SF01'); 
   end;
-end; 
+end;
 
 procedure Alk_Lead_Line_Etching;
 begin
@@ -200,7 +200,7 @@ begin
   if (GoldFingerType = 'Lead Line Etching') or 
      (GoldFingerType = 'NO Lead Line Etching') or
      (SelectiveGoldType = 'BGA/LGA Encapsulation') or
-     (GoldFingerType = 'Soldermask Spray') 
+     (GoldFingerType = 'Soldermask Spray')
   then                                           
   begin //Common Steps for the above                      
       OL_Pattern_Formation(true);
@@ -219,11 +219,11 @@ begin
            (SelectiveGoldType = 'Soldermask Spray') or
            (SelectiveGoldType = 'BGA/LGA Encapsulation') or
            (GoldFingerType = 'Soldermask Spray') 
-  then           
-  begin       
+  then
+  begin
     if ( SelectiveGoldType = 'Soldermask Spray' ) or ( GoldFingerType = 'Soldermask Spray' )  then
       Soldermask_Spray_Selective_Gold;
-      
+                 
     if ( SelectiveGoldType <> 'Soldermask Spray' ) and (SelectiveGoldType <> 'BGA/LGA Encapsulation' ) then
       Gold_Photo2Plating(1, true, true);
       
@@ -231,13 +231,14 @@ begin
     
     if BoardFinish = 'Thin/Thick Au Plate' then Gold_Photo2Plating(2, true, true);
     
+    // 2362
     //if (BoardFinish = 'Full Body Gold') or  (BoardFinish = 'Thin/Thick Au Plate') or
-    //   (SelectiveGoldType = 'Pattern Overhang / PTH') or (SelectiveGoldType = 'Gold Finger + Pattern Overhang / PTH') then
+   //    (SelectiveGoldType = 'Pattern Overhang / PTH') or (SelectiveGoldType = 'Gold Finger + Pattern Overhang / PTH') then
       AddStep('OffLine_PreTreat', 'OffLine_PreTreat_B4AE'); 
                                          
     if (BoardFinish = 'Full Body Gold') or (BoardFinish = 'Thin/Thick Au Plate') then
       AddStep('HoleTent_Photo', 'HoleTent_Photo01')
-    else if (SelectiveGoldType = 'Pattern Overhang / PTH') or 
+    else if (SelectiveGoldType = 'Pattern Overhang / PTH') or
             (SelectiveGoldType = 'Gold Finger + Pattern Overhang / PTH') or
             (SelectiveGoldType = 'Soldermask Spray' ) or
             (SelectiveGoldType = 'BGA/LGA Encapsulation')
@@ -245,18 +246,19 @@ begin
       AddStep('AlkEtchPatt_Photo', 'AlkEtchPatt_Photo01')
     else if ( GoldFingerType = 'Soldermask Spray' ) then
       AddStep('AELL_Photo', 'AELL_Photo01');
-        
+
     Alkaline_DES;
-    
+
+    // 2362
     //if (BoardFinish = 'Full Body Gold') or  (BoardFinish = 'Thin/Thick Au Plate') or
     //   (SelectiveGoldType = 'Pattern Overhang / PTH') or (SelectiveGoldType = 'Gold Finger + Pattern Overhang / PTH') then
-      AddStep('OffLine_PreTreat', 'OffLine_PreTreat_AFAE'); 
-  end;                    
+      AddStep('OffLine_PreTreat', 'OffLine_PreTreat_AFAE');
+  end;
 
 End;
 
 function Epoxy_US(process: string; seq_no: integer) : string;
-begin                        
+begin
   case process of
     'A' : AddStep('Epoxy_PlugA', 'Epoxy_PlugA0' + IntToStr(seq_no));
     'B' : AddStep('Epoxy_PlugB', 'Epoxy_PlugB0' + IntToStr(seq_no));
@@ -267,22 +269,22 @@ end;
 function Epoxy_Plug_Process : string;  // 1463
 begin
   result := Fnc.SysGetAttrValue('EpoxyPlug_Process');
-  
+
   if result = 'Auto' then
-  begin                      
+  begin
     if Fnc.SysGetAttrValue('MfgPartType') <> 'Top' then
       result := 'Standard'
     else
     begin
       if Fnc.SysGetAttrValue('EpoxyPlug_PlugToNonPlugSpacing') < 1.0 then
-      begin     
+      begin
         if LayupThickness > 2.0 then
           result := 'Side-by-Side'
         else
           result := 'Standard';
-      end              
-      else           
-      begin                                                                          
+      end
+      else
+      begin
         if LayupThickness > 3.0 then
           result := 'Side-by-Side'
         else
@@ -291,19 +293,19 @@ begin
     end;
   end;
 end;
-                                                                      
+
 procedure Epoxy_Plugging;
-var                                                                
+var
   User_Seq : string;
-  User_Seq_Length : integer;      
+  User_Seq_Length : integer;
   i : integer;
   Process : string;
 begin
   Process := '';
-  
-  if Fnc.SysGetAttrValue('BackDrill_Epoxy') then  // 1258 Additional pre-baking b4 Epoxy Plugging 
-    AddStep('Epoxy_Plug_PreBake_BackDrill', 'Epoxy_Plug_PreBake_BackDrill01'); 
-    
+
+  if Fnc.SysGetAttrValue('BackDrill_Epoxy') then  // 1258 Additional pre-baking b4 Epoxy Plugging
+    AddStep('Epoxy_Plug_PreBake_BackDrill', 'Epoxy_Plug_PreBake_BackDrill01');
+
   if  ( Fnc.SysGetAttrValue('BackDrill_Epoxy') = false ) or
       (( Fnc.SysGetAttrValue('EpoxySide') <> 'None' ) and ( Fnc.SysGetAttrValue('BackDrill_Epoxy') = true  ))
   then // 844 Back Drill After Electrolytic Cu
@@ -314,13 +316,13 @@ begin
       User_Seq := Fnc.SysGetAttrValue('EpoxyPlug_US');
   
       if User_Seq = 'Default' then
-      begin             
-        case Fnc.SysGetAttrValue('EpoxySide') of                      
+      begin
+        case Fnc.SysGetAttrValue('EpoxySide') of
           'Epoxy Side A' : AddStep('Epoxy_PlugA', 'Epoxy_PlugA01');
           'Epoxy Side AB' : begin AddStep('Epoxy_PlugA', 'Epoxy_PlugA01'); AddStep('Epoxy_PlugB', 'Epoxy_PlugB'); end;
           'Epoxy Side B' : AddStep('Epoxy_PlugB', 'Epoxy_PlugB01');
           'Epoxy Side BA' : begin AddStep('Epoxy_PlugB', 'Epoxy_PlugB01'); AddStep('Epoxy_PlugA', 'Epoxy_PlugA01'); end;
-        end;                
+        end;
       end
       else
       begin
@@ -331,7 +333,7 @@ begin
       end;
     end
     else if Epoxy_Plug_Process = 'Side-by-Side' then // 1463
-    begin                           
+    begin
       AddStep('Epoxy_PlugA_SS', 'Epoxy_PlugASS01');
       AddStep('Epoxy_PlugB_SS', 'Epoxy_PlugBSS01');
     end;
@@ -344,7 +346,7 @@ begin
     if BKDRwEpoxyTop then
       AddStep('Epoxy_PlugB', 'Epoxy_PlugB01');
   end;
-  
+
   if Fnc.SysGetAttrValue('EpoxyPlug_CuThin_Process') <> 'None' then
     begin
       if Fnc.SysGetAttrValue('EpoxyPlug_CuThin_Process') = 'Buffing' then
@@ -360,17 +362,17 @@ begin
         AddStep('EpoxyPlug_MicroEtch', 'EpoxyPlug_MicroEtch01');
         AddStep('EpoxyPlug_CT_Buffing2', 'EpoxyPlug_CT_Buffing201');
       end;
-      
-      if ( Fnc.SysGetAttrValue('EpoxyPlug_CuThin_Process') = 'Micro-Etch + Buffing' ) or 
+
+      if ( Fnc.SysGetAttrValue('EpoxyPlug_CuThin_Process') = 'Micro-Etch + Buffing' ) or
          ( Fnc.SysGetAttrValue('EpoxyPlug_CuThin_Process') = 'Buffing + Mirco-Etch + Buffing' )
       then
       begin
-        if LayupThickness > 4.0 then // 1112 Micro-etch for thick board 
-          MessageDlg('Board too thick for Epoxy Plug standard Micro-etch process.', mtWarning, Setof([mbOK]), 0); 
+        if LayupThickness > 4.0 then // 1112 Micro-etch for thick board
+          MessageDlg('Board too thick for Epoxy Plug standard Micro-etch process.', mtWarning, Setof([mbOK]), 0);
       end;
     end;
-    
-    // InProcessCuThk := Cu_Thk_After_EP; // (364) Surface Cu thickness calculation correction 
+
+    // InProcessCuThk := Cu_Thk_After_EP; // (364) Surface Cu thickness calculation correction
     UpdateInProcessCuThk(Cu_Thk_After_EP);
 end;
 
@@ -396,28 +398,28 @@ end;
 
 procedure SolderMask;
 begin
-  if not HardGoldB4Resist then // 1305 Additional condition for CZ Pre-Treatemnt  
-  begin                           
+  if not HardGoldB4Resist then // 1305 Additional condition for CZ Pre-Treatemnt
+  begin
     if FinishGetsCZPreTreat then
-    begin                         
+    begin
       if LayupThickness <= 3.20 then
-      begin                                 
+      begin
         AddStep('OffLine_PreTreat', 'OffLine_PreTreatSM01');
         AddStep('CZPretreat', 'CZPretreat01');
-      end      
-      else                   
-      begin                             
+      end
+      else
+      begin
         AddStep('DM2_Buff', 'DM2_BuffSM01');
-        AddStep('OffLine_PreTreat', 'OffLine_PreTreatSM01'); 
-      end;                           
-    end                               
+        AddStep('OffLine_PreTreat', 'OffLine_PreTreatSM01');
+      end;
+    end
     else
     begin
-      if Fnc.SysGetAttrValue('CZPreTreat') then 
+      if Fnc.SysGetAttrValue('CZPreTreat') then
         AddStep('CZPretreat', 'CZPretreat01');
     end;
-  end;                        
-                           
+  end;
+
   if ((Fnc.SysGetAttrValue('Min_Res_Th') > 40) or (Fnc.SysGetAttrValue('TwoXResist') = true)) then
   begin
 
@@ -425,7 +427,7 @@ begin
       AddStep('ResSprayCoat2X1', 'ResSprayCoat2X101')
     else
       AddStep('ResScreenPrint2X1', 'ResScreenPrint2X101');
-                  
+
     if Fnc.SysGetAttrValue('TwoXResist_Ink') = 'PSR2000-SP300HFM' then
       AddStep('ResSprayCoat2X2', 'ResSprayCoat2X201')
     else
@@ -435,7 +437,7 @@ begin
 
     if GetsInkJetLegend = true then
       AddStep('InkJet_Legend', 'InkJet_Legend01');
-              
+
     AddStep('ResistPostCure2X', 'ResistPostCure2X01');
 
   end
@@ -454,15 +456,15 @@ begin
   else
   begin
     if ScreenPrintResist = true then
-    begin                           
+    begin
       AddStep('ResScreenPrint', 'ResScreenPrint01');
       AddStep('ResScreenPrint2', 'ResScreenPrint201'); // Resist Printing Step with dual info
 
-      if GetsInkJetLegend = true then      
+      if GetsInkJetLegend = true then
         AddStep('InkJet_Legend', 'InkJet_Legend01');
 
       AddStep('ScreenPrintBaking', 'ScreenPrintBaking01');
-    end               
+    end
     else // If not Screen Print Resist, it must be Spray Coat
     begin
       AddStep('ResSprayCoat', 'ResSprayCoat01');
@@ -491,7 +493,7 @@ begin
 
   if ((Fnc.SysGetAttrValue('Marking_A') <> 'None') and (Fnc.SysGetAttrValue('Marking_A') <> 'INKJET LEGEND')) then
     AddStep('MarkingPrint_A', 'MarkingPrint_A01');
-                                
+
   if Fnc.SysGetAttrValue('Marking_A1') <> 'None' then
     AddStep('MarkingPrint_A1', 'MarkingPrint_A101');
 
@@ -516,14 +518,14 @@ var
   SelectiveENIG : boolean;
 begin
   SelectiveENIG := false;
-  if ( SelectiveGoldType<> 'None' ) or 
+  if ( SelectiveGoldType<> 'None' ) or
      ( GoldFingerType <> 'None' ) or
      //( BoardFinish = 'ENIG + OSP' )  // 1173 Additional Surface Finishing. Selective ENIG + OSP
      ( ENIGplusOSP )  // 1256
   then
     SelectiveENIG := true;
 
-  if BakingDone = false then                    
+  if BakingDone = false then
     Baking;
 
   if BoardFinish = 'ENEPIG' then
@@ -537,7 +539,7 @@ begin
       AddStep('ENEPIG_ILPhotoPT', 'ENEPIG_ILPhotoPT01');
     end;
   end
-  else if ( BoardFinish = 'ENIG' ) or ( ENIGplusOSP ) then  // 1173 Additional Surface Finishing. Selective ENIG + OSP // 1256 
+  else if ( BoardFinish = 'ENIG' ) or ( ENIGplusOSP ) then  // 1173 Additional Surface Finishing. Selective ENIG + OSP // 1256
   begin
     if (( ThicknessOverMask >= 2.2 ) and ( ThicknessOverMask <= 3.0 )) then
       ENIG_AlkRinseMicroEtch;
@@ -591,37 +593,36 @@ end;
 procedure RouteFlow03;
 Var
   T_MIN_TH: float;
-begin                         
+begin
   HoleCheckDone := false; //ENIG Changes
   {Electrolytic Copper Steps}
-  if (( Fnc.SysGetAttrValue('CuFilledVias')) and ( NCRun = 1 )) then 
+  if (( Fnc.SysGetAttrValue('CuFilledVias')) and ( NCRun = 1 )) then
   begin
     if Fnc.SysGetAttrValue('Aspect_Ratio_Val') > 6 then
     begin
       if ( Fnc.SysGetAttrValue('Abs_Min_Th') > 18 ) or 
-         ( Fnc.SysGetAttrValue('Ave_Min_Th') > 20 ) or 
-         ( Fnc.SysGetAttrValue('Aspect_Ratio_Val') > 8 ) or
-         ( CustCode_Rule('Customer') = 'FA' ) // 1260 Updated Cu Via Filling Rule 
+         ( Fnc.SysGetAttrValue('Ave_Min_Th') > 20 ) or
+         ( Fnc.SysGetAttrValue('Aspect_Ratio_Val') > 6 ) or // 2401
+         ( CustCode_Rule('Customer') = 'FA' ) // 1260 Updated Cu Via Filling Rule
       then  // 1086 - Electrolytic Cu Plating Line Selection from Flowchart
         AddStep('Flash_Plating', 'Flash_Plating01');
     end;
   end;
-                                         
+
   AddStep('Electrolytic_Cu_1', 'Electrolytic_Cu_1' + '0' + IntToStr(MetalizationRun));
 
   if (RequiredPlatingThk > 41) and (Fnc.SysGetAttrValue('CuFilledVias') = false) then
     AddStep('Electrolytic_Cu_2', 'Electrolytic_Cu_201');
 
-                                                      
-  if  (( Plating_Line = 'PAL4' ) or 
-       ( Plating_Line = 'PAL5' ) or 
+  if  (( Plating_Line = 'PAL4' ) or
+       ( Plating_Line = 'PAL5' ) or
        ( Plating_Line = 'PAL6' ) or
-       ( Plating_Line = 'PAL7' ) or 
+       ( Plating_Line = 'PAL7' ) or
        ( Plating_Line = 'PAL6 / PAL7' ))
     or
-      ( Fnc.SysGetAttrValue('Min_Drill_Size') <= 0.25 ) and ( Plating_Line = 'MCP' ) 
+      ( Fnc.SysGetAttrValue('Min_Drill_Size') <= 0.25 ) and ( Plating_Line = 'MCP' )
     or
-      ( Fnc.SysGetAttrValue('NCRunX2') = false ) and ( Fnc.SysGetAttrValue('EpoxySide') <> 'None' )      
+      ( Fnc.SysGetAttrValue('NCRunX2') = false ) and ( Fnc.SysGetAttrValue('EpoxySide') <> 'None' )
   then
     AddStep('CuHoleCheck', 'CuHoleCheck' + '0' + IntToStr(MetalizationRun));
     
@@ -631,22 +632,22 @@ begin
     begin
       AddStep('Pre_Photo_Cu_Thin', 'Pre_Photo_Cu_Thin01');
       UpdateInProcessCuThk(ConvertStrtoInt( Fnc.SysGetAttrValue('Pre_Photo_CuThin_Spec') ));
-    end;                                  
+    end;
   end;
 
   if (( Fnc.SysGetAttrValue('BackDrill_Epoxy') ) and ( Fnc.SysGetAttrValue('NCRunX2') = false )) then // 844 Backdrill after Electrolytic Cu
-    Back_Drill_Epoxy;                
-                          
+    Back_Drill_Epoxy;
+
   if (
-      (                    
+      (
        ( Fnc.SysGetAttrValue('CappedVia') = true ) or
-       ( Fnc.SysGetAttrValue('EpoxySide') <> 'None' ) or                                                                                            
+       ( Fnc.SysGetAttrValue('EpoxySide') <> 'None' ) or
        ( Fnc.SysGetAttrValue('BackDrill_Epoxy') = true ) // 844 Backdrill after Electrolytic Cu
-      )                     
+      )
       and ( Fnc.SysGetAttrValue('NCRunX2') = false )
      )
   then
-  begin                                    
+  begin
     if (( Fnc.SysGetAttrValue('EpoxySide') <> 'None' ) or ( Fnc.SysGetAttrValue('BackDrill_Epoxy') = true  )) then
       Epoxy_Plugging;
 
@@ -667,37 +668,37 @@ begin
 
   if Fnc.SysGetAttrValue('MfgPartType') = 'Top' then
   begin
-    if HardGoldB4Resist 
+    if HardGoldB4Resist
     then
       ElectrolyticGoldPlatingB4Resist
     else
-      OL_Pattern_Formation(false);     
-  end                 
+      OL_Pattern_Formation(false);
+  end
   else
     OL_Pattern_Formation(false);
-                               
+
   if ((Fnc.SysGetAttrValue('Design_Type') = 'Flip Chip') and (Fnc.SysGetAttrValue('Tented_Via') = true)) then
-  begin                   
+  begin
     AddStep('Panel_EC', 'Panel_EC01');
-    
-    if LayupThickness < 0.60 then  // 1198 OL Process Flow Update 
+
+    if LayupThickness < 0.60 then  // 1198 OL Process Flow Update
       AddStep('IL_AOI_OL_ThinPanel', 'IL_AOI_OL_ThinPanel06') // 1108 OL Process Flow Update
     else
       AddStep('OL_AOI', 'OL_AOI06');
-      
+
   end
   else
-  begin                 
-                    
+  begin
+
     if LayupThickness < 0.60 then   // 1108 OL Process Flow Update  // 1198 OL Process Flow Update 
       AddStep('IL_AOI_OL_ThinPanel', 'IL_AOI_OL_ThinPanel06')
     else
       AddStep('OL_AOI', 'OL_AOI06');
-      
+
     if ((Fnc.SysGetAttrValue('EC_Type') = 'Panel - Before Primary') or (Fnc.SysGetAttrValue('EC_Type') = 'Panel - Before Primary Routing')) then
       AddStep('Panel_EC', 'Panel_EC01');
-      
-  end;                    
+
+  end;
 
   if Fnc.SysGetAttrValue('MfgPartType') = 'Top' then  //Assuming Subs/Drilled Inners end here
   begin 
@@ -707,46 +708,46 @@ begin
 
     if Engx_SMCount > 0 then
       Soldermask;
-      
-    if (GoldFingerType = 'Au Finger Plate after SM') then
-    begin                          
-      Gold_Photo2Plating(1, true, false);             
-      AddStep('OL_AOI', 'OL_AOI07');
-    end;                                                                                                
 
-    if ( BoardFinish = 'ENIG' ) or 
+    if (GoldFingerType = 'Au Finger Plate after SM') then
+    begin
+      Gold_Photo2Plating(1, true, false);
+      AddStep('OL_AOI', 'OL_AOI07');
+    end;
+
+    if ( BoardFinish = 'ENIG' ) or
        ( ENIGplusOSP ) or // 1256
        ( BoardFinish = 'ENEPIG' )
     then
-    begin                   
+    begin
       AddStep('Hole_Check', 'Hole_Check01');
       HoleCheckDone := true;
-                                            
-      ENIG_ENEPIG;            
-                                                
+
+      ENIG_ENEPIG;
+
       if UVMarking = true then
         MarkingPrintProcess;
 
       ENIG_NFluxDone := true; //Check if this still needs to be done
     end
-    else                               
-    begin                         
+    else
+    begin
       if UVMarking = true then
-        MarkingPrintProcess 
+        MarkingPrintProcess
       else if Engx_SMCount > 0 then
         AddStep('UV_Cure', 'UV_Cure01');
     end;
 
     if Fnc.SysGetAttrValue('BaseCu_Marking') = true then
       AddStep('BaseCuMarking_Wash', 'BaseCuMarking_Wash01');
-                                 
-    if UVMarking = false then                       
-      MarkingPrintProcess;       
-             
+
+    if UVMarking = false then
+      MarkingPrintProcess;
+
     if ( BoardFinish = 'Immersion Silver' ) and
        ( SelectiveGoldorFinger ) and
        ( Fnc.SysGetAttrValue('Imm_Silver_Process') = 'Photo' ) then
-    begin                
+    begin
       AddStep('Hole_Check', 'Hole_Check01');
       HoleCheckDone := true;
       Immersion_Silver_Sel_Gold('Photo');
@@ -758,8 +759,9 @@ begin
     begin                      
       Lead_Free_HAL_Sel_Gold('Photo'); // 1355
     end;
-                               
-    RouteFlow04;                                                  
+
+    RouteFlow04;
 
   end;
+  
 End;

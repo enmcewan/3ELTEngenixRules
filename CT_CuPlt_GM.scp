@@ -26,7 +26,7 @@ begin
                                   
   // 2363 Process Step Update  - Remove PAL3
   {if UpperCase(TestId) = 'Q30252 (CLASS C)' then
-  begin
+  begin                      
     if LowerCase(ProdCode) = 'ls' then
       Result := 'PAL3';
   end; }                               

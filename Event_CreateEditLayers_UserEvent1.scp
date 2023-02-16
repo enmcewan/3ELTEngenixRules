@@ -1,0 +1,432 @@
+//HeaderImportExport-->
+//SiteId=0
+//Enterprise=True
+//ScriptType=1
+//ScriptGroup=Create / Edit Layers
+//HeaderImportExport<--
+const                                                                                                                                                                                                                                                                                                                                     
+  BackDrillDefID_1 = 11;  // replace with your own DrillFileDefinition.DrillDefID values that are BackDrill types (DrillFileDefinition.DrillType = 7).
+  BackDrillDefID_2 = -99; // just keep adding more constants if you have multiple backdrill types defined…
+ 
+var
+  BackDrillConvertCount : integer;
+                                   
+function IsSoldermask(LayerType : string) : boolean;
+begin
+  Result := LayerType = 'solder_mask';
+end;
+                                          
+function IsCopperLayer(LayerType : string) : boolean;       
+begin
+  Result := (LayerType = 'signal') or
+            (LayerType = 'power_ground') or
+            (LayerType = 'mixed') or
+            (LayerType = 'dummy');
+end;
+                                         
+procedure GetStartEndLayer(DrillLayersTable : TSysTable; 
+                           NonDrillLayersTable : TSysTable; 
+                           var StartLayer : String; 
+                           var StartCopperLayer : String; 
+                           var EndLayer : String;
+                           var EndCopperLayer : String;
+                           var IsUpsideDown : Boolean);
+var
+  LayerType : string;   
+  StartIndex, EndIndex : integer;  
+  DrillStart, DrillEnd : string;
+begin
+  StartLayer := '';
+  EndLayer := '';
+  IsUpsideDown := False;
+  StartIndex := -1;
+  EndIndex := -1;
+  
+  DrillStart := DrillLayersTable.FieldByName('StartLyr').AsString;
+  DrillEnd   := DrillLayersTable.FieldByName('EndLyr').AsString;
+  
+  // both are filled in...
+  if ((DrillStart <> '') and (DrillEnd <> '')) then
+  begin
+    // DrillStart is filled in...locate that
+    if NonDrillLayersTable.Locate('LayerName', DrillStart, SetOf([])) then
+    begin
+      StartLayer := NonDrillLayersTable.FieldByName('LayerName').AsString;
+      StartIndex := NonDrillLayersTable.FieldByName('DisplaySeq').AsInteger;
+    end;
+  
+    // DrillEnd is filled in...locate that
+    if NonDrillLayersTable.Locate('LayerName', DrillEnd, SetOf([])) then
+    begin
+      EndLayer := NonDrillLayersTable.FieldByName('LayerName').AsString;
+      EndIndex := NonDrillLayersTable.FieldByName('DisplaySeq').AsInteger;
+    end;
+    
+    IsUpsideDown := StartIndex > EndIndex;
+  end
+  else if ((DrillStart = '') and (DrillEnd = '')) then
+  begin
+    IsUpsideDown := False;
+      
+    // just pick the outermost Copper or Soldermask layers
+    NonDrillLayersTable.First;
+  
+    while not NonDrillLayersTable.EOF do
+    begin
+      LayerType := Lowercase(NonDrillLayersTable.FieldByName('LayerType').AsString);
+
+      if (IsSolderMask(LayerType) or IsCopperLayer(LayerType)) then
+      begin 
+        StartLayer := NonDrillLayersTable.FieldByName('LayerName').AsString;
+        break;   
+      end; 
+      NonDrillLayersTable.Next;
+    end;
+
+    NonDrillLayersTable.Last;
+  
+    while not NonDrillLayersTable.BOF do
+    begin
+      LayerType := Lowercase(NonDrillLayersTable.FieldByName('LayerType').AsString);
+
+      if (IsSolderMask(LayerType) or IsCopperLayer(LayerType)) then
+      begin                                          
+        EndLayer := NonDrillLayersTable.FieldByName('LayerName').AsString;
+        break;   
+      end; 
+      NonDrillLayersTable.Prior;
+    end;
+  end
+  else if (DrillStart <> '') then
+  begin
+    // DrillStart is filled in...locate that
+    if NonDrillLayersTable.Locate('LayerName', DrillStart, SetOf([])) then
+    begin                                  
+      StartLayer := NonDrillLayersTable.FieldByName('LayerName').AsString;
+      StartIndex := NonDrillLayersTable.FieldByName('DisplaySeq').AsInteger;
+    end;                                         
+    
+    // DrillEnd is blank... 
+    NonDrillLayersTable.Last;
+                                                                 
+    while not NonDrillLayersTable.BOF do
+    begin
+      LayerType := Lowercase(NonDrillLayersTable.FieldByName('LayerType').AsString);
+
+      if (IsSolderMask(LayerType) or IsCopperLayer(LayerType)) then
+      begin                                          
+        EndLayer := NonDrillLayersTable.FieldByName('LayerName').AsString;
+        EndIndex := NonDrillLayersTable.FieldByName('DisplaySeq').AsInteger;
+        
+        break;   
+      end; 
+      NonDrillLayersTable.Prior;                               
+    end;
+    
+    IsUpsideDown := StartIndex > EndIndex;
+  end
+  else if (DrillEnd <> '') then
+  begin
+    // DrillStart is blank...
+    NonDrillLayersTable.First;
+  
+    while not NonDrillLayersTable.EOF do
+    begin
+      LayerType := Lowercase(NonDrillLayersTable.FieldByName('LayerType').AsString);
+
+      if (IsSolderMask(LayerType) or IsCopperLayer(LayerType)) then
+      begin 
+        StartLayer := NonDrillLayersTable.FieldByName('LayerName').AsString;
+        StartIndex := NonDrillLayersTable.FieldByName('DisplaySeq').AsInteger;
+        break;   
+      end; 
+      NonDrillLayersTable.Next;
+    end;
+
+    // DrillEnd is filled in...locate that
+    if NonDrillLayersTable.Locate('LayerName', DrillEnd, SetOf([])) then
+    begin
+      EndLayer := NonDrillLayersTable.FieldByName('LayerName').AsString;
+      EndIndex := NonDrillLayersTable.FieldByName('DisplaySeq').AsInteger;
+    end;
+    
+    IsUpsideDown := StartIndex > EndIndex;
+  end; 
+  
+  // now must get the start/end copper layers if necessary...
+  
+  // StartCopperLayer
+  if NonDrillLayersTable.Locate('DisplaySeq', StartIndex, SetOf([])) then
+  begin            
+    LayerType := Lowercase(NonDrillLayersTable.FieldByName('LayerType').AsString);
+    if IsCopperLayer(LayerType) then                                                      
+    begin
+      StartCopperLayer := NonDrillLayersTable.FieldByName('LayerName').AsString;   
+    end
+    else
+    begin
+      if IsUpsideDown then
+      begin
+        while not NonDrillLayersTable.BOF do
+        begin
+          LayerType := Lowercase(NonDrillLayersTable.FieldByName('LayerType').AsString);
+          if IsCopperLayer(LayerType) then                                                      
+          begin
+            StartCopperLayer := NonDrillLayersTable.FieldByName('LayerName').AsString;
+            break;
+          end
+          else
+            NonDrillLayersTable.Prior;
+        end;
+      end
+      else
+      begin
+        while not NonDrillLayersTable.EOF do
+        begin
+          LayerType := Lowercase(NonDrillLayersTable.FieldByName('LayerType').AsString);
+          if IsCopperLayer(LayerType) then                                                      
+          begin
+            StartCopperLayer := NonDrillLayersTable.FieldByName('LayerName').AsString;
+            break;
+          end
+          else
+            NonDrillLayersTable.Next;
+        end;
+      end;
+    end; 
+  end;
+  
+  // EndCopperLayer
+  if NonDrillLayersTable.Locate('DisplaySeq', EndIndex, SetOf([])) then
+  begin            
+    LayerType := Lowercase(NonDrillLayersTable.FieldByName('LayerType').AsString);
+    if IsCopperLayer(LayerType) then                                                      
+    begin
+      EndCopperLayer := NonDrillLayersTable.FieldByName('LayerName').AsString;   
+    end                                         
+    else
+    begin
+      if not IsUpsideDown then
+      begin
+        while not NonDrillLayersTable.BOF do
+        begin
+          LayerType := Lowercase(NonDrillLayersTable.FieldByName('LayerType').AsString);
+          if IsCopperLayer(LayerType) then                                                      
+          begin
+            EndCopperLayer := NonDrillLayersTable.FieldByName('LayerName').AsString;
+            break;
+          end
+          else
+            NonDrillLayersTable.Prior;
+        end;
+      end
+      else
+      begin
+        while not NonDrillLayersTable.EOF do
+        begin
+          LayerType := Lowercase(NonDrillLayersTable.FieldByName('LayerType').AsString);
+          if IsCopperLayer(LayerType) then                                                      
+          begin
+            EndCopperLayer := NonDrillLayersTable.FieldByName('LayerName').AsString;
+            break;
+          end
+          else
+            NonDrillLayersTable.Next;
+        end;
+      end;
+    end;
+  end;            
+end;
+
+function ShouldDoBackDrillConversion(DrillLayersTable : TSysTable) : boolean;
+begin
+  // example logic is that if the Drill's LayerName:
+  
+  //   1. begins with 'BD'  and 
+  //   2. Is non-plated     and
+  //   3. Is a Surface drill
+  
+  //then it is an old style backdrill definition and we need to convert to a new BackDrill Type...      
+  
+  // replace with your own logic to determine if this drill needs conversion.
+  Fnc.SendDebugString('Test');              
+  Result := (Lowercase(LeftStr(DrillLayersTable.FieldByName('LayerName').AsString, 2)) = 'bd') and
+            (not DrillLayersTable.FieldByName('DrillPlated').AsBoolean) and
+            (DrillLayersTable.FieldByName('BlindVia').AsBoolean);           
+                                                                                                                   
+  Fnc.SendDebugString(' Plated: ' + DrillLayersTable.FieldByName('DrillPlated').AsString +
+                      ' Surface: ' + DrillLayersTable.FieldByName('BlindVia').AsString);
+  if Result then
+    Fnc.SendDebugString('Will convert - matches pre-requisites')
+  else                                             
+    Fnc.SendDebugString('Will NOT convert - does not match pre-requisites'); 
+end;         
+
+function GetNextCopperLayerName(NonDrillLayersTable : TSysTable; LayerName : string) : string;
+begin
+  Result := '';
+  
+  if NonDrillLayersTable.Locate('LayerName', LayerName, SetOf([])) then
+  begin 
+    NonDrillLayersTable.Next;      
+
+    while not NonDrillLayersTable.EOF do
+    begin
+      if IsCopperLayer(LowerCase(NonDrillLayersTable.FieldByName('LayerType').AsString)) then
+      begin
+        Result := NonDrillLayersTable.FieldByName('LayerName').AsString;
+        break;
+      end;
+      NonDrillLayersTable.Next;
+    end
+  end;
+end;
+
+function GetPriorCopperLayerName(NonDrillLayersTable : TSysTable; LayerName : string) : string;
+begin
+  Result := '';                                                                     
+  
+  if NonDrillLayersTable.Locate('LayerName', LayerName, SetOf([])) then
+  begin 
+    NonDrillLayersTable.Prior;      
+
+    while not NonDrillLayersTable.BOF do
+    begin
+      if IsCopperLayer(LowerCase(NonDrillLayersTable.FieldByName('LayerType').AsString)) then
+      begin
+        Result := NonDrillLayersTable.FieldByName('LayerName').AsString;
+        break;                    
+      end;
+      NonDrillLayersTable.Prior;
+    end
+  end;
+end;
+
+procedure DoBackDrillConversion(DrillLayersTable : TSysTable; NonDrillLayersTable : TSysTable; EditLayersTable : TSysTable);
+var
+  SaveAutoInc : integer;
+  StartLayer : string;
+  StartCopperLayer : string;
+  EndLayer : string;
+  EndCopperLayer : string;
+  UpsideDown : boolean;
+begin  
+  SaveAutoInc := DrillLayersTable.FieldByName('AutoInc').AsInteger;
+  
+  // now find the same record in EditLayersTable...
+  if EditLayersTable.Locate('AutoInc', SaveAutoInc, SetOf([])) then
+  begin              
+    EditLayersTable.Edit;
+    EditLayersTable.FieldByName('DrillDefID').AsInteger := BackDrillDefID_1;  // changes the Drill definition type to be the new BackDrill type                     
+    EditLayersTable.FieldByName('DrillPlated').AsBoolean := True;  // new BackDrill type MUST be plated to display correctly                     
+    
+    // now must figure out the correct Start and End Layers as well as BackDrill From, To and DNC layers...
+    GetStartEndLayer(DrillLayersTable, NonDrillLayersTable, StartLayer, StartCopperLayer, EndLayer, EndCopperLayer, UpsideDown);    
+    
+    Fnc.SendDebugString('StartLayer  : ' + StartLayer);  
+    Fnc.SendDebugString('StartCuLayer: ' + StartCopperLayer);  
+    Fnc.SendDebugString('EndLayer    : ' + EndLayer);  
+    Fnc.SendDebugString('EndCuLayer  : ' + EndCopperLayer);  
+    if UpsideDown then 
+      Fnc.SendDebugString('Is Upside Down')
+    else  
+      Fnc.SendDebugString('NOT Upside Down')
+      
+    if not UpsideDown then
+    begin
+      EditLayersTable.FieldByName('StartLyr').AsString := StartLayer;
+      EditLayersTable.FieldByName('DrillBackDrillFrom_Name').AsString := StartCopperLayer;  
+      EditLayersTable.FieldByName('DrillBackDrillTo_Name').AsString := EndCopperLayer;  
+      EditLayersTable.FieldByName('DrillBackDrillDNC_Name').AsString := GetNextCopperLayerName(NonDrillLayersTable, EndLayer);
+      EditLayersTable.FieldByName('EndLyr').AsString := GetNextCopperLayerName(NonDrillLayersTable, EditLayersTable.FieldByName('DrillBackDrillDNC_Name').AsString);
+    end                             
+    else
+    begin
+      EditLayersTable.FieldByName('StartLyr').AsString := StartLayer;
+      EditLayersTable.FieldByName('DrillBackDrillFrom_Name').AsString := StartCopperLayer;  
+      EditLayersTable.FieldByName('DrillBackDrillTo_Name').AsString := EndCopperLayer;   
+      EditLayersTable.FieldByName('DrillBackDrillDNC_Name').AsString := GetPriorCopperLayerName(NonDrillLayersTable, EndLayer);
+      EditLayersTable.FieldByName('EndLyr').AsString := GetPriorCopperLayerName(NonDrillLayersTable, EditLayersTable.FieldByName('DrillBackDrillDNC_Name').AsString);
+    end;
+    
+    // Remove when script is working...
+    EditLayersTable.FieldByName('LayerName').AsString := EditLayersTable.FieldByName('LayerName').AsString + '-X'; 
+    
+    Fnc.SendDebugString('BD From:' + EditLayersTable.FieldByName('DrillBackDrillFrom_Name').AsString); 
+    Fnc.SendDebugString('BD To  :' + EditLayersTable.FieldByName('DrillBackDrillTo_Name').AsString); 
+    Fnc.SendDebugString('BD DNC :' + EditLayersTable.FieldByName('DrillBackDrillDNC_Name').AsString); 
+     
+    if EditLayersTable.FieldByName('DrillBackDrillDNC_Name').AsString = '' then
+    begin
+      Fnc.SendDebugString('Not Converted - Could not find a valid DNC layer');
+      EditLayersTable.Cancel;                        
+    end
+    else if EditLayersTable.FieldByName('EndLyr').AsString = '' then
+    begin
+      Fnc.SendDebugString('Not Converted - Could not find a valid End layer');
+      EditLayersTable.Cancel;                        
+    end
+    else
+    begin
+      EditLayersTable.Post;                        
+      Inc(BackDrillConvertCount);
+    end;
+  end;
+end;            
+          
+procedure ConvertBackdrills(DrillLayersTable: TSysTable; NonDrillLayersTable : TSysTable; EditLayersTable: TSysTable);
+begin                          
+  BackDrillConvertCount := 0;
+  
+  DrillLayersTable.First;
+  
+  while not DrillLayersTable.EOF do
+  begin
+    Fnc.SendDebugSeparator; 
+    Fnc.SendDebugString('Drill: ' + DrillLayersTable.FieldByName('LayerName').AsString);
+    
+    if not Fnc.SysGetIsBackDrill(DrillLayersTable.FieldByName('LayerName').AsString) then
+    begin
+      if ShouldDoBackDrillConversion(DrillLayersTable) then
+      begin                                          
+        DoBackDrillConversion(DrillLayersTable, NonDrillLayersTable, EditLayersTable);  // actually modify the current DrillLayersTable record and convert into a new style BackDrill...   
+      end;
+    end
+    else
+    begin
+      Fnc.SendDebugString('Will NOT convert - already a Back Drill Type.'); 
+    end;
+                        
+    DrillLayersTable.Next;   
+  end;
+  
+  if BackDrillConvertCount = 0 then
+    ShowMessage('No drills were converted to the new style BackDrill.')
+  else if BackDrillConvertCount = 1 then
+    ShowMessage(IntToStr(BackDrillConvertCount) + ' drill was converted to the new style BackDrill.')
+  else
+    ShowMessage(IntToStr(BackDrillConvertCount) + ' drills were converted to the new style BackDrill.');
+end;
+     
+
+procedure CreateEditLayersUserEvent1(ParamList: TStringList; NonDrillLayersTable: TSysTable; DrillLayersTable: TSysTable; EditLayersTable: TSysTable);
+begin                                                              
+  // ParamList           : Currently no parameters are passed          
+  // NonDrillLayersTable : Read Only TSysTable containing all non-Drill or Rout layers (Copper Layers, SolderMask, Legends, etc.)
+  // DrillLayersTable    : Read Only TSysTable containing all Drill and Rout layers
+  // EditLayersTable     : Writeable TSysTable containing ALL layers.  Up to this script to update this table correctly as it is
+  //                        directly used by Engenix.  Note:  This table cannot be used by Fnc.OpenDataGrid as it has been
+  //                        disconnected by Engenix from any data aware controls.
+
+  // Usage:  Typically you can use this script to perform any mass-change type activities on the existing layers.
+  //         Iterate over the NonDrillLayersTable or the DrillLayersTable to find records to change.  Once you have
+  //         found a record you want to modify, then find the corresponding record in EditLayersTable and edit data
+  //         there.
+  
+  // Example:  Example below will show one method to take old style Back Drill definitions and convert to the new
+  //            BackDrill drill type that is found in Engenix v5.1+.
+
+  // Uncomment line below to perform Backdrill conversion...
+  // ConvertBackdrills(DrillLayersTable, NonDrillLayersTable, EditLayersTable);
+end;                                                   
+              

@@ -2825,26 +2825,28 @@ begin
 End;
 
 Procedure Electrolytic_Cu_1_SD;
-begin       
+begin
   Electrolytic_Cu_SD(false);
 end;
 
 Procedure Electrolytic_Cu_2_SD;
 begin
   Electrolytic_Cu_SD(true);
-end;                         
+end;
 
 Procedure Electrolytic_CappedVia_SD;
 begin
-  StepDeptERP('COPPL-E01');
-  StepWCERP('COPPL-E01');
+  //StepDeptERP('COPPL-E01');
+  //StepWCERP('COPPL-E01');
+  StepDeptERP('COPPL-C'); // 2388
+  StepWCERP('COPPL-C');
 
   if Fnc.SysGetAttrValue('Min_Surf_Plt') = 0 then
     Fnc.SysSetAttrValue('Min_Surf_Plt', 15.0);
 
   StepParamERP('Min Surface Plate', Fnc.SysGetAttrValue('Min_Surf_Plt'));
   StepParamERP('Process', 'Flash Plating');
-
+                  
   CalcAndInsert_DECUTHK(false, 2, 'CappedVia');
   AddBoardFinishAsAttribute; // 1223 Additional Surface Finish info under Electrolytic Cu step
 end;

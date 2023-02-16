@@ -1,0 +1,21 @@
+//HeaderImportExport-->
+//SiteId=0
+//Enterprise=True
+//ScriptType=1
+//ScriptGroup=Create / Edit Layers
+//HeaderImportExport<--
+procedure CreateEditLayersUserEvent2(ParamList: TStringList; NonDrillLayersTable: TSysTable; DrillLayersTable: TSysTable; EditLayersTable: TSysTable);
+begin                                                              
+  // ParamList           : Currently no parameters are passed          
+  // NonDrillLayersTable : Read Only TSysTable containing all non-Drill or Rout layers (Copper Layers, SolderMask, Legends, etc.)
+  // DrillLayersTable    : Read Only TSysTable containing all Drill and Rout layers
+  // EditLayersTable     : Writeable TSysTable containing ALL layers.  Up to this script to update this table correctly as it is
+  //                        directly used by Engenix.  Note:  This table cannot be used by Fnc.OpenDataGrid as it has been
+  //                        disconnected by Engenix from any data aware controls.
+
+  // Usage:  Typically you can use this script to perform any mass-change type activities on the existing layers.
+  //         Iterate over the NonDrillLayersTable or the DrillLayersTable to find records to change.  Once you have
+  //         found a record you want to modify, then find the corresponding record in EditLayersTable and edit data
+  //         there.
+end;                                                   
+         

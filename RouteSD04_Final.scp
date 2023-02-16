@@ -4,7 +4,7 @@
 //ScriptType=0
 //ScriptGroup=HCS
 //HeaderImportExport<--
- uses                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          
+ uses
   Event_RouteGenLibrary, Eng_RouteFunctions,
   RouteFunctions, RouteSD03_ElyCu2Marking, CT_RoutStkHt;
 
@@ -51,40 +51,48 @@ end;
 
 procedure Back_Drill_Common_SD(process : string);
 var
-  thk : float
+  thk : float;
+  
 begin
+
   StepDeptERP('BACKD-A');
   
   // 2366 Additional Attribute for Backdrill stub length Spec
   if Fnc.SysGetAttrValue('BackDrillStubSpec') <= 6.0 then
-    StepWCERP('BACKD-B')
+  begin
+
+    StepWCERP('BACKD-B');
+
+    if process = 'aftermask' then StepInstructionERP('BACKD039'); // 2385 Add remarks for Backdrill
+
+  end
   else
-    StepWCERP('BACKD-A')
+    StepWCERP('BACKD-A');
   
   thk := 0.0;
-  if process = 'epoxy' then  
-    thk := LayupThickness
-  else if process = 'aftermask' then
-    thk := ThicknessOverMask;
 
-  StepParamERP('Thickness', FormatFloat('0.000', thk)); 
+  if process = 'epoxy' then thk := LayupThickness
+  else if process = 'aftermask' then thk := ThicknessOverMask;
+
+  StepParamERP('Thickness', FormatFloat('0.000', thk));
   StepParamERP('Machine', Fnc.SysGetAttrValue('BackDrill_Mch')); 
   StepInstructionERP('BACKD001'); // REMARK:100% BACKDRILL COUPON X-RAY CHECK
 
-  if (
-      (Fnc.SysGetAttrValue('BackDrill_Mch') = 'CAMERA') or
+  if  (Fnc.SysGetAttrValue('BackDrill_Mch') = 'CAMERA') or
       (Eng_JobName = 'KHQ12-0011') or
       (Eng_JobName = 'KHQ12-0012') or
       (Eng_JobName = 'WHQ12-0019') or
       (Eng_JobName = 'WHQ12-0020') or
       (Eng_JobName = 'WHQ12-0018') or
       (Eng_JobName = 'KHQ12-0013')
-     )
   then
   begin
+
     StepInstructionERP('BACKD002'); // REMARK:USE 4 CAMERA MACHINE.
     //ShowMessage('For 3E PCB Only - Specific Job Names used in IES Back Drill rule, how to transfer this to Engenix?')
+
   end;
+
 end;
 
 procedure Back_Drill_A_SD;
