@@ -4,7 +4,7 @@
 //ScriptType=0
 //ScriptGroup=HCS
 //HeaderImportExport<--
-                                 uses                                                                           
+uses
   Event_RouteGenLibrary,
   Eng_RouteFunctions,
   RouteFunctions,
@@ -16,51 +16,51 @@ begin
 end;
 
 procedure IL_Exposure_SD; // 2197
-var                                            
+var
   Dept_Erp,
   Group_Erp,
-  DesLine,                                              
+  DesLine,
   AltLine: string;
-  Material : TStringlist;                    
-begin                         
+  Material : TStringlist;
+begin
   if Fnc.SysGetAttrValue('MfgPartType') = 'Inn' then
-  begin                                   
+  begin
     Dept_Erp := '';
     Group_Erp := '';
-    
+
     if ( SubLayersAreOnTopMfgPart ) or ( Fnc.SysGetAttrValueParent('Core_Build') ) then // Thin Core Remarks
-    begin                            
+    begin
       Dept_Erp := 'EXPIL-K';
-      Group_Erp := 'EXPIL-K0';                         
-      AltLine := 'Core Capping Build, Use LDI Machine Only';       
+      Group_Erp := 'EXPIL-K0';
+      AltLine := 'Core Capping Build, Use LDI Machine Only';
     end;
-    
+
     if ( GrandParentIsSequential ) or ( ParentIsSequential ) then
-    begin                         
+    begin
       Dept_Erp := 'EXPIL-K';
       Group_Erp := 'EXPIL-K0';     
       AltLine := 'Sequential Build, Use LDI Machine Only';
-                              
-      if ( SubLayersAreOnTopMfgPart ) or                                
-         ( Fnc.SysGetAttrValueParent('Core_Build') = true ) or 
+
+      if ( SubLayersAreOnTopMfgPart ) or
+         ( Fnc.SysGetAttrValueParent('Core_Build') = true ) or
          ( ParentSubIsCoreBuild )
-      then                     
+      then
         AltLine := 'Seq/Core Capping Build, Use LDI Machine Only';
     end;
                                  
-    if Group_Erp = '' then // Not set by the rules above  
+    if Group_Erp = '' then // Not set by the rules above
     begin
       GetRes(Group_Erp, DesLine, AltLine); // Don't really need this table lookup any more. Table 2A is not used. Easily done with rules.
       
       if pos('-D', Group_Erp) > 0 then Dept_Erp := 'EXPIL-D';
       
-      if pos('-K', Group_Erp) > 0 then 
+      if pos('-K', Group_Erp) > 0 then
       begin
         Dept_Erp := 'EXPIL-K';
         AltLine := 'LDI Only';
       end
     end;
-    
+
     StepDeptERP(Dept_Erp);
     StepWCERP(Group_Erp); 
     
@@ -68,27 +68,27 @@ begin
                                         
     if HasFaradflexMat then
       StepParamERP('Remark', 'Faradflex Core, Panel Leader Taping needed');
-      
-    if ( SandwichCore ) and ( not Fnc.SysGetAttrValueTopLevel('Alt_PEP_Process') ) then // 1470 
+
+    if ( SandwichCore ) and ( not Fnc.SysGetAttrValueTopLevel('Alt_PEP_Process') ) then // 1470
       StepParamERP('4 Hole Alignment', 'X: ' + FloatToStr(Fnc.SysGetAttrValue('FourHoleAlign_X')) + 'mm / Y: ' +
                                                FloatToStr(Fnc.SysGetAttrValue('FourHoleAlign_Y')) + 'mm' );
-                                                                
+
     // 2367 Additional Attribute
     StepParamERP('CAD File Name', Fnc.SysGetAttrValue('CADFileName'));
-  
+
   end
   else //Dummy Core
-  begin                                                                                          
+  begin
     StepDeptERP('EXPIL-D');
-    StepWCERP('EXPIL-N0');            
+    StepWCERP('EXPIL-N0');
     StepParamERP('Alt Line', 'G2');
-  end;                                                                                                  
-                                                          
+  end;
+
   Material := TStringList.Create;
   Material.add('Core');
   StepMaterialsERP(Material, 1);
   Material.Free;
-end;    
+end;
 
 procedure IL_DES_SD;
 var
@@ -103,13 +103,13 @@ begin
     //ShowMessage(ILPHOTOList.strings[1]);
 
     StepDeptERP('DESIL-D');
-    StepWCERP(DesLine); 
-    //StepParamERP('Alt Line', AltLine); 2197 
+    StepWCERP(DesLine);
+    //StepParamERP('Alt Line', AltLine); 2197
     if (( FindImpedanceSides = 'Outer' ) or ( FindImpedanceSides = 'Both' )) then    // 962 - Impedance Info
       StepParamERP('Impedance', 'Yes');
     else
       StepParamERP('Impedance', 'No'); 
-      
+
     if (
         (CustCode_Rule('Customer') = 'FA') and
         ((Fnc.SysGetAttrValue('Line_Width') > 0.0) or (Fnc.SysGetAttrValue('Air_Gap') > 0.0))
@@ -121,10 +121,10 @@ begin
   else
   begin  // Dummy Core
     StepDeptERP('DESIL-D');
-    StepWCERP('DESIL-E');      
+    StepWCERP('DESIL-E');
   end;
 end;
-                                                                                                                              
+
 procedure HiPotTest_SD;
 begin
   if Fnc.SysGetAttrValue('MfgPartType') = 'Inn' then
@@ -137,28 +137,28 @@ begin
     StepDeptERP('HIPOL-A');
     StepWCERP('HIPOL-A');
   end;
-  
-  
+
+
   // 1391 Add unit Name for Hi Pot Parameters
   if ((Fnc.SysGetAttrValue('Volt') > 0) and (Fnc.SysGetAttrValue('Ramp') > 0)) then
   begin
     StepParamERP('Volt', FloatToStr(Fnc.SysGetAttrValue('Volt')) + ' KV');
     StepParamERP('Ramp', IntToStr(Fnc.SysGetAttrValue('Ramp')) + ' V/sec');
-                                                                                                                       
+
     Fnc.SysSetAttrValue('Wait', (Fnc.SysGetAttrValue('Volt') / Fnc.SysGetAttrValue('Ramp')) * 1000 ); // 1308
     StepParamERP('Wait', FloatToStr(Fnc.SysGetAttrValue('Wait')) + ' sec');
 
     if Fnc.SysGetAttrValue('Hold') > 0 then
-      StepParamERP('Hold', IntToStr(Fnc.SysGetAttrValue('Hold')) + ' sec');                            
-                                     
+      StepParamERP('Hold', IntToStr(Fnc.SysGetAttrValue('Hold')) + ' sec');
+
     if Fnc.SysGetAttrValue('Leak_New') > 0 then
       StepParamERP('Leak', IntToStr(Fnc.SysGetAttrValue('Leak_New')) + ' uA'); // 1308
   end;
 
-end;                                                                                                                    
+end;
 
 procedure IL_AOI_SD;
-begin                         
+begin
   StepDeptERP('INSIL-A');
   StepWCERP('INSIL-A');
 
@@ -171,7 +171,7 @@ begin
   StepParamERP('Thickness', FormatFloat('0.000',LayupThickness));
 end;
 
-procedure IL_PEP_SD;  // 1229 PEP Flow option for Sub-assembly build. 
+procedure IL_PEP_SD;  // 1229 PEP Flow option for Sub-assembly build.
 begin
   StepDeptERP('PEPOL-A');
   StepWCERP('PEPOL-A');
@@ -181,13 +181,13 @@ begin
     
   StepInstructionERP('PEPOL011');  // Remark PEP Sandwich cores only
 
-end; 
+end;
 
-procedure IL_SSP_SD;  // 1229 PEP Flow option for Sub-assembly build. 
+procedure IL_SSP_SD;  // 1229 PEP Flow option for Sub-assembly build.
 begin
-  StepDeptERP('EXPSM-A');                                                            
+  StepDeptERP('EXPSM-A');
   StepWCERP('EXPSM-A');
   StepInstructionERP('EXPSM012'); // Remarks: Measure PEP OffSet Value
   StepInstructionERP('EXPSM013'); // Send back panels to IL AOI for matching
-  StepParamERP('Panel Size',Fnc.SysGetAttrValue('Panel_Size')); 
+  StepParamERP('Panel Size',Fnc.SysGetAttrValue('Panel_Size'));
 end;

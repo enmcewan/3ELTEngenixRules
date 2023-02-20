@@ -528,7 +528,7 @@ begin
   //-----
   if VarNames = 'CU_RATIO' then
   begin
-    VarValueList.Add(FloatToStr(Set_CU_Ratio))
+    VarValueList.Add(FloatToStr(Set_CU_Ratio(false)))
     Result := CheckConditionsAndValues('N', Condition, VarValueList);
     bDone := True;
   end;

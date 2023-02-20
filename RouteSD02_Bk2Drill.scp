@@ -2422,7 +2422,7 @@ begin
 
   StepDeptERP('COPPL-C');                                                
 
-  Set_CU_Ratio;
+  Set_CU_Ratio(false); // 2400
 
   if NCRun = 1 then
   begin 
@@ -2850,8 +2850,9 @@ begin
   CalcAndInsert_DECUTHK(false, 2, 'CappedVia');
   AddBoardFinishAsAttribute; // 1223 Additional Surface Finish info under Electrolytic Cu step
 
-  StepParamERP('Hole Circle', Fnc.SysGetAttrValue('Hole_Circle_Capped'));
-  StepParamERP('Hole Area', Fnc.SysGetAttrValue('Hole_Area_Capped'));
+  // 2400
+  if Fnc.SysGetAttrValue('Cu_Ratio_Capped') = 0 then Fnc.SysSetAttrValue('Cu_Ratio_Capped', Set_Cu_Ratio(true));
+
   StepParamERP('Cu Ratio', Fnc.SysGetAttrValue('Cu_Ratio_Capped'));
 
 end;

@@ -2164,7 +2164,7 @@ begin
   //ShowMessage(FloatToStr(result));
 end;
 
-function Set_CU_Ratio : float;
+function Set_CU_Ratio(CappedVia: boolean) : float;  // 2400 Cu Ratio Capped Via
 var
   Hole_Area : float;
   Hole_Circle : float;
@@ -2183,30 +2183,51 @@ begin
   Overlay_Hole_Circle := 0.0;
   Total_Hole_Area_Panel := 0.0;
   Total_Hole_Circle_Panel := 0.0;
-  Total_Surface_Nohole := 0.0;                
+  Total_Surface_Nohole := 0.0;
   Total_Plating_Area := 0.0;
 
-  if NCRUN = 2 then
+  if CappedVia then
   begin
-    Hole_Area := Fnc.SysGetAttrValue('Hole_Area_2');
-    Hole_Circle := Fnc.SysGetAttrValue('Hole_Circle_2');
 
-    if Hole_Area = 0 then
-      ShowMessage('WARNING! : Hole_Area_2 is 0, CU_RATIO value not set');
+      Hole_Area := Fnc.SysGetAttrValue('Hole_Area_Capped');
+      Hole_Circle := Fnc.SysGetAttrValue('Hole_Circle_Capped');
 
-    if Hole_Circle = 0 then
-      ShowMessage('WARNING! : Hole_Circle_2 is 0, CU_RATIO value not set');
+      if Hole_Area = 0 then
+        ShowMessage('WARNING! : Hole_Area_Capped is 0, CU_RATIO value not set');
+
+      if Hole_Circle = 0 then
+        ShowMessage('WARNING! : Hole_Circle_Capped is 0, CU_RATIO value not set');
+
   end
   else
   begin
-    Hole_Area := Fnc.SysGetAttrValue('Hole_Area');
-    Hole_Circle := Fnc.SysGetAttrValue('Hole_Circle');
+    if NCRUN = 2 then
+    begin
 
-    if Hole_Area = 0 then
-      ShowMessage('WARNING! : Hole_Area is 0, CU_RATIO value not set');
+      Hole_Area := Fnc.SysGetAttrValue('Hole_Area_2');
+      Hole_Circle := Fnc.SysGetAttrValue('Hole_Circle_2');
 
-    if Hole_Circle = 0 then
-      ShowMessage('WARNING! : Hole_Circle is 0, CU_RATIO value not set');
+      if Hole_Area = 0 then
+        ShowMessage('WARNING! : Hole_Area_2 is 0, CU_RATIO value not set');
+  
+      if Hole_Circle = 0 then
+        ShowMessage('WARNING! : Hole_Circle_2 is 0, CU_RATIO value not set');
+
+    end
+    else
+    begin
+
+      Hole_Area := Fnc.SysGetAttrValue('Hole_Area');
+      Hole_Circle := Fnc.SysGetAttrValue('Hole_Circle');
+  
+      if Hole_Area = 0 then
+        ShowMessage('WARNING! : Hole_Area is 0, CU_RATIO value not set');
+
+      if Hole_Circle = 0 then
+        ShowMessage('WARNING! : Hole_Circle is 0, CU_RATIO value not set');
+
+    end;
+
   end;
 
   if Fnc.SysGetAttrValueTopLevel('Panel_Cavity') = 0 then
@@ -4243,10 +4264,11 @@ begin
     //cuRatio := Fnc.SysGetAttrValue('Cu_Ratio_2');
   end;
 
-  cuRatio := Set_CU_Ratio;
+  cuRatio := Set_CU_Ratio(false); // 2400
 
   if (( Fnc.SysGetAttrValue('CuFilledVias')) and ( NCRun <= 1 )) then // 1138
   begin
+  
     if (
          (minDrill >= 0.25) and
          (Get_Panel_Thickness >= 0.2) and
@@ -4307,14 +4329,17 @@ end;
 
 function ENIGplusOSP : boolean;  // 1256
 begin
+
   result := false;
-  if ( BoardFinish = 'OSP' ) and ( SelectiveGoldType= 'ENIG') then
-    result := true
+
+  if ( BoardFinish = 'OSP' ) and ( SelectiveGoldType= 'ENIG') then result := true
+
 end;
 
 // 1177 Update Soldermask Pre-Treat
 function FinishGetsCZPreTreat : boolean;
 begin
+
   result := false;
   
   // 1245 Updated CZ Rule
@@ -4327,23 +4352,21 @@ begin
      ) 
      or ( BoardFinish = 'Immersion Tin' )
   then
-    result := true; 
+    result := true;
+
 end;
 
 // 1191 Drill Side for Countersink/bore & milling
 // 1392 Drill Side Naming
 function DrillSide(side: string) : string;
 begin
-  if side = 'Top' then
-    result := 'Side B' 
-  else if side = 'Bot' then
-    result := 'Side A'
-  else if side = 'Side B Top' then
-    result := 'Side B'
-  else if side = 'Side A Bot' then
-    result := 'Side A'
-  else
-    result := '';
+
+  if side = 'Top' then result := 'Side B'
+  else if side = 'Bot' then result := 'Side A'
+  else if side = 'Side B Top' then result := 'Side B'
+  else if side = 'Side A Bot' then result := 'Side A'
+  else result := '';
+
 end;
 
 procedure UpdateInProcessCuThk(value: integer);

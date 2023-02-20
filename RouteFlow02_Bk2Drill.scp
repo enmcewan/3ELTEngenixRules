@@ -441,6 +441,10 @@ procedure NC_EpxPlug_wFlash;
 begin              
   AddStep('NC_Drill', 'NC_Drill01');
 
+  if MechBlindViaSide <> 'None' then AddStep('MechBlindVia1', 'MechBlindVia101'); // 2386
+
+  if MechBlindViaSide = 'Both' then AddStep('MechBlindVia2', 'MechBlindVia201');  // 2386
+
   if GetsExtraAZBlowerStep then // 1144 Additional AZ Blower Step after CNC Drill 
     AddStep('HighPressAirBlow', 'HighPressAirBlow-2');
 
@@ -540,17 +544,13 @@ begin
   if MechBlindViaSide = 'Both' then // Mech Blind Via
     AddStep('MechBlindVia2', 'MechBlindVia201');}
 
-  if Fnc.SysGetAttrValue('NCRunX2') and Fnc.SysGetAttrValue('CappedVia') then
+  if Fnc.SysGetAttrValue('NCRunX2') and Fnc.SysGetAttrValue('CappedVia') then // 2386
   begin
 
     NC_EpxPlug_wFlash;
 
-    if MechBlindViaSide <> 'None' then AddStep('MechBlindVia1', 'MechBlindVia101');
-
-    if MechBlindViaSide = 'Both' then AddStep('MechBlindVia2', 'MechBlindVia201');
-
     AddStep('NC_Drill', 'NC_Drill02');
-
+                                               
   end
   else
   begin
