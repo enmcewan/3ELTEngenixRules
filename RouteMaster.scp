@@ -10,60 +10,41 @@ uses
   RouteFunctions,
   RouteFunctions_Drilling,
   RouteFlow01_PEInners,
-  RouteFlow02_Bk2Drill;  //Route User Scripts 
+  RouteFlow02_Bk2Drill;  //Route User Scripts
 
-function VerifyKeyAttributesOK(ErrorList : TStringList) : boolean;
+var
+  InputAttributesOK: boolean;
+  InputAttributesErrorList: TStringlist;
+
+procedure InputAttributeErrorHandler(ErrorMessage: string);
 begin
-  Result := true;
 
-  if ((Fnc.SysGetAttrValue('Panel_Length') = 0) or (Fnc.SysGetAttrValue('Panel_Width') = 0)) then
-  begin
-    Result := false;
-    ErrorList.Add('Panel Length or Panel Width');
-  end;
+  InputAttributesOK := false;
+  InputAttributesErrorList.Add(ErrorMessage);
+
+end;
+
+function VerifyKeyAttributesOK(ErrorList : TStringList): boolean;
+begin
+
+  if (Fnc.SysGetAttrValue('Panel_Length') = 0) or (Fnc.SysGetAttrValue('Panel_Width') = 0) then
+    InputAttributeErrorHandler('Panel Length or Panel Width');
 
   if LayupCoreCount > 0 then
+    if (Fnc.SysGetAttrValue('Panel_Length_Press') = 0) or (Fnc.SysGetAttrValue('Panel_Width_Press') = 0) then
+      InputAttributeErrorHandler('Panel Length Press or Panel Width Press');
+
+  if Fnc.SysGetAttrValue('BlindVias') then
   begin
-    if ((Fnc.SysGetAttrValue('Panel_Length_Press') = 0) or (Fnc.SysGetAttrValue('Panel_Width_Press') = 0)) then
-    begin
-      Result := false;
-      ErrorList.Add('Panel Length Press or Panel Width Press');
-    end;
+
+    if ((LaserABotHits = 0) and  (LaserBTopHits = 0)) then InputAttributeErrorHandler('Laser A or Laser B Hits');
+
+    if  ((LaserBTopHits = 0) and (LaserABotHits = 0)) and Fnc.SysGetAttrValue('ForceUVLaser') then
+      InputAttributeErrorHandler('Force UV Laser and no Laser Hits value');
+
   end;
 
-  if Fnc.SysGetAttrValue('BlindVias') = true then
-  begin
-    if ((LaserABotHits = 0) and  (LaserBTopHits = 0)) then
-    begin
-      Result := false;
-      ErrorList.Add('Laser A or Laser B Hits');
-    end;
-                                                     
-    if (
-        ((LaserBTopHits = 0) and (LaserABotHits = 0)) and
-        Fnc.SysGetAttrValue('ForceUVLaser') = true
-       )
-    then
-    begin
-      Result := false;
-      ErrorList.Add('Force UV Laser and no Laser Hits value');
-    end;
-  end;
-
-  if fnc.SysFindAttrValue('Registration',false) = 0 then
-  begin
-    Result := false;
-    ErrorList.Add('Registration');
-  end;
-
-  {if ( (CoreBuild or SubAssemblyCoreBuild ) and (Fnc.SysGetAttrValue('LayerCount') > 2)) then
-  begin
-    if Fnc.SysGetAttrValue('CoreBuildCuThin') = 0 then
-    begin
-      Result := false;
-      ErrorList.Add('Cu Thinning for Core Build');
-    end;
-  end;}
+  if fnc.SysFindAttrValue('Registration',false) = 0 then InputAttributeErrorHandler('Registration');
 
   if (( CoreBuild or SubAssemblyCoreBuild ) and ( Fnc.SysGetAttrValue('LayerCount') > 2 )) then
   begin
@@ -76,161 +57,99 @@ begin
       Fnc.SysSetAttrValue('CoreBuild_CuThin_Process', 'Buffing + Micro-Etch + Buffing');
 
     if Fnc.SysGetAttrValue('CoreBuild_CuThin_Process') = 'None' then  // Core Build Cu Thinning
-    begin
-      Result := false;
-      ErrorList.Add('Cu Thinning Process for Core Build');
-    end
+      InputAttributeErrorHandler('Cu Thinning Process for Core Build')
     else
     begin
+
       if ( Fnc.SysGetAttrValue('CoreBuild_CuThin_Process') = 'Buffing' ) or
          ( Fnc.SysGetAttrValue('CoreBuild_CuThin_Process') = 'Vertical Buffing' ) then
       begin
+
          if Fnc.SysGetAttrValue('CoreBuild_CuThin_1stBuff') = '' then
-         begin
-           Result := false;
-           ErrorList.Add('Core Build Cu Thinning 1st Buff');
-         end;
+          InputAttributeErrorHandler('Core Build Cu Thinning 1st Buff');
+
       end
       else if Fnc.SysGetAttrValue('CoreBuild_CuThin_Process') = 'Buffing + Micro-Etch + Buffing' then // 1473 Fix Attribute
       begin
-         if (
-             ( Fnc.SysGetAttrValue('CoreBuild_CuThin_1stBuff') = '' ) or
+
+         if  ( Fnc.SysGetAttrValue('CoreBuild_CuThin_1stBuff') = '' ) or
              ( Fnc.SysGetAttrValue('CoreBuild_CuThin_2ndBuff') = '' ) or
              ( Fnc.SysGetAttrValue('CoreBuild_CuThin_MEtch') = '' )
-            ) then
-         begin
-           Result := false;
-           ErrorList.Add('Core Build Cu Thinning 1st Buff or Micro-Etch or 2nd Buff');
-         end;
+         then
+           InputAttributeErrorHandler('Core Build Cu Thinning 1st Buff or Micro-Etch or 2nd Buff');
+
       end
       else if Fnc.SysGetAttrValue('CoreBuild_CuThin_Process') = 'Micro-Etch + Buffing' then  // 1473
       begin
-         if (
-             ( Fnc.SysGetAttrValue('CoreBuild_CuThin_1stBuff') = '' ) or
-             ( Fnc.SysGetAttrValue('CoreBuild_CuThin_MEtch') = '' )
-            ) then
-         begin
-           Result := false;
-           ErrorList.Add('Core Build Cu Thinning 1st Buff or Micro-Etch');
-         end;
+
+         if ( Fnc.SysGetAttrValue('CoreBuild_CuThin_1stBuff') = '' ) or
+            ( Fnc.SysGetAttrValue('CoreBuild_CuThin_MEtch') = '' )
+         then
+           InputAttributeErrorHandler('Core Build Cu Thinning 1st Buff or Micro-Etch');
+
       end;
+
     end;
+
   end;
 
   if Fnc.SysGetAttrValue('Pre_Photo_CuThin') then  // 1196 Pre-Photo Cu Thinning
-  begin
     if Fnc.SysGetAttrValue('Pre_Photo_CuThin_Spec') = '' then
-    begin
-      Result := false;
-      ErrorList.Add('Pre-Photo Cu Thinning Spec Required');
-    end;
-  end;
+      InputAttributeErrorHandler('Pre-Photo Cu Thinning Spec Required');
 
   if Fnc.SysGetAttrValue('MfgPartType') = 'Top' then
   begin
 
-    if ((Fnc.SysGetAttrValue('Panel_LengthEA') = 0) or (Fnc.SysGetAttrValue('Panel_WidthEA') = 0)) then
-    begin
-      Result := false;
-      ErrorList.Add('Panel Length or Panel Width Edge Allowance');
-    end;
+    if (Fnc.SysGetAttrValue('Panel_LengthEA') = 0) or (Fnc.SysGetAttrValue('Panel_WidthEA') = 0) then
+      InputAttributeErrorHandler('Panel Length or Panel Width Edge Allowance');
 
-    if ((Fnc.SysGetAttrValue('PunchB4EC') = true) and (Fnc.SysGetAttrValue('Punch_Type') = 'None')) then
-    begin
-      Result := false;
-      ErrorList.Add('Punch Type');
-    end;
+    if Fnc.SysGetAttrValue('PunchB4EC') and (Fnc.SysGetAttrValue('Punch_Type') = 'None') then
+     InputAttributeErrorHandler('Punch Type');
 
-    if ((pos('Primary',Fnc.SysGetAttrValue('SMPlugType')) > 0) and (Fnc.SysGetAttrValue('PrimaryPlugProcess') = 'None')) then
-    begin
-      Result := false;
-      ErrorList.Add('Primary Plug Process');
-    end;
+    if (pos('Primary',Fnc.SysGetAttrValue('SMPlugType')) > 0) and (Fnc.SysGetAttrValue('PrimaryPlugProcess') = 'None') then
+      InputAttributeErrorHandler('Primary Plug Process');
 
-    if ((pos('Primary',Fnc.SysGetAttrValue('SMPlugType')) > 0) and (Fnc.SysGetAttrValue('PrimaryPlugInk') = 'None')) then
-    begin
-      Result := false;
-      ErrorList.Add('Primary Plug Ink');
-    end;
+    if (pos('Primary',Fnc.SysGetAttrValue('SMPlugType')) > 0) and (Fnc.SysGetAttrValue('PrimaryPlugInk') = 'None') then
+      InputAttributeErrorHandler('Primary Plug Ink');
 
-    if ((pos('Secondary',Fnc.SysGetAttrValue('SMPlugType')) > 0) and (Fnc.SysGetAttrValue('SecondaryPlugInk') = 'None')) then
-    begin
-      Result := false;
-      ErrorList.Add('Secondary Plug Ink');
-    end;
+    if (pos('Secondary',Fnc.SysGetAttrValue('SMPlugType')) > 0) and (Fnc.SysGetAttrValue('SecondaryPlugInk') = 'None') then
+      InputAttributeErrorHandler('Secondary Plug Ink');
 
-    if (
-        (Fnc.SysGetAttrValue('NCRunX2') = true) and
+    if  (Fnc.SysGetAttrValue('NCRunX2') = true) and
         (Fnc.SysGetAttrValue('CappedVia') = true) and
         (Fnc.SysGetAttrValue('EpoxySide') = 'None')
-       )
     then
-    begin
-      Result := false;
-      ErrorList.Add('Cappped Via with No Epoxy Plug');
-    end;
+      InputAttributeErrorHandler('Cappped Via with No Epoxy Plug');
 
-    if (((Fnc.SysGetAttrValue('EpoxySide') <> 'None')) and (Fnc.SysGetAttrValue('EpoxyPlugInk') = 'None')) then
-    begin
-      Result := false;
-      ErrorList.Add('Epoxy Plug but no Ink selected');
-    end;
+    if ( Fnc.SysGetAttrValue('EpoxySide') <> 'None') and (Fnc.SysGetAttrValue('EpoxyPlugInk') = 'None') then
+      InputAttributeErrorHandler('Epoxy Plug but no Ink selected');
 
     // 756 Update Aspect ratio calculation for OL layer photo process
     if PluggedFilledB4Photo then
-    begin
       if Fnc.SysGetAttrValue('Min_Drill_Size_NP') = 0.0 then
-        begin
-        Result := false;
-        ErrorList.Add('Min Drill Size for Non-Plugged/Filled Holes Required');
-      end;
-    end;
+        InputAttributeErrorHandler('Min Drill Size for Non-Plugged/Filled Holes Required');
 
-    if ((Fnc.SysGetAttrValue('BackDrill') = true) and (Fnc.SysGetAttrValue('BackDrill_Mch') = 'None')) then
-    begin
-      Result := false;
-      ErrorList.Add('Back Drill Machine Type');
-    end; 
-   
-    if ( Fnc.SysGetAttrValue('BackDrill') or Fnc.SysGetAttrValue('BackDrill_Epoxy') ) and
-       ( Fnc.SysGetAttrValue('BackDrillStubSpec') = 0.0 ) then
-    begin
-      Result := false;
-      ErrorList.Add('Back Drill Stub Spec');
-    end;
+    if Fnc.SysGetAttrValue('BackDrill') and (Fnc.SysGetAttrValue('BackDrill_Mch') = 'None') then
+      InputAttributeErrorHandler('Back Drill Machine Type');
 
-    if ((Fnc.SysGetAttrValue('TwoXResist_Ink') = 'None') and (Fnc.SysGetAttrValue('TwoXResist') = true)) then
-    begin
-      Result := false;
-      ErrorList.Add('Two Times Resist Ink');
-    end;
+    if (Fnc.SysGetAttrValue('TwoXResist_Ink') = 'None') and Fnc.SysGetAttrValue('TwoXResist') then
+      InputAttributeErrorHandler('Two Times Resist Ink');
 
-    if ((Fnc.SysGetAttrValue('PunchB4EC') = true) and (Fnc.SysGetAttrValue('Punch_Type') = 'None')) then
-    begin
-      Result := false;
-      ErrorList.Add('PunchB4EC but PunchType = None');
-    end;
+    if Fnc.SysGetAttrValue('PunchB4EC') and (Fnc.SysGetAttrValue('Punch_Type') = 'None') then
+      InputAttributeErrorHandler('PunchB4EC but PunchType = None');
 
-    if ((Fnc.SysGetAttrValue('Punch_Type') <> 'None') and (Fnc.SysGetAttrValue('Punch_Die11') = '0')) then
-    begin
-      Result := false;
-      ErrorList.Add('Punching but Punch Die 1-1 = 0');
-    end;
+    if (Fnc.SysGetAttrValue('Punch_Type') <> 'None') and (Fnc.SysGetAttrValue('Punch_Die11') = '0') then
+      InputAttributeErrorHandler('Punching but Punch Die 1-1 = 0');
 
-    if ((Fnc.SysGetAttrValue('Punch_Type') = '2 Stage Punch') and (Fnc.SysGetAttrValue('Punch_Die21') = '0')) then
-    begin
-      Result := false;
-      ErrorList.Add('Punchingx2 but Punch Die 2-1 = 0');
-    end;
+    if (Fnc.SysGetAttrValue('Punch_Type') = '2 Stage Punch') and (Fnc.SysGetAttrValue('Punch_Die21') = '0') then
+      InputAttributeErrorHandler('Punchingx2 but Punch Die 2-1 = 0');
 
     if SubProdCodeSameAsTopLevel then
-    begin
-      result := false;
-      ErrorList.Add('Sub-Assemblies and Inners cannot have the same Product Code as the Top-Level');
-    end;
+      InputAttributeErrorHandler('Sub-Assemblies and Inners cannot have the same Product Code as the Top-Level');
 
     if BoardFinish = 'ENEPIG' then   // ENIG Changes from Mani Feb 2016
     begin
+
       if not
          (
           ( HasSolderMaskType('DSR330S-50-99R') ) or
@@ -240,10 +159,8 @@ begin
           ( HasSolderMaskType('FZ-2700GA') )
          )
       then
-      begin
-        result := false;
-        ErrorList.Add('Solder Mask type not compatible with ENEPIG');
-      end;
+        InputAttributeErrorHandler('Solder Mask type not compatible with ENEPIG');
+
     end;
 
     if ( BoardFinish = 'ENIG' ) or
@@ -258,95 +175,60 @@ begin
       end;
     end;
 
-    {if BoardFinish = 'ENEPIG' then   // 1256
-    begin
-      if (( SelectiveGoldType<> 'None' ) or (GoldFingerType <> 'None' )) then
-      begin
-        result := false;
-        ErrorList.Add('ENEPIG not compatible with Selective Gold or Gold Finger Plating');
-      end;
-    end;}
-
-                                      // 1110 Soldermask Override
     if ( not ScreenPrintResist ) and (Fnc.SysGetAttrValue('SM_Process') <> 'Spray Coat' ) then    // (760) condition for spray coat PSR-2000, If Board thickness>/= 3.6mm, Error will prompt that the board cannot run Spray coat.
     begin
+
       if LayupThickness >= 3.6 then
-      begin
-        result := false;
-        ErrorList.Add('Board Thickness: ' + FloatToStr(LayupThickness) + ' mm is too thick for Spray Coat Soldermask.');
-      end;
+        InputAttributeErrorHandler('Board Thickness: ' +
+                                   FloatToStr(LayupThickness) +
+                                   ' mm is too thick for Spray Coat Soldermask.');
     end;
 
     if Fnc.SysGetAttrValue('Part_Type') = 'Internal' then
-    begin
       if Fnc.SysGetAttrValue('KT_Number') = '' then
-      begin
-        result := false;
-        ErrorList.Add('Internal Part Number, KT Number is required');
-      end;
-    end;
+        InputAttributeErrorHandler('Internal Part Number, KT Number is required');
 
     if Fnc.SysGetAttrValue('BackDrill') then  // 1213 Additional Hole Check after Backdrill step condition
     begin
+
       if ( Fnc.SysGetAttrValue('SMPlugType') <> 'None' ) or ( Fnc.SysGetAttrValue('EpoxySide') <> 'None' ) then
-      begin
         if Fnc.SysGetAttrValue('BackDrill_Hole_Type') = '<Not Selected>' then
-          begin
-            result := false;
-            ErrorList.Add('Back Drill Hole Type not set');
-          end;
-      end;
+          InputAttributeErrorHandler('Back Drill Hole Type not set');
+
     end;
 
   end; // End Top Level Checking
 
+  if ( Fnc.SysGetAttrValue('BackDrill') or Fnc.SysGetAttrValue('BackDrill_Epoxy') ) and
+     ( Fnc.SysGetAttrValue('BackDrillStubSpec') = 0.0 )
+  then
+    InputAttributeErrorHandler('Back Drill Stub Spec');
+
   if Fnc.SysGetAttrValueTopLevel('Panel_Cavity') = 0 then
-  begin
-    Result := false;
-    ErrorList.Add('Panel Cavity for Top Level Part cannot be 0');
-  end;
+    InputAttributeErrorHandler('Panel Cavity for Top Level Part cannot be 0');
 
   if Fnc.SysGetAttrValueTopLevel('SO_Unit') <> 'Part'  then
-  begin
     if Fnc.SysGetAttrValueTopLevel('Part_Cavity') = 0 then
-    begin
-      Result := false;
-      ErrorList.Add('Part Cavity for Top Level Part cannot be 0');
-    end;
-  end;
+      InputAttributeErrorHandler('Part Cavity for Top Level Part cannot be 0');
 
   if Fnc.SysGetAttrValueTopLevel('PCB_Length') = 0 then
-  begin
-    Result := false;
-    ErrorList.Add('PCB_Length for Top Level Part cannot be 0');
-  end;
+    InputAttributeErrorHandler('PCB_Length for Top Level Part cannot be 0');
 
   if Fnc.SysGetAttrValueTopLevel('PCB_Width') = 0 then
-  begin
-    Result := false;
-    ErrorList.Add('PCB_Width for Top Level Part cannot be 0');
-  end;
+    InputAttributeErrorHandler('PCB_Width for Top Level Part cannot be 0');
 
   if Fnc.SysGetAttrValueTopLevel('Parts_Per_PCB') = 0 then
-  begin
-    Result := false;
-    ErrorList.Add('Parts_Per_PCB for Top Level Part cannot be 0');
-  end;
+    InputAttributeErrorHandler('Parts_Per_PCB for Top Level Part cannot be 0');
+
 
   if Fnc.SysGetAttrValue('MfgPartType') <> 'DmC' then
   begin
-    if Fnc.SysGetAttrValue('Air_Gap') = 0 then
-    begin
-      Result := false;
-      ErrorList.Add('Air_Gap cannot be 0');
-    end;
 
-    if Fnc.SysGetAttrValue('Line_Width') = 0 then
-    begin
-      Result := false;
-      ErrorList.Add('Line_Width cannot be 0');
-    end;
-  end
+    if Fnc.SysGetAttrValue('Air_Gap') = 0 then InputAttributeErrorHandler('Air_Gap cannot be 0');
+
+    if Fnc.SysGetAttrValue('Line_Width') = 0 then InputAttributeErrorHandler('Line_Width cannot be 0');
+
+  end;
 
 end;
 
@@ -595,9 +477,14 @@ begin
   //Fnc.SysGetAttrValue('LayupThickness'ZZZ)
   LayupThickness := Fnc.SysGetAttrValue('LayupThickness');
 
-  if not VerifyKeyAttributesOK(ErrorList) then  //760 - condition for spray coat PSR-2000, If Board thickness>/= 3.6mm, Error will prompt that the board cannot run Spray coat.
+  InputAttributesOK := true;
+  InputAttributesErrorList := TStringList.Create;
+
+  VerifyKeyAttributesOK(ErrorList)
+
+  if not InputAttributesOK then  //760 - condition for spray coat PSR-2000, If Board thickness>/= 3.6mm, Error will prompt that the board cannot run Spray coat.
   begin
-    ErrorMessageGenAndLog(ErrorList.text, mtError);
+    ErrorMessageGenAndLog(InputAttributesErrorList.text, mtError);
     Fnc.UserRouteGenAbort := true;
     ErrorList.free;
   end
@@ -1114,12 +1001,9 @@ begin
   Fnc.MouseBusy;
   InitRouteGeneratedAttributes;
 
-  if ((MfgPartType = 'Inn') or (MfgPartType = 'DmC')) then  //Simple Inner or Dummy Core
+  if (MfgPartType = 'Inn') or (MfgPartType = 'DmC') then  //Simple Inner or Dummy Core
   begin
-    if FindNumberOfDrillFiles = 0 then
-      InnerLayerPE;
-    else
-      RouteFlow02;
+    if FindNumberOfDrillFiles = 0 then InnerLayerPE else RouteFlow02;
   end
   else
     RouteFlow02;

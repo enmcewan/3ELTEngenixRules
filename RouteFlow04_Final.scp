@@ -42,11 +42,23 @@ end;
 
 procedure Back_Drill;
 begin
-  if BKDRTop = true then
-    AddStep('Back_Drill_B', 'Back_Drill_B01');
 
-  if BKDRBot = true then
-    AddStep('Back_Drill_A', 'Back_Drill_A01');
+  if Fnc.SysGetAttrValue('BackDrillStubSpec') <= 6.0 then  // 2385 Backdrill with 6 mil stub
+  begin
+                     
+    if BKDRTop then AddStep('Back_Drill_B_SP', 'Back_Drill_SPB01');
+
+    if BKDRBot then AddStep('Back_Drill_A_SP', 'Back_Drill_SPA01');
+
+  end
+  else
+  begin
+
+    if BKDRTop then AddStep('Back_Drill_B', 'Back_Drill_B01');
+
+    if BKDRBot then AddStep('Back_Drill_A', 'Back_Drill_A01');
+
+  end;
 
   BackDrillDone := true;
 
@@ -55,8 +67,10 @@ begin
   // 1213 Additional Hole Check after Backdrill step condition
   if ( Fnc.SysGetAttrValue('SMPlugType') <> 'None' ) or ( Fnc.SysGetAttrValue('EpoxySide') <> 'None' ) then
   begin
+
     if Fnc.SysGetAttrValue('BackDrill_Hole_Type') = 'Non-Plugged Holes' then
       AddStep('Hole_Check_BD', 'Hole_Check_BD01');
+
   end;
 
 end;

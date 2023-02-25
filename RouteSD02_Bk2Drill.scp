@@ -1596,16 +1596,23 @@ begin
                   'Y = ' + FormatFloat('0.000', FloatToStr(Fnc.SysGetAttrValue('Drill_FSF_Y') - Fnc.SysGetAttrValue('Drill_FSF_Y_Tol'))) + '~' +
                            FormatFloat('0.000', FloatToStr(Fnc.SysGetAttrValue('Drill_FSF_Y') + Fnc.SysGetAttrValue('Drill_FSF_Y_Tol'))) + '%';
 
-           
-  // Add Instructions and Parameters
-  {if Fnc.SysGetAttrValue('NCRunX2') = false then
+
+
+  if NCRun = 1 then
   begin
+
     StepParamERP('Stack Height', Fnc.SysGetAttrValue('Stack_Hgt'));
     StepParamERP('Flute Length', Fnc.SysGetAttrValue('Flute_Len'));
     StepParamERP('Min Drill Size', Fnc.SysGetAttrValue('Min_Drill_Size'));
     StepParamERP('Min Slot Size', Fnc.SysGetAttrValue('Min_Slot_Size'));
-    StepParamERP('Entry Sheet Material', Entry_Sheet_Mat); 
-    
+    StepParamERP('Entry Sheet Material', Entry_Sheet_Mat);
+
+    if Fnc.SysGetAttrValue('NCRunX2') then
+    begin
+      StepInstructionERP('DRILL010');  // REMARK : 1st Drilling
+      StepInstructionERP('2NC_PESHET'); // REMARK: Put PE Sheet In Between Panel
+    end;
+
     // 1114 Fixed Scale Factor Info
     if Fnc.SysGetAttrValue('Drill_FSF_X') > 0 then
     begin
@@ -1619,83 +1626,56 @@ begin
       if Fnc.SysGetAttrValue('Drill_Offset_X') <> 0 then
         StepParamERP('Offset X', FormatFloat('0.000', FloatToStr(Fnc.SysGetAttrValue('Drill_Offset_X'))));
       if Fnc.SysGetAttrValue('Drill_Offset_Y') <> 0 then
-        StepParamERP('Offset Y', FormatFloat('0.000', FloatToStr(Fnc.SysGetAttrValue('Drill_Offset_Y'))));
+      StepParamERP('Offset Y', FormatFloat('0.000', FloatToStr(Fnc.SysGetAttrValue('Drill_Offset_Y'))));
     //end;
-                               
+
     // 1134 Additional Information
     Fnc.SysSetAttrValue('NC_Drill_1_EntryMat', Entry_Sheet_Mat);
-  end                 
-  else
-  begin}
-    if NCRun = 1 then
+
+    // 2383 KK Drill Info all Drill Processes
+    StepParamERP('KK Distance', Fnc.SysGetAttrValue('KK_Distance_NC1'));
+
+  end
+  else if NCRun = 2 then
+  begin
+
+    StepParamERP('2nd Stack Height', Fnc.SysGetAttrValue('Stack_Hgt_2'));
+    StepParamERP('2nd Flute Length', Fnc.SysGetAttrValue('Flute_Len_2'));
+    StepParamERP('2nd Min Drill Size', Fnc.SysGetAttrValue('Min_Drill_Size_2'));
+    StepParamERP('2nd Min Slot Size', Fnc.SysGetAttrValue('Min_Slot_Size_2'));
+    StepParamERP('2nd Entry Sheet Mat', Entry_Sheet_Mat);
+    StepInstructionERP('DRILL009');  // REMARK : 2nd Drilling
+    // 1114 Fixed Scale Factor Info
+    if Fnc.SysGetAttrValue('Drill_FSF_X_2') > 0 then
     begin
-      StepParamERP('Stack Height', Fnc.SysGetAttrValue('Stack_Hgt'));
-      StepParamERP('Flute Length', Fnc.SysGetAttrValue('Flute_Len'));
-      StepParamERP('Min Drill Size', Fnc.SysGetAttrValue('Min_Drill_Size'));
-      StepParamERP('Min Slot Size', Fnc.SysGetAttrValue('Min_Slot_Size'));
-      StepParamERP('Entry Sheet Material', Entry_Sheet_Mat);
-      
-      if Fnc.SysGetAttrValue('NCRunX2') then
-      begin
-        StepInstructionERP('DRILL010');  // REMARK : 1st Drilling
-        StepInstructionERP('2NC_PESHET'); // REMARK: Put PE Sheet In Between Panel 
-      end;
-      
-      // 1114 Fixed Scale Factor Info
-      if Fnc.SysGetAttrValue('Drill_FSF_X') > 0 then
-      begin
-        StepParamERP('Fixed Scale Factor', fixedDim);
-        StepParamERP('Control Range', controlRange);
-      end;
+      fixedDim2 := 'X = ' + FormatFloat('0.000', FloatToStr(Fnc.SysGetAttrValue('Drill_FSF_X_2'))) + '%; ' +
+                   'Y = ' + FormatFloat('0.000', FloatToStr(Fnc.SysGetAttrValue('Drill_FSF_Y_2'))) + '%';
 
-      // 1259 Addition Attributes for NC
-      //if (Fnc.SysGetAttrValue('Drill_Offset_X') <> 0 ) or (Fnc.SysGetAttrValue('Drill_Offset_Y') <> 0 ) then
-      //begin                    
-        if Fnc.SysGetAttrValue('Drill_Offset_X') <> 0 then
-          StepParamERP('Offset X', FormatFloat('0.000', FloatToStr(Fnc.SysGetAttrValue('Drill_Offset_X'))));
-        if Fnc.SysGetAttrValue('Drill_Offset_Y') <> 0 then
-        StepParamERP('Offset Y', FormatFloat('0.000', FloatToStr(Fnc.SysGetAttrValue('Drill_Offset_Y'))));
-      //end;
+      controlRange2 := 'X = ' + FormatFloat('0.000', FloatToStr(Fnc.SysGetAttrValue('Drill_FSF_X_2') - Fnc.SysGetAttrValue('Drill_FSF_X_Tol_2'))) + '~' +
+                                FormatFloat('0.000', FloatToStr(Fnc.SysGetAttrValue('Drill_FSF_X_2') + Fnc.SysGetAttrValue('Drill_FSF_X_Tol_2'))) + '%; ' +
+                       'Y = ' + FormatFloat('0.000', FloatToStr(Fnc.SysGetAttrValue('Drill_FSF_Y_2') - Fnc.SysGetAttrValue('Drill_FSF_Y_Tol_2'))) + '~' +
+                                FormatFloat('0.000', FloatToStr(Fnc.SysGetAttrValue('Drill_FSF_Y_2') + Fnc.SysGetAttrValue('Drill_FSF_Y_Tol_2'))) + '%';
 
-      // 1134 Additional Information
-      Fnc.SysSetAttrValue('NC_Drill_1_EntryMat', Entry_Sheet_Mat);
-    end
-    else if NCRun = 2 then
-    begin
-      StepParamERP('2nd Stack Height', Fnc.SysGetAttrValue('Stack_Hgt_2'));
-      StepParamERP('2nd Flute Length', Fnc.SysGetAttrValue('Flute_Len_2'));
-      StepParamERP('2nd Min Drill Size', Fnc.SysGetAttrValue('Min_Drill_Size_2'));
-      StepParamERP('2nd Min Slot Size', Fnc.SysGetAttrValue('Min_Slot_Size_2'));
-      StepParamERP('2nd Entry Sheet Mat', Entry_Sheet_Mat);
-      StepInstructionERP('DRILL009');  // REMARK : 2nd Drilling
-      // 1114 Fixed Scale Factor Info
-      if Fnc.SysGetAttrValue('Drill_FSF_X_2') > 0 then
-      begin
-        fixedDim2 := 'X = ' + FormatFloat('0.000', FloatToStr(Fnc.SysGetAttrValue('Drill_FSF_X_2'))) + '%; ' +
-                     'Y = ' + FormatFloat('0.000', FloatToStr(Fnc.SysGetAttrValue('Drill_FSF_Y_2'))) + '%';
-
-        controlRange2 := 'X = ' + FormatFloat('0.000', FloatToStr(Fnc.SysGetAttrValue('Drill_FSF_X_2') - Fnc.SysGetAttrValue('Drill_FSF_X_Tol_2'))) + '~' +
-                                  FormatFloat('0.000', FloatToStr(Fnc.SysGetAttrValue('Drill_FSF_X_2') + Fnc.SysGetAttrValue('Drill_FSF_X_Tol_2'))) + '%; ' +
-                         'Y = ' + FormatFloat('0.000', FloatToStr(Fnc.SysGetAttrValue('Drill_FSF_Y_2') - Fnc.SysGetAttrValue('Drill_FSF_Y_Tol_2'))) + '~' +
-                                  FormatFloat('0.000', FloatToStr(Fnc.SysGetAttrValue('Drill_FSF_Y_2') + Fnc.SysGetAttrValue('Drill_FSF_Y_Tol_2'))) + '%';
-
-        StepParamERP('Fixed Scale Factor', fixedDim2);
-        StepParamERP('Control Range', controlRange2);
-      end;
-
-      // 1259 Addition Attributes for NC
-      //if (Fnc.SysGetAttrValue('Drill_Offset_X_2') <> 0 ) or (Fnc.SysGetAttrValue('Drill_Offset_Y_2') <> 0 ) then
-      //begin
-        if Fnc.SysGetAttrValue('Drill_Offset_X_2') <> 0 then
-          StepParamERP('Offset X', FormatFloat('0.000', FloatToStr(Fnc.SysGetAttrValue('Drill_Offset_X_2'))));
-        if Fnc.SysGetAttrValue('Drill_Offset_Y_2') <> 0 then
-          StepParamERP('Offset Y', FormatFloat('0.000', FloatToStr(Fnc.SysGetAttrValue('Drill_Offset_Y_2'))));
-      //end;
-
-      // 1134 Additional Information
-      Fnc.SysSetAttrValue('NC_Drill_1_EntryMat', Fnc.SysGetAttrValue('NC_Drill_1_EntryMat') + '/' + Entry_Sheet_Mat);
+      StepParamERP('Fixed Scale Factor', fixedDim2);
+      StepParamERP('Control Range', controlRange2);
     end;
-  //end;
+
+    // 1259 Addition Attributes for NC
+    //if (Fnc.SysGetAttrValue('Drill_Offset_X_2') <> 0 ) or (Fnc.SysGetAttrValue('Drill_Offset_Y_2') <> 0 ) then
+    //begin
+      if Fnc.SysGetAttrValue('Drill_Offset_X_2') <> 0 then
+        StepParamERP('Offset X', FormatFloat('0.000', FloatToStr(Fnc.SysGetAttrValue('Drill_Offset_X_2'))));
+      if Fnc.SysGetAttrValue('Drill_Offset_Y_2') <> 0 then
+        StepParamERP('Offset Y', FormatFloat('0.000', FloatToStr(Fnc.SysGetAttrValue('Drill_Offset_Y_2'))));
+    //end;
+
+    // 1134 Additional Information
+    Fnc.SysSetAttrValue('NC_Drill_1_EntryMat', Fnc.SysGetAttrValue('NC_Drill_1_EntryMat') + '/' + Entry_Sheet_Mat);
+
+    // 2383 KK Drill Info all Drill Processes
+    StepParamERP('KK Distance', Fnc.SysGetAttrValue('KK_Distance_NC2'));
+
+  end;
 
   StepParamERP('Material Tg', GetMatTgValue);
   StepParamERP('Thickness', FormatFloat('0.000', Get_Panel_Thickness));
@@ -1725,7 +1705,8 @@ begin
   if HasFaradflexMat then                                    // Faradflex drill instruction
     StepInstructionERP('DRILL076'); // 836 Instruction Code Update
                                                         
-  if SubGetsNewPEP then StepInstructionERP('DRILL167'); //With Sub-Lam PEP Slot Drilling                                                       
+  if SubGetsNewPEP then StepInstructionERP('DRILL167'); //With Sub-Lam PEP Slot Drilling
+
 end;
 
 procedure InsertPressFitRemarks;
@@ -1754,19 +1735,25 @@ end;
 
 procedure CuHoleCheck_SD;
 begin
+
   StepDeptERP('HOLCP-A');
   StepWCERP('HOLCP-A');
 
   if Fnc.SysGetAttrValue('Tight_PressFit_Tol') = true then  // 795 Tight Press Fit Tolerance rule
+  begin
+
+    if Fnc.SysGetAttrValue('NCRunX2') = true then
     begin
-      if Fnc.SysGetAttrValue('NCRunX2') = true then
-      begin
-        if NCRun = 2 then
-          InsertPressFitRemarks;
-      end
-      else
+
+      if NCRun = 2 then
         InsertPressFitRemarks;
-    end;
+        
+    end
+    else
+      InsertPressFitRemarks;
+
+  end;
+
 end;
 
 procedure PLCountersink_SD;
@@ -2872,33 +2859,46 @@ end;
 
 procedure MechBlindVia_Common;
 begin
+
   StepDeptERP('BACKD-A');
   StepWCERP('BACKD-A');
   StepParamERP('Entry Sheet', GetDrillEntrySheet); // 912 Mech Blind Via Entry Material
+
+  // 2383 KK Drill Info all Drill Processes
+  StepParamERP('KK Distance', Fnc.SysGetAttrValue('KK_Distance_MBV'));
+
 end;
 
 procedure MechBlindVia1_SD;
 begin
+
   MechBlindVia_Common;
 
   case MechBlindViaSide of
+
     'Bot'   : StepParamERP('Side A', Fnc.SysGetAttrValue('BotLayer'));  // 837 Show Same format as Backdrill
     'Top'   : StepParamERP('Side B', Fnc.SysGetAttrValue('TopLayer'));
     'Both'  : StepParamERP('Side A', Fnc.SysGetAttrValue('BotLayer'));
+
   end;
 
   case MechBlindViaSide of
+
     'Bot'   : InsertMechBlindViaInfo('A');
     'Top'   : InsertMechBlindViaInfo('B');
     'Both'  : InsertMechBlindViaInfo('A');
+
   end;
+
 end;
        
 procedure MechBlindVia2_SD;
 begin
+
   MechBlindVia_Common;
   StepParamERP('Side B', Fnc.SysGetAttrValue('TopLayer'));  // 837 Mechanical Drill should show A & B Format same as backdrill
   InsertMechBlindViaInfo('B');
+  
 end;
 
 procedure Beveling_SD;

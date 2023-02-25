@@ -4,19 +4,19 @@
 //ScriptType=1
 //ScriptGroup=Create / Edit Layers
 //HeaderImportExport<--
-const                                                                                                                                                                                                                                                                                                                                     
+const 
   BackDrillDefID_1 = 11;  // replace with your own DrillFileDefinition.DrillDefID values that are BackDrill types (DrillFileDefinition.DrillType = 7).
   BackDrillDefID_2 = -99; // just keep adding more constants if you have multiple backdrill types defined…
  
 var
   BackDrillConvertCount : integer;
-                                   
-function IsSoldermask(LayerType : string) : boolean;
+                                                                                     
+function IsSoldermask(LayerType : string) : boolean;    
 begin
   Result := LayerType = 'solder_mask';
 end;
                                           
-function IsCopperLayer(LayerType : string) : boolean;       
+function IsCopperLayer(LayerType : string) : boolean;
 begin
   Result := (LayerType = 'signal') or
             (LayerType = 'power_ground') or
@@ -24,24 +24,24 @@ begin
             (LayerType = 'dummy');
 end;
                                          
-procedure GetStartEndLayer(DrillLayersTable : TSysTable; 
+procedure GetStartEndLayer(DrillLayersTable : TSysTable;
                            NonDrillLayersTable : TSysTable; 
-                           var StartLayer : String; 
+                           var StartLayer : String;
                            var StartCopperLayer : String; 
                            var EndLayer : String;
                            var EndCopperLayer : String;
                            var IsUpsideDown : Boolean);
 var
-  LayerType : string;   
+  LayerType : string;
   StartIndex, EndIndex : integer;  
   DrillStart, DrillEnd : string;
 begin
-  StartLayer := '';
+  StartLayer := '';                                
   EndLayer := '';
-  IsUpsideDown := False;
+  IsUpsideDown := False;   
   StartIndex := -1;
   EndIndex := -1;
-  
+
   DrillStart := DrillLayersTable.FieldByName('StartLyr').AsString;
   DrillEnd   := DrillLayersTable.FieldByName('EndLyr').AsString;
   
@@ -249,7 +249,6 @@ begin
   //then it is an old style backdrill definition and we need to convert to a new BackDrill Type...      
   
   // replace with your own logic to determine if this drill needs conversion.
-  Fnc.SendDebugString('Test');              
   Result := (Lowercase(LeftStr(DrillLayersTable.FieldByName('LayerName').AsString, 2)) = 'bd') and
             (not DrillLayersTable.FieldByName('DrillPlated').AsBoolean) and
             (DrillLayersTable.FieldByName('BlindVia').AsBoolean);           
@@ -315,69 +314,96 @@ begin
   
   // now find the same record in EditLayersTable...
   if EditLayersTable.Locate('AutoInc', SaveAutoInc, SetOf([])) then
-  begin              
+  begin                                                                          
     EditLayersTable.Edit;
     EditLayersTable.FieldByName('DrillDefID').AsInteger := BackDrillDefID_1;  // changes the Drill definition type to be the new BackDrill type                     
     EditLayersTable.FieldByName('DrillPlated').AsBoolean := True;  // new BackDrill type MUST be plated to display correctly                     
     
     // now must figure out the correct Start and End Layers as well as BackDrill From, To and DNC layers...
     GetStartEndLayer(DrillLayersTable, NonDrillLayersTable, StartLayer, StartCopperLayer, EndLayer, EndCopperLayer, UpsideDown);    
-    
-    Fnc.SendDebugString('StartLayer  : ' + StartLayer);  
-    Fnc.SendDebugString('StartCuLayer: ' + StartCopperLayer);  
+             
+    {
+    Fnc.SendDebugString('StartLayer  : ' + StartLayer);
+    Fnc.SendDebugString('StartCuLayer: ' + StartCopperLayer);   
     Fnc.SendDebugString('EndLayer    : ' + EndLayer);  
-    Fnc.SendDebugString('EndCuLayer  : ' + EndCopperLayer);  
+    Fnc.SendDebugString('EndCuLayer  : ' + EndCopperLayer);       
     if UpsideDown then 
-      Fnc.SendDebugString('Is Upside Down')
-    else  
-      Fnc.SendDebugString('NOT Upside Down')
-      
+      Fnc.SendDebugString('Is Upside Down')              
+    else                                        
+      Fnc.SendDebugString('NOT Upside Down')            
+                                                  
+    Fnc.SendDebugString('MfgPart: ' + DrillLayersTable.FieldByName('MfgPart_Name').AsString);  
+    Fnc.SendDebugString('MfgPart TopLayer: ' + DrillLayersTable.FieldByName('MfgPart_TopLayerName').AsString);  
+    Fnc.SendDebugString('MfgPart BottomLayer: ' + DrillLayersTable.FieldByName('MfgPart_BottomLayerName').AsString);  
+    }
+    
     if not UpsideDown then
     begin
       EditLayersTable.FieldByName('StartLyr').AsString := StartLayer;
-      EditLayersTable.FieldByName('DrillBackDrillFrom_Name').AsString := StartCopperLayer;  
+      EditLayersTable.FieldByName('EndLyr').AsString := DrillLayersTable.FieldByName('MfgPart_BottomLayerName').AsString;    
+                                         
+      EditLayersTable.FieldByName('DrillBackDrillFrom_Name').AsString := StartCopperLayer;
       EditLayersTable.FieldByName('DrillBackDrillTo_Name').AsString := EndCopperLayer;  
       EditLayersTable.FieldByName('DrillBackDrillDNC_Name').AsString := GetNextCopperLayerName(NonDrillLayersTable, EndLayer);
-      EditLayersTable.FieldByName('EndLyr').AsString := GetNextCopperLayerName(NonDrillLayersTable, EditLayersTable.FieldByName('DrillBackDrillDNC_Name').AsString);
     end                             
     else
     begin
       EditLayersTable.FieldByName('StartLyr').AsString := StartLayer;
-      EditLayersTable.FieldByName('DrillBackDrillFrom_Name').AsString := StartCopperLayer;  
+      EditLayersTable.FieldByName('EndLyr').AsString := DrillLayersTable.FieldByName('MfgPart_TopLayerName').AsString;   
+
+      
+      EditLayersTable.FieldByName('DrillBackDrillFrom_Name').AsString := StartCopperLayer;
       EditLayersTable.FieldByName('DrillBackDrillTo_Name').AsString := EndCopperLayer;   
       EditLayersTable.FieldByName('DrillBackDrillDNC_Name').AsString := GetPriorCopperLayerName(NonDrillLayersTable, EndLayer);
-      EditLayersTable.FieldByName('EndLyr').AsString := GetPriorCopperLayerName(NonDrillLayersTable, EditLayersTable.FieldByName('DrillBackDrillDNC_Name').AsString);
     end;
     
-    // Remove when script is working...
-    EditLayersTable.FieldByName('LayerName').AsString := EditLayersTable.FieldByName('LayerName').AsString + '-X'; 
+    // make sure we have correct layers for BackDrill Logic...To/DNC cannot be the EndLyr
+    if EditLayersTable.FieldByName('DrillBackDrillTo_Name').AsString = EditLayersTable.FieldByName('EndLyr').AsString then
+       EditLayersTable.FieldByName('DrillBackDrillTo_Name').AsString := '';     
+    if EditLayersTable.FieldByName('DrillBackDrillDNC_Name').AsString = EditLayersTable.FieldByName('EndLyr').AsString then
+       EditLayersTable.FieldByName('DrillBackDrillDNC_Name').AsString := '';
     
-    Fnc.SendDebugString('BD From:' + EditLayersTable.FieldByName('DrillBackDrillFrom_Name').AsString); 
-    Fnc.SendDebugString('BD To  :' + EditLayersTable.FieldByName('DrillBackDrillTo_Name').AsString); 
-    Fnc.SendDebugString('BD DNC :' + EditLayersTable.FieldByName('DrillBackDrillDNC_Name').AsString); 
-     
-    if EditLayersTable.FieldByName('DrillBackDrillDNC_Name').AsString = '' then
+    // tests for successful conversion
+    if EditLayersTable.FieldByName('DrillBackDrillTo_Name').AsString = '' then
+    begin
+      Fnc.SendDebugString('Not Converted - Could not find a valid To layer');
+      EditLayersTable.Cancel;                        
+    end
+    else if EditLayersTable.FieldByName('DrillBackDrillDNC_Name').AsString = '' then
     begin
       Fnc.SendDebugString('Not Converted - Could not find a valid DNC layer');
       EditLayersTable.Cancel;                        
     end
     else if EditLayersTable.FieldByName('EndLyr').AsString = '' then
-    begin
+    begin                           
       Fnc.SendDebugString('Not Converted - Could not find a valid End layer');
       EditLayersTable.Cancel;                        
     end
     else
-    begin
-      EditLayersTable.Post;                        
+    begin                                       
+      // conversion is successful...save the changes.
+      
+      // If you need to rename the Drill after converting...
+      //EditLayersTable.FieldByName('LayerName').AsString := EditLayersTable.FieldByName('LayerName').AsString + '-X'; 
+
+      EditLayersTable.Post;
       Inc(BackDrillConvertCount);
+      
+      Fnc.SendDebugString('Converted drill: ' + EditLayersTable.FieldByName('LayerName').AsString);
+      Fnc.SendDebugString('Start Layer: ' + EditLayersTable.FieldByName('StartLyr').AsString); 
+      Fnc.SendDebugString('End Layer: ' + EditLayersTable.FieldByName('EndLyr').AsString); 
+  
+      Fnc.SendDebugString('BD From: ' + EditLayersTable.FieldByName('DrillBackDrillFrom_Name').AsString);
+      Fnc.SendDebugString('BD To  : ' + EditLayersTable.FieldByName('DrillBackDrillTo_Name').AsString); 
+      Fnc.SendDebugString('BD DNC : ' + EditLayersTable.FieldByName('DrillBackDrillDNC_Name').AsString); 
     end;
   end;
-end;            
+end;                                                                                                                                         
           
 procedure ConvertBackdrills(DrillLayersTable: TSysTable; NonDrillLayersTable : TSysTable; EditLayersTable: TSysTable);
 begin                          
   BackDrillConvertCount := 0;
-  
+                                    
   DrillLayersTable.First;
   
   while not DrillLayersTable.EOF do
@@ -396,7 +422,7 @@ begin
     begin
       Fnc.SendDebugString('Will NOT convert - already a Back Drill Type.'); 
     end;
-                        
+                                   
     DrillLayersTable.Next;   
   end;
   
@@ -426,7 +452,6 @@ begin
   // Example:  Example below will show one method to take old style Back Drill definitions and convert to the new
   //            BackDrill drill type that is found in Engenix v5.1+.
 
-  // Uncomment line below to perform Backdrill conversion...
-  // ConvertBackdrills(DrillLayersTable, NonDrillLayersTable, EditLayersTable);
+  // Uncomment line below to perform Backdrill conversion...                    
+  //ConvertBackdrills(DrillLayersTable, NonDrillLayersTable, EditLayersTable);
 end;                                                   
-              

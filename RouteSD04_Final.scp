@@ -43,7 +43,7 @@ procedure SP_Final_Cure_SD;
 begin                              
   StepDeptERP('STCUR-A');
   StepWCERP('STCUR-A');
-end;
+end;            
 
 procedure Step_Curing_SD
 begin
@@ -52,16 +52,17 @@ end;
 procedure Back_Drill_Common_SD(process : string);
 var
   thk : float;
-  
+
 begin
 
   StepDeptERP('BACKD-A');
   
   // 2366 Additional Attribute for Backdrill stub length Spec
-  if Fnc.SysGetAttrValue('BackDrillStubSpec') <= 6.0 then
+  if Fnc.SysGetAttrValue('BackDrillStubSpec') <= 6.0 then // Same logic as adding the 'SP' type steps
   begin
 
-    StepWCERP('BACKD-B');
+    //StepDeptERP('BACKD-B');  Not sure if this should be -B or not...doesn't really matter
+    StepWCERP('BACKD-B0');
 
     if process = 'aftermask' then StepInstructionERP('BACKD039'); // 2385 Add remarks for Backdrill
 
@@ -75,7 +76,7 @@ begin
   else if process = 'aftermask' then thk := ThicknessOverMask;
 
   StepParamERP('Thickness', FormatFloat('0.000', thk));
-  StepParamERP('Machine', Fnc.SysGetAttrValue('BackDrill_Mch')); 
+  StepParamERP('Machine', Fnc.SysGetAttrValue('BackDrill_Mch'));
   StepInstructionERP('BACKD001'); // REMARK:100% BACKDRILL COUPON X-RAY CHECK
 
   if  (Fnc.SysGetAttrValue('BackDrill_Mch') = 'CAMERA') or
@@ -86,37 +87,76 @@ begin
       (Eng_JobName = 'WHQ12-0018') or
       (Eng_JobName = 'KHQ12-0013')
   then
-  begin
-
     StepInstructionERP('BACKD002'); // REMARK:USE 4 CAMERA MACHINE.
-    //ShowMessage('For 3E PCB Only - Specific Job Names used in IES Back Drill rule, how to transfer this to Engenix?')
 
-  end;
+  // 2383 KK Drill Info all Drill Processes
+  if process = 'aftermask' then
+    StepParamERP('KK Distance', Fnc.SysGetAttrValue('KK_Distance_BD_SM'))
+  else
+    StepParamERP('KK Distance', Fnc.SysGetAttrValue('KK_Distance_BD'));
 
 end;
 
 procedure Back_Drill_A_SD;
-begin                     
+begin
+
   Back_Drill_Common_SD('aftermask');   
-  StepParamERP('Side A', Fnc.SysGetAttrValue('BotLayer')); 
+  StepParamERP('Side A', Fnc.SysGetAttrValue('BotLayer'));
+
 end;
 
 procedure Back_Drill_B_SD;
 begin
+
   Back_Drill_Common_SD('aftermask');
-  StepParamERP('Side B', Fnc.SysGetAttrValue('TopLayer')); 
+  StepParamERP('Side B', Fnc.SysGetAttrValue('TopLayer'));
+
 end;
 
 procedure Back_Drill_A_Epoxy_SD;
-begin                     
+begin
+
   Back_Drill_Common_SD('epoxy');
-  StepParamERP('Side A', Fnc.SysGetAttrValue('BotLayer')); 
+  StepParamERP('Side A', Fnc.SysGetAttrValue('BotLayer'));
+
 end;
 
 procedure Back_Drill_B_Epoxy_SD;
 begin
+
   Back_Drill_Common_SD('epoxy');
-  StepParamERP('Side B', Fnc.SysGetAttrValue('TopLayer')); 
+  StepParamERP('Side B', Fnc.SysGetAttrValue('TopLayer'));
+
+end;
+
+procedure Back_Drill_A_SP_SD;
+begin
+  Back_Drill_Common_SD('aftermask');
+  StepParamERP('Side A', Fnc.SysGetAttrValue('BotLayer')); 
+end;
+
+procedure Back_Drill_B_SP_SD;
+begin
+
+  Back_Drill_Common_SD('aftermask');
+  StepParamERP('Side B', Fnc.SysGetAttrValue('TopLayer'));
+
+end;
+
+procedure Back_Drill_A_Epoxy_SP_SD;
+begin
+
+  Back_Drill_Common_SD('epoxy');
+
+  StepParamERP('Side A', Fnc.SysGetAttrValue('BotLayer'));
+end;
+
+procedure Back_Drill_B_Epoxy_SP_SD;
+begin
+
+  Back_Drill_Common_SD('epoxy');
+  StepParamERP('Side B', Fnc.SysGetAttrValue('TopLayer'));
+
 end;
 
 procedure Gold_Tab_Plating_SD;

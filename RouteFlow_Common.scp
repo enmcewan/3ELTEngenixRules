@@ -11,14 +11,27 @@ uses
   
 procedure Back_Drill_Epoxy; // 844 Backdrill after electrolytic Cu
 begin
+
   AddStep('Scope_Drilling_BDEP', 'Scope_Drilling_BDEP01');
 
-  if BKDRwEpoxyTop = true then
-    AddStep('Back_Drill_B_Epoxy', 'Back_Drill_B00');
-                                                   
-  if BKDRwEpoxyBot = true then
-    AddStep('Back_Drill_A_Epoxy', 'Back_Drill_A00');
+  if Fnc.SysGetAttrValue('BackDrillStubSpec') <= 6.0 then  // 2385 Backdrill with 6 mil stub
+  begin
+
+    if BKDRwEpoxyTop then AddStep('Back_Drill_B_Epoxy_SP', 'Back_Drill_SPB00');
+  
+    if BKDRwEpoxyBot then AddStep('Back_Drill_A_Epoxy_SP', 'Back_Drill_SPA00')
+
+  end
+  else
+  begin
+
+    if BKDRwEpoxyTop then AddStep('Back_Drill_B_Epoxy', 'Back_Drill_B00');
+  
+    if BKDRwEpoxyBot then AddStep('Back_Drill_A_Epoxy', 'Back_Drill_A00');
+
+  end;
 
   AddStep('HighPressAirBlow', 'HighPressAirBlow00');
   AddStep('Hole_Check_BDB4M', 'Hole_Check_BD00');
-end; 
+
+end;
