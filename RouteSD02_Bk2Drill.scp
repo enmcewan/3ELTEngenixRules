@@ -155,14 +155,14 @@ begin
   if ((ThinnestCore < 0.05) or (ThickestCore > 2.4)) then
     UseOxideLine3 := false;
 
-  if UseOxideLine1 = true then
+  if UseOxideLine1 then
   begin
     OxideLineSelected := true;
     OxideLineName := OxideLineName1;
     AltOxideLineName := OxideLineName1;
   end;
 
-  if UseOxideLine2 = true then
+  if UseOxideLine2 then
   begin
     if OxideLineSelected = true then
     begin
@@ -176,7 +176,7 @@ begin
     end;
   end;
 
-  if UseOxideLine3 = true then
+  if UseOxideLine3 then
   begin
     if OxideLineSelected = true then
     begin
@@ -190,7 +190,7 @@ begin
     end;
   end;
 
-  if OxideLineSelected = false then
+  if not OxideLineSelected then
   begin
     ShowMessage('Error!!! - No Oxide Line Selected');
     AddStep('EGX_Missing_Steps', 'EGX_Missing_Steps01');
@@ -213,6 +213,14 @@ begin
 
   //if Fnc.SysRouteInsGetStepNum = 1 then  // 1471 QR Code information info update
   //  InsertQRInfoAtStep1;
+
+end;
+
+procedure NonEtchPreTreatment_SD;
+begin
+
+  StepDeptERP('OXDOL-F0');
+  StepWCERP('OXDOL-F0');
 
 end;
 
@@ -256,7 +264,18 @@ begin
   StepParamERP('PCB Orientation', MfgAttrTL('PCBOrientation'));
 end;
 
-procedure Riveting_SD;
+procedure Riveting_Common; // 2472
+begin
+
+  StepDeptERP('PBOOK-B0');
+  StepWCERP('PBOOK-B0');
+
+  if Fnc.SysGetAttrValue('Rivet_Thk') <> '' then
+    StepParamERP('Rivet Thickness', Fnc.SysGetAttrValue('Rivet_Thk'));
+
+end;
+
+{procedure Riveting_SD; // No Longer used after 2472 - X-OUt Step so cannot be selected.
 begin
   StepDeptERP('PBOOK-B0');
   StepWCERP('PBOOK-B0');
@@ -267,9 +286,25 @@ begin
   if NumOfCores > 8 then           
     StepInstructionERP('PBOOK013'); // 4 Rivet
   else
-    StepInstructionERP('PBOOK012'); // 2 Rivet
+    StepInstructionERP('PBOOK012'); // 2 Rivet 
+  
+end;}
+
+procedure RivetingX4_SD; // 2472
+begin
+
+  Riveting_Common;         
+  StepInstructionERP('PBOOK013'); // 4 Rivet
 
 end;
+
+procedure RivetingX2_SD;  // 2472
+begin
+
+  Riveting_Common;         
+  StepInstructionERP('PBOOK012'); // 2 Rivet 
+
+end; 
 
 procedure PlasticEye_Riveting_SD
 begin
@@ -470,7 +505,7 @@ begin
 
   StepDeptERP('SCPDR-A');
 
-  if (
+  {if (
       (
        (Fnc.SysGetAttrValue('ProdCode') = '04LS') or
        (Fnc.SysGetAttrValue('ProdCode') = 'P04ls') or
@@ -483,9 +518,11 @@ begin
       (Fnc.SysGetAttrValue('KK_Distance') < 598)
      )
   then
-    StepWCERP('SCPDR-A');
+    StepWCERP('SCPDR-A')
   else
-    StepWCERP('SCPDR-B0');
+    StepWCERP('SCPDR-B0');}
+
+  StepWCERP('SCPDR-A'); // 2471
 
   if (
       ((LaserBTopHits > 0) or (LaserABotHits > 0))
@@ -1597,7 +1634,6 @@ begin
                            FormatFloat('0.000', FloatToStr(Fnc.SysGetAttrValue('Drill_FSF_Y') + Fnc.SysGetAttrValue('Drill_FSF_Y_Tol'))) + '%';
 
 
-
   if NCRun = 1 then
   begin
 
@@ -1607,12 +1643,14 @@ begin
     StepParamERP('Min Slot Size', Fnc.SysGetAttrValue('Min_Slot_Size'));
     StepParamERP('Entry Sheet Material', Entry_Sheet_Mat);
 
+    StepParamERP('NC Stage', 'First NC'); // 2477  
+    
     if Fnc.SysGetAttrValue('NCRunX2') then
     begin
       StepInstructionERP('DRILL010');  // REMARK : 1st Drilling
-      StepInstructionERP('2NC_PESHET'); // REMARK: Put PE Sheet In Between Panel
+      StepInstructionERP('2NC_PESHET'); // REMARK: Put PE Sheet In Between Panel 
     end;
-
+    
     // 1114 Fixed Scale Factor Info
     if Fnc.SysGetAttrValue('Drill_FSF_X') > 0 then
     begin
@@ -1632,7 +1670,7 @@ begin
     // 1134 Additional Information
     Fnc.SysSetAttrValue('NC_Drill_1_EntryMat', Entry_Sheet_Mat);
 
-    // 2383 KK Drill Info all Drill Processes
+    // 2384 KK Drill Info all Drill Processes
     StepParamERP('KK Distance', Fnc.SysGetAttrValue('KK_Distance_NC1'));
 
   end
@@ -1644,6 +1682,9 @@ begin
     StepParamERP('2nd Min Drill Size', Fnc.SysGetAttrValue('Min_Drill_Size_2'));
     StepParamERP('2nd Min Slot Size', Fnc.SysGetAttrValue('Min_Slot_Size_2'));
     StepParamERP('2nd Entry Sheet Mat', Entry_Sheet_Mat);
+
+    StepParamERP('NC Stage', 'Second NC'); // 2477
+
     StepInstructionERP('DRILL009');  // REMARK : 2nd Drilling
     // 1114 Fixed Scale Factor Info
     if Fnc.SysGetAttrValue('Drill_FSF_X_2') > 0 then
@@ -1672,7 +1713,7 @@ begin
     // 1134 Additional Information
     Fnc.SysSetAttrValue('NC_Drill_1_EntryMat', Fnc.SysGetAttrValue('NC_Drill_1_EntryMat') + '/' + Entry_Sheet_Mat);
 
-    // 2383 KK Drill Info all Drill Processes
+    // 2384 KK Drill Info all Drill Processes
     StepParamERP('KK Distance', Fnc.SysGetAttrValue('KK_Distance_NC2'));
 
   end;
@@ -1705,7 +1746,7 @@ begin
   if HasFaradflexMat then                                    // Faradflex drill instruction
     StepInstructionERP('DRILL076'); // 836 Instruction Code Update
                                                         
-  if SubGetsNewPEP then StepInstructionERP('DRILL167'); //With Sub-Lam PEP Slot Drilling
+  if SubGetsNewPEP then StepInstructionERP('DRILL167'); //With Sub-Lam PEP Slot Drillin
 
 end;
 
@@ -1735,25 +1776,19 @@ end;
 
 procedure CuHoleCheck_SD;
 begin
-
   StepDeptERP('HOLCP-A');
   StepWCERP('HOLCP-A');
 
   if Fnc.SysGetAttrValue('Tight_PressFit_Tol') = true then  // 795 Tight Press Fit Tolerance rule
-  begin
-
-    if Fnc.SysGetAttrValue('NCRunX2') = true then
     begin
-
-      if NCRun = 2 then
+      if Fnc.SysGetAttrValue('NCRunX2') = true then
+      begin
+        if NCRun = 2 then
+          InsertPressFitRemarks;
+      end
+      else
         InsertPressFitRemarks;
-        
-    end
-    else
-      InsertPressFitRemarks;
-
-  end;
-
+    end;
 end;
 
 procedure PLCountersink_SD;
@@ -1923,6 +1958,14 @@ begin
   StepInstructionERP('COPPL085'); //REMARK: Strike Plating Program
 end;
 
+procedure Strike_Plating_FV_SD;
+begin
+
+    Strike_Plating_SD;
+    StepParamERP('Remarks', '1.0 asd 58 minutes');
+
+end;
+
 procedure Electroless_SP_SD; // 978 Updated Cu Rule - Metalization
 begin
   StepDeptERP('METAL-D0');
@@ -2041,10 +2084,13 @@ var
   NC_Thickness: string;
   CuPlating_MCP: TSysTable;
 begin
+
   Result := ''
   errMsg := '';
 
-  CuPlating_MCP := Fnc.CustomTableGet('CuPlating_MCP_P3_FV');  // 1086 Updated Cu Platin Rule
+  //CuPlating_MCP := Fnc.CustomTableGet('CuPlating_MCP_P3_FV');  // 1086 Updated Cu Platin Rule
+  CuPlating_MCP := Fnc.CustomTableGet('CuPlating_MCP_2464');
+
   Filter1 := '';
   Filter2 := '';
 
@@ -2094,15 +2140,20 @@ begin
 
     if not CuPlating_MCP.isEmpty then
     begin
+
       CuPlating_MCP.First;
       //Fnc.OpenDataGrid(CuPlating_MCP);
-      GLB_Ave_CuThk := CuPlating_MCP.FieldByName('ThicknessSurfacePlated').AsInteger;
+      if (Fnc.SysGetAttrValue('EpoxySide') <> 'None') and Fnc.SysGetAttrValue('CappedVia') then // 2464
+        GLB_Ave_CuThk := CuPlating_MCP.FieldByName('ThkPltInkPlugNoCap').AsInteger
+      else
+        GLB_Ave_CuThk := CuPlating_MCP.FieldByName('ThicknessSurfacePlated').AsInteger;
+
     end;
   end;
 
   GLB_Abs_CuThk := GLB_Ave_CuThk;
 
-  // cleanup
+  // cleanup               
   CuPlating_MCP.Filtered := False;
   CuPlating_MCP.Filter := '';
 
@@ -2157,7 +2208,8 @@ begin
 
   //ShowMessage(aFilter);
 
-  CuPlating_RPLS := Fnc.CustomTableGet('CuPlating_RPLS_1467'); // 1467
+  //CuPlating_RPLS := Fnc.CustomTableGet('CuPlating_RPLS_1467'); // 1467
+  CuPlating_RPLS := Fnc.CustomTableGet('CuPlating_RPLS_2464'); // 2464
 
   CuPlating_RPLS.Filtered := False;
   CuPlating_RPLS.Filter := aFilter;
@@ -2167,11 +2219,29 @@ begin
 
   if not CuPlating_RPLS.isEmpty then
   begin
+
     CuPlating_RPLS.First;
-    if MinDrillSize <= 0.3 then
-      GLB_Ave_CuThk := CuPlating_RPLS.FieldByName('ThicknessSurfacePlated').AsFloat
+
+    if (Fnc.SysGetAttrValue('EpoxySide') <> 'None') and Fnc.SysGetAttrValue('CappedVia') then // 2464
+    begin
+
+      if MinDrillSize <= 0.3 then
+        GLB_Ave_CuThk := CuPlating_RPLS.FieldByName('ThkPltInkPlugNoCapLTE3').AsFloat
+      else
+        GLB_Ave_CuThk := CuPlating_RPLS.FieldByName('ThkPltInkPlugNoCapGT3').AsFloat;
+
+    end
     else
-      GLB_Ave_CuThk := CuPlating_RPLS.FieldByName('ThicknessSurfacePlated2').AsFloat
+    begin
+
+      if MinDrillSize <= 0.3 then
+        GLB_Ave_CuThk := CuPlating_RPLS.FieldByName('ThicknessSurfacePlated').AsFloat
+      else
+        GLB_Ave_CuThk := CuPlating_RPLS.FieldByName('ThicknessSurfacePlated2').AsFloat;
+
+    end;
+
+
   end;
 
   GLB_Abs_CuThk := GLB_Ave_CuThk;
@@ -2573,13 +2643,13 @@ begin
       StepWCERP('COPPL-B');
     end;
 
-    if Plating_Line = 'PAL4' then
+    if Plating_Line = 'P4' then // 2467 'PAL4'
     begin
       StepDeptERP('COPPL-C');
       StepWCERP('COPPL-C1');
     end;
 
-    if ( Plating_Line = 'PAL6' ) or ( Plating_Line = 'PAL7' ) or ( Plating_Line = 'PAL6 / PAL7' )  then
+    if ( Plating_Line = 'PAL6' ) or ( Plating_Line = 'PAL7' ) or ( Plating_Line = 'P6 / P7' )  then  // 2467 'PAL6 / PAL7'
     begin
       //StepDeptERP('COPPL-C');
       StepWCERP('COPPL-C22'); // Plating Line PAL5 change to PAL6
@@ -2808,17 +2878,21 @@ begin
   AddBoardFinishAsAttribute; // 1223 Additional Surface Finish info under Electrolytic Cu step
 
   StepParamERP('Panel Size', Fnc.SysGetAttrValue('Panel_Size'));  // 2201 Electrolytic Cu Info
-
+     
 End;
 
 Procedure Electrolytic_Cu_1_SD;
 begin
-  Electrolytic_Cu_SD(false);
-end;
 
+  Electrolytic_Cu_SD(false);
+
+end;
+                
 Procedure Electrolytic_Cu_2_SD;
 begin
+
   Electrolytic_Cu_SD(true);
+
 end;
 
 Procedure Electrolytic_CappedVia_SD;
@@ -2826,14 +2900,28 @@ begin
 
   //StepDeptERP('COPPL-E01');
   //StepWCERP('COPPL-E01');
-  StepDeptERP('COPPL-C'); // 2388
-  StepWCERP('COPPL-C');
+  if LayupThickness <= 2.00 then
+  begin
+
+    StepDeptERP('COPPL-E0'); // 2388
+    StepWCERP('COPPL-E0');
+
+  end
+  else
+  begin
+
+    StepDeptERP('COPPL-C'); // 2388
+    StepWCERP('COPPL-C');
+
+  end;
 
   if Fnc.SysGetAttrValue('Min_Surf_Plt') = 0 then Fnc.SysSetAttrValue('Min_Surf_Plt', 15.0);
 
   StepParamERP('Min Surface Plate', Fnc.SysGetAttrValue('Min_Surf_Plt'));
-  StepParamERP('Process', 'Flash Plating');
-                  
+
+  //StepParamERP('Process', 'Flash Plating');      // 2477 switched this off since it conflicts with the new request below
+  StepParamERP('Plating Stage', 'Capped Plating'); // 2477
+
   CalcAndInsert_DECUTHK(false, 2, 'CappedVia');
   AddBoardFinishAsAttribute; // 1223 Additional Surface Finish info under Electrolytic Cu step
 
@@ -2846,6 +2934,7 @@ end;
 
 procedure KK_Drill_SD;
 begin
+
   StepDeptERP('KKDRI-B');
   StepWCERP('KKDRI-B');
 
@@ -2864,41 +2953,33 @@ begin
   StepWCERP('BACKD-A');
   StepParamERP('Entry Sheet', GetDrillEntrySheet); // 912 Mech Blind Via Entry Material
 
-  // 2383 KK Drill Info all Drill Processes
+  // 2384 KK Drill Info all Drill Processes
   StepParamERP('KK Distance', Fnc.SysGetAttrValue('KK_Distance_MBV'));
 
 end;
 
 procedure MechBlindVia1_SD;
 begin
-
   MechBlindVia_Common;
 
   case MechBlindViaSide of
-
     'Bot'   : StepParamERP('Side A', Fnc.SysGetAttrValue('BotLayer'));  // 837 Show Same format as Backdrill
     'Top'   : StepParamERP('Side B', Fnc.SysGetAttrValue('TopLayer'));
     'Both'  : StepParamERP('Side A', Fnc.SysGetAttrValue('BotLayer'));
-
   end;
 
   case MechBlindViaSide of
-
     'Bot'   : InsertMechBlindViaInfo('A');
     'Top'   : InsertMechBlindViaInfo('B');
     'Both'  : InsertMechBlindViaInfo('A');
-
   end;
-
 end;
        
 procedure MechBlindVia2_SD;
 begin
-
   MechBlindVia_Common;
   StepParamERP('Side B', Fnc.SysGetAttrValue('TopLayer'));  // 837 Mechanical Drill should show A & B Format same as backdrill
   InsertMechBlindViaInfo('B');
-  
 end;
 
 procedure Beveling_SD;

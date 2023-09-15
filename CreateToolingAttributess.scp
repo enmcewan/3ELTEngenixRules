@@ -1,0 +1,150 @@
+//HeaderImportExport-->
+//SiteId=0
+//Enterprise=True
+//ScriptType=0
+//ScriptGroup=
+//HeaderImportExport<--
+procedure InsertPartAttribute(AttrName: string; DispInfo: string; DataType: string);
+var
+  aQry: TAdoQuery;
+  aSProc: TAdoStoredProc;
+begin
+  aQry := Fnc.SqlRunNew(Format('Select * From PartAttributes Where TreeName = %s', [QuotedStr(AttrName)]));
+
+  if aQry.isEmpty then
+  begin
+    aSProc := TAdoStoredProc.Create(nil);
+    aSProc.Connection := Fnc.DBConnection;                    
+    aSProc.ProcedureName := 'sp_InsertNewPartAttributeExt';
+    aSProc.Parameters.Refresh;
+
+    aSProc.Parameters.ParamByName('@TreeName').Value := AttrName;
+    aSProc.Parameters.ParamByName('@DispInfo').Value := DispInfo;
+    aSProc.Parameters.ParamByName('@DataType').Value := DataType;
+
+    aSProc.ExecProc;
+
+    aSProc.Free;
+  end;
+
+  aQry.Active := False;                                     
+  aQry.Free;
+end;
+
+procedure UpdatePartAttribute(OldName: string; NewName: string; DispName: string; DispInfo: string);
+var
+  DispInfoId: integer;
+  aQry: TAdoQuery;
+begin
+  aQry := Fnc.SqlRunNew(Format('Select DisplayInformationId From DisplayInformation Where DisplayGroup = %s', [QuotedStr(DispInfo)]));
+
+  if not aQry.isEmpty then
+  begin
+    DispInfoId := aQry.FieldByName('DisplayInformationId').AsInteger;
+                                                   
+    aQry.Active := False;
+
+    aQry.Sql.Text := Format('Select * From PartAttributes Where TreeName = %s', [QuotedStr(OldName)]);
+    aQry.Active := True;
+
+    if not aQry.isEmpty then
+    begin
+      aQry.Edit;
+      aQry.FieldByName('TreeName').AsString := NewName;
+      aQry.FieldByName('Name').AsString := DispName;
+      aQry.FieldByName('DisplayInformationID').AsInteger := DispInfoId;
+      aQry.FieldByName('cimFlag').AsInteger := 0;
+      aQry.Post;
+    end;
+  end;
+
+  aQry.Active := False;
+  aQry.Free;
+end;
+
+begin
+  Fnc.MouseBusy;
+
+  InsertPartAttribute('ToolModOwner', 'ToolModule', 'ftString');
+  UpdatePartAttribute('ToolModOwner', 'ToolModOwner', 'Owner', 'ToolModule');
+
+  InsertPartAttribute('ToolModStatus', 'ToolModule', 'ftString');
+  UpdatePartAttribute('ToolModStatus', 'ToolModStatus', 'Status', 'ToolModule');
+
+  InsertPartAttribute('ToolModRemarks', 'ToolModule', 'ftMemo');
+  UpdatePartAttribute('ToolModRemarks', 'ToolModRemarks', 'Remarks', 'ToolModule');
+
+  InsertPartAttribute('ToolModLastUpdateUser', 'ToolModule', 'ftString');
+  UpdatePartAttribute('ToolModLastUpdateUser', 'ToolModLastUpdateUser', 'Last Upd. User', 'ToolModule');
+
+  InsertPartAttribute('ToolModLastUpdateDate', 'ToolModule', 'ftDate');
+  UpdatePartAttribute('ToolModLastUpdateDate', 'ToolModLastUpdateDate', 'Last Upd. Date', 'ToolModule');
+
+  InsertPartAttribute('ToolModLastUpdateTime', 'ToolModule', 'ftTime');
+  UpdatePartAttribute('ToolModLastUpdateTime', 'ToolModLastUpdateTime', 'Last Upd. Time', 'ToolModule');
+
+  InsertPartAttribute('ToolModEditable', 'ToolModule', 'ftBoolean');
+  UpdatePartAttribute('ToolModEditable', 'ToolModEditable', 'Editable', 'ToolModule');
+
+  //--
+
+  InsertPartAttribute('ToolModCamAssigned', 'ToolModule', 'ftString');
+  UpdatePartAttribute('ToolModCamAssigned', 'ToolModCamAssigned', 'Cam User', 'ToolModule');
+
+  InsertPartAttribute('ToolModCamStatus', 'ToolModule', 'ftString');
+  UpdatePartAttribute('ToolModCamStatus', 'ToolModCamStatus', 'Cam Status', 'ToolModule');
+
+  InsertPartAttribute('ToolModCamStartDate', 'ToolModule', 'ftDate');
+  UpdatePartAttribute('ToolModCamStartDate', 'ToolModCamStartDate', 'Cam Start Date', 'ToolModule');
+
+  InsertPartAttribute('ToolModCamStartTime', 'ToolModule', 'ftTime');
+  UpdatePartAttribute('ToolModCamStartTime', 'ToolModCamStartTime', 'Cam Start Time', 'ToolModule');
+
+  InsertPartAttribute('ToolModCamEndDate', 'ToolModule', 'ftDate');
+  UpdatePartAttribute('ToolModCamEndDate', 'ToolModCamEndDate', 'Cam End Date', 'ToolModule');
+
+  InsertPartAttribute('ToolModCamEndTime', 'ToolModule', 'ftTime');
+  UpdatePartAttribute('ToolModCamEndTime', 'ToolModCamEndTime', 'Cam End Time', 'ToolModule');
+
+  //--
+
+  InsertPartAttribute('ToolModArtWorkAssigned', 'ToolModule', 'ftString');
+  UpdatePartAttribute('ToolModArtWorkAssigned', 'ToolModArtWorkAssigned', 'ArtWork User', 'ToolModule');
+
+  InsertPartAttribute('ToolModArtWorkStatus', 'ToolModule', 'ftString');
+  UpdatePartAttribute('ToolModArtWorkStatus', 'ToolModArtWorkStatus', 'ArtWork Status', 'ToolModule');
+
+  InsertPartAttribute('ToolModArtWorkStartDate', 'ToolModule', 'ftDate');
+  UpdatePartAttribute('ToolModArtWorkStartDate', 'ToolModArtWorkStartDate', 'ArtWork Start Date', 'ToolModule');
+
+  InsertPartAttribute('ToolModArtWorkStartTime', 'ToolModule', 'ftTime');
+  UpdatePartAttribute('ToolModArtWorkStartTime', 'ToolModArtWorkStartTime', 'ArtWork Start Time', 'ToolModule');
+                                               
+  InsertPartAttribute('ToolModArtWorkEndDate', 'ToolModule', 'ftDate');
+  UpdatePartAttribute('ToolModArtWorkEndDate', 'ToolModArtWorkEndDate', 'ArtWork End Date', 'ToolModule');
+
+  InsertPartAttribute('ToolModArtWorkEndTime', 'ToolModule', 'ftTime');
+  UpdatePartAttribute('ToolModArtWorkEndTime', 'ToolModArtWorkEndTime', 'ArtWork End Time', 'ToolModule'); 
+                                  
+  InsertPartAttribute('ToolModCamIdleTime', 'ToolModule', 'ftFloat'); 
+  UpdatePartAttribute('ToolModCamIdleTime', 'ToolModCamIdleTime', 'Cam Idle Time', 'ToolModule');
+  
+  InsertPartAttribute('ToolModArtWorkIdleTime', 'ToolModule', 'ftFloat');
+  UpdatePartAttribute('ToolModArtWorkIdleTime', 'ToolModArtWorkIdleTime', 'ArtWork Idle Time', 'ToolModule');
+
+  //--
+  {
+  // attribute might exist, do it this way
+  UpdatePartAttribute('Scale_X', 'ToolModScaleX', 'Scale X', 'ToolModule');
+  InsertPartAttribute('ToolModScaleX', 'ToolModule', 'ftFloat');
+  UpdatePartAttribute('ToolModScaleX', 'ToolModScaleX', 'Scale X', 'ToolModule');
+
+  // attribute might exist, do it this way
+  UpdatePartAttribute('Scale_Y', 'ToolModScaleY', 'Scale Y', 'ToolModule');
+  InsertPartAttribute('ToolModScaleY', 'ToolModule', 'ftFloat');
+  UpdatePartAttribute('ToolModScaleY', 'ToolModScaleY', 'Scale Y', 'ToolModule');
+  }
+  Fnc.MouseNormal;
+end;
+
+ 

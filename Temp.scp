@@ -13,6 +13,8 @@ var
 
   jobAttributes : TSysTable;
 
+  ParamList: TStringList;
+
 begin
 
   Qry := TAdoQuery.Create(nil);
@@ -22,15 +24,19 @@ begin
   //Qry.SQL.Add('SELECT COUNT(*) from Cust_JobPartAttributes'); 
   // Qry.SQL.Add('SELECT * from JobAnswers WHERE JobID = 2022');
   // Qry.SQL.Add('SELECT JobName from Jobs WHERE JobID = 2022');
-  Qry.SQL.Add('SELECT * from CUST_JOBPARTATTRIBUTES ');
-  Qry.SQL.Add('WHERE PARTTYPE = ' + QuotedStr('MFGTP') + ' AND ATTRIBUTENAME LIKE ' + QuotedStr('CoreBuild_CuThin%') );
-  Qry.SQL.Add(' ORDER BY ' + QuotedStr('JobID') + ' DESC' );
+  //Qry.SQL.Add('SELECT * from CUST_JOBPARTATTRIBUTES ');
+  //Qry.SQL.Add('WHERE PARTTYPE = ' + QuotedStr('MFGTP') + ' AND ATTRIBUTENAME LIKE ' + QuotedStr('CoreBuild_CuThin%') );
+  //Qry.SQL.Add(' ORDER BY ' + QuotedStr('JobID') + ' DESC' );
+  Qry.SQL.Add('SELECT * FROM PanelizerParameters')
 
   Qry.Open 
                                         
   tbl := qry;
+
+  ParamList := TStringList.Create;
+  ParamList.Values['ShowExportToCSV'] := 'True';
   
-  Fnc.OpenDataGrid(tbl);
+  Fnc.OpenDataGrid(tbl, ParamList);
   
   
 end

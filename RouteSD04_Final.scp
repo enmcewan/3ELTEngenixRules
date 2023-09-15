@@ -43,7 +43,7 @@ procedure SP_Final_Cure_SD;
 begin                              
   StepDeptERP('STCUR-A');
   StepWCERP('STCUR-A');
-end;            
+end;
 
 procedure Step_Curing_SD
 begin
@@ -89,7 +89,7 @@ begin
   then
     StepInstructionERP('BACKD002'); // REMARK:USE 4 CAMERA MACHINE.
 
-  // 2383 KK Drill Info all Drill Processes
+  // 2384 KK Drill Info all Drill Processes
   if process = 'aftermask' then
     StepParamERP('KK Distance', Fnc.SysGetAttrValue('KK_Distance_BD_SM'))
   else
@@ -98,41 +98,33 @@ begin
 end;
 
 procedure Back_Drill_A_SD;
-begin
-
+begin                     
   Back_Drill_Common_SD('aftermask');   
-  StepParamERP('Side A', Fnc.SysGetAttrValue('BotLayer'));
-
+  StepParamERP('Side A', Fnc.SysGetAttrValue('BotLayer')); 
 end;
 
 procedure Back_Drill_B_SD;
 begin
-
   Back_Drill_Common_SD('aftermask');
-  StepParamERP('Side B', Fnc.SysGetAttrValue('TopLayer'));
-
+  StepParamERP('Side B', Fnc.SysGetAttrValue('TopLayer')); 
 end;
 
 procedure Back_Drill_A_Epoxy_SD;
-begin
-
+begin                     
   Back_Drill_Common_SD('epoxy');
-  StepParamERP('Side A', Fnc.SysGetAttrValue('BotLayer'));
-
+  StepParamERP('Side A', Fnc.SysGetAttrValue('BotLayer')); 
 end;
 
 procedure Back_Drill_B_Epoxy_SD;
 begin
-
   Back_Drill_Common_SD('epoxy');
-  StepParamERP('Side B', Fnc.SysGetAttrValue('TopLayer'));
-
+  StepParamERP('Side B', Fnc.SysGetAttrValue('TopLayer')); 
 end;
 
 procedure Back_Drill_A_SP_SD;
 begin
   Back_Drill_Common_SD('aftermask');
-  StepParamERP('Side A', Fnc.SysGetAttrValue('BotLayer')); 
+  StepParamERP('Side A', Fnc.SysGetAttrValue('BotLayer'));
 end;
 
 procedure Back_Drill_B_SP_SD;
@@ -158,6 +150,7 @@ begin
   StepParamERP('Side B', Fnc.SysGetAttrValue('TopLayer'));
 
 end;
+
 
 procedure Gold_Tab_Plating_SD;
 begin

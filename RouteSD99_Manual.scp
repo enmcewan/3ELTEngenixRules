@@ -17,7 +17,7 @@ end;
 procedure OL_Photo_L3_SD;
 begin
   StepDeptERP('EXPOL-A');
-  StepWCERP('EXPOL-A3'); 
+  StepWCERP('EXPOL-A3');
 end;
                                                                                                                       
 procedure OL_Photo_L4_SD;
@@ -26,10 +26,10 @@ begin
   StepWCERP('EXPOL-A4');                                                          
 end;
 
-procedure OL_Photo_L5_SD;                                                                                            
+procedure OL_Photo_L5_SD;
 begin
   StepDeptERP('EXPOL-A');
-  StepWCERP('EXPOL-A5');                                          
+  StepWCERP('EXPOL-A5');
 end;
 
 procedure OL_Photo_L6_SD;                                                                                                                      
@@ -56,19 +56,19 @@ begin
   StepWCERP('COPPL-B');
 end;
 
-procedure Electrolytic_Cu_PAL4_SD; 
+procedure Electrolytic_Cu_PAL4_SD;
 begin
   StepDeptERP('COPPL-C');
   StepWCERP('COPPL-C1');
 end;
 
-procedure Electrolytic_Cu_PAL5_SD; 
+procedure Electrolytic_Cu_PAL5_SD;
 begin
   StepDeptERP('COPPL-C');
   StepWCERP('COPPL-C2');
 end;
 
-procedure Electrolytic_Cu_PAL6_SD; 
+procedure Electrolytic_Cu_PAL6_SD;
 begin
   StepDeptERP('COPPL-C');
   StepWCERP('COPPL-C22');
@@ -247,11 +247,11 @@ procedure PAL4_Man_SD;     // Herole added on 26-Jul-2018
 begin
   StepDeptERP('COPPL-C');                                   
   StepWCERP('COPPL-C1');                    
-  StepParamERP('Plating Line', 'PAL4');   
+  StepParamERP('Plating Line', 'P4');  // 2467 'PAL4'
   StepParamERP('Thickness Before Plate', PressThickness);
   StepParamERP('2nd DE Cu Thickness', Fnc.SysGetAttrValue('User_DE_Cu_Thk_2')); 
   StepParamERP('2nd Min Drill Size', Fnc.SysGetAttrValue('Min_Drill_Size_2'));
-  StepParamERP('Ave Min PTH', Fnc.SysGetAttrValue('Ave_Min_Th_2'));    
+  StepParamERP('Ave Min PTH', Fnc.SysGetAttrValue('Ave_Min_Th_2'));
   StepParamERP('Abs Min PTH', Fnc.SysGetAttrValue('Abs_Min_Th_2'));  
   StepParamERP('2nd PTH Aspect Ratio', Fnc.SysGetAttrValue('Aspect_Ratio_Val_2'));  
   StepParamERP('2nd PTH Cu Plate Area', Fnc.SysGetAttrValue('PTH_CuPlt_Area_2'));    
@@ -263,7 +263,7 @@ end;
 procedure Epoxy_Plug_B_Man_SD;     // Herole added on 1-Aug-2018                                                            
 begin
   StepDeptERP('EPXPL-A');                                   
-  StepWCERP('EPXPL-B0'); 
+  StepWCERP('EPXPL-B0');
   StepParamERP('Plug Ink', Fnc.SysGetAttrValue('EpoxyPlugInk'));   
   StepParamERP('Top B Layer', Fnc.SysGetAttrValue('TopLayer'));                                                                   
 end;  
@@ -400,17 +400,17 @@ begin
   StepParamERP('Dynamic', Fnc.SysGetAttrValue('DynamicEtch'));
 end;
        
-procedure IL_AOI_Man_SD;     // Herole added on 16-Aug-2018                                                            
-begin                                                                                                             
-  StepDeptERP('INSIL-A');                                                            
-  StepWCERP('INSIL-A');  
-  StepParamERP('Thickness', FormatFloat('0.000',LayupThickness));   
-  StepParamERP('Annular', Fnc.SysGetAttrValue('Annular'));                            
-  StepParamERP('Land Area', Fnc.SysGetAttrValue('Land_Area'));   
+procedure IL_AOI_Man_SD;     // Herole added on 16-Aug-2018
+begin
+  StepDeptERP('INSIL-A');
+  StepWCERP('INSIL-A');
+  StepParamERP('Thickness', FormatFloat('0.000',LayupThickness));
+  StepParamERP('Annular', Fnc.SysGetAttrValue('Annular'));
+  StepParamERP('Land Area', Fnc.SysGetAttrValue('Land_Area'));
   StepParamERP('Line Width', Fnc.SysGetAttrValue('Line_Width')); 
-  StepParamERP('Min Gap', Fnc.SysGetAttrValue('Air_Gap'));  
-  StepInstructionERP('INSOL002');   
-end;  
+  StepParamERP('Min Gap', Fnc.SysGetAttrValue('Air_Gap'));
+  StepInstructionERP('INSOL002');
+end;
 
 procedure ResScreenBNDG_Man2_SD;     // Herole added on 17-Aug-2018                   
 begin
@@ -563,22 +563,22 @@ procedure Strike_PAL4_Man_SD;     // Herole added on 26-Oct-2018
 begin
   StepDeptERP('COPPL-C');                                                                                         
   StepWCERP('COPPL-C1'); 
-  StepParamERP('Plating Line', 'PAL4');                                                  
+  StepParamERP('Plating Line', 'P4');  // 2467 'PAL4'
 end;     
 
 procedure Strike_PAL6_Man_SD;     // Herole added on 26-Oct-2018                   
 begin
   StepDeptERP('COPPL-C');                                                                                         
-  StepWCERP('COPPL-C1'); 
+  StepWCERP('COPPL-C1');
   StepParamERP('Plating Line', 'PAL6');                                                  
 end;          
 
-procedure IL_AOI_Blank_Man_SD;     // Herole added on 30-Oct-2018                                                            
+procedure IL_AOI_Blank_Man_SD;     // Herole added on 30-Oct-2018
 begin                                                                                                             
   StepDeptERP('INSIL-A');                                                            
   StepWCERP('INSIL-A');                                                   
   StepInstructionERP('INSOL002');   
-end;      
+end;
 
 procedure VELCP_V2_Man_SD;     // Herole added on 30-Oct-2018                   
 begin
@@ -683,7 +683,7 @@ begin
   StepParamERP('Permanganate','25 min');
 end;          
 
-procedure IL_AOI_1ST__Man_SD;     // Herole added on 16-Jan-2019                                                                  
+procedure IL_AOI_1ST__Man_SD;     // Herole added on 16-Jan-2019
 begin
   StepDeptERP('ISSIL-A');                                                                    
   StepWCERP('ISSIL-A');  
@@ -708,9 +708,9 @@ begin
   StepParamERP('PTH Aspect Ratio', Fnc.SysGetAttrValue('AspectRatio'));  
   StepParamERP('PTH Cu Plating Area', Fnc.SysGetAttrValue('PTH_CuPlt_Area'));  
   StepParamERP('Cu Ratio', Fnc.SysGetAttrValue('Cu_Ratio'));     
-  StepParamERP('Min Surface Cu', Fnc.SysGetAttrValue('Min_Surf_Cu'));   
+  StepParamERP('Min Surface Cu', Fnc.SysGetAttrValue('Min_Surf_Cu'));
   StepParamERP('Max Surface Cu', Fnc.SysGetAttrValue('Max_Surf_Cu'));   
-  StepParamERP('Application', Fnc.SysGetAttrValue('Application'));     
+  StepParamERP('Application', Fnc.SysGetAttrValue('Application'));
   StepInstructionERP('COPPL001'); 
 end;    
 
@@ -815,7 +815,7 @@ procedure ScopeDrill_Man_SD;     // Herole added on 07-Jan-2020
 begin
   StepDeptERP('SCPDR-A');                                   
   StepWCERP('SCPDR-A');                         
-end;       
+end;
 
 procedure Milling_A_Man_SD;     // Herole added on 13-Feb-2020                                                            
 begin
@@ -824,16 +824,16 @@ begin
   StepParamERP('Drill Side', 'Side A Bottom');
 end;     
 
-procedure Oxide_Man_SD;     // Herole added on 18-Feb-2020                                                            
+procedure Oxide_Man_SD;     // Herole added on 18-Feb-2020
 begin
-  StepDeptERP('OXDOL-B');                                   
-  StepWCERP('OXDOL-D0');                         
-end;  
+  StepDeptERP('OXDOL-B');
+  StepWCERP('OXDOL-D0');
+end;
 
 procedure PreBake_Epoxy_Man_SD;     // Herole added on 21-Apr-2020                                                            
 begin
   StepDeptERP('DMBAK-A');                                   
-  StepWCERP('DMBAK-A'); 
+  StepWCERP('DMBAK-A');
   StepInstructionERP('DMBAK003');
 end;                  
 
@@ -1104,7 +1104,7 @@ begin
   StepParamERP('Backdrill Side', 'A Side');
   StepInstructionERP('BACKD001');
   StepInstructionERP('BACKD002');
-  end;
+end;
 
    procedure BACKD_SP_B_Man_SD;     // herole added on 13-Oct-2022
 begin
@@ -1115,7 +1115,7 @@ begin
   StepParamERP('Backdrill Side', 'B Side');
   StepInstructionERP('BACKD001');
   StepInstructionERP('BACKD002');
-  end;
+end;
   
 procedure Shadow_Moire_Man_SD;     // Herole added on 10-Nov-2022
 begin
@@ -1175,3 +1175,33 @@ begin
   StepDeptERP('LAS2D-A');
   StepWCERP('LAS2D-A');
 end;
+
+procedure Core_Matching_Man_SD;     // Herole added on 22-Mar-2023
+begin
+  StepDeptERP('COMIL-A');
+  StepWCERP('COMIL-A0');
+end;
+
+procedure IL_ELINE_Man_SD;     // Herole added on 06-Jun-2023
+begin
+  StepDeptERP('EXPIL-T');
+  StepWCERP('EXPIL-T');
+  StepParamERP('Alt Line', 'Auto_Exposure/LDI');
+  StepParamERP('CAD File Name', Fnc.SysGetAttrValue('CADFileName'));
+  StepInstructionERP('EXPIL039');
+end;
+
+procedure GLICAP_Man_SD;     // Herole added on 03-Jul-2023
+begin
+  StepDeptERP('OXDOL-B');
+  StepWCERP('OXDOL-F0');
+  StepInstructionERP('OXDOL021');
+end;
+
+procedure IL_AOI_Conformal_SD;     // Herole added on 07-Aug-2023
+begin
+  StepDeptERP('INSIL-A');
+  StepWCERP('INSIL-A');
+  StepParamERP('Thickness', FormatFloat('0.000',LayupThickness));
+  StepInstructionERP('INSIL014');
+end;                                       

@@ -14,11 +14,16 @@ begin
   //ShowMessage('Print and Etch Inners');
   //Both Inner & Dummy Cores get Exposure & DES Steps
   //Sub-Assembly Rules Done with Outer Layers
-
-  if ( SandwichCore ) and ( not Fnc.SysGetAttrValueTopLevel('Alt_PEP_Process') ) then  // 1229 New PEP Flow   // 1470
+  
+  if ( SandwichCore ) and ( not Fnc.SysGetAttrValueTopLevel('Alt_PEP_Process') ) then  // 1229 New PEP Flow   // 1470                                            
     AddStep('NC_Drill_PEP_IL', 'NC_Drill_PEP_IL01');
 
-  AddStep('IL_Exposure', 'IL_Exposure01');
+
+  if MfgAttrTL('NonEtchPreTreatment') then // 2470
+    AddStep('IL_Exposure_NonEtched', 'IL_Exposure_NonEtched')
+  else
+    AddStep('IL_Exposure', 'IL_Exposure01');
+
   AddStep('IL_DES', 'IL_DES01');
 
   if Fnc.SysGetAttrValue('MfgPartType') = 'Inn' then
@@ -28,8 +33,11 @@ begin
 
     AddStep('IL_AOI', 'IL_AOI01');
 
+    // 2465
+    AddStep('Core_Matching', 'Core_Matching01');
+
     {if ( SandwichCore ) and ( not Fnc.SysGetAttrValueTopLevel('Alt_PEP_Process') ) then  // 1229 New PEP Flow   // 1470
-    begin
+    begin                                             
       AddStep('IL_PEP', 'IL_PEP01');
       AddStep('IL_SSP', 'IL_SSP01');
     end;}
