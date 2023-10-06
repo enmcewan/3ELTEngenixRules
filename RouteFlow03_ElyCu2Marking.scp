@@ -608,7 +608,7 @@ begin
          ( CustCode_Rule('Customer') = 'FA' ) // 1260 Updated Cu Via Filling Rule 
       then  // 1086 - Electrolytic Cu Plating Line Selection from Flowchart
         //AddStep('Flash_Plating', 'Flash_Plating01');
-        AddStep('Strike_Plating_FV ', 'Strike_Plating-CFV'); // 2469
+        AddStep('Strike_Plating_FV', 'Strike_Plating-CFV'); // 2469
 
     end;
   end;

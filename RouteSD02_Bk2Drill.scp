@@ -366,7 +366,7 @@ var
 begin
   StepDeptERP('PRESS-A');
 
-  if PinLamination = true then
+  if PinLamination then    // 2472
     StepWCERP('PRESS-C1');
   else
     StepWCERP('PRESS-C0');
@@ -1958,11 +1958,11 @@ begin
   StepInstructionERP('COPPL085'); //REMARK: Strike Plating Program
 end;
 
-procedure Strike_Plating_FV_SD;
+procedure Strike_Plating_FV_SD;   // 2469
 begin
 
     Strike_Plating_SD;
-    StepParamERP('Remarks', '1.0 asd 58 minutes');
+    //StepParamERP('Remarks', '1.0 asd 58 minutes');  // Removed per Herole 2469 comment
 
 end;
 
@@ -2143,7 +2143,7 @@ begin
 
       CuPlating_MCP.First;
       //Fnc.OpenDataGrid(CuPlating_MCP);
-      if (Fnc.SysGetAttrValue('EpoxySide') <> 'None') and Fnc.SysGetAttrValue('CappedVia') then // 2464
+      if (Fnc.SysGetAttrValue('EpoxySide') <> 'None') and ( Not Fnc.SysGetAttrValue('CappedVia')) then // 2464
         GLB_Ave_CuThk := CuPlating_MCP.FieldByName('ThkPltInkPlugNoCap').AsInteger
       else
         GLB_Ave_CuThk := CuPlating_MCP.FieldByName('ThicknessSurfacePlated').AsInteger;
@@ -2222,7 +2222,7 @@ begin
 
     CuPlating_RPLS.First;
 
-    if (Fnc.SysGetAttrValue('EpoxySide') <> 'None') and Fnc.SysGetAttrValue('CappedVia') then // 2464
+    if (Fnc.SysGetAttrValue('EpoxySide') <> 'None') and ( not Fnc.SysGetAttrValue('CappedVia')) then // 2464
     begin
 
       if MinDrillSize <= 0.3 then
@@ -3056,4 +3056,11 @@ procedure Hole_Check_AfterEless_SD;
 begin
   StepDeptERP('HOLCP-A');
   StepWCERP('HOLCP-A0');
+end;
+
+procedure Pulse_Bond_SD
+begin
+  StepDeptERP('PBOOK-A');
+  StepWCERP('PBOOK-H0');
+  Fnc.SysSetAttrValue('Pin_Lam', false);
 end;

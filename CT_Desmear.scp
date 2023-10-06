@@ -131,47 +131,6 @@ begin
     Desmear_AppendError(errMsg, Format('Searching Desmear table failed, invalid Thickness or DeepBlindVia for material: ', [QuotedStr(Material)]))
 end;
 
-{
-function SpreadsheetColumnList : TStringList;
-begin
-  result := TStringList.Create;
-  result.Add('D');
-  result.Add('E');
-  result.Add('F');
-  result.Add('G');
-  result.Add('H');
-  result.Add('I');
-  result.Add('J');
-  result.Add('K');
-  result.Add('L');
-  result.Add('M');
-  result.Add('N');
-  result.Add('O');
-  result.Add('P');
-  result.Add('Q');
-  result.Add('R');
-  result.Add('S');
-  result.Add('T');
-  result.Add('U');
-  result.Add('V');
-  result.Add('W');
-  result.Add('X');
-  result.Add('Y');
-  result.Add('Z');
-  result.Add('AA');
-  result.Add('AB');
-  result.Add('AC');
-  result.Add('AD');
-  result.Add('AE');
-  result.Add('AF');
-  result.Add('AG');
-  result.Add('AH');
-  result.Add('AI');
-
-  //ShowMessage(result.Text);
-end;
-}
-
 function GetDesmearStepList(Material: string; Thickness: float): TStringList;
 var
   i: integer;
@@ -212,18 +171,19 @@ begin
       i := 0
       repeat
         Inc(i);
-        FieldName := Format('Data_%d', [i]);
-//-->        SpreadsheetColumnList;
-
-        if not assigned(DesmearTab.FindField(FieldName)) then
-          i := -1                                         
-        else
-        begin                                                                                                                        
-          FieldValue := LowerCase(DesmearTab.FieldByName(FieldName).AsString);
-                  
-          if (FieldValue <> 'none') and (FieldValue <> '') then
-            TempList.Add(FieldName);
-        end;
+        // if i <> 3 4 5 then
+          FieldName := Format('Data_%d', [i]);
+  //-->        SpreadsheetColumnList;
+  
+          if not assigned(DesmearTab.FindField(FieldName)) then
+            i := -1
+          else
+          begin
+            FieldValue := LowerCase(DesmearTab.FieldByName(FieldName).AsString);
+                    
+            if (FieldValue <> 'none') and (FieldValue <> '') then
+              TempList.Add(FieldName);
+          end;
       until i < 0;
 
       DesmearTab.Filtered := False;

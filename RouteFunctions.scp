@@ -19,8 +19,8 @@ Var
   PANEL_VCUT_DONE : boolean;
   BackDrillDone : boolean;         
   ImpedanceDone : boolean;
-  PressThickness : float;                                             
-  VCutDone : boolean;          
+  PressThickness : float;
+  VCutDone : boolean;
   //ImmersionSilverDone: boolean;   1256
   VCUT_TYPE : string;                           
   BaseCuTopUM : integer;
@@ -76,7 +76,7 @@ Var
   
   // Fnc.SysGetAttrValue('LayupThickness'ZZZ)
   LayupThickness: float;
-  
+
 procedure ErrorMessageGenAndLog(ErrorMsg, ErrorType: variant);
 var              
   ErrorTypeStr,
@@ -267,7 +267,7 @@ begin
 end;
 
 function CoreBuildTopBotFamily(var FamTop: string; var FamBot: string) : boolean;
-// Works in conjunction with the CoreBuild function
+// Works in conjunction with the CoreBuild function -- ??
 var
 
   I: Integer;
@@ -289,7 +289,7 @@ begin
   MatList := Fnc.SysStackupGetMaterialList(1, false, 'Foil;PP/Filler;Core;MfgPart', 'ItemDesc');
   FamList := Fnc.SysStackupGetMaterialList(1, false, 'Core', 'ItemFamily');
 
-  //ShowMessage(Matlist.text);
+  //ShowMessage(Matlist.Strings[2]);
 
   if MatList.Count > 0 then
   begin
@@ -321,11 +321,10 @@ var
 begin
   Result := false;
   MatList := Fnc.SysStackupGetMaterialList(0, false, 'Foil;PP/Filler;Core;MfgPart', 'ItemDesc');
-  //ShowMessage(MatList.Text);
 
   if MatList.Count > 0 then
   begin
-    if Matlist.Strings[2] = 'Foil' then
+    if Matlist.Strings[1] = 'Foil' then
     begin
       //ShowMessage('Material at top is a ' + MatList.Strings(0));
       Result := true;
@@ -339,6 +338,53 @@ begin
   end;
 
   MatList.Free;
+end;
+
+function FoilBuildFirstAndLastCoreFamily(var FamTop: string; var FamBot: string) : boolean;
+var
+
+  I: Integer;
+  MatList,
+  FamList: TStringList;
+
+  FoilTop,
+  FoilBot: boolean;
+
+begin
+
+  Result  := false;
+
+  FoilTop := false;
+  FoilBot := false;
+  FamTop  := '';
+  FamBot  := '';
+
+  MatList := Fnc.SysStackupGetMaterialList(1, false, 'Foil;PP/Filler;Core;MfgPart', 'ItemDesc');
+  FamList := Fnc.SysStackupGetMaterialList(1, false, 'Core', 'ItemFamily');
+
+  //ShowMessage(Matlist.Strings[1]);
+
+  if MatList.Count > 0 then
+  begin
+
+    if Matlist.Strings[1] = 'Foil' then FoilTop := true;
+    if MatList.Strings[MatList.Count - 1] = 'Foil' then FoilBot := true;
+
+  end;
+
+  if FamList.Count > 0 then
+  begin
+
+    if FoilTop then FamTop := FamList.Strings[0];
+    if FoilBot then FamBot := FamList.Strings[FamList.Count - 1];
+
+  end;
+
+  FamList.Free;
+  MatList.Free;
+
+  if FoilTop or FoilBot then result := true;
+
 end;
 
 function LayupCoreCount : integer;
@@ -908,7 +954,7 @@ begin
   BKDRwEpoxyBot := false;
   DrillStartLayer := '';
   DrillEndLayer := '';
-  Plated := false;      
+  Plated := false;
   MechBVHTop := false;
   MechBVHBot := false;
 
@@ -1606,14 +1652,29 @@ begin
 
   result := false;
 
-  if (( Fnc.SysGetAttrValue('MfgPartType') = 'Sub' ) and PressCycleMoreThan1 ) or
+  if //(( Fnc.SysGetAttrValue('MfgPartType') = 'Sub' ) and PressCycleMoreThan1 ) or
+     PressCycleMoreThan1 or
      ((Fnc.SysFindAttrValue('Registration', false) < 100) and ( Fnc.SysGetAttrValue('LayerCount') > 6)) or
      (PressThickness > 3.5) or
      (NumOfCores > 13) or
-     (ThreeCores05ThkOrMore)
+     (ThreeCores05ThkOrMore) or
+     Fnc.SysGetAttrValue('Pulse_Bond') // Testing comment from Herole
   then
     result := true;
-                            
+
+end;
+
+function GreaterThan1CoreOrSequential: boolean; // 2274
+begin
+
+  result := true;
+
+  if (( NumOfCores > 1 ) or ( PressCycleMoreThan1 )) and
+     ( not Fnc.SysGetAttrValue('Build_Up'))
+  then
+    result := true;
+
+
 end;
                                  
 function HardGoldB4Resist : boolean;
@@ -1804,14 +1865,14 @@ begin
     'TAMURA S210W-U(WHITE)',
     'TAMURA S210C-U(BLACK)',
     'USI-210YP (YELLOW)',
-    'GREENLEG 460WF-HV WHITE': result := true;  // 2524 White Marking ink replacement
+    'GREENLEG 460WF-HV (WHITE)': result := true;  // 2524 White Marking ink replacement
   end;
 
   case Fnc.SysGetAttrValue('Marking_A') of
     'TAMURA S210W-U(WHITE)',
     'TAMURA S210C-U(BLACK)',
     'USI-210YP (YELLOW)',
-    'GREENLEG 460WF-HV WHITE': result := true;  // 2524 White Marking ink replacement
+    'GREENLEG 460WF-HV (WHITE)': result := true;  // 2524 White Marking ink replacement
   end;
 
 end;

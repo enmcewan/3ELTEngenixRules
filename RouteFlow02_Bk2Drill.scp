@@ -104,15 +104,20 @@ begin
   // New Pre-Book Steps 230913  2472
   AddStep('Pre_Book', 'Pre_Book01'); // Everything gets pre-book first, flowchart steps are unnecessary
 
-  if (( NumOfCores > 1 ) or ( PressCycleMoreThan1 )) and ( not Fnc.SysGetAttrValue('Build_Up')) then
+  if GreaterThan1CoreOrSequential then
   begin
 
-    CoreBuildTopBotFamily(FamTop, FamBot);
+    if CoreBuild then CoreBuildTopBotFamily(FamTop, FamBot)
+    else
+    if FoilBuild then FoilBuildFirstAndLastCoreFamily(FamTop, FamBot)
 
     if ( FamTop = 'Faradflex' ) or ( FamBot = 'Faradflex') then
     begin
 
-      if ((NumOfCores <= 6) and (PressThickness <= 3.0)) then
+      if (NumOfCores <= 6) and
+         (PressThickness <= 3.0) and
+         (Not Fnc.SysGetAttrValue('Pulse_Bond'))
+      then
       begin
 
         AddStep('Pin_Bond', 'Pin_Bond01');
@@ -168,7 +173,7 @@ begin
         AddStep('Pulse_Bond', 'Pulse_Bond01')
       else
       begin
-  
+
         if PinLamination then AddStep('Pin_Lam', 'Pin_Lam01')
         else
         begin
@@ -422,19 +427,21 @@ begin
     result := true else result := false;
       
 end;
-                    
-function UVLaser: boolean;     
-begin                                      
-  if  (
+
+function UVLaser: boolean;
+begin
+
+  // From 2472, comment from Hereole that UV laswe is no longer used.
+  // Needs cleaned up (all rules and config) meanwhile the automatic rule using Pin Lamination is disabled.
+  {if  (
        (( UVLaserB_Top > 0 ) or ( UVLaserA_Bot > 0 )) and
        ( UVLaserB_Top + UVLaserA_Bot < 3500 ) and
-       ( PinLamination )
+       ( PinLamination )   // Definition changed with 2472 - check how this decision should be updated.
       )                     
-        or Fnc.SysGetAttrValue('ForceUVLaser')             
-  then
-    result := true
-  else
-    result := false;
+        or Fnc.SysGetAttrValue('ForceUVLaser')}
+
+  if Fnc.SysGetAttrValue('ForceUVLaser') then result := true else result := false;
+
 end;
 
 function UVLaserMicroEtch: boolean;

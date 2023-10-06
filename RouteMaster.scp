@@ -230,9 +230,9 @@ begin
 
   end;
 
-  if Fnc.SysGetAttrValue('LayerCount') > 2 then
-   if Not (Fnc.SysGetAttrValue('Panel_Width') >= 358) then
-     InputAttributeErrorHandler('Panel Width must be >= 358MM');
+  if GreaterThan1CoreOrSequential then     // 2472
+   if Not (Fnc.SysGetAttrValue('Panel_Width_Press') >= 358) then
+     InputAttributeErrorHandler('Press Panel Width must be >= 358MM');
 
 end;
 
@@ -244,14 +244,14 @@ begin
   Engx_ScanBOM; 
   Engx_ScanDrill;
   GetPartCoreFamilies;
-  GetPartPPGFamilies;                 
+  GetPartPPGFamilies;
   SetTopBotLayerNames;
   TotalThickestCuUM;
   LayupThickness := Fnc.SysGetAttrValue('LayupThickness');
   SetThicknessRequirements;
   GET_VCUT_TYPE;
   GetCopperInfo;
-  CheckProdPartUsesQualMats;             
+  CheckProdPartUsesQualMats;
   Find2milorlessCores; // Special Process Description
   SetMatTGClass;   // CNC Entry Sheet updated Rule (613)
 
