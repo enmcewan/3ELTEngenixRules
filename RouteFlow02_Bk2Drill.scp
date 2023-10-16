@@ -20,7 +20,7 @@ begin
 
   AddStep('Pin_Bond', 'Pin_Bond01');
 
-  if (                             
+  if (
       (NumOfCores >= 4) or    // 4-13 not required as > 13 will be Pin Lam
       ((NumOfCores = 3) and (Fnc.SysGetAttrValue('Panel_Width') > 460))
      )
@@ -344,11 +344,12 @@ begin
   begin
     Rte_Step := '';
     //showmessage(StepList.Text);     
-             
+
     for i := 0 to StepList.Count - 1 do
     begin
       case StepList.Strings[i] of
-        'DM2'                   : Rte_Step := 'Desmear_DM2';
+        //'DM2'                   : Rte_Step := 'Desmear_DM2';  // 2466
+        'Deburr'                : Rte_Step := 'Deburr';  // 2466
         'Hiji Line'             : Rte_Step := 'Desmear_AlkRinse';
         //'Alkaline Rinse'      : Rte_Step := 'Desmear_AlkRinse';
         'Hollmuller Desmear'    : Rte_Step := 'Desmear_Holl';
@@ -358,8 +359,8 @@ begin
         'Plasma2'               : Rte_Step := 'Plasma_2';
         'Hollmuller Desmear2-1' : Rte_Step := 'Desmear_Holl2_1';
         'Hollmuller Desmear2-2' : Rte_Step := 'Desmear_Holl2_2';
-        'DM2-1'                 : Rte_Step := 'Desmear_DM2_1';
-        'DM2-2'                 : Rte_Step := 'Desmear_DM2_2';
+        //'DM2-1'                 : Rte_Step := 'Desmear_DM2_1';  // 2466
+        //'DM2-2'                 : Rte_Step := 'Desmear_DM2_2';  // 2466
         'Ultrasonic'            : Rte_Step := 'Ultrasonic';
         'Vertical Desmear'      : Rte_Step := 'Vertical_Desmear';  // 978
         'Vertical Desmear2'     : Rte_Step := 'Vertical_Desmear_2';
@@ -371,16 +372,16 @@ begin
 
       // OD 2294 removes Vertical_Desmear as a step - The Replacement Hole Cleaning does not
       if Rte_Step = 'Vertical_Desmear_2' then verticalDesmear := true;
-                      
+
     end;
     StepList.Free;
-  end                                                       
+  end
   else                      
     AddStep('Desmear', 'Desmear' + '0' + IntToStr(MetalizationRun)); 
-                                                                                   
+
   MetalizationRun := MetalizationRun + 1;
-    
-  if GetsUltrasonic(true) then  
+
+  if GetsUltrasonic(true) then
    AddStep('UltraSonicStep', 'UltraSonicStep' + '0' + IntToStr(MetalizationRun)); 
                                         
   if NCRun = 1 then // 1204 Updated Desmear Flow
@@ -518,8 +519,9 @@ end;
 procedure NC_EpxPlug_wFlash;
 begin
 
-  AddStep('NC_Drill', 'NC_Drill01');
-              
+  //AddStep('NC_Drill', 'NC_Drill01');      // 2466
+  AddStep('NC_Drill_First', 'NC_Drill01');
+
   if MechBlindViaSide <> 'None' then AddStep('MechBlindVia1', 'MechBlindVia101');
 
   if MechBlindViaSide = 'Both' then AddStep('MechBlindVia2', 'MechBlindVia201');
@@ -532,8 +534,8 @@ begin
   AddStep('CuHoleCheck', 'CuHoleCheck01');
   
   if ( ( Fnc.SysGetAttrValue('BackDrill_Epoxy') ) and ( Fnc.SysGetAttrValue('NCRunX2') = true )) then // 844 Backdrill after Electrolytic Cu
-    Back_Drill_Epoxy; 
-                                                                                                
+    Back_Drill_Epoxy;
+
   Epoxy_Plugging;
                       
   AddStep('Scope_Drilling_EP', 'Scope_Drilling_EP01');
@@ -634,13 +636,15 @@ begin
     NC_EpxPlug_wFlash;
 
 
-    AddStep('NC_Drill', 'NC_Drill02');
+    //AddStep('NC_Drill', 'NC_Drill02');  // 2466
+    AddStep('NC_Drill_Second', 'NC_Drill01');
 
   end
   else
   begin
 
-    AddStep('NC_Drill', 'NC_Drill02');
+    //AddStep('NC_Drill', 'NC_Drill01');  // 2466
+    AddStep('NC_Drill_First', 'NC_Drill01');
 
     if MechBlindViaSide <> 'None' then AddStep('MechBlindVia1', 'MechBlindVia101');
             

@@ -238,7 +238,8 @@ begin
        // (SelectiveGoldType= 'Pattern (Overhang)') or 1256
        (SelectiveGoldType= 'Pattern Overhang / PTH') or  // 1256 Need to check this
        //(GoldFingerType = 'Lead Line Etching B4 Res (Sel)') or 1256
-       (Fnc.SysAttrEditGetAttrValue('Gold_Fgr_Type') = 'Lead Line Etching') or
+       //(Fnc.SysAttrEditGetAttrValue('Gold_Fgr_Type') = 'Lead Line Etching') or
+       ( GoldFingerType = 'Lead Line Etching') or  // Hot fix 231009 - IW. Replaces line above
        //(GoldFingerType = 'Chamfer B4 Res (Sel)') or 911 
        // (GoldFingerType = 'After Pattern (Sel)') or   1256
        (GoldFingerType = 'NO Lead Line Etching') or

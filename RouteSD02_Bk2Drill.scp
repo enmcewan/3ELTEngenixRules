@@ -416,6 +416,11 @@ begin
      (UVLaserB_Top > 0 )
   then
     result := true;
+end;
+
+procedure ManualKKDistanceWarning;
+begin
+
 end
 
 procedure KKXDYDDistance; // 2200 IL Shearing / Routing Info
@@ -439,7 +444,15 @@ begin
                     ' will be used as the KK distance. Please check and confirm', mtWarning, SetOf([mbOK]), 0);
     end
     else
-      Fnc.SysSetAttrValue('KK_Distance', Fnc.SysGetAttrValue('Panel_Length') - 8);
+    begin
+
+      if Fnc.SysGetAttrValue('KK_Distance') = 0 then // 2550
+        Fnc.SysSetAttrValue('KK_Distance', Fnc.SysGetAttrValue('Panel_Length') - 8)
+      else
+        MessageDlg('The manually entered value of ' +
+                    IntToStr(Fnc.SysGetAttrValue('KK_Distance')) +
+                    ' will be used as the KK distance. Please check and confirm', mtWarning, SetOf([mbOK]), 0);
+    end;
   end
   else
   begin
@@ -1214,7 +1227,7 @@ begin
   Material := GetDesmearSearchMaterial;
   ParamList := GetDesmearStepParameters(Material, Thickness, Rte_Step);
 
-  if ParamList.Count > 0 then                                           
+  if ParamList.Count > 0 then
   begin
     //showmessage(ParamList.Strings[j] + #13#13 + ParamList.Text);
     for j := 0 to ParamList.Count - 1 do
@@ -1225,9 +1238,19 @@ begin
       StepParamERP(ParamName, ParamValue);
 
       //showmessage('Name: ' + QuotedStr(ParamName) + ', Value: ' + QuotedStr(ParamValue));
-    end;                                          
+    end;
     ParamList.Free;
   end;
+end;
+
+procedure Deburr_SD;  // 2466
+begin
+
+  StepDeptERP('DBURR-A');
+  StepWCERP('DBURR-B0');
+  StepParamERP('Remarks', 'DM2 Buffing Only'); // ?? Still needed, copied from Manual Step
+  DeSmear_Params('Deburr');
+
 end;
 
 procedure Desmear_Common(Line : string);
@@ -1242,7 +1265,8 @@ begin
   Desmear_Std_Attr;
 end;
 
-procedure Desmear_DM2_SD;
+// Steps are no linger used
+{procedure Desmear_DM2_SD;
 begin
   Desmear_Common('DM');
   DeSmear_Params('DM2');
@@ -1258,7 +1282,7 @@ procedure Desmear_DM2_2_SD;
 begin
   Desmear_Common('DM');
   DeSmear_Params('DM2-2');
-end;
+end;}
 
 procedure Desmear_Holl_SD;
 begin
@@ -1643,7 +1667,7 @@ begin
     StepParamERP('Min Slot Size', Fnc.SysGetAttrValue('Min_Slot_Size'));
     StepParamERP('Entry Sheet Material', Entry_Sheet_Mat);
 
-    StepParamERP('NC Stage', 'First NC'); // 2477  
+    StepParamERP('NC Stage', 'First NC'); // 2466
     
     if Fnc.SysGetAttrValue('NCRunX2') then
     begin
@@ -1683,7 +1707,7 @@ begin
     StepParamERP('2nd Min Slot Size', Fnc.SysGetAttrValue('Min_Slot_Size_2'));
     StepParamERP('2nd Entry Sheet Mat', Entry_Sheet_Mat);
 
-    StepParamERP('NC Stage', 'Second NC'); // 2477
+    StepParamERP('NC Stage', 'Second NC'); // 2466
 
     StepInstructionERP('DRILL009');  // REMARK : 2nd Drilling
     // 1114 Fixed Scale Factor Info
@@ -1749,6 +1773,21 @@ begin
   if SubGetsNewPEP then StepInstructionERP('DRILL167'); //With Sub-Lam PEP Slot Drillin
 
 end;
+
+procedure NC_Drill_First;  // 2466
+begin
+
+  NC_Drill_SD;
+
+end;
+
+procedure NC_Drill_Second;
+begin
+
+  NC_Drill_SD;
+
+end;
+
 
 procedure InsertPressFitRemarks;
 var
@@ -1953,10 +1992,14 @@ end;
 
 procedure Strike_Plating_SD; // 978 Updated Cu Rule - Metalization
 begin
+
   StepDeptERP('COPPL-C');
   StepWCERP('COPPL-C');
   StepInstructionERP('COPPL085'); //REMARK: Strike Plating Program
-end;
+
+  StepParamERP('Plating Stage', 'Strike Plating'); // 2466
+
+  end;
 
 procedure Strike_Plating_FV_SD;   // 2469
 begin
@@ -2482,7 +2525,7 @@ begin
   Set_CU_Ratio(false); // 2400
 
   if NCRun = 1 then
-  begin 
+  begin
     if Fnc.SysGetAttrValue('Electrolytic_Cu_Line') = 'Auto' then  // 843 Process Override Rule
     begin                             
       if (CustCode_Rule('Customer') = 'GM') and (Fnc.SysGetAttrValue('Test_ID') <> 'None') then
@@ -2844,10 +2887,17 @@ begin
     if Fnc.SysGetAttrValue('NCRunX2') = true then
     begin
       if NCRun = 1 then
+      begin
+
         StepInstructionERP('2NC_CUPLT1'); // REMARK: FIRST CU PLATING.
+
+        StepParamERP('Plating Stage', 'First Plating'); // 2466
+
+      end;
 
       if NCRun = 2 then
       begin
+
         StepInstructionERP('2NC_CUPLT2'); // REMARK: SECOND CU PLATING.
 
         if ( BoardFinish = 'ENIG' ) or ( ENIGplusOSP ) then // 1256
@@ -2857,9 +2907,13 @@ begin
               (Eng_JobType = 'Sample') and
               ((CustCode_Rule('Customer') = 'BF') or (CustCode_Rule('Customer') = 'BC'))
              )
-          then                  
+          then
             StepInstructionERP('DRILL011'); // REMARK: OSP + 2X DRILLING.
-        end; 
+
+        end;
+
+        StepParamERP('Plating Stage', 'Second Plating'); // 2466
+
       end;
     end;
 
@@ -2919,8 +2973,8 @@ begin
 
   StepParamERP('Min Surface Plate', Fnc.SysGetAttrValue('Min_Surf_Plt'));
 
-  //StepParamERP('Process', 'Flash Plating');      // 2477 switched this off since it conflicts with the new request below
-  StepParamERP('Plating Stage', 'Capped Plating'); // 2477
+  //StepParamERP('Process', 'Flash Plating');      // 2466 switched this off since it conflicts with the new request below
+  StepParamERP('Plating Stage', 'Capped Plating'); // 2466
 
   CalcAndInsert_DECUTHK(false, 2, 'CappedVia');
   AddBoardFinishAsAttribute; // 1223 Additional Surface Finish info under Electrolytic Cu step
@@ -2938,11 +2992,14 @@ begin
   StepDeptERP('KKDRI-B');
   StepWCERP('KKDRI-B');
 
-  Fnc.SysSetAttrValue('KK_Distance', Fnc.SysGetAttrValue('Panel_Length') - 8);
-  StepParamERP('KK Distance', Fnc.SysGetAttrValue('KK_Distance'));
+  if Fnc.SysGetAttrValue('KK_Distance') = 0 then  // 2550
+    Fnc.SysSetAttrValue('KK_Distance', Fnc.SysGetAttrValue('Panel_Length') - 8)
+  else
+    MessageDlg('The manually entered value of ' +
+                 IntToStr(Fnc.SysGetAttrValue('KK_Distance')) +
+                ' will be used as the KK distance. Please check and confirm', mtWarning, SetOf([mbOK]), 0);
 
-  //if Fnc.SysRouteInsGetStepNum = 1 then  // 1471 QR Code information info update
-  //  InsertQRInfoAtStep1;
+  StepParamERP('KK Distance', Fnc.SysGetAttrValue('KK_Distance'));
 
 end;
 

@@ -19,6 +19,8 @@ var
 procedure InputAttributeErrorHandler(ErrorMessage: string);
 begin
 
+  //editing test comment
+
   InputAttributesOK := false;
   InputAttributesErrorList.Add(ErrorMessage);
 
