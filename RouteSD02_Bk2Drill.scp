@@ -416,11 +416,6 @@ begin
      (UVLaserB_Top > 0 )
   then
     result := true;
-end;
-
-procedure ManualKKDistanceWarning;
-begin
-
 end
 
 procedure KKXDYDDistance; // 2200 IL Shearing / Routing Info
@@ -444,15 +439,7 @@ begin
                     ' will be used as the KK distance. Please check and confirm', mtWarning, SetOf([mbOK]), 0);
     end
     else
-    begin
-
-      if Fnc.SysGetAttrValue('KK_Distance') = 0 then // 2550
-        Fnc.SysSetAttrValue('KK_Distance', Fnc.SysGetAttrValue('Panel_Length') - 8)
-      else
-        MessageDlg('The manually entered value of ' +
-                    IntToStr(Fnc.SysGetAttrValue('KK_Distance')) +
-                    ' will be used as the KK distance. Please check and confirm', mtWarning, SetOf([mbOK]), 0);
-    end;
+      Fnc.SysSetAttrValue('KK_Distance', Fnc.SysGetAttrValue('Panel_Length') - 8);
   end
   else
   begin
@@ -1248,7 +1235,7 @@ begin
 
   StepDeptERP('DBURR-A');
   StepWCERP('DBURR-B0');
-  StepParamERP('Remarks', 'DM2 Buffing Only'); // ?? Still needed, copied from Manual Step
+  StepParamERP('Remarks', 'Buffing Only');
   DeSmear_Params('Deburr');
 
 end;
@@ -2527,7 +2514,7 @@ begin
   if NCRun = 1 then
   begin
     if Fnc.SysGetAttrValue('Electrolytic_Cu_Line') = 'Auto' then  // 843 Process Override Rule
-    begin                             
+    begin
       if (CustCode_Rule('Customer') = 'GM') and (Fnc.SysGetAttrValue('Test_ID') <> 'None') then
       begin
         Plating_Line := GetCuPlat_GM;
@@ -2686,13 +2673,17 @@ begin
       StepWCERP('COPPL-B');
     end;
 
-    if Plating_Line = 'P4' then // 2467 'PAL4'
+    if ( Plating_Line = 'P4' ) or ( Plating_Line = 'PAL4' ) then // 2467 'PAL4'  // 2557
     begin
       StepDeptERP('COPPL-C');
       StepWCERP('COPPL-C1');
     end;
 
-    if ( Plating_Line = 'PAL6' ) or ( Plating_Line = 'PAL7' ) or ( Plating_Line = 'P6 / P7' )  then  // 2467 'PAL6 / PAL7'
+    if ( Plating_Line = 'PAL6' ) or
+       ( Plating_Line = 'PAL7' ) or
+       ( Plating_Line = 'P6' ) or
+       ( Plating_Line = 'P7' ) or
+       ( Plating_Line = 'P6 / P7' )  then  // 2467 'PAL6 / PAL7'
     begin
       //StepDeptERP('COPPL-C');
       StepWCERP('COPPL-C22'); // Plating Line PAL5 change to PAL6
@@ -2886,14 +2877,8 @@ begin
 
     if Fnc.SysGetAttrValue('NCRunX2') = true then
     begin
-      if NCRun = 1 then
-      begin
 
-        StepInstructionERP('2NC_CUPLT1'); // REMARK: FIRST CU PLATING.
-
-        StepParamERP('Plating Stage', 'First Plating'); // 2466
-
-      end;
+      if NCRun = 1 then StepInstructionERP('2NC_CUPLT1'); // REMARK: FIRST CU PLATING.
 
       if NCRun = 2 then
       begin
@@ -2912,10 +2897,13 @@ begin
 
         end;
 
-        StepParamERP('Plating Stage', 'Second Plating'); // 2466
-
       end;
+
     end;
+
+    // Email from Herole 23/11/08
+    if NCRun = 1 then StepParamERP('Plating Stage', 'First Plating'); // 2466
+    if NCRun = 2 then StepParamERP('Plating Stage', 'Second Plating'); // 2466
 
     if Fnc.SysGetAttrValue('Tight_PressFit_Tol') = true then  // 795 Tight Press Fit Tolerance rule
     begin
@@ -2992,14 +2980,11 @@ begin
   StepDeptERP('KKDRI-B');
   StepWCERP('KKDRI-B');
 
-  if Fnc.SysGetAttrValue('KK_Distance') = 0 then  // 2550
-    Fnc.SysSetAttrValue('KK_Distance', Fnc.SysGetAttrValue('Panel_Length') - 8)
-  else
-    MessageDlg('The manually entered value of ' +
-                 IntToStr(Fnc.SysGetAttrValue('KK_Distance')) +
-                ' will be used as the KK distance. Please check and confirm', mtWarning, SetOf([mbOK]), 0);
-
+  Fnc.SysSetAttrValue('KK_Distance', Fnc.SysGetAttrValue('Panel_Length') - 8);
   StepParamERP('KK Distance', Fnc.SysGetAttrValue('KK_Distance'));
+
+  //if Fnc.SysRouteInsGetStepNum = 1 then  // 1471 QR Code information info update
+  //  InsertQRInfoAtStep1;
 
 end;
 

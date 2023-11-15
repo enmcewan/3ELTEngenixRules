@@ -520,7 +520,7 @@ procedure NC_EpxPlug_wFlash;
 begin
 
   //AddStep('NC_Drill', 'NC_Drill01');      // 2466
-  AddStep('NC_Drill_First', 'NC_Drill01');
+  AddStep('NC_Drill_First', 'NC_Drill-EpxPlug');
 
   if MechBlindViaSide <> 'None' then AddStep('MechBlindVia1', 'MechBlindVia101');
 

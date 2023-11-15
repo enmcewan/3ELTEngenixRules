@@ -26,7 +26,7 @@ Var
   BaseCuTopUM : integer;
   BaseCuBotUM : integer;               
   AOIforCMK : boolean;                         
-  NCRun : integer;                                                                                 
+  NCRun : integer;
   MicroEtchDone : boolean;
   TopFirstPlatingUM : float;       
   BotFirstPlatingUM : float;             
@@ -242,7 +242,7 @@ begin
   MatList := Fnc.SysStackupGetMaterialList(1, false, 'Foil;PP/Filler;Core;MfgPart', 'ItemDesc');
   //ShowMessage(MatList.Text);
 
-  if MatList.Count > 0 then
+  if MatList.Count >= 3 then   // hot fix 23/10/17
   begin
     if Matlist.Strings[2] = 'Core' then
     begin
@@ -1667,7 +1667,7 @@ end;
 function GreaterThan1CoreOrSequential: boolean; // 2274
 begin
 
-  result := true;
+  result := false;
 
   if (( NumOfCores > 1 ) or ( PressCycleMoreThan1 )) and
      ( not Fnc.SysGetAttrValue('Build_Up'))
@@ -3747,7 +3747,7 @@ begin
   end
   else                
     MessageDlg('Rule Error! Customer Code Rule Type is invalid. Contact 3EPCB', mtWarning, SetOf([mbOK]), 0);  
-    
+
   //ShowMessage(result);
 end;
 
@@ -3761,16 +3761,16 @@ var
   so_Attr_Unit : string;
   buttonSelected : integer;
 begin
-  mapTable := Fnc.CustomTableGet('Cust_Code_Map'); 
+  mapTable := Fnc.CustomTableGet('Cust_Code_Map');
   part_Type := Fnc.SysGetAttrValue('Part_Type');
-  cCode := Fnc.SysGetAttrValue('Cust_Code'); 
+  cCode := Fnc.SysGetAttrValue('Cust_Code');
   so_Unit := '';
   so_Attr_Unit := Fnc.SysGetAttrValue('SO_Unit'); 
   part_Type := Fnc.SysGetAttrValue('Part_Type');
-  
+
   if (( part_Type = 'Standard' ) or ( part_Type = 'Internal' )) then
-  begin            
-    mapTable.First;       
+  begin
+    mapTable.First;
     While not mapTable.EOF do
     begin
       if Part_Type = 'Internal' then

@@ -19,8 +19,6 @@ var
 procedure InputAttributeErrorHandler(ErrorMessage: string);
 begin
 
-  //editing test comment
-
   InputAttributesOK := false;
   InputAttributesErrorList.Add(ErrorMessage);
 
@@ -818,7 +816,10 @@ begin
     SetInnerCoreCuAttribute;
     SetInnerCoreThkAttribute;
 
-  end;             
+  end;
+
+  // 2565 Add the Job Name Attribute to Route Step Assignment
+  Fnc.SysSetAttrValue('JobNameAttribute', Fnc.GetJobData.Values['JobName']);
 
 end;
                   
