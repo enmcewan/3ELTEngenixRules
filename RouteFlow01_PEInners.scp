@@ -24,7 +24,6 @@ begin
   else
     AddStep('IL_Exposure', 'IL_Exposure01');
 
-  //AddStep('Core_Matching', 'Core_Matching01'); 
   AddStep('IL_DES', 'IL_DES01');
 
   if Fnc.SysGetAttrValue('MfgPartType') = 'Inn' then
@@ -32,7 +31,7 @@ begin
     if (( CoreGetsHiPot = true ) or ( Fnc.SysGetAttrValue('HiPotTest') = true )) then
       AddStep('HiPotTest', 'HiPotTest01');
 
-    AddStep('IL_AOI', 'IL_AOI01');
+    AddStep('IL_AOI', 'IL_AOI01');       
 
     // 2465
     AddStep('Core_Matching', 'Core_Matching01');

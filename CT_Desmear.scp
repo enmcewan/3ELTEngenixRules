@@ -27,7 +27,7 @@ var
   i: integer;
   Material: string;
   TempList: TStringList;
-begin
+begin                                                                      
   Result := False;
 
   Material := '';

@@ -23,7 +23,7 @@ begin
     if SecondaryPlugInkType <> '' then
     begin
       if SecondaryPlugInkType = 'UV' then
-      begin
+      begin                                
         AddStep('UV_Cure', 'UV_Cure01');
       end
       else if SecondaryPlugInkType = 'Photo' then

@@ -23,21 +23,21 @@ var
   AltLine: string;
   Material : TStringlist;                    
 begin
-
+                              
   if Fnc.SysGetAttrValue('MfgPartType') = 'Inn' then
-  begin
+  begin                                   
     Dept_Erp := '';
     Group_Erp := '';
 
     if ( SubLayersAreOnTopMfgPart ) or ( Fnc.SysGetAttrValueParent('Core_Build') ) then // Thin Core Remarks
     begin
       Dept_Erp := 'EXPIL-K';
-      Group_Erp := 'EXPIL-K0';
+      Group_Erp := 'EXPIL-K0';                         
       AltLine := 'Core Capping Build, Use LDI Machine Only';       
     end;
-
+    
     if ( GrandParentIsSequential ) or ( ParentIsSequential ) then
-    begin                               
+    begin                         
       Dept_Erp := 'EXPIL-K';
       Group_Erp := 'EXPIL-K0';
       AltLine := 'Sequential Build, Use LDI Machine Only';
@@ -59,11 +59,11 @@ begin
       StepInstructionERP('EXPIL039');
 
     end;
-
-    if Group_Erp = '' then // Not set by the rules above
+                                 
+    if Group_Erp = '' then // Not set by the rules above  
     begin
       GetRes(Group_Erp, DesLine, AltLine); // Don't really need this table lookup any more. Table 2A is not used. Easily done with rules.
-
+      
       if pos('-D', Group_Erp) > 0 then Dept_Erp := 'EXPIL-D';
       
       if pos('-K', Group_Erp) > 0 then 

@@ -1,0 +1,187 @@
+//HeaderImportExport-->
+//SiteId=0
+//Enterprise=True
+//ScriptType=0
+//ScriptGroup=HCS
+//HeaderImportExport<--
+procedure SetRulesVersion;
+begin
+  //Fnc.SysSetAttrValue('Rules_Version', 1.01);
+  //Fnc.SysSetAttrValue('Rules_Version', 1.10); // Blind Via Changes
+  //Fnc.SysSetAttrValue('Rules_Version', 1.11); // Photo Sequence
+  //Fnc.SysSetAttrValue('Rules_Version', 1.12); // Resist Printing Step with dual info
+                                              // New Drill Bit Instruction for Faradflex Material
+                                              // Include the Electrolytic Machine name on the process step
+  //Fnc.SysSetAttrValue('Rules_Version', 1.13); // Desmear for Hybrid builds.
+  //Fnc.SysSetAttrValue('Rules_Version', 1.14);  // Updated Photo Sequence to exclude Conformal Mask
+  //Fnc.SysSetAttrValue('Rules_Version', 1.15); // New Rules for Pre/Post Oxide Bake. Oxide line now accepts 0.012 min for Faradflex Rules
+  //Fnc.SysSetAttrValue('Rules_Version', 1.20); // Mech Blind Vias
+  //Fnc.SysSetAttrValue('Rules_Version', 1.30); // 2 Layer Fixes
+  //Fnc.SysSetAttrValue('Rules_Version', 1.31); // Immersion Tin updates
+  //Fnc.SysSetAttrValue('Rules_Version', 1.32); // Core Build Cu Thinning
+  //Fnc.SysSetAttrValue('Rules_Version', 1.33); // Cu Ratio & Plating Area for filled via jobs; Shear Size; Immersion Tin extra condition
+  //Fnc.SysSetAttrValue('Rules_Version', 1.34); // Cu Hole Check; AUS 308 Mask
+  //Fnc.SysSetAttrValue('Rules_Version', 1.35); // Max Epoxy Plug Thk; Thin Core remarks for sequential & core capping builds
+  //Fnc.SysSetAttrValue('Rules_Version', 1.36); // Special Process Description (614)
+  //Fnc.SysSetAttrValue('Rules_Version', 1.37); // CNC Entry Sheet updated Rule (613)
+  //Fnc.SysSetAttrValue('Rules_Version', 1.40); // Keep Manually Added Instructions (708); Change Plating Line PAL5 change to PAL6 (719); Gold Steps Missing Info (722)
+  //Fnc.SysSetAttrValue('Rules_Version', 1.41); // Lead Free Req'd (730)                      
+  //Fnc.SysSetAttrValue('Rules_Version', 1.42); // Updating Inventory Part Number Cycle Code (750)
+  //Fnc.SysSetAttrValue('Rules_Version', 1.50); // Change Step Attributes to Parameters
+  //Fnc.SysSetAttrValue('Rules_Version', 1.51); //(755) Job Revision to follow Engenix calculation; (757) Job Type checking
+  //Fnc.SysSetAttrValue('Rules_Version', 1.52); // (782) For FN Customer code with Conformal mask, the default is without micro etch before laser drill
+                                                // 761 - Add Washing step after baking for OSP finishing
+                                                // 760 - condition for spray coat PSR-2000, If Board thickness>/= 3.6mm, Error will prompt that the board cannot run Spray coat.
+                                                // 785 - Selective Finger with Immersion silver Flow change
+                                                //  784 - Scope Drill remarks for HDI jobs (multiple press or jobs with laser via
+  //Fnc.SysSetAttrValue('Rules_Version', 1.60); // (364) Surface Cu thickness calculation correction
+  //Fnc.SysSetAttrValue('Rules_Version', 1.61); // 797 Pulse Bond
+                                              // 795 Tight Press Fit Tolerance
+                                              // 793 Update Photo Process
+                                              // 802 Additional Special PRocess Info
+                                              // 803 Add Remarks for IL runcard for Faradflex
+                                              // 804 UV Process Step after resist for ENIG
+  // Fnc.SysSetAttrValue('Rules_Version', 1.62); // 836 Instruction Code update
+                                               // 837 Mechanical drill should show A and B format the same as Backdrill format.
+                                               // 838 Core Build buffing remarks
+                                               // 839 Electrolytic Cu - Capped Via / 2nd Plating DE Cu Thickness Tolerance
+                                               // 840 Additional Baking step for EM888 material 
+                                               // 842 Baking additional Parameter for BC and BF job
+                                               // 843 Process Override Rule
+   // Fnc.SysSetAttrValue('Rules_Version', 1.63); // 756 Update Aspect Ratio Calc for OL Photo PRocess
+                                               // 854, 856 New Job Attribute for Finished Thickness
+   //Fnc.SysSetAttrValue('Rules_Version', 1.64); // 841 Primary Plug Before Pattern Cu Thinning Step
+   //Fnc.SysSetAttrValue('Rules_Version', 1.65); // 844 Back Drill After Electrolytic Cu
+   //Fnc.SysSetAttrValue('Rules_Version', 1.70); // 409 Paradigm Part Number Coding 
+                                               // 867 Update Back Drill After Mask Board Thickness
+                                               // 881 Limit Step Parameter name & Value Length
+  //Fnc.SysSetAttrValue('Rules_Version', 1.71); // 887 Backdrill After Plate (Fix thickness values at various steps
+  //Fnc.SysSetAttrValue('Rules_Version', 1.72); // 799 Surface Cu Thickness Value Format
+                                              // 845 ENEPIG finish with DSR330S-50-99R mask
+   // Fnc.SysSetAttrValue('Rules_Version', 1.73); // 911 Change Chamfer B4 Res (Sel) to After Pattern Sel
+                                                // 910 Addition of Ultrasonic and After VELCP Hole Check
+                                                // 918 Backdrill at Sublam stage
+                                                // 915 Job with tight pressfit specification
+                                                // 919 Add MLB or HDI remarks under OL Photo 
+    //Fnc.SysSetAttrValue('Rules_Version', 1.74);  // 912 Mech Blind Via Entry Material
+                                                 //  927 Add Final OL thk, board thk, Panel Size to SM step
+//  Fnc.SysSetAttrValue('Rules_Version', 1.75); // 913 Update CNC Stack Height
+ //  Fnc.SysSetAttrValue('Rules_Version', 1.76); // 917 Correct of Seq Lam w/ Mech Blind Vias
+   // Fnc.SysSetAttrValue('Rules_Version', 1.77); // 783 Automate BOM Conversion
+                                                // 939 BOM Panel Size v Attribute Panel Size
+    //Fnc.SysSetAttrValue('Rules_Version', 1.78); // 959 Laser Machine Resource     
+                                                // 960 Additional Cu Area for HAL
+                                                // 962 Imdepdance info for DES 
+    //Fnc.SysSetAttrValue('Rules_Version', 1.79); // 961 Removal of min Non Plug Holes from sub-assembly.
+    //Fnc.SysSetAttrValue('Rules_Version', 1.80); // 957 BOM Conversion Cu Type for Cores
+   // Fnc.SysSetAttrValue('Rules_Version', 1.81); // 956 BOM Conversion for Cu Foil  
+                                                // 972 Material & Panel Size on OL Photo Step
+                                                // 973 Hole Check after Back Drill Step
+                                                // 976 Filled Via Plating Line Missing Info
+                                                // 983 Additional Condition to Edge Plating & Slot Length Steps
+                                                // 977 Automate Product Code
+                                                // 979 Plating line for 2x NC (Manual plating line 2 only) 
+    //Fnc.SysSetAttrValue('Rules_Version', 1.90); // 978 Desmear & Metalization, fixes for blind via attributes 
+    //Fnc.SysSetAttrValue('Rules_Version', 1.91); // 1084 Vertical Desmear Params
+    //Fnc.SysSetAttrValue('Rules_Version', 1.92); // 1085 Update Reverse Pulse Table
+                                                  // 1087 Electroles Cu - Capped Via Remark Error
+    //  Fnc.SysSetAttrValue('Rules_Version', 2.00); // 1086 Electrolytic Cu Plating Selection & Cu Calculations
+    //Fnc.SysSetAttrValue('Rules_Version', 2.01);  // 1106 Baking Before NC
+                                                 // 1107 Runcard Process Additional Information
+    //Fnc.SysSetAttrValue('Rules_Version', 2.02); // 1119 ENEPIG Resource 
+    //Fnc.SysSetAttrValue('Rules_Version', 2.03); // 1108 OL Process Flow Update
+                                                  // 1109 CNC Drilling Table New B Update 0.457, 0.48 
+    //Fnc.SysSetAttrValue('Rules_Version', 2.04); // 1110 Override Attribute for Soldermask Process
+                                                  // 1111 Red & Blue Soldermask flow  
+    //Fnc.SysSetAttrValue('Rules_Version', 2.05); // 1113 NP Countersink Board thickness is incorrect
+    //Fnc.SysSetAttrValue('Rules_Version', 2.10); // 1114 Scale Factor Information
+    //Fnc.SysSetAttrValue('Rules_Version', 2.11); // 1112 Micro-etch for thick boards
+    //Fnc.SysSetAttrValue('Rules_Version', 2.20); // 1137 Baking before CNC Drill for Sub-Assembly
+                                                // 1138 Micro-Etch for Laser Via
+                                                // 1139 Hole Check after Electroless
+    //Fnc.SysSetAttrValue('Rules_Version', 2.21); // 1172 NC Stack Height Generation Error Message
+    //Fnc.SysSetAttrValue('Rules_Version', 2.22); // 1144 Additional AZ Blower Step after CNC Drill
+    //Fnc.SysSetAttrValue('Rules_Version', 2.30); // 1173 Additional Surface Finish ENIG + OSP
+    //Fnc.SysSetAttrValue('Rules_Version', 2.31); // 1177 Update Soldermask Pre-Treatment
+                                                // 1183 Wrong Thin Core UNIT
+    //Fnc.SysSetAttrValue('Rules_Version', 2.32); // 1190 Product Code for Core Drilling
+                                                  // 1191 Countersink/bore Milling Side
+                                                  // 1177 Soldermask Pre-Treatment, Screen Print Mask only 
+    //Fnc.SysSetAttrValue('Rules_Version', 2.33); // 1197 Thin Panel IL Pohot Fixed Scalre Factor
+                                                  // 1198 OL Photo Rule Update Thin Panel changed to 0.6
+                                                  // 1200 5um Cu Foil
+     //Fnc.SysSetAttrValue('Rules_Version', 2.34);// 1205 ENEPIG Changes
+     //Fnc.SysSetAttrValue('Rules_Version', 2.35); // 1196 Pre-Photo Cu Thinning
+     //Fnc.SysSetAttrValue('Rules_Version', 2.36); // 1213 Additional Hole Check after Backdrill step condition
+     //Fnc.SysSetAttrValue('Rules_Version', 2.37); // 1223 Add surface finish to Electrolytic Cu step
+                                                   // 1224 Updated Desmear Flow
+                                                   // 1225 Add Fill_Via line as manual override option for plating lines 
+     //Fnc.SysSetAttrValue('Rules_Version', 2.40); // 1229 PEP Flow Option for Sub-Assembly Build 
+     //Fnc.SysSetAttrValue('Rules_Version', 2.41); // 1230 Auto Add Hi Pot Spec
+     //Fnc.SysSetAttrValue('Rules_Version', 2.42);   // 1245 Updates CZ Rule
+                                                   // 1246 Remove PBOOK008 Instruction
+                                                   // 1247 BOM Cu Foil Unit for Pin Lam
+     //Fnc.SysSetAttrValue('Rules_Version', 2.43); // 1254 DES Rule Update
+                                                   // 1255 EC Parameter Attributes
+                                                   // 1257 Show Surface Finish at Soldermask
+                                                   // 1258 Pre-Bake before Epoxy Plug
+                                                   // 1259 Offset Attributes for NC Drill
+                                                   // 1260 Updated Fill Via Plating Rule
+     //Fnc.SysSetAttrValue('Rules_Version', 3.00); // 1256 Selective Finishing  
+     //Fnc.SysSetAttrValue('Rules_Version', 3.01); // 1256 Selective Finishing - fix Hole Check for Imm Silver Photo 
+     //Fnc.SysSetAttrValue('Rules_Version', 3.10); // 1305 Additional Rule Condition for CZ Pre-Treatment
+                                                   // 1306 Updated Electroless Plating Rule
+                                                   // 1307 Direct Laser MEthod
+                                                   // 1308 Update Hi Pot Parameter
+                                                   // 1309 Update EC Condition Table
+                                                   // 1310 Additional /Back Drill EC Step
+                                                   // 1323 Changed Product Code for Dummy Layer Boards. Added 9/14/20. Rule not incremented since route not changed
+      //Fnc.SysSetAttrValue('Rules_Version', 3.11);// 1322 LB Free HAL + Immersion Silver 
+      //Fnc.SysSetAttrValue('Rules_Version', 3.12);// 1321 CNC Drilling Table B Updated
+      //Fnc.SysSetAttrValue('Rules_Version', 3.13);// 1462 Updated ELCP and Plating Rules
+                                                   // 1463 Epoxy Plug Side by Side
+                                                   // 1466 Update the IL Exposure Process resource code
+                                                   // 1468 Missing HiPot Leakage Current
+                                                   // 1474 New Soldermask Type
+      //Fnc.SysSetAttrValue('Rules_Version', 3.14);// 1465 Panel Length & Width /discatance /calculation update
+                                                   // 1467 Reverse Pulse Plating Table Update
+                                                   // 1469 Missing Secondary Plug Process Steps
+                                                   // 1470 Sequential Build with Sanwich CoreProcess Flow
+      //Fnc.SysSetAttrValue('Rules_Version', 3.15);// 1472 User Defined Stack Heigh for IL Rout & Rout
+                                                   // 1473 Additional Core Build Cu thinning attribute
+      //Fnc.SysSetAttrValue('Rules_Version', 3.16);// 1568 Micro-Etch after Direct Laser
+                                                   // 1569 Correct og V1/V2 rule for Job with 2X NC
+                                                   // 1570 Duplicate ID error for BGA/LGA Encapsulation
+      //Fnc.SysSetAttrValue('Rules_Version', 3.20);// 2022-02-10
+                                                   // 2197 Change of Inner Layer Photo Table
+                                                   // 2199 IL AOI Additional Step Info
+                                                   // 2200 IL Shearing/Routing Info Update
+                                                   // 2201 Electrolytic Cu info
+                                                   // 2202 Fill Via Dimplae Spec info
+                                                   // 2203 Epoxy Plugging Additional Info
+      //Fnc.SysSetAttrValue('Rules_Version', 3.21);// 2269 Shearing After Laser
+      //Fnc.SysSetAttrValue('Rules_Version', 3.30);// 2294 Updated Desmear Table Column for Hole Cleaning Step
+                                                   // 2295 Updated VELCP Flow
+                                                   // 2296 Updated Sublam PEP Rule
+      //Fnc.SysSetAttrValue('Rules_Version', 3.40) // 2385 Add Remarks for BAckdrill with 6mil Stub 23-02-21
+                                                   // 2386 Mechanical Drill & NC Process Flow
+                                                   // 2387 Change Mechanical Drill Step Name
+                                                   // 2388 Cange Elctrolytic Capped Via Process Code
+                                                   // 2389 Addiotnal Remarks Under resist spray coat
+                                                   // 2391 Add stackup info to attribute
+                                                   // 2400 Cu Ratio Attribute
+                                                   // 2401 Cu Filled Via Rule Update
+      //Fnc.SysSetAttrValue('Rules_Version', 3.41);// Updates & Fixes for 2384 (KK Distance) & 2385 Backdrill 6mil stub
+      //Fnc.SysSetAttrValue('Rules_Version', 3.42);// 2388 Updated Request for Capped Via Resource Code
+      //Fnc.SysSetAttrValue('Rules_Version', 3.50);// 2464 Plating Table Update (Reverse Pulse and DC)
+                                                   // 2465 Addtional Core Matching after AOI
+                                                   // 2467 Change Plating Line Name
+                                                   // 2469 Filled Via Plating Flow Update
+                                                   // 2470 Non-Etch Pre-Treatment
+                                                   // 2471 Change Scope Drilling Resource Code
+                                                   // 2472 Pre-Book Flow Updte
+                                                   // 2525 4oz Copper
+                                                   // 2524 White Marking Ink Replacement
+        Fnc.SysSetAttrValue('Rules_Version', 3.51);// 2466 NC, Desmear & Plating Stge
+
+end;

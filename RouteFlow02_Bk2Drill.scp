@@ -393,7 +393,7 @@ begin
   AddStep('Electroless', 'Electroless' + '0' + IntToStr(MetalizationRun));
   
   if ( NCRun = 1 ) and ( MechBlindViaSide <> 'None' ) then // 2295  Updated VELCP Flow          
-  begin        
+  begin
     AddStep('Strike_Plating', 'Strike_Plating' + '0' + IntToStr(MetalizationRun));
     AddStep('Electroless_SP', 'Electroless_SP' + '0' + IntToStr(MetalizationRun)); 
   end;
@@ -410,7 +410,7 @@ begin
   AddStep('OL_DES_CM', 'OL_DES_CM01');
   AddStep('OL_AOI_CM', 'OL_AOI_CM01');
 end;
-
+        
 function NonUVMicroEtch: boolean; // 1138 Microetch for Laser Via
 var                                            
   confMask_UetchOK : boolean; 

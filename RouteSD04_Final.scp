@@ -79,13 +79,13 @@ begin
   StepParamERP('Machine', Fnc.SysGetAttrValue('BackDrill_Mch'));
   StepInstructionERP('BACKD001'); // REMARK:100% BACKDRILL COUPON X-RAY CHECK
 
-  if (Fnc.SysGetAttrValue('BackDrill_Mch') = 'CAMERA') or
-     (Eng_JobName = 'KHQ12-0011') or
-     (Eng_JobName = 'KHQ12-0012') or
-     (Eng_JobName = 'WHQ12-0019') or
-     (Eng_JobName = 'WHQ12-0020') or
-     (Eng_JobName = 'WHQ12-0018') or
-    (Eng_JobName = 'KHQ12-0013')
+  if  (Fnc.SysGetAttrValue('BackDrill_Mch') = 'CAMERA') or
+      (Eng_JobName = 'KHQ12-0011') or
+      (Eng_JobName = 'KHQ12-0012') or
+      (Eng_JobName = 'WHQ12-0019') or
+      (Eng_JobName = 'WHQ12-0020') or
+      (Eng_JobName = 'WHQ12-0018') or
+      (Eng_JobName = 'KHQ12-0013')
   then
     StepInstructionERP('BACKD002'); // REMARK:USE 4 CAMERA MACHINE.
 
@@ -110,11 +110,9 @@ begin
 end;
 
 procedure Back_Drill_A_Epoxy_SD;
-begin
-
+begin                     
   Back_Drill_Common_SD('epoxy');
-  StepParamERP('Side A', Fnc.SysGetAttrValue('BotLayer'));
-  
+  StepParamERP('Side A', Fnc.SysGetAttrValue('BotLayer')); 
 end;
 
 procedure Back_Drill_B_Epoxy_SD;

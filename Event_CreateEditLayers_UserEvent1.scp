@@ -5,9 +5,9 @@
 //ScriptGroup=Create / Edit Layers
 //HeaderImportExport<--
 const 
-  BackDrillDefID_1 = 11;  // replace with your own DrillFileDefinition.DrillDefID values that are BackDrill types (DrillFileDefinition.DrillType = 7).
-  BackDrillDefID_2 = -99; // just keep adding more constants if you have multiple backdrill types defined…
- 
+  NewBackDrillDefID = 12;  // replace with your own DrillFileDefinition.DrillDefID value that is the new BackDrill type (DrillFileDefinition.DrillType = 7).
+  OldBackDrillDefID = 6;   // replace with your own DrillFileefinition.DrillDefID value that is your old BackDrill type 
+                                                                                                                       
 var
   BackDrillConvertCount : integer;
                                                                                      
@@ -25,7 +25,7 @@ begin
 end;
                                          
 procedure GetStartEndLayer(DrillLayersTable : TSysTable;
-                           NonDrillLayersTable : TSysTable; 
+                           NonDrillLayersTable : TSysTable;            
                            var StartLayer : String;
                            var StartCopperLayer : String; 
                            var EndLayer : String;
@@ -39,7 +39,7 @@ begin
   StartLayer := '';                                
   EndLayer := '';
   IsUpsideDown := False;   
-  StartIndex := -1;
+  StartIndex := -1;                                                                               
   EndIndex := -1;
 
   DrillStart := DrillLayersTable.FieldByName('StartLyr').AsString;
@@ -240,21 +240,12 @@ end;
 
 function ShouldDoBackDrillConversion(DrillLayersTable : TSysTable) : boolean;
 begin
-  // example logic is that if the Drill's LayerName:
-  
-  //   1. begins with 'BD'  and 
-  //   2. Is non-plated     and
-  //   3. Is a Surface drill
-  
+  // example logic is that if the Drill's DrillDefID =  OldBackDrillDefID 
   //then it is an old style backdrill definition and we need to convert to a new BackDrill Type...      
   
-  // replace with your own logic to determine if this drill needs conversion.
-  Result := (Lowercase(LeftStr(DrillLayersTable.FieldByName('LayerName').AsString, 2)) = 'bd') and
-            (not DrillLayersTable.FieldByName('DrillPlated').AsBoolean) and
-            (DrillLayersTable.FieldByName('BlindVia').AsBoolean);           
+  // replace with your own logic to determine if this drill needs conversion.     
+  Result := DrillLayersTable.FieldByName('DrillDefID').AsInteger = OldBackDrillDefID;              
                                                                                                                    
-  Fnc.SendDebugString(' Plated: ' + DrillLayersTable.FieldByName('DrillPlated').AsString +
-                      ' Surface: ' + DrillLayersTable.FieldByName('BlindVia').AsString);
   if Result then
     Fnc.SendDebugString('Will convert - matches pre-requisites')
   else                                             
@@ -316,27 +307,12 @@ begin
   if EditLayersTable.Locate('AutoInc', SaveAutoInc, SetOf([])) then
   begin                                                                          
     EditLayersTable.Edit;
-    EditLayersTable.FieldByName('DrillDefID').AsInteger := BackDrillDefID_1;  // changes the Drill definition type to be the new BackDrill type                     
+    EditLayersTable.FieldByName('DrillDefID').AsInteger := NewBackDrillDefID;  // changes the Drill definition type to be the new BackDrill type                     
     EditLayersTable.FieldByName('DrillPlated').AsBoolean := True;  // new BackDrill type MUST be plated to display correctly                     
     
     // now must figure out the correct Start and End Layers as well as BackDrill From, To and DNC layers...
     GetStartEndLayer(DrillLayersTable, NonDrillLayersTable, StartLayer, StartCopperLayer, EndLayer, EndCopperLayer, UpsideDown);    
-             
-    {
-    Fnc.SendDebugString('StartLayer  : ' + StartLayer);
-    Fnc.SendDebugString('StartCuLayer: ' + StartCopperLayer);   
-    Fnc.SendDebugString('EndLayer    : ' + EndLayer);  
-    Fnc.SendDebugString('EndCuLayer  : ' + EndCopperLayer);       
-    if UpsideDown then 
-      Fnc.SendDebugString('Is Upside Down')              
-    else                                        
-      Fnc.SendDebugString('NOT Upside Down')            
-                                                  
-    Fnc.SendDebugString('MfgPart: ' + DrillLayersTable.FieldByName('MfgPart_Name').AsString);  
-    Fnc.SendDebugString('MfgPart TopLayer: ' + DrillLayersTable.FieldByName('MfgPart_TopLayerName').AsString);  
-    Fnc.SendDebugString('MfgPart BottomLayer: ' + DrillLayersTable.FieldByName('MfgPart_BottomLayerName').AsString);  
-    }
-    
+       
     if not UpsideDown then
     begin
       EditLayersTable.FieldByName('StartLyr').AsString := StartLayer;
@@ -383,9 +359,6 @@ begin
     begin                                       
       // conversion is successful...save the changes.
       
-      // If you need to rename the Drill after converting...
-      //EditLayersTable.FieldByName('LayerName').AsString := EditLayersTable.FieldByName('LayerName').AsString + '-X'; 
-
       EditLayersTable.Post;
       Inc(BackDrillConvertCount);
       

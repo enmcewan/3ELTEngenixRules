@@ -27,7 +27,7 @@ begin
   //Qry.SQL.Add('SELECT * from CUST_JOBPARTATTRIBUTES ');
   //Qry.SQL.Add('WHERE PARTTYPE = ' + QuotedStr('MFGTP') + ' AND ATTRIBUTENAME LIKE ' + QuotedStr('CoreBuild_CuThin%') );
   //Qry.SQL.Add(' ORDER BY ' + QuotedStr('JobID') + ' DESC' );
-  Qry.SQL.Add('SELECT * FROM PanelizerParameters')
+  Qry.SQL.Add('SELECT * FROM SRNInputs')
 
   Qry.Open 
                                         

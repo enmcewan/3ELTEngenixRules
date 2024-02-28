@@ -1,0 +1,10 @@
+//HeaderImportExport-->
+//SiteId=0
+//Enterprise=True
+//ScriptType=1
+//ScriptGroup=BOM Conversion
+//HeaderImportExport<--
+procedure BomConvUserEvent7;
+begin
+  // your code in here
+end;      

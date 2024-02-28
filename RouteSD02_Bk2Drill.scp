@@ -22,7 +22,7 @@ uses
 Var
   PhotoLine: string;
   AltLine: string;
-  ProdResource: string
+  ProdResource: string                    
   DesLine: string;
 
 procedure PEP_SD;      
@@ -416,6 +416,11 @@ begin
      (UVLaserB_Top > 0 )
   then
     result := true;
+end;
+
+procedure ManualKKDistanceWarning;
+begin
+
 end
 
 procedure KKXDYDDistance; // 2200 IL Shearing / Routing Info
@@ -439,7 +444,15 @@ begin
                     ' will be used as the KK distance. Please check and confirm', mtWarning, SetOf([mbOK]), 0);
     end
     else
-      Fnc.SysSetAttrValue('KK_Distance', Fnc.SysGetAttrValue('Panel_Length') - 8);
+    begin
+
+      if Fnc.SysGetAttrValue('KK_Distance') = 0 then // 2550
+        Fnc.SysSetAttrValue('KK_Distance', Fnc.SysGetAttrValue('Panel_Length') - 8)
+      else
+        MessageDlg('The manually entered value of ' +
+                    IntToStr(Fnc.SysGetAttrValue('KK_Distance')) +
+                    ' will be used as the KK distance. Please check and confirm', mtWarning, SetOf([mbOK]), 0);
+    end;
   end
   else
   begin
@@ -2514,7 +2527,7 @@ begin
   if NCRun = 1 then
   begin
     if Fnc.SysGetAttrValue('Electrolytic_Cu_Line') = 'Auto' then  // 843 Process Override Rule
-    begin
+    begin                             
       if (CustCode_Rule('Customer') = 'GM') and (Fnc.SysGetAttrValue('Test_ID') <> 'None') then
       begin
         Plating_Line := GetCuPlat_GM;
@@ -2525,7 +2538,7 @@ begin
     end
     else
      Plating_Line := Fnc.SysGetAttrValue('Electrolytic_Cu_Line');
-  end 
+  end
   else if NCRun = 2 then
   begin
     if Fnc.SysGetAttrValue('Electrolytic_Cu_Line_2') = 'Auto' then  // 843 Process Override Rule
@@ -2549,7 +2562,7 @@ begin
     Fnc.SysSetAttrValue('Plating_Line', Plating_Line)
   else if NCRun = 2 then
     Fnc.SysSetAttrValue('Plating_Line', Fnc.SysGetAttrValue('Plating_Line') + '/' + Plating_Line);
-  
+
     if ((Fnc.SysGetAttrValue('BlindVias') = true) and (Fnc.SysGetAttrValue('MfgPartType') <> 'Top'))  then
     begin
       if ((Fnc.SysGetAttrValue('Ave_Min_Bl') > 0.0) or (Fnc.SysGetAttrValue('Abs_Min_Bl') > 0.0)) then
@@ -2650,11 +2663,11 @@ begin
           StepParamERP('Specific Application', Fnc.SysGetAttrValue('ApplicationSP'));
       end;
 
-    end;            
-  end 
+    end;
+  end
   else
   begin
-    if Plating_Line = 'MCP' then  
+    if Plating_Line = 'MCP' then
     begin
       StepDeptERP('COPPL-E');
 
@@ -2683,7 +2696,7 @@ begin
        ( Plating_Line = 'PAL7' ) or
        ( Plating_Line = 'P6' ) or
        ( Plating_Line = 'P7' ) or
-       ( Plating_Line = 'P6 / P7' )  then  // 2467 'PAL6 / PAL7'
+       ( Plating_Line = 'P6 / P7' ) then  // 2467 'PAL6 / PAL7'
     begin
       //StepDeptERP('COPPL-C');
       StepWCERP('COPPL-C22'); // Plating Line PAL5 change to PAL6
@@ -2700,7 +2713,7 @@ begin
 
     if Plating_Line = 'PAL3 + MCP' then
      ShowMessage('ERROR! : NO CU PLATING LINE SELECTED as PAL3 + MCP');
-                     
+
     if Plating_Line = 'NO_PLATING_LINE' then
     begin
       if PressThickness > 3.5 then
@@ -2723,13 +2736,13 @@ begin
       if (( Fnc.SysGetAttrValue('BlindVias') = true ) and ( Fnc.SysGetAttrValue('NCRunX2') = true ) and  ( NCRun = 1 )) or
          (( Fnc.SysGetAttrValue('BlindVias') = true ) and ( Fnc.SysGetAttrValue('NCRunX2') = false ))
       then
-      begin                              
+      begin
         if Fnc.SysGetAttrValue('Laser_Check_Hole') = 0.0 then
           ShowMessage('ERROR! : Laser Accuracy Check Hole is ZERO');
 
         InsertViaTypeAttributes;
 
-        //if CustCode_Rule('Customer') <> 'FA' then  2364 - Remove all FA restrictions for Step Attributes 
+        //if CustCode_Rule('Customer') <> 'FA' then  2364 - Remove all FA restrictions for Step Attributes
           InsertBlindViaAttributes;
       end
       else
@@ -2744,7 +2757,7 @@ begin
         else
           StepParamERP('Thickness Before Plate', FormatFloat('0.000', DSThicknessB4Plating));
       end;
-               
+
      // IES LOGIC = Level[VIA_TYPE$]="BLIND AND BURIED" OR LPTH? doens;t seem to make sense LPTH = Drilled = everything that gets plated???
 
      // Fix for Surface Plating not being set until Capped Via step:
@@ -2793,7 +2806,7 @@ begin
         //if CustCode_Rule('Customer') <> 'FA' then
         //begin
           if NCRun = 2 then
-          begin     
+          begin
             StepParamERP('2nd Min Drill Size', Fnc.SysGetAttrValue('Min_Drill_Size_2'));
 
             if ((Fnc.SysGetAttrValue('Ave_Min_Th_2') > 0 ) or (Fnc.SysGetAttrValue('Abs_Min_Th_2') > 0 )) then
@@ -2867,7 +2880,7 @@ begin
             StepParamERP('Specific Application', Fnc.SysGetAttrValue('ApplicationSP'));
         end;
       //end;
-                                              
+
     end; // End of Insert Attributes etc for standard (single step) plating
 
     StepInstructionERP('COPPL001'); // MEASUREMT CU THK : i) ______ii) ______,
@@ -2901,9 +2914,7 @@ begin
 
     end;
 
-    // Email from Herole 23/11/08
-    if NCRun = 1 then StepParamERP('Plating Stage', 'First Plating'); // 2466
-    if NCRun = 2 then StepParamERP('Plating Stage', 'Second Plating'); // 2466
+
 
     if Fnc.SysGetAttrValue('Tight_PressFit_Tol') = true then  // 795 Tight Press Fit Tolerance rule
     begin
@@ -2920,10 +2931,21 @@ begin
   AddBoardFinishAsAttribute; // 1223 Additional Surface Finish info under Electrolytic Cu step
 
   StepParamERP('Panel Size', Fnc.SysGetAttrValue('Panel_Size'));  // 2201 Electrolytic Cu Info
-     
+
+  // Email from Herole 23/11/08 - Bug Fix 23/11/16, If FILL_VIA line these next 2 lines were missed. Move to end of script
+  if NCRun = 1 then StepParamERP('Plating Stage', 'First Plating'); // 2466
+  if NCRun = 2 then StepParamERP('Plating Stage', 'Second Plating'); // 2466
+
 End;
 
 Procedure Electrolytic_Cu_1_SD;
+begin
+
+  Electrolytic_Cu_SD(false);
+
+end;
+
+Procedure Electrolytic_Cu_2XNC_SD;
 begin
 
   Electrolytic_Cu_SD(false);
@@ -2980,11 +3002,14 @@ begin
   StepDeptERP('KKDRI-B');
   StepWCERP('KKDRI-B');
 
-  Fnc.SysSetAttrValue('KK_Distance', Fnc.SysGetAttrValue('Panel_Length') - 8);
-  StepParamERP('KK Distance', Fnc.SysGetAttrValue('KK_Distance'));
+  if Fnc.SysGetAttrValue('KK_Distance') = 0 then  // 2550
+    Fnc.SysSetAttrValue('KK_Distance', Fnc.SysGetAttrValue('Panel_Length') - 8)
+  else
+    MessageDlg('The manually entered value of ' +
+                 IntToStr(Fnc.SysGetAttrValue('KK_Distance')) +
+                ' will be used as the KK distance. Please check and confirm', mtWarning, SetOf([mbOK]), 0);
 
-  //if Fnc.SysRouteInsGetStepNum = 1 then  // 1471 QR Code information info update
-  //  InsertQRInfoAtStep1;
+  StepParamERP('KK Distance', Fnc.SysGetAttrValue('KK_Distance'));
 
 end;
 

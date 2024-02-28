@@ -14,7 +14,7 @@
   CT_SearchLibrary;
 
 var
-  PhotoLine: string;
+  PhotoLine: string;                                    
   AltLine: string;
   ProdResource: string
   DesLine: string;
@@ -443,7 +443,8 @@ begin
       (Fnc.SysGetAttrValue('Panel_Width') < 200) or
       (Fnc.SysGetAttrValue('Panel_Length') > 609) or
       (Fnc.SysGetAttrValue('Panel_Length') < 250) or
-      (LayupThickness > 5.00) or  // Epoxy Plugging Max Thickness Change
+      //(LayupThickness > 5.00) or  // Epoxy Plugging Max Thickness Change
+      (LayupThickness > 8.00) or  // Epoxy Plugging Max Thickness Change  2573
       (LayupThickness < 0.40) or
       (Fnc.SysGetAttrValue('BlindVias') = true) or
       (Fnc.SysGetAttrValue('BuriedVias') = true) or
@@ -457,7 +458,8 @@ begin
       (Fnc.SysGetAttrValue('Panel_Width') < 200) or
       (Fnc.SysGetAttrValue('Panel_Length') > 620) or
       (Fnc.SysGetAttrValue('Panel_Length') < 200) or
-      (LayupThickness > 5.00) or  // Epoxy Plugging Max Thickness Change
+      //(LayupThickness > 5.00) or  // Epoxy Plugging Max Thickness Change
+      (LayupThickness > 8.00) or  // Epoxy Plugging Max Thickness Change  2573
       (LayupThickness < 0.40)
      )
   then                                        
@@ -1397,7 +1399,7 @@ begin
   StepDeptERP('INSOL-A');
   StepWCERP('INSOL-D0');
 end;
-    
+
 procedure SCope_Drilling_BDEP_SD;
 begin
   StepDeptERP('SCPDR-A');
@@ -1410,21 +1412,21 @@ begin
   StepWCERP('SCPDR-A');
   StepParamERP('Remark', 'Drill KK');
   StepParamERP('PEP KK Distance', Fnc.SysGetAttrValue('KK_Distance_PEP'));
-  
+
   if Fnc.SysGetAttrValue('KK_Offset_PEP') > 0  then
     StepParamERP('PEP KK Offset', Fnc.SysGetAttrValue('KK_Offset_PEP'));
 end;
-
+                       
 procedure NC_Drill_PEP_SD; // 1229 PEP Flow option for Sub-assembly build. 
 begin
   StepDeptERP('DRILL-E');
   StepWCERP('DRILL-E');  
   StepParamERP('Stack Height', Fnc.SysGetAttrValue('Stack_Hgt')); 
   StepParamERP('Entry Sheet Material', 'Aluminum');  
-  StepParamERP('Material Tg', Fnc.SysGetAttrValue('TG_Class')); 
-  StepParamERP('Thickness', FormatFloat('0.000', LayupThickness));  
+  StepParamERP('Material Tg', Fnc.SysGetAttrValue('TG_Class'));
+  StepParamERP('Thickness', FormatFloat('0.000', LayupThickness));
   StepParamERP('Drill Side', DrillSide(Fnc.SysGetAttrValue('Drill_Side')));
-  
+
   if SubIsSandwich then                  
     //StepInstructionERP('DRILL123'); // 1470
     StepParamERP('Remarks', 'Drill the PEP slot Holes. Drill size: 4.788mm');
@@ -1435,11 +1437,11 @@ end;
 
 procedure NC_Drill_PEP_IL_SD; // 1470
 begin
-  StepDeptERP('DRILL-E');         
-  StepWCERP('DRILL-E');        
+  StepDeptERP('DRILL-E');
+  StepWCERP('DRILL-E');
   StepParamERP('Hole to Edge', 'X: ' + FloatToStr(Fnc.SysGetAttrValue('HoleToEdge_X')) + 'mm / ' +
-                                                  'Y: ' + FloatToStr(Fnc.SysGetAttrValue('HoleToEdge_Y')) + 'mm'     
+                                                  'Y: ' + FloatToStr(Fnc.SysGetAttrValue('HoleToEdge_Y')) + 'mm'
                                                   );
   StepParamERP('Entry Sheet Material', 'Aluminum');
-end;                                                                   
+end;
 

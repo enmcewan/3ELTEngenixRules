@@ -398,8 +398,8 @@ end;
 
 procedure SolderMask;
 begin
-  if not HardGoldB4Resist then // 1305 Additional condition for CZ Pre-Treatemnt  
-  begin                           
+  if not HardGoldB4Resist then // 1305 Additional condition for CZ Pre-Treatemnt
+  begin
     if FinishGetsCZPreTreat then
     begin                         
       if LayupThickness <= 3.20 then
@@ -415,11 +415,11 @@ begin
     end                               
     else
     begin
-      if Fnc.SysGetAttrValue('CZPreTreat') then 
+      if Fnc.SysGetAttrValue('CZPreTreat') then
         AddStep('CZPretreat', 'CZPretreat01');
     end;
   end;                        
-                           
+
   if ((Fnc.SysGetAttrValue('Min_Res_Th') > 40) or (Fnc.SysGetAttrValue('TwoXResist') = true)) then
   begin
 
@@ -493,7 +493,7 @@ begin
 
   if ((Fnc.SysGetAttrValue('Marking_A') <> 'None') and (Fnc.SysGetAttrValue('Marking_A') <> 'INKJET LEGEND')) then
     AddStep('MarkingPrint_A', 'MarkingPrint_A01');
-                                
+
   if Fnc.SysGetAttrValue('Marking_A1') <> 'None' then
     AddStep('MarkingPrint_A1', 'MarkingPrint_A101');
 
@@ -593,7 +593,7 @@ end;
 procedure RouteFlow03;
 Var
   T_MIN_TH: float;
-begin                         
+begin
   HoleCheckDone := false; //ENIG Changes
   {Electrolytic Copper Steps}
   if (( Fnc.SysGetAttrValue('CuFilledVias')) and ( NCRun = 1 )) then 
@@ -612,14 +612,18 @@ begin
 
     end;
   end;
-                                         
-  AddStep('Electrolytic_Cu_1', 'Electrolytic_Cu_1' + '0' + IntToStr(MetalizationRun));
+
+  // 2466
+  if NCRun = 1 then AddStep('Electrolytic_Cu_1', 'Electrolytic_Cu_1' + '0' + IntToStr(MetalizationRun));
+
+  if NCRun = 2 then AddStep('Electrolytic_Cu_2XNC', 'Electrolytic_Cu_2XNC' + '0' + IntToStr(MetalizationRun));
 
   if (RequiredPlatingThk > 41) and (Fnc.SysGetAttrValue('CuFilledVias') = false) then
     AddStep('Electrolytic_Cu_2', 'Electrolytic_Cu_201');
 
                                                       
   if  (( Plating_Line = 'P4' ) or  // 2467 'PAL4' then
+       ( Plating_Line = 'PAL4' ) or
        ( Plating_Line = 'PAL5' ) or
        ( Plating_Line = 'PAL6' ) or
        ( Plating_Line = 'PAL7' ) or 
@@ -627,7 +631,7 @@ begin
     or
       ( Fnc.SysGetAttrValue('Min_Drill_Size') <= 0.25 ) and ( Plating_Line = 'MCP' ) 
     or
-      ( Fnc.SysGetAttrValue('NCRunX2') = false ) and ( Fnc.SysGetAttrValue('EpoxySide') <> 'None' )      
+      ( Fnc.SysGetAttrValue('NCRunX2') = false ) and ( Fnc.SysGetAttrValue('EpoxySide') <> 'None' )
   then
     AddStep('CuHoleCheck', 'CuHoleCheck' + '0' + IntToStr(MetalizationRun));
     
@@ -644,7 +648,7 @@ begin
     Back_Drill_Epoxy;                
                           
   if (
-      (                    
+      (
        ( Fnc.SysGetAttrValue('CappedVia') = true ) or
        ( Fnc.SysGetAttrValue('EpoxySide') <> 'None' ) or                                                                                            
        ( Fnc.SysGetAttrValue('BackDrill_Epoxy') = true ) // 844 Backdrill after Electrolytic Cu
@@ -709,24 +713,24 @@ begin
 
   if Fnc.SysGetAttrValue('MfgPartType') = 'Top' then  //Assuming Subs/Drilled Inners end here
   begin 
-  
+
     if Fnc.SysGetAttrValue('PrimaryPlugProcess') = 'After Pattern' then
     Primary_Plug;
 
     if Engx_SMCount > 0 then
       Soldermask;
-      
+
     if (GoldFingerType = 'Au Finger Plate after SM') then
     begin                          
       Gold_Photo2Plating(1, true, false);             
       AddStep('OL_AOI', 'OL_AOI07');
     end;                                                                                                
 
-    if ( BoardFinish = 'ENIG' ) or 
+    if ( BoardFinish = 'ENIG' ) or
        ( ENIGplusOSP ) or // 1256
        ( BoardFinish = 'ENEPIG' )
     then
-    begin                   
+    begin
       AddStep('Hole_Check', 'Hole_Check01');
       HoleCheckDone := true;
                                             
@@ -738,19 +742,19 @@ begin
       ENIG_NFluxDone := true; //Check if this still needs to be done
     end
     else                               
-    begin                         
+    begin
       if UVMarking = true then
-        MarkingPrintProcess 
+        MarkingPrintProcess
       else if Engx_SMCount > 0 then
         AddStep('UV_Cure', 'UV_Cure01');
     end;
 
     if Fnc.SysGetAttrValue('BaseCu_Marking') = true then
       AddStep('BaseCuMarking_Wash', 'BaseCuMarking_Wash01');
-                                 
-    if UVMarking = false then                       
+
+    if UVMarking = false then
       MarkingPrintProcess;       
-             
+
     if ( BoardFinish = 'Immersion Silver' ) and
        ( SelectiveGoldorFinger ) and
        ( Fnc.SysGetAttrValue('Imm_Silver_Process') = 'Photo' ) then
@@ -759,15 +763,15 @@ begin
       HoleCheckDone := true;
       Immersion_Silver_Sel_Gold('Photo');
     end;
-                            
+
     if ( BoardFinish = 'Lead Free HAL' ) and
        ( SelectiveGoldorFinger ) and
        ( Fnc.SysGetAttrValue('Lead_Free_HAL_Process') = 'Photo' ) then
     begin                      
       Lead_Free_HAL_Sel_Gold('Photo'); // 1355
     end;
-                               
-    RouteFlow04;                                                  
+
+    RouteFlow04;
 
   end;
 End;
