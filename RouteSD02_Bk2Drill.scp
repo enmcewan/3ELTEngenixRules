@@ -942,6 +942,7 @@ procedure MicroEtch_DirLaser_Common; // 2615
 begin
 
   UpdateInProcessCuThk(InProcessCuThk - 3 ); // 1568 Micro-Etch after Direct Laser
+  
   Fnc.SysSetAttrValue('UEtch_Cu', InProcessCuThk);
 
   if InProcessCuThk <= 5 then StepInstructionERP('METCH012');

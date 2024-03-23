@@ -527,15 +527,31 @@ procedure Epoxy_PlugB_SS_SD;  // 1463
 begin
   Epoxy_Plug_Common;
   StepParamERP('Epoxy Side', 'B side');
-  
+
   if not Fnc.SysGetAttrValue('BackDrill_Epoxy') then // 1504
   StepInstructionERP('EPXPL071'); // Pre-Bake using Blue Box Oven' 
 end;
 
 procedure EpoxyPlug_Buffing_Common;                          
 begin
-  StepDeptERP('EPBUF-A');
-  StepWCERP('EPBUF-A');
+
+  if ( Fnc.SysGetAttrValue('NCRunX2') and ( NCRun = 1 ) ) or  // 2614 Vertical Buffin Rule
+     ( ( MfgPartType = 'Sub' ) and ( ParentIsSequential ) )
+  then
+  begin
+
+    StepDeptERP('EPBUF-B0');
+    StepWCERP('EPBUF-B0 ');
+
+  end
+  else
+  begin
+
+    StepDeptERP('EPBUF-A');
+    StepWCERP('EPBUF-A');
+
+  end;
+
 end;
 
 procedure EpoxyPlug_Buffing_SD;
@@ -552,7 +568,7 @@ end;
 
 procedure EpoxyPlug_CT_Buffing2_SD;
 begin
-  EpoxyPlug_Buffing_Common;                                                      
+  EpoxyPlug_Buffing_Common;
   StepParamERP('2nd Buffing Spec', formatCuThinValue('EpoxyPlug_CuThin_2ndBuff', 'EpoxyPlug'));
   StepInstructionERP('COPPL001');
 end;
