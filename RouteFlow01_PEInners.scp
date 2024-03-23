@@ -33,14 +33,9 @@ begin
 
     AddStep('IL_AOI', 'IL_AOI01');       
 
-    // 2465
-    AddStep('Core_Matching', 'Core_Matching01');
-
-    {if ( SandwichCore ) and ( not Fnc.SysGetAttrValueTopLevel('Alt_PEP_Process') ) then  // 1229 New PEP Flow   // 1470
-    begin                                             
-      AddStep('IL_PEP', 'IL_PEP01');
-      AddStep('IL_SSP', 'IL_SSP01');
-    end;}
-
   end;
+
+  // 2465  // 2624 Obsolete Resource Code (Dummy Cores need core matching step)  
+  AddStep('Core_Matching', 'Core_Matching01');
+
 end;

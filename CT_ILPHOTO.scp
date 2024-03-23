@@ -4,7 +4,7 @@
 //ScriptType=0
 //ScriptGroup=HCS
 //HeaderImportExport<--
- uses                                                                                                                              
+ uses
   CT_SearchLibrary,
   RouteFunctions;
 
@@ -142,8 +142,6 @@ begin
     if bCont then
       GetFieldNameBySequence(InnerPhoto1A, FieldNameList, cILPhoto_LineFieldPreFix);
   end;
-                         
-  //ShowMessage(FieldNameList.Text);
 
   // check the InnerPhoto1A table
   if bCont then

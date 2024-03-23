@@ -4,7 +4,7 @@
 //ScriptType=0
 //ScriptGroup=HCS
 //HeaderImportExport<--
-uses                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     
+uses
   Event_RouteGenLibrary,
   Eng_RouteFunctions,
   Eng_DrillFunctions,
@@ -195,7 +195,7 @@ begin
   stopPadThk_uStr := '';
   skipPadThk_uStr := '';
   drillStartEnd := '';
-  
+
   // 1049 Strike Plating Rule Issue
   Fnc.SysSetAttrValue('Surface_BVH', false);
   Fnc.SysSetAttrValue('Skip_BVH', false);              
@@ -223,7 +223,7 @@ begin
     
     if (( Fnc.SysGetAttrValue('MfgPartType') = 'Sub' ) and ( SubLayersAreOnTopMfgPart )) then
       Fnc.SysSetAttrValueTopLevel('Skip_BVH', true); 
-  end;   
+  end;
                                     
   stopPadThk_u := fnc.SysGetLayerAttrValue(DrillName, 'StopPadThk_u');
   skipPadThk_u := fnc.SysGetLayerAttrValue(DrillName, 'SkipPadThk_u');
@@ -247,8 +247,6 @@ begin
 
     tableThk := FloatToStr( aTable.FieldByName('Thickness').AsFloat );
     drillStartEnd := DrillStartLayer + ' - ' + DrillEndLayer + ' = ';
-
-
 
     if skipPadThk_u > 0 then // User overrride
       skipParam := drillStartEnd + skipPadThk_uStr
@@ -341,7 +339,7 @@ begin
     DrillValues.Text := DrillList.Strings[i];
     //ShowMessage(DrillValues.Text);
 
-    if (( DrillValues.Strings[1] = true ) and ( DrillValues.Strings[5] = 2 )) then
+    if ( DrillValues.Strings[1] = true ) and ( DrillValues.Strings[5] = 2 ) then
     begin              
       DrillName := DrillValues.Strings[0];
       DrillStartLayer := DrillValues.Strings[2];
@@ -349,18 +347,11 @@ begin
       DrillDepthStr := FormatFloat('0.000', DrillValues.Strings[4]);
       depthInstr := '';
 
-      if (( Side = 'A' ) and ( DrillStartLayer = LayerBot )) then
+      if ( Side = 'A' ) and ( DrillStartLayer = LayerBot ) then
       begin
-        //BlindViaCount := BlindViaCount + 1;
-        //if BlindViaCount = 1 then
-          depthInstr := DrillStartLayer + ' - ' + DrillEndLayer + ' = ' + DrillDepthStr;
 
-        {if BlindViaCount > 1 then
-          depthInstr := depthInstr + chr(13) + chr(10) +
-                    DrillStartLayer + ' - ' + DrillEndLayer + ' = ' + DrillDepthStr;}
+        depthInstr := DrillStartLayer + ' - ' + DrillEndLayer + ' = ' + DrillDepthStr;
 
-        //SysRouteInsInstruction('', depthInstr, ''); 1307
-        //SysRouteInsinstruction('', GetDrilledMaterialandLayerInfo(DrillName, DrillStartLayer, DrillEndLayer, LayerTop, LayerBot), '');
         SysRouteInsAddlParameter('Erp', 'Laser Depth', depthInstr, '', '', false, '', '', '');
         SysRouteInsAddlParameter('Erp', 'Laser Material', GetDrilledMaterialandLayerInfo(DrillName, DrillStartLayer, DrillEndLayer, LayerTop, LayerBot), '', '', false, '', '', '');
       
@@ -370,22 +361,16 @@ begin
                                   
       if (( Side = 'B' ) and ( DrillStartLayer = LayerTop )) then
       begin
-        //BlindViaCount := BlindViaCount + 1;
-        //if BlindViaCount = 1 then
-          depthInstr := DrillStartLayer + ' - ' + DrillEndLayer + ' = ' + DrillDepthStr;
-                                               
-        {if BlindViaCount > 1 then
-          depthInstr := depthInstr + chr(13) + chr(10) +
-                    DrillStartLayer + ' - ' + DrillEndLayer + ' = ' + DrillDepthStr;}
 
-        //SysRouteInsInstruction('', depthInstr, '');
-        //SysRouteInsinstruction('', GetDrilledMaterialandLayerInfo(DrillName, DrillStartLayer, DrillEndLayer, LayerTop, LayerBot), '');
+        depthInstr := DrillStartLayer + ' - ' + DrillEndLayer + ' = ' + DrillDepthStr;
+
         SysRouteInsAddlParameter('Erp', 'Laser Depth', depthInstr, '', '', false, '', '', '');
         SysRouteInsAddlParameter('Erp', 'Laser Material', GetDrilledMaterialandLayerInfo(DrillName, DrillStartLayer, DrillEndLayer, LayerTop, LayerBot), '', '', false, '', '', '');
         
         if Fnc.SysGetAttrValue('Direct_Laser') then
           SysRouteInsAddlParameter('Erp', 'Laser Size',  SmallestDrillOneFile(DrillName, 'ALL'), '', '', false, '', '', '');
-      end;                                             
+
+      end;
     end;                      
   end;
 
@@ -469,7 +454,6 @@ begin
   DrillList.Free;
   DrillValues.Free;
 end;
-
 
 function BlindViaMAspect : float;
 var
@@ -898,7 +882,8 @@ var
   matInstr : string;
   DrillName : string;   
 
-begin            
+begin
+
   result := false;                              
   DrillList := TStringList.Create;
   BlindViaCount := 0;
@@ -923,34 +908,27 @@ begin
         result := true;
     end;                      
   end;
-  
 
   DrillList.Free;         
-  DrillValues.Free;  
+  DrillValues.Free;
+
 end;
 
-function LaserG30KMechOrSkipBVH : boolean;  // 978 Updated Cu Rule - Metalization 
+function LaserG30KMechOrSkipBVH : boolean;  // 978 Updated Cu Rule - Metalization
 var         
   laserHits : integer;
-begin                     
+begin
   result := false;
-  
+
   MfgPartHasSkipBlindVias;
-  
+
   if NCRun = 1 then
-    begin          
-    laserHits := LaserBTopHits +
-                   LaserABotHits +
-                   UVLaserB_Top +
-                   UVLaserA_Bot;
+  begin
+
+    laserHits := LaserBTopHits + LaserABotHits + UVLaserB_Top + UVLaserA_Bot;
   
-    if (
-        ( laserHits > 30000 ) or  
-        ( MechBlindViaSide <> 'None' ) or
-        //( Fnc.SysGetAttrValue('Skip_BVH') = true )
-        MfgPartHasSkipBlindVias
-       )
-    then 
-    result := true;
+    if  ( laserHits > 30000 ) or ( MechBlindViaSide <> 'None' ) or MfgPartHasSkipBlindVias then
+      result := true;
+
   end;
 end;  

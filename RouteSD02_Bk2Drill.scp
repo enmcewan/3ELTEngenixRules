@@ -25,7 +25,7 @@ Var
   ProdResource: string                    
   DesLine: string;
 
-procedure PEP_SD;      
+procedure PEP_SD;
 begin
   StepDeptERP('PEPOL-A');                                             
   StepWCERP('PEPOL-A');
@@ -756,7 +756,7 @@ begin
 
   if Fnc.SysGetAttrValue('IL_Finish_Rout') = true then
     StepInstructionERP('FINIL010'); //  PLS USE SPECIFIC ROUTING TAPE (PROGRAME) FOR THIS MODEL ONLY.
-
+    
 end;                  
 
 procedure IL_Bevel_SD;               
@@ -795,39 +795,47 @@ begin
   end;
 end;
 
-procedure MicroEtch_SD;
+procedure MicroEtchCommon;
 var
+
   sUEtch : string;
   cuAfterMEtch : integer;
-begin
-  sUEtch := '';
 
-  StepDeptERP('METCH-A');
-  StepWCERP('METCH-A');
+begin
+
+  sUEtch := '';
 
   if ((UVLaserB_Top > 0) or (UVLaserA_Bot > 0)) then
   begin
+
     if BaseCuTopUM = 18 then
     begin
+
       Fnc.SysSetAttrValue('UEtch_Spec', '18 TO 9.5~12');
       Fnc.SysSetAttrValue('UEtch_Cu', 9.5);
       MicroEtchDone := true;
+
     end;
 
     if BaseCuTopUM = 12 then
     begin
+
       Fnc.SysSetAttrValue('UEtch_Spec', '12 TO 7~9.5');
       Fnc.SysSetAttrValue('UEtch_Cu', 7.0);
       MicroEtchDone := true;
+
     end;
     // DONE AS PER IES. Note that the logic does not handle anything other than 12 or 18 um base copper.
   end
   else
   begin
+
     if BaseCuTopUM = 18 then
     begin
+
       if Fnc.SysGetAttrValue('UEtch_Value') <> '' then
       begin
+
         sUEtch := copy(Fnc.SysGetAttrValue('UEtch_Value'), 1, 8);
         Fnc.SysSetAttrValue('UEtch_Spec', '18 to ' + sUEtch);
 
@@ -837,42 +845,57 @@ begin
         except
           ShowMessage('Error converting User Entered UEtch Spec to a number');
         end;
+
       end
       else
       begin
+
         Fnc.SysSetAttrValue('UEtch_Spec', '18 TO 9~12');
         Fnc.SysSetAttrValue('UEtch_Cu', 9.0);
+
       end;
 
       MicroEtchDone := true;
+
     end;
 
     if BaseCuTopUM = 12 then
     begin
+
       Fnc.SysSetAttrValue('UEtch_Spec', '12 TO 7~9.5');
       Fnc.SysSetAttrValue('UEtch_Cu', 7.0);
+
     end;
+
     MicroEtchDone := true;
+
   end;
 
   //New calculation of Micro-etch values per Herole, 364 Surface Cu Calculation, message 3/10/17
   if (( CoreBuild or SubAssemblyCoreBuild ) and ( Fnc.SysGetAttrValue('LayerCount') > 2 )) then
   begin
+
     Fnc.SysSetAttrValue('UEtch_Spec', IntToStr( InProcessCuThk ) + ' TO ' + IntToStr( InProcessCuThk - 4 ));
     Fnc.SysSetAttrValue('UEtch_Cu', InProcessCuThk - 4);
+
   end
   else
   begin
+
     case BaseCuTopUM of
+
       35 : cuAfterMEtch := 29;
       18 : cuAfterMetch := 12;
       12 : cuAfterMetch := 8;
+
     else
       cuAfterMEtch := BaseCuTopUM;
+
     end;
 
     Fnc.SysSetAttrValue('UEtch_Spec', IntToStr( BaseCuTopUM ) + ' TO ' + IntToStr( cuAfterMEtch ));
     Fnc.SysSetAttrValue('UEtch_Cu', cuAfterMetch);
+
   end;
 
   //InProcessCuThk := Fnc.SysGetAttrValue('UEtch_Cu'); //364 Surface Cu Calculation
@@ -885,34 +908,71 @@ begin
 
   if ((Fnc.SysGetAttrValue('NCRunX2') = true) and (NCRun = 0)) then
     StepInstructionERP('2NC_PESHET'); // REMARK: PUT PE SHEET IN BETWEEN PANEL
+    
 end;
 
-procedure MicroEtchCuThin_SD;
+procedure MicroEtch_SD;
+begin
+
+  StepDeptERP('METCH-A');
+  StepWCERP('METCH-A');
+
+  MicroEtchCommon;
+
+end;
+
+procedure MicroEtchHAL_SD;
+begin
+
+  StepDeptERP('HALPT-A0');
+  StepWCERP('HALPT-A0');
+
+  MicroEtchCommon;
+
+end;
+
+{procedure MicroEtchCuThin_SD;  Not in use.
 begin
   StepDeptERP('METCH-A');
   StepWCERP('METCH-A');
   StepParamERP('Note', 'Micro-Etch for Cu Thin');
-end;
+end;}
 
-procedure MicroEtch_DirLaser_SD; // 1307
+procedure MicroEtch_DirLaser_Common; // 2615
 begin
-  StepDeptERP('METCH-A');
-  StepWCERP('METCH-A');
 
   UpdateInProcessCuThk(InProcessCuThk - 3 ); // 1568 Micro-Etch after Direct Laser
   Fnc.SysSetAttrValue('UEtch_Cu', InProcessCuThk);
 
-  if InProcessCuThk <= 5 then
-    StepInstructionERP('METCH012');
-  else if InProcessCuThk <= 12 then
-    StepInstructionERP('METCH014');
+  if InProcessCuThk <= 5 then StepInstructionERP('METCH012');
+  else if InProcessCuThk <= 12 then StepInstructionERP('METCH014');
   else
   begin
+
     StepParamERP('Remark', '2um reduction (bare Cu coupon/Dummy)' );
     StepParamERP('Micro-Etch Spec', IntToStr(InProcessCuThk) + ' ± 0.5µm');
+
   end;
 
+end;
 
+procedure MicroEtch_DirLaser_SD; // 1307
+begin
+
+  StepDeptERP('METCH-A');
+  StepWCERP('METCH-A');
+
+  MicroEtch_DirLaser_Common;  // 2615
+
+end;
+
+procedure MicroEtch_DirLaserHAL_SD;   // 2615
+begin
+
+  StepDeptERP('HALPT-A0');
+  StepWCERP('HALPT-A0');
+
+  MicroEtch_DirLaser_Common;
 
 end;
 
@@ -1135,7 +1195,7 @@ begin
   StepParamERP('Top Layer', Fnc.SysGetAttrValue('TopLayer'));
   //StepParamERP('Laser Mat', GetLaseredMaterials(Fnc.SysGetAttrValue('TopLayer')));
   StepParamERP('Laser Hits', LaserBTopHits);
-                                     
+
   //SysRouteInsInstruction('', InsertBlindViaDrillDepth('B'));
   InsertBlindViaInfo('B');
 
@@ -1404,7 +1464,6 @@ begin
   DeSmear_Params('Hole Cleaning');
 end;
 
-
 procedure CuThinning_SD;
 begin                 
   StepDeptERP('EPBUF-A');
@@ -1483,7 +1542,6 @@ begin
       Fnc.SysSetAttrValue('Flute_Len_2', Fnc.SysGetAttrValue('Flute_Len_2_User'));
   end;
 end;
-
 
 procedure CNC_Drl_StkHght_Flt_Len;
 var
@@ -1765,11 +1823,14 @@ begin
     StepInstructionERP('FINIL028'); // REMARK : Distance from panel edge to K point : 127.26mm
   end;
 
-  StepParamERP('Drill Side', DrillSide(Fnc.SysGetAttrValue('Drill_Side')));
+  if NCRun = 1 then
+    StepParamERP('Drill Side', DrillSide(Fnc.SysGetAttrValue('Drill_Side')));
+  else if NCRun = 2 then
+    StepParamERP('Drill Side', DrillSide(Fnc.SysGetAttrValue('Drill_Side_2')));
 
   if HasFaradflexMat then                                    // Faradflex drill instruction
     StepInstructionERP('DRILL076'); // 836 Instruction Code Update
-                                                        
+                                                             
   if SubGetsNewPEP then StepInstructionERP('DRILL167'); //With Sub-Lam PEP Slot Drillin
 
 end;
@@ -1787,7 +1848,6 @@ begin
   NC_Drill_SD;
 
 end;
-
 
 procedure InsertPressFitRemarks;
 var
@@ -1885,48 +1945,45 @@ end;
 
 procedure Electroless_SD;
 var
-  Min_Drill : float;
+  Min_Drill,
   AspectRatio: float;
+
 begin
+
   StepDeptERP('METAL-C');
 
   Min_Drill := 0.0;
 
   if NCRun = 1 then
   begin
+
     Min_Drill := Fnc.SysGetAttrValue('Min_Drill_Size');
-    AspectRatio := Fnc.SysGetAttrValue('Aspect_Ratio_Val');  // 1569  Correction of V1/V2 rule for Job with 2x NC                                  
+    AspectRatio := Fnc.SysGetAttrValue('Aspect_Ratio_Val');  // 1569  Correction of V1/V2 rule for Job with 2x NC
+
   end
   else
   begin
+
     Min_Drill := Fnc.SysGetAttrValue('Min_Drill_Size_2');
     AspectRatio := Fnc.SysGetAttrValue('Aspect_Ratio_Val_2'); // 1569  Correction of V1/V2 rule for Job with 2x NC
+
   end;
-                                                
-  {if (( Get_Panel_Thickness >= 3.2 ) and ( Min_Drill <= 0.25 )) or ( AspectRatio > 12.8 ) then // 1462  2295
-  begin        
-    if LaserG30KMechOrSkipBVH then StepParamERP('Remark', 'On-Line Vacuum');
-    StepWCERP('METAL-D0');   
-    StepParamERP('VELCP Line', 'V2 Only');
-  end
-  else                                                                                   
-  begin               
-  StepWCERP('METAL-C0');
-  StepParamERP('VELCP Line', 'V1 or V2');
-  end;}
-                                                                      
+
   if ( MechBlindViaSide <> 'None' ) and ( NCRun = 1 ) then //2295
   begin
-    StepWCERP('METAL-D0');   
-    StepParamERP('VELCP Line', 'V2 Only');                       
+
+    StepWCERP('METAL-C0');  // 2616 VELCP Updated Flow
+    StepParamERP('VELCP Line', 'V2 Only');
     StepInstructionERP('METAL041');
-    StepParamERP('Remark', 'With Mech Blind Vias'); 
+    StepParamERP('Remark', 'With Mech Blind Vias');
+
   end
   else
   begin
-    //if CustCode_Rule('Customer') = 'FA' then StepWCERP('METAL-C0') else 
-    StepWCERP('METAL-C');
+
+    StepWCERP('METAL-D0');  // 2616 VELCP Updated Flow
     StepParamERP('VELCP Line', 'V1 or V2');
+
   end;
 
   if Fnc.SysGetAttrValue('CuFilledVias') then StepInstructionERP('METAL016');
@@ -1942,8 +1999,8 @@ begin
   StepParamERP('Min Drill Size', Min_Drill);
 
   // 1107 Additional Run Card info - Note sequential build
-  if ( Fnc.SysGetAttrValue('Seq_Build') = true ) or ( SubParentIsSequential ) then
-    StepParamERP('Remark', 'Sequential Build');
+  if Fnc.SysGetAttrValue('Seq_Build') or SubParentIsSequential then StepParamERP('Remark', 'Sequential Build');
+
 end;
 
 procedure Electroless_CappedVia_SD;
@@ -1988,18 +2045,38 @@ begin
   // 1107 Additional Run Card info - Note sequential build
   if Fnc.SysGetAttrValueTopLevel('Seq_Build') = true then
     SysRouteInsAddlParameter('Erp', 'Remark', 'Sequential Build', '', '', false, '', '', ''); 
-end; 
+end;
+
+procedure CappedAndStrikePlatingResource; // 2616 VELCP Update Flow
+begin
+
+  if LayupThickness <= 2.00 then
+  begin
+
+    StepDeptERP('COPPL-E0'); // 2388
+    StepWCERP('COPPL-E0');
+
+  end
+  else
+  begin
+
+    StepDeptERP('COPPL-C'); // 2388
+    StepWCERP('COPPL-C');
+
+  end;
+
+ end;
 
 procedure Strike_Plating_SD; // 978 Updated Cu Rule - Metalization
 begin
 
-  StepDeptERP('COPPL-C');
-  StepWCERP('COPPL-C');
+  CappedAndStrikePlatingResource; // 2616 VELCP Update Flow
+
   StepInstructionERP('COPPL085'); //REMARK: Strike Plating Program
 
   StepParamERP('Plating Stage', 'Strike Plating'); // 2466
 
-  end;
+end;
 
 procedure Strike_Plating_FV_SD;   // 2469
 begin
@@ -2009,18 +2086,19 @@ begin
 
 end;
 
-procedure Electroless_SP_SD; // 978 Updated Cu Rule - Metalization
+procedure Electroless_SP_SD; // 2616 VELCP Updated Flow
 begin
+
   StepDeptERP('METAL-D0');
   StepWCERP('METAL-D0');
+
   StepParamERP('VELCP Line:', 'V2 Only');
-  //StepParamERP('Remark', 'On-Line Vacuum');       2295
-  //StepParamERP('Remark', 'Use Strike Condition');
+
   StepInstructionERP('METAL042'); //REMARK: Strike Plating Program
 
-  // 1107 Additional Run Card info - Note sequential build
-  if ( Fnc.SysGetAttrValue('Seq_Build') = true ) or ( SubParentIsSequential ) then
+  if Fnc.SysGetAttrValue('Seq_Build') or SubParentIsSequential then
     StepParamERP('Remark', 'Sequential Build');
+
 end;
 
 function MCP_CU_THK_Validate_TargetThickness(CuPlating_MCP: TSysTable; aFilter: string): string;
@@ -2344,22 +2422,6 @@ begin
   else
     Fnc.SysSetAttrValue('Down_Etch_Cu', BaseCuTopUM);
 
-  // Use Current Base Cu instead of Down_Etch_Cu
-
-  {if UseF_ then  // 1201 Remove addition 3um Cu for MicroEtch
-  begin
-    if Fnc.SysGetAttrValue('UEtch_Cu') > 0 then
-    begin
-      Fnc.SysSetAttrValue('Cal_Abs_Th', 3 + GLB_Abs_CuThk + InProcessCuThk);
-      Fnc.SysSetAttrValue('Cal_Ave_Th', 3 + GLB_Ave_CuThk + InProcessCuThk);
-    end
-    else
-    begin
-      Fnc.SysSetAttrValue('Cal_Abs_Th', GLB_Abs_CuThk + InProcessCuThk);
-      Fnc.SysSetAttrValue('Cal_Ave_Th', GLB_Ave_CuThk + InProcessCuThk);
-    end;
-  end;}
-
   Fnc.SysSetAttrValue('Cal_Abs_Th', GLB_Abs_CuThk + InProcessCuThk);
   Fnc.SysSetAttrValue('Cal_Ave_Th', GLB_Ave_CuThk + InProcessCuThk);
 
@@ -2534,7 +2596,7 @@ begin
         Fnc.SysSetAttrValue('Ave_Min_Th', 0.0);
       end
       else
-        Plating_Line := SelectPlatingLine;                       
+        Plating_Line := SelectPlatingLine;
     end
     else
      Plating_Line := Fnc.SysGetAttrValue('Electrolytic_Cu_Line');
@@ -2914,17 +2976,14 @@ begin
 
     end;
 
-
-
-    if Fnc.SysGetAttrValue('Tight_PressFit_Tol') = true then  // 795 Tight Press Fit Tolerance rule
+    if Fnc.SysGetAttrValue('Tight_PressFit_Tol') then  // 795 Tight Press Fit Tolerance rule
     begin
-      if Fnc.SysGetAttrValue('NCRunX2') = true then
-      begin
-        if NCRun = 2 then
-          InsertPressFitRemarks;
-      end
+
+      if Fnc.SysGetAttrValue('NCRunX2') then
+        if NCRun = 2 then InsertPressFitRemarks;
       else
         InsertPressFitRemarks;
+
     end;
   end;
 
@@ -2951,7 +3010,7 @@ begin
   Electrolytic_Cu_SD(false);
 
 end;
-                
+
 Procedure Electrolytic_Cu_2_SD;
 begin
 
@@ -2962,22 +3021,7 @@ end;
 Procedure Electrolytic_CappedVia_SD;
 begin
 
-  //StepDeptERP('COPPL-E01');
-  //StepWCERP('COPPL-E01');
-  if LayupThickness <= 2.00 then
-  begin
-
-    StepDeptERP('COPPL-E0'); // 2388
-    StepWCERP('COPPL-E0');
-
-  end
-  else
-  begin
-
-    StepDeptERP('COPPL-C'); // 2388
-    StepWCERP('COPPL-C');
-
-  end;
+  CappedAndStrikePlatingResource; // 2616 VELCP Updated Flow
 
   if Fnc.SysGetAttrValue('Min_Surf_Plt') = 0 then Fnc.SysSetAttrValue('Min_Surf_Plt', 15.0);
 
@@ -3125,9 +3169,17 @@ begin
   StepWCERP('HOLCP-A0');
 end;
 
-procedure Pulse_Bond_SD
+procedure Pulse_Bond_SD;
 begin
   StepDeptERP('PBOOK-A');
   StepWCERP('PBOOK-H0');
   Fnc.SysSetAttrValue('Pin_Lam', false);
+end;
+
+procedure HitalexLam_SD;
+begin
+
+  StepDeptERP('FILAM-A ');
+  StepWCERP('FILAM-A ');
+
 end;

@@ -692,6 +692,16 @@ begin
   //StepInstructionERP('RESSB005'); // CC1 Pretreatment line
 end;
 
+procedure OffLine_PreTreat_USR_SD; // // 2618 Additional Hole Check Step after Epoxy Plug Ultrasonic Rinse
+begin
+
+  StepDeptERP('RESSB-A');
+  StepWCERP('RESSB-A');
+
+  StepParamERP('Remarks', 'Use Jetscrub Ultrasonic Rinse');
+
+end;
+
 procedure Oxide_Repl_SD;
 begin
   StepDeptERP('OXDOL-D0');

@@ -14,7 +14,7 @@ uses
   RouteMasterVersionControl,
   RouteMasterVerifyAttributes;
 
-procedure RoutePreProcess;
+procedure CheckAndGenPartData;
 begin
 
   GetPartType;
@@ -22,7 +22,7 @@ begin
   Engx_ScanBOM; 
   Engx_ScanDrill;
   GetPartCoreFamilies;
-  GetPartPPGFamilies;                 
+  GetPartPPGFamilies;
   SetTopBotLayerNames;
   TotalThickestCuUM;
   LayupThickness := Fnc.SysGetAttrValue('LayupThickness');
@@ -33,9 +33,9 @@ begin
   Find2milorlessCores; // Special Process Description
   SetMatTGClass;   // CNC Entry Sheet updated Rule (613)
 
-  photoStepList := TStringList.Create;
+  //photoStepList := TStringList.Create;
 
-  if Fnc.SysGetAttrValue('MfgPartType') <> 'DmC' then 
+  if Fnc.SysGetAttrValue('MfgPartType') <> 'DmC' then
   begin
     BaseCuTopUM := ConvertBaseCuLabelToMicrons('True', 'False');
     BaseCuBotUM := ConvertBaseCuLabelToMicrons('False', 'False');
@@ -393,17 +393,18 @@ begin
     MessageDlg('Max Thickness for Epoxy Plugging is 5.00 MM.', mtWarning, Setof([mbOK]), 0);
                           
   // 757 - Job Type Checking  
-  if MfgPartType = 'Top' then  
-    CheckJobType;
+  if MfgPartType = 'Top' then CheckJobType;
     
   // 911 Change Chamfer B4 Res (Sel) name to Finger Au After Pattern (Sel)
   if MfgPartType = 'Top' then
   begin
+
     if GoldFingerType = 'Chamfer B4 Res (Sel)' then
       Fnc.SysSetAttrValue('Gold_Fgr_Type', 'After Pattern (Sel)');
     
      if GoldFingerType = 'Thin/Thick - Chamfer B4 Res (Sel)' then
-      Fnc.SysSetAttrValue('Gold_Fgr_Type', 'Thin/Thick - After Pattern (Sel)');   
+      Fnc.SysSetAttrValue('Gold_Fgr_Type', 'Thin/Thick - After Pattern (Sel)');
+
   end;
   
   // Check or Update Finish, Selective Gold & Gold Finger Type
@@ -598,27 +599,46 @@ begin
   Fnc.SysSetAttrValue('JobNameAttribute', Fnc.GetJobData.Values['JobName']);
 
 end;
-                  
+
+procedure RoutePreProcess;
+begin
+
+  if ( not Fnc.SysRouteGenIsInsertingManualStep ) and
+     ( not Fnc.SysRouteGenIsDeletingStep )
+  then
+    CheckAndGenPartData;
+
+  // Always init photoStepList as it is used in the RoutePostProcess procedure
+  photoStepList := TStringList.Create;
+
+end;
+
 procedure InitRouteGeneratedAttributes;
-begin                      
+begin
+
   Fnc.SysSetAttrValue('UEtch_Cu', 0.0);
   Fnc.SysSetAttrValue('UEtch_Spec', '');
 
   InProcessCuThk := 0;
   if (( CoreBuild or SubAssemblyCoreBuild ) and ( Fnc.SysGetAttrValue('LayerCount') > 2 )) then 
   begin
+
     InProcessCuThk := GetSuborCoreIPCT;
     
     if InProcessCuThk = 0 then
-      InProcessCuThk := BaseCuTopUM; 
+      InProcessCuThk := BaseCuTopUM;
+
   end                                           
   else            
   begin
+
     if Fnc.SysGetAttrValue('MfgPartType') <> 'DmC' then
       InProcessCuThk := BaseCuTopUM; //364 Surface Cu Calculation
+
   end;
   
   Fnc.SysSetAttrValue('Pin_Lam', false);
+
 end;
                      
 procedure FlowSelect;
@@ -629,125 +649,41 @@ begin
   
   if ((MfgPartType = 'Inn') or (MfgPartType = 'DmC')) then  //Simple Inner or Dummy Core
   begin
+
     if FindNumberOfDrillFiles = 0 then                       
       InnerLayerPE;
     else                  
-      RouteFlow02;                                                                         
+      RouteFlow02;
+      
   end                                               
   else
     RouteFlow02;
 
   Fnc.MouseNormal;
+
 end;
 
-procedure PostProc_Set_QR_Barcode;
-var
-  i: integer;
-
-  SeqNo: integer;                             
-  SeqStr: string;
-  QRCode: string;                  
-
-  ParamValue: string;
-  ParamList: TStringList;
-
-  DeptCodeCount: TStringList;
-
-  RouteCopyTable: TSysTable;
-  
-  StepNumber: integer;
-begin
-  DeptCodeCount := TStringList.Create;
-
-  RouteCopyTable := Fnc.SysTableCreate('CopyRouteStepDetails');
-
-  Fnc.SysTableAddField(RouteCopyTable, 'RecId', 0, ftAutoInc);
-  Fnc.SysTableAddField(RouteCopyTable, 'StepNo', 0, ftInteger);
-  Fnc.SysTableAddField(RouteCopyTable, 'QRCode', 50, ftString);
-  Fnc.SysTableAddField(RouteCopyTable, 'Manual', 5, ftString);
-
-  RouteCopyTable.Active := True;
-
-  i := 1;
-
-  while Fnc.SysRouteGenGetStepDetails(i, 'ProcLibName', ParamValue) do
-  begin
-    RouteCopyTable.Append;                
-
-    RouteCopyTable.FieldByName('StepNo').AsInteger := i;
-    RouteCopyTable.FieldByName('QRCode').AsString := ParamValue;
-
-    Fnc.SysRouteGenGetStepDetails(i, 'Manual', ParamValue);
-    RouteCopyTable.FieldByName('Manual').AsString := ParamValue;
-
-    RouteCopyTable.Post;
-
-    Inc(i);
-  end;
-                                           
-  //--
-
-  ParamList := TStringList.Create;
-  ParamList.Add('ShowExportToCSV=True');
-
-  //Fnc.OpenDataGrid(RouteCopyTable, ParamList);
-
-  ParamList.Free;
-                                       
-  //--                       
-
-  RouteCopyTable.First;
-
-  while not RouteCopyTable.Eof do
-  begin
-    QRCode := RouteCopyTable.FieldByName('QRCode').AsString;
-    if LowerCase(RouteCopyTable.FieldByName('Manual').AsString) = 'true' then
-      QRCode := QRCode + '-M';
-
-    SeqNo := StrToIntDef(DeptCodeCount.Values[QRCode], 0);
-    Inc(SeqNo);
-    DeptCodeCount.Values[QRCode] := IntToStr(SeqNo);
-                  
-    SeqStr := IntToStr(SeqNo);
-
-    {if SeqNo = 1 then
-      SeqStr := ''
-    else}
-      SeqStr := '-' + IntToStr(SeqNo);
-      
-    StepNumber := RouteCopyTable.FieldByName('StepNo').AsInteger;
-                                    
-    Fnc.SysRouteGenUpdAddlParam(StepNumber, 'QR Code', 'AddlParamValue' , 'Step' + IntToStr(StepNumber) + '*' + QRCode + SeqStr);
-
-    RouteCopyTable.Next;                 
-  end;
-                                                    
-  //--
-
-  Fnc.SysTableDestroy(RouteCopyTable);
-
-  DeptCodeCount.Free;
-end;
-                                            
 procedure RoutePostProcess;
 var
-  i : integer;                          
-  routeStep : integer;                                                                                                                 
-  photoSeqStr : string;                                        
+
+  i,
+  routeStep : integer;
+  photoSeqStr : string;
+
 begin
+
   photoSeqStr := '';
-  
-  //ShowMessage('Post Process');  
-                                                                           
+
   if photoStepList.Count > 1 then
-  begin                                              
-    //ShowMessage(photoStepList.Text);                    
+  begin
                                                                      
     for i := 0 to photoStepList.Count - 1 do
-    begin                                         
+    begin
+
       routeStep := StrToInt(photoStepList.Strings[i]);
                                                                                                                                   
-      case i of        
+      case i of
+
         0 : photoSeqStr := '1st Photo';
         1 : photoSeqStr := '2nd Photo';
         2 : photoSeqStr := '3rd Photo';
@@ -757,11 +693,13 @@ begin
         6 : photoSeqStr := '7th Photo';                      
         7 : photoSeqStr := '8th Photo';
         8 : photoSeqStr := '9th Photo';
+
       end;
 
       Fnc.SysRouteGenInsAddlParam(routeStep, 'Erp', 'Photo Sequence', photoSeqStr, '', '', false, '', '', '');
 
-    end;                                   
+    end;
+    
   end;                                                            
   
   SetRulesVersion;

@@ -182,21 +182,11 @@ end;
 procedure Hole_Check_SD;
 begin
 
-  {if LayupThickness >= 3.5 then    // Change per request from Herole Feb 2016
-  begin
-    StepDeptERP('HOLAN-A');
-    StepWCERP('HOLAN-A');
-  end
-  else
-  begin
-    StepDeptERP('HOLCH-A');
-    StepWCERP('HOLCH-A');
-  end;}
-
   StepDeptERP('HOLCH-A');
   StepWCERP('HOLCH-A');
 
-  StepParamERP('Board Thickness', FormatFloat('0.000', ThicknessOverMask)); 
+  StepParamERP('Board Thickness', FormatFloat('0.000', ThicknessOverMask));
+
 end;
 
 procedure Hole_Check_BD_SD;
@@ -216,7 +206,15 @@ begin
   StepWCERP('HOLCD-A0');
   
   StepParamERP('Board Thickness', FormatFloat('0.000', LayupThickness)); 
-end; 
+end;
+
+procedure Hole_Check_Plug_SD;
+begin
+
+  StepDeptERP('HOLCH-A');
+  StepWCERP('HOLCH-A');
+
+end;
                                 
 procedure HAL_SD;
 begin
@@ -526,7 +524,8 @@ begin
 end;
 
 // 1310 Back Drill EC
-procedure BackDrill_EC_SD;
+// 2622 Update backdrill step name
+procedure Silver_Inspection_SD;
 begin
   StepDeptERP('SLVER-A');
   StepWCERP('SLVER-A');

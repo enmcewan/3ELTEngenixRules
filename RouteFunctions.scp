@@ -45,7 +45,7 @@ Var
   Au_Plt_Count : integer;
 
   CU_RATIO_WARNING : integer;
-                  
+
   MechBVHTop : boolean;
   MechBVHBot : boolean;                          
 
@@ -60,7 +60,7 @@ Var
   epoxyPlugDone : boolean; //978
   verticalDesmear : boolean;
   DirectLaser: boolean;
-  
+
   LaserABotHits,
   LaserBTopHits,
   UVLaserB_Top,
@@ -4500,7 +4500,7 @@ begin
 
   result := false;
   
-  if (( Fnc.SysGetAttrValue('Mech_BlindVias') = false ) and ( Fnc.SysGetAttrValue('BlindVias') = false)) then
+  if ( not Fnc.SysGetAttrValue('Mech_BlindVias')) and ( not Fnc.SysGetAttrValue('BlindVias')) then
     result := true;
 
 end;
@@ -4509,7 +4509,7 @@ function MechBlindViaMaxDepth : float;
 var
 
   NumDrillFiles: integer;
-  I: integer;            
+  I: integer;
   LayerTop : string;
   LayerBot : string;
   LayerCount : integer;
@@ -4530,15 +4530,14 @@ begin
     for I := 1 to NumDrillFiles do
     begin
 
-      if (( Fnc.SysGetItemAttrValue('BlindVia', True, cStackupDrill, I) = true ) and
-          ( Fnc.SysGetItemAttrValue('DrillDefID', True, cStackupDrill, I) = 8 ))
+      if ( Fnc.SysGetItemAttrValue('BlindVia', True, cStackupDrill, I) ) and
+         ( Fnc.SysGetItemAttrValue('DrillDefID', True, cStackupDrill, I) = 8 )
       then
       begin
 
         DrillDepth := Fnc.SysGetItemAttrValue('DrillDepth', True, cStackupDrill, I);
 
-        if DrillDepth > result then
-          result := DrillDepth;
+        if DrillDepth > result then result := DrillDepth;
 
       end;
 
@@ -4570,15 +4569,54 @@ begin
     begin
 
       if Fnc.SysGetItemAttrValue('DrillDefID', True, cStackupDrill, I) = 2 then
-      begin                                       
-        
+      begin
+
         if Fnc.SysGetItemAttrValue('DrillDepth_U', True, cStackupDrill, I) > 0 then
           drillDepth := Fnc.SysGetItemAttrValue('DrillDepth_U', True, cStackupDrill, I)
         else                                  
           drillDepth := Fnc.SysGetItemAttrValue('DrillDepth', True, cStackupDrill, I);
 
-        if drillDepth > result then
-          result := drillDepth;
+        if drillDepth > result then result := drillDepth;
+
+      end;
+
+    end;
+
+  end;
+
+end;
+
+function MaxBlindViaDepthSkpVia : float;
+var
+
+  NumDrillFiles: integer;
+  I: integer;
+  drillDepth : float;
+
+begin
+
+  result := 0;
+  drillDepth := 0.0;
+
+  NumDrillFiles := FindNumberOfDrillFiles;
+
+  if NumDrillFiles > 0 then
+  begin
+
+    for I := 1 to NumDrillFiles do
+    begin
+
+      if ( Fnc.SysGetItemAttrValue('DrillDefID', True, cStackupDrill, I) = 2 ) and
+         ( Fnc.SysGetItemAttrValue('BlViaType', True, cStackupDrill, I) = 'Skip_Via' )
+      then
+      begin
+
+        if Fnc.SysGetItemAttrValue('DrillDepth_U', True, cStackupDrill, I) > 0 then
+          drillDepth := Fnc.SysGetItemAttrValue('DrillDepth_U', True, cStackupDrill, I)
+        else                                  
+          drillDepth := Fnc.SysGetItemAttrValue('DrillDepth', True, cStackupDrill, I);
+
+        if drillDepth > result then result := drillDepth;
 
       end;
 
@@ -4613,8 +4651,7 @@ begin
 
         aspectRatio := Fnc.SysGetItemAttrValue('AspectRatio', True, cStackupDrill, I);
         
-        if aspectRatio > result then
-          result := aspectRatio;
+        if aspectRatio > result then result := aspectRatio;
 
       end;
 
@@ -4624,7 +4661,7 @@ begin
 
 end;
 
-function PAL3(aspectRatio : float; minDrill : float): boolean;
+{function PAL3(aspectRatio : float; minDrill : float): boolean;
 begin
 
   result := false
@@ -4637,100 +4674,84 @@ begin
   then
     result := true;
 
-end;
+end;}  //  No Longer used
 
 function MCP(aspectRatio : float; minDrill : float; conformal : integer; blindAspect : float; maxDepthBlind : float; maxDepthMech  : float): boolean;
 begin
   result := false;
 
-  if NCRun <= 1 then // Consider blind vias   // 1138
+  if NCRun = 1 then // Consider blind vias   // 1138
   begin
 
-    if (
-        ( aspectRatio <= 6.4 ) and
-        ( minDrill >= 0.2 ) and
-        (( Get_Panel_Thickness >= 0.2 ) and ( Get_Panel_Thickness <= 1.59 )) and
-        ( conformal <= 200 ) and
-        ( blindAspect <= 0.75 ) and
-        ( maxDepthBlind <= 0.17 ) and
-        ( maxDepthMech <= 0.4 )
-       )
+    if ( aspectRatio <= 6.4 ) and
+       ( minDrill >= 0.2 ) and
+       (( Get_Panel_Thickness >= 0.2 ) and ( Get_Panel_Thickness <= 1.60 )) and  // 2616 VELCP Updated Flow
+       ( conformal <= 200 ) and
+       ( blindAspect <= 0.75 ) and
+       ( maxDepthBlind <= 0.17 ) and
+       ( maxDepthMech <= 0.4 )
     then     
       result := true;
 
-  end
-  else if NCRun = 2 then  // Ignore blind Vias
+  end;
+
+  if NCRun = 2 then  // Ignore blind Vias
   begin
 
-    if (
-        ( aspectRatio <= 6.4 ) and
-        ( minDrill >= 0.2 ) and
-        (( Get_Panel_Thickness >= 0.2 ) and ( Get_Panel_Thickness <= 1.59 ))
-       )           
-    then
-      result := true;
+//    if ( aspectRatio <= 6.4 ) and
+//       ( minDrill >= 0.2 ) and
+//       (( Get_Panel_Thickness >= 0.2 ) and ( Get_Panel_Thickness <= 1.60 ))
+//   then
+      result := false; // 2619 Electrolytic Cu Plating Rule Update - MCP Cannot be used for NCX 2
 
   end
 end;
 
 function PAL4(aspectRatio : float; minDrill : float; conformal : integer; blindAspect : float; maxDepthBlind : float; maxDepthMech  : float; cuRatio : float): boolean;
 begin
+
   result := false;
 
-  if NCRun <= 1 then // Consider blind vias // 1138
+  // NCRun 1 or NCRun 2 AND No Blind Vias  // 2619
+  if NoBlindVias then
   begin
 
-    if NoBlindVias then  // make conformal value pass condition (will be 0 for non-laser)
-    conformal :=  100;
+    if ( aspectRatio <= 16 ) and
+       ( minDrill >= 0.2 ) and
+       (( Get_Panel_Thickness >= 1.00 ) and ( Get_Panel_Thickness <= 4.0 ))
+    then
+      result := true;
+
+  end
+  else if ( NCRun = 1 ) then // ( And No Blind Vias ) Blind Vias are NCRun 1 only
+  begin
+
+    if ( aspectRatio <= 16 ) and
+       ( minDrill >= 0.2 ) and
+       (( Get_Panel_Thickness >= 1.00 ) and ( Get_Panel_Thickness <= 3.6 )) and  // 2616
+       (( conformal >= 70 ) and ( conformal <= 450 )) and
+       ( blindAspect <= 0.95 ) and
+       ( cuRatio <= 44.99 ) and
+       ( maxDepthBlind <= 0.4 ) and
+       ( maxDepthMech <= 0.4 )
+    then                                   
+      result := true;
+
+  end;
+
+  {if NCRun <= 1 then // Consider blind vias // 1138
+  begin
+
+    if NoBlindVias then conformal := 100; // make conformal value pass condition (will be 0 for non-laser)
                  
-    if (                    
-        ( aspectRatio <= 16 ) and
-        ( minDrill >= 0.2 ) and
-        (( Get_Panel_Thickness >= 1.00 ) and ( Get_Panel_Thickness <= 3.5 )) and
-        (( conformal >= 70 ) and ( conformal <= 450 )) and
-        ( blindAspect <= 0.95 ) and
-        ( cuRatio <= 44.99 ) and
-        ( maxDepthBlind <= 0.4 ) and
-        ( maxDepthMech <= 0.4 )
-       )
-    then
-      result := true;
-
-  end
-  else if NCRun = 2 then  // Ignore blind Vias            
-  begin
-
-    if (
-        ( aspectRatio <= 16 ) and
-        ( minDrill >= 0.2 ) and
-        (( Get_Panel_Thickness >= 1.00 ) and ( Get_Panel_Thickness <= 3.5 ))
-       )
-    then
-      result := true;
-
-  end
-end;
-
-function PAL6(aspectRatio : float; minDrill : float; conformal : integer; blindAspect : float; maxDepthBlind : float; maxDepthMech  : float; cuRatio : float): boolean;
-begin
-  result := false
-
-  if NCRun <= 1 then // Consider blind vias //1138
-  begin
-
-    if NoBlindVias then  // make conformal value pass condition (will be 0 for non-laser)
-    conformal :=  100;
-    
-    if (                      
-        ( aspectRatio <= 25 ) and
-        ( minDrill >= 0.2 ) and
-        (( Get_Panel_Thickness >= 3.00 ) and ( Get_Panel_Thickness <= 7.0 )) and
-        ( conformal >= 90 ) and
-        ( blindAspect <= 0.95 ) and
-        ( cuRatio <= 45.00 ) and
-        ( maxDepthBlind <= 0.4 ) and
-        ( maxDepthMech <= 0.4 )
-       )
+    if ( aspectRatio <= 16 ) and
+       ( minDrill >= 0.2 ) and
+       (( Get_Panel_Thickness >= 1.00 ) and ( Get_Panel_Thickness <= 3.6 )) and  // 2616
+       (( conformal >= 70 ) and ( conformal <= 450 )) and
+       ( blindAspect <= 0.95 ) and
+       ( cuRatio <= 44.99 ) and
+       ( maxDepthBlind <= 0.4 ) and
+       ( maxDepthMech <= 0.4 )
     then
       result := true;
 
@@ -4738,15 +4759,50 @@ begin
   else if NCRun = 2 then  // Ignore blind Vias
   begin
 
-    if (
-        ( aspectRatio <= 16 ) and
-        ( minDrill >= 0.2 ) and
-        (( Get_Panel_Thickness >= 1.00 ) and ( Get_Panel_Thickness <= 3.5 ))
-       )
+    if ( aspectRatio <= 16 ) and
+       ( minDrill >= 0.2 ) and
+       (( Get_Panel_Thickness >= 1.00 ) and ( Get_Panel_Thickness <= 3.5 ))
+    then
+      result := true;
+
+  end;}
+
+end;
+
+function PAL6(aspectRatio : float; minDrill : float; conformal : integer; blindAspect : float; maxDepthBlind : float; maxDepthMech  : float; cuRatio : float): boolean;
+begin
+
+  result := false;
+
+  if NCRun = 1 then // Consider blind vias //1138
+  begin
+
+    if NoBlindVias then conformal :=  100; // make conformal value pass condition (will be 0 for non-laser). Other Blind values will be 0 and pass the conditions
+
+    if ( aspectRatio <= 25 ) and
+       ( minDrill >= 0.2 ) and
+       (( Get_Panel_Thickness >= 1.00 ) and ( Get_Panel_Thickness <= 7.0 )) and  // 2619
+       ( conformal >= 90 ) and
+       ( blindAspect <= 1.0 ) and  // 2619
+       ( cuRatio <= 45.00 ) and
+       ( maxDepthBlind <= 0.4 ) and
+       ( maxDepthMech <= 0.4 )
     then
       result := true;
 
   end
+  else if NCRun = 2 then  // Ignore blind Vias. Probably not needed as Blind Via related values will all be 0 above
+  begin
+
+    if ( aspectRatio <= 16 ) and
+       ( minDrill >= 0.2 ) and
+       (( Get_Panel_Thickness >= 1.00 ) and ( Get_Panel_Thickness <= 7.0 )) and  // 2619
+       ( cuRatio <= 45.00 )// 2616
+    then
+      result := true;
+
+  end;
+
 end;
 
 function SelectPlatingLine : string;
@@ -4776,8 +4832,8 @@ begin
     maxDepthBlind := MaxBlindViaDepth;
     maxDepthMech  := MechBlindViaMaxDepth;
     //cuRatio := Fnc.SysGetAttrValue('Cu_Ratio');
-   
-  end                             
+
+  end
   else if NCRun = 2 then
   begin
 
@@ -4793,25 +4849,22 @@ begin
           
   cuRatio := Set_CU_Ratio(false); // 2400
                                    
-  if (( Fnc.SysGetAttrValue('CuFilledVias')) and ( NCRun <= 1 )) then // 1138
+  if Fnc.SysGetAttrValue('CuFilledVias') and ( NCRun <= 1 ) then // 1138
   begin
 
-    if ( 
-         (minDrill >= 0.25) and
-         (Get_Panel_Thickness >= 0.2) and
-         (Get_Panel_Thickness <= 2) and
-         (conformal <= 100) and
-         (conformal >= 80) and
-         (blindAspect <= 0.75)
-       )
+    if (minDrill >= 0.25) and
+       (Get_Panel_Thickness >= 0.1) and
+       (Get_Panel_Thickness <= 2) and // 2619
+       (conformal <= 100) and
+       (conformal >= 80)
+       // (blindAspect <= 0.75)  2616 VELCP Updated Flow
     then                  
       result := 'FILL_VIA';
-
     else
     begin
 
-      errMsg := 'Error: Condition not met for FILL VIA Plating Line (Min Drill = 0.25 | Thickness 0.2-2.00 | CMK 80-100 | Blind Aspect <= 0.75)'
-        + #13 + '[ ' + FloatToStr(minDrill) + ' | ' + FormatFloat('0.000', FloatToStr(Get_Panel_Thickness)) + ' | ' + FloatToStr(conformal) + ' | ' + FloatToStr(blindAspect) + ' ]'
+      errMsg := 'Error: Condition not met for FILL VIA Plating Line (Min Drill = 0.25 | Thickness 0.2-2.00 | CMK 80-100)'
+        + #13 + '[ ' + FloatToStr(minDrill) + ' | ' + FormatFloat('0.000', FloatToStr(Get_Panel_Thickness)) + ' | ' + FloatToStr(conformal) + ' ]'
         + #13 + 'Please discuss with PE.';                    
         
        MessageDlg(errMsg, mtWarning, Setof([mbOK]), 0);
@@ -4819,32 +4872,21 @@ begin
     end;
 
   end
-  else                              
+  else
   begin // Not Cu Filled Vias
-    {if (( Fnc.SysGetAttrValue('Mech_BlindVias') = false ) and ( Fnc.SysGetAttrValue('BlindVias') = false)) then
-    begin
-      if PAL3(aspectRatio, minDrill) then
-        result := 'PAL3';          
-    end;}                          
 
-    //if result = '' then // 2363 Process Flow Update
-    begin
-
-      if MCP(aspectRatio, minDrill, conformal, blindAspect, maxDepthBlind, maxDepthMech) then
-        result := 'MCP'
-      else if ( maxDepthBlind > 0.17 ) and ( Get_Panel_Thickness <= 2.0 ) and ( minDrill >= 0.25 ) then // 1462
-        result := 'FILL_VIA'
-      else if PAL4(aspectRatio, minDrill, conformal, blindAspect, maxDepthBlind, maxDepthMech, cuRatio) then
-        result := 'P4'  // 2469 'PAL4'
-      else if PAL6(aspectRatio, minDrill, conformal, blindAspect, maxDepthBlind, maxDepthMech, cuRatio) then
-        result := 'P6 / P7';// 2469 'PAL6 / PAL7';
-
-    end;
+    if MCP(aspectRatio, minDrill, conformal, blindAspect, maxDepthBlind, maxDepthMech) then
+      result := 'MCP'
+    else if ( maxDepthBlind >= 0.17 ) and ( Get_Panel_Thickness <= 2.0 ) and ( minDrill >= 0.25 ) then // 1462
+      result := 'FILL_VIA'
+    else if PAL4(aspectRatio, minDrill, conformal, blindAspect, maxDepthBlind, maxDepthMech, cuRatio) then
+      result := 'P4'  // 2469 'PAL4'
+    else if PAL6(aspectRatio, minDrill, conformal, blindAspect, maxDepthBlind, maxDepthMech, cuRatio) then
+      result := 'P6 / P7';// 2469 'PAL6 / PAL7';
 
   end;
-                                
-  if result = '' then
-    MessageDlg('Plating Line not found', mtWarning, Setof([mbOK]), 0);
+
+  if result = '' then MessageDlg('Plating Line not found', mtWarning, Setof([mbOK]), 0);
                    
 end;
 
@@ -4903,8 +4945,10 @@ end;
 
 procedure UpdateInProcessCuThk(value: integer);
 begin
+
   InProcessCuThk := value;
   Fnc.SysSetAttrValue('In_Process_Cu_Thk', InProcessCuThk);
+  
 end;
 
 procedure AddBoardFinishAsAttribute; // 1223 Additional Surface Finish info under Electrolytic Cu step  // 1257 Add to SM

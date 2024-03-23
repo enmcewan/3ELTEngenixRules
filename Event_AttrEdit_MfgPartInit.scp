@@ -4,23 +4,39 @@
 //ScriptType=1
 //ScriptGroup=Attribute Edit
 //HeaderImportExport<--
-{                                                                                                                                                     
+{
 To get/set attribute values or hide/show attributes use the following functions
 
-Fnc.SysAttrEditGetAttrValue(AttrName: string): variant;
-Fnc.SysAttrEditGetAttrValueTopLevel(AttrName: string): variant;
+GetVal(AttrName: string): variant;
+GetValTopLevel(AttrName: string): variant;
 Fnc.SysAttrEditGetLayerAttrValue(LayerName: string; AttrName: string): variant;
 
-Fnc.SysAttrEditSetAttrValue(AttrName, AttrValue: string; HideAttrib: boolean = False);
-Fnc.SysAttrEditSetAttrValueTopLevel(AttrName, AttrValue: string; HideAttrib: boolean = False);
+SetVal(AttrName, AttrValue: string; HideAttrib: boolean = False);
+SetValTopLevel(AttrName, AttrValue: string; HideAttrib: boolean = False);
 Fnc.SysAttrEditSetLayerAttrValue(LayerName: string; AttrName: string; AttrValue: string; HideAttrib: boolean = False);
 } 
 uses
-  HiPot_Table_Lookup;
+  HiPot_Table_Lookup,
+  Electrical_Table_Lookup;
+
+function GetVal(AttrName: string): variant
+begin
+
+  result := Fnc.SysAttrEditGetAttrValue(AttrName);
+
+end;
+
+procedure SetVal(AttrName: string; Value: variant);
+begin
+
+  Fnc.SysAttrEditSetAttrValue(AttrName, Value, false);
+
+end;
 
 // Not currently needed, table data is using numerci values
 function ConvertTableData(Data: string; parameter: string) : variant;
 begin
+
   case parameter of
     'volts', 'ramp', 'hold': try result := StrToInt(Data); Except result := 0; end;
                      'leak': try result := StrToFloat(Data); Except result := 0.0; end;
@@ -30,92 +46,47 @@ begin
                           
   if result = 0 then
     MessageDlg('Unable to convert Hi-Pot Table Data to number, check table for valid values', mtWarning, Setof([mbOK]) , 0);
-end;                                                               
 
-procedure SetECValues;  // 1255 EC Parameter Attributes
-var
-  ECTable: TSysTable;
-  JobData: TStringList;
-  CustCode: string;
-  tableFilter: string;
-begin
-  JobData := Fnc.GetJobData;
-  CustCode := JobData.Values['CustomerName'];
-  //ShowMessage(CustCode);
-  tableFilter := '([Customer] = ' + QuotedStr(CustCode) + ')';
-  ECTable := Fnc.CustomTableGet('Electrical_Check');
-
-  ECTable.Filtered := False;
-  ECTable.Filter := tableFilter;
-  ECTable.Filtered := True;
-  //Fnc.OpenDataGrid(ECTable);
-           
-  if not ECTable.isEmpty then
-  begin
-    ECTable.First;
-    if Fnc.SysAttrEditGetAttrValue('EC_Test_Voltage') = 0 then
-      Fnc.SysAttrEditSetAttrValue('EC_Test_Voltage', ECTable.FieldByName('Test_Voltage').AsInteger, false);
-    
-    if Fnc.SysAttrEditGetAttrValue('EC_Cont_Res') = 0 then
-      Fnc.SysAttrEditSetAttrValue('EC_Cont_Res', ECTable.FieldByName('Cont_Resistance').AsInteger, false);
-      
-    if Fnc.SysAttrEditGetAttrValue('EC_Isol_Res') = 0 then
-      Fnc.SysAttrEditSetAttrValue('EC_Isol_Res', ECTable.FieldByName('Iso_Resistance').AsInteger, false);
-    
-    //if Fnc.SysAttrEditGetAttrValue('EC_Current') = 0 then   1309
-    //Fnc.SysAttrEditSetAttrValue('EC_Current', ECTable.FieldByName('Current').AsInteger, false); 
-  end
-  else
-    MessageDlg('Customer Code ' + CustCode + ' not found in Electrical Check Table. EC Parameters not set', mtWarning, Setof([mbOK]), 0);
-
-  ECTable.Filtered := False;
-  ECTable.Filter := '';         
-
-end;                                            
+end;
 
 procedure AttrEdit_MfgPartInit(ParamList: TStringList; AttrTable: TSysTable; SpecTable: TSysTable);
 begin
-   //showmessage(ParamList.strings[1]);
-   //ShowMessage('Mfg Part Init');
 
-   // Set/Check Hi-Pot Values
+  // Set/Check Hi-Pot Values
   if (ParamList.values['ItemType'] = 'MFGTP') or (ParamList.values['ItemType'] = 'MFGSB') then
-  begin      
+  begin
+
     // 1308 Update Hi-Pot table Value Units
     // For new Jobs, get values from new table                                                     
     // For existing Jobs with Data, recalculate Test Voltage & Leakage Values
     // Make sure only to convert once - old values are in the 100's
-    if (Fnc.SysAttrEditGetAttrValue('Volt') > 0) and (Fnc.SysAttrEditGetAttrValue('Volt') > 100) then
-      Fnc.SysAttrEditSetAttrValue('Volt', Fnc.SysAttrEditGetAttrValue('Volt') / 1000);
-                                      
-    {if ParamList.values['ItemType'] = 'MFGTP' then 
-    ShowMessage('Leak: ' + FloatToStr(Fnc.SysAttrEditGetAttrValue('Leak')) +
-                '  Leak New: ' + IntToStr(Fnc.SysAttrEditGetAttrValue('Leak_New')) +
-                '  Volts: ' + FloatToStr(Fnc.SysAttrEditGetAttrValue('Volt'))
-                                                                               
-               );}
-                                         
-    if (Fnc.SysAttrEditGetAttrValue('Leak') > 0) and (Fnc.SysAttrEditGetAttrValue('Leak_New') = 0) then // Don't need to check for converting more than once since we use a new attribute
-      Fnc.SysAttrEditSetAttrValue('Leak_New', Fnc.SysAttrEditGetAttrValue('Leak') * 1000); 
+    if (GetVal('Volt') > 0) and (GetVal('Volt') > 100) then
+      SetVal('Volt', GetVal('Volt') / 1000);
+
+    if (GetVal('Leak') > 0) and (GetVal('Leak_New') = 0) then // Don't need to check for converting more than once since we use a new attribute
+      SetVal('Leak_New', GetVal('Leak') * 1000);
                                            
     // 1230 Auto Add Hi-Pot Spec
-    if (Fnc.SysAttrEditGetAttrValue('Volt') = 0.0) or
-       (Fnc.SysAttrEditGetAttrValue('Ramp') = 0) or
-       (Fnc.SysAttrEditGetAttrValue('Hold') = 0) or
-       (Fnc.SysAttrEditGetAttrValue('Leak_New') = 0) then
+    if (GetVal('Volt') = 0.0) or
+       (GetVal('Ramp') = 0) or
+       (GetVal('Hold') = 0) or
+       (GetVal('Leak_New') = 0) then
          SetHiPotValues(ParamList.values['ItemType'], false)
     else
     begin
-      if (Fnc.SysAttrEditGetAttrValue('Volt') > 0) and (Fnc.SysAttrEditGetAttrValue('Ramp') > 0) then
-      Fnc.SysAttrEditSetAttrValue('Wait', (Fnc.SysAttrEditGetAttrValue('Volt') / Fnc.SysAttrEditGetAttrValue('Ramp')) * 1000);
+
+      if (GetVal('Volt') > 0) and (GetVal('Ramp') > 0) then
+        SetVal('Wait', (GetVal('Volt') / GetVal('Ramp')) * 1000);
+
     end;
-  End;
+
+  end;
                                         
    if (ParamList.values['ItemType'] = 'MFGTP') and 
-      (( Fnc.SysAttrEditGetAttrValue('EC_Test_Voltage') = 0 ) or
-      ( Fnc.SysAttrEditGetAttrValue('EC_Cont_Res') = 0 ) or
-      ( Fnc.SysAttrEditGetAttrValue('EC_Isol_Res') = 0 ) or
-      ( Fnc.SysAttrEditGetAttrValue('EC_Current') = 0 ))
+      (( GetVal('EC_Test_Voltage') = 0 ) or
+      ( GetVal('EC_Cont_Res') = 0 ) or
+      ( GetVal('EC_Isol_Res') = 0 ) or
+      ( GetVal('EC_AutoUpdate') )) // 2632  Electrical Check Spec not updating
    then // 1255 EC Parameter Attributes
      SetECValues;
      
@@ -123,57 +94,57 @@ begin
   // Item 1256
   if ParamList.values['ItemType'] = 'MFGTP'then
   begin                                     
-    if Fnc.SysAttrEditGetAttrValue('Board_Finish') = 'Full Body Gold + LGA' then
+    if GetVal('Board_Finish') = 'Full Body Gold + LGA' then
     begin                                 
       MessageDlg('The board finish "Full Body Gold + LGA" is no longer valid. Select another option', mtError, Setof([mbOK]), 0); 
     end;
     
-    if Fnc.SysAttrEditGetAttrValue('Board_Finish') = 'ENIG + OSP' then
+    if GetVal('Board_Finish') = 'ENIG + OSP' then
     begin
       MessageDlg('The board finish "ENIG + OSP" is no longer valid. Board Finish set to "OSP" and Selective Gold set to "ENIG"', mtInformation, Setof([mbOK]), 0);
-      Fnc.SysAttrEditSetAttrValue('Board_Finish', 'OSP');
+      SetVal('Board_Finish', 'OSP');
                                                       
-      if Fnc.SysAttrEditGetAttrValue('Sel_Gold_Type') = 'None' then
-        Fnc.SysAttrEditSetAttrValue('Sel_Gold_Type', 'ENIG');
+      if GetVal('Sel_Gold_Type') = 'None' then
+        SetVal('Sel_Gold_Type', 'ENIG');
       else              
       begin       
         MessageDlg('ENIG + OSP cannot have another Selective Gold Type. Select another option', mtError, Setof([mbOK]), 0);
       end;
     end;
     
-    if ( Fnc.SysAttrEditGetAttrValue('Sel_Gold_Type') = 'BGA, Encapsulation' ) or 
-       ( Fnc.SysAttrEditGetAttrValue('Sel_Gold_Type') = 'Thin/Thick Encapsulated Pattern' ) then
+    if ( GetVal('Sel_Gold_Type') = 'BGA, Encapsulation' ) or 
+       ( GetVal('Sel_Gold_Type') = 'Thin/Thick Encapsulated Pattern' ) then
     begin                    
-      MessageDlg(Fnc.SysAttrEditGetAttrValue('Sel_Gold_Type') + ' is no longer valid. Select another Selective Gold Type', mtError, Setof([mbOK]), 0); 
+      MessageDlg(GetVal('Sel_Gold_Type') + ' is no longer valid. Select another Selective Gold Type', mtError, Setof([mbOK]), 0);
     end;                     
     
-    if ( Fnc.SysAttrEditGetAttrValue('Sel_Gold_Type') = 'Pattern (Overhang)' ) or 
-       ( Fnc.SysAttrEditGetAttrValue('Sel_Gold_Type') = 'PTH' ) then
+    if ( GetVal('Sel_Gold_Type') = 'Pattern (Overhang)' ) or 
+       ( GetVal('Sel_Gold_Type') = 'PTH' ) then
     begin
-      MessageDlg('Selective Gold type: "' + Fnc.SysAttrEditGetAttrValue('Sel_Gold_Type') + '" is no longer valid. Value set to "Pattern Overhang / PTH"', mtInformation, Setof([mbOK]), 0); 
-      Fnc.SysAttrEditSetAttrValue('Sel_Gold_Type', 'Pattern Overhang / PTH'); 
+      MessageDlg('Selective Gold type: "' + GetVal('Sel_Gold_Type') + '" is no longer valid. Value set to "Pattern Overhang / PTH"', mtInformation, Setof([mbOK]), 0); 
+      SetVal('Sel_Gold_Type', 'Pattern Overhang / PTH'); 
     end;
                                   
-    if Fnc.SysAttrEditGetAttrValue('Gold_Fgr_Type') = 'Lead Line Etching B4 Res (Sel)' then
+    if GetVal('Gold_Fgr_Type') = 'Lead Line Etching B4 Res (Sel)' then
     begin
-      MessageDlg('Gold Finger type: "' + Fnc.SysAttrEditGetAttrValue('Gold_Fgr_Type') + '" is no longer valid. Value set to "Lead Line Etching"', mtInformation, Setof([mbOK]), 0);
-      Fnc.SysAttrEditSetAttrValue('Gold_Fgr_Type', 'Lead Line Etching');
+      MessageDlg('Gold Finger type: "' + GetVal('Gold_Fgr_Type') + '" is no longer valid. Value set to "Lead Line Etching"', mtInformation, Setof([mbOK]), 0);
+      SetVal('Gold_Fgr_Type', 'Lead Line Etching');
     end;
     
-    if Fnc.SysAttrEditGetAttrValue('Gold_Fgr_Type') = 'Lead Line Etching Af Res (Sel)' then
+    if GetVal('Gold_Fgr_Type') = 'Lead Line Etching Af Res (Sel)' then
     begin 
-      MessageDlg('Gold Finger type: "' + Fnc.SysAttrEditGetAttrValue('Gold_Fgr_Type') + '" is no longer valid. Value set to "Au Finger Plate after SM"', mtInformation, Setof([mbOK]), 0);
-      Fnc.SysAttrEditSetAttrValue('Gold_Fgr_Type', 'Au Finger Plate after SM');
+      MessageDlg('Gold Finger type: "' + GetVal('Gold_Fgr_Type') + '" is no longer valid. Value set to "Au Finger Plate after SM"', mtInformation, Setof([mbOK]), 0);
+      SetVal('Gold_Fgr_Type', 'Au Finger Plate after SM');
     end;
-                                    
-    if ( Fnc.SysAttrEditGetAttrValue('Gold_Fgr_Type') = 'Chamfer Af Res (Sel)' ) or
-       ( Fnc.SysAttrEditGetAttrValue('Gold_Fgr_Type') = 'Thin/Thick - Lead Line Etching B4 Res (Sel)' ) or
-       ( Fnc.SysAttrEditGetAttrValue('Gold_Fgr_Type') = 'Thin/Thick - After Pattern (Sel)' ) or // Rename of rename - see above
-       ( Fnc.SysAttrEditGetAttrValue('Gold_Fgr_Type') = 'No Horn - Lead Line Etching B4 Res (Sel)' )
+
+    if ( GetVal('Gold_Fgr_Type') = 'Chamfer Af Res (Sel)' ) or
+       ( GetVal('Gold_Fgr_Type') = 'Thin/Thick - Lead Line Etching B4 Res (Sel)' ) or
+       ( GetVal('Gold_Fgr_Type') = 'Thin/Thick - After Pattern (Sel)' ) or // Rename of rename - see above
+       ( GetVal('Gold_Fgr_Type') = 'No Horn - Lead Line Etching B4 Res (Sel)' )
     then                             
     begin
-      MessageDlg('"' + Fnc.SysAttrEditGetAttrValue('Gold_Fgr_Type') + '"' + ' is no longer valid. Select another Gold Finger Type', mtError, Setof([mbOK]), 0);     
-      Fnc.SysAttrEditSetAttrValue('Gold_Fgr_Type', 'None');
+      MessageDlg('"' + GetVal('Gold_Fgr_Type') + '"' + ' is no longer valid. Select another Gold Finger Type', mtError, Setof([mbOK]), 0);     
+      SetVal('Gold_Fgr_Type', 'None');
     end;
     
   end;

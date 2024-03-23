@@ -25,28 +25,33 @@ var
 begin
                               
   if Fnc.SysGetAttrValue('MfgPartType') = 'Inn' then
-  begin                                   
+  begin
+
     Dept_Erp := '';
     Group_Erp := '';
 
     if ( SubLayersAreOnTopMfgPart ) or ( Fnc.SysGetAttrValueParent('Core_Build') ) then // Thin Core Remarks
     begin
+
       Dept_Erp := 'EXPIL-K';
-      Group_Erp := 'EXPIL-K0';                         
-      AltLine := 'Core Capping Build, Use LDI Machine Only';       
+      Group_Erp := 'EXPIL-K0';
+      AltLine := 'Core Capping Build, Use LDI Machine Only';
+
     end;
-    
+
     if ( GrandParentIsSequential ) or ( ParentIsSequential ) then
-    begin                         
+    begin
+
       Dept_Erp := 'EXPIL-K';
       Group_Erp := 'EXPIL-K0';
       AltLine := 'Sequential Build, Use LDI Machine Only';
-                              
-      if ( SubLayersAreOnTopMfgPart ) or                                
-         ( Fnc.SysGetAttrValueParent('Core_Build') = true ) or 
-         ( ParentSubIsCoreBuild )
-      then                     
+
+      if SubLayersAreOnTopMfgPart or
+         Fnc.SysGetAttrValueParent('Core_Build')  or
+         ParentSubIsCoreBuild
+      then
         AltLine := 'Seq/Core Capping Build, Use LDI Machine Only';
+
     end;
 
     // 2470 Non-Etch Pre-treatment Line
@@ -59,32 +64,35 @@ begin
       StepInstructionERP('EXPIL039');
 
     end;
-                                 
-    if Group_Erp = '' then // Not set by the rules above  
+
+    if Group_Erp = '' then // Not set by the rules above
     begin
+
       GetRes(Group_Erp, DesLine, AltLine); // Don't really need this table lookup any more. Table 2A is not used. Easily done with rules.
-      
+
       if pos('-D', Group_Erp) > 0 then Dept_Erp := 'EXPIL-D';
-      
-      if pos('-K', Group_Erp) > 0 then 
+
+      if pos('-K', Group_Erp) > 0 then
       begin
+
         Dept_Erp := 'EXPIL-K';
         AltLine := 'LDI Only';
-      end
+
+      end;
+
     end;
-    
+
     StepDeptERP(Dept_Erp);
-    StepWCERP(Group_Erp); 
-    
+    StepWCERP(Group_Erp);
+
     StepParamERP('Alt Line', AltLine);
-                                        
-    if HasFaradflexMat then
-      StepParamERP('Remark', 'Faradflex Core, Panel Leader Taping needed');
-      
-    if ( SandwichCore ) and ( not Fnc.SysGetAttrValueTopLevel('Alt_PEP_Process') ) then // 1470 
+
+    if HasFaradflexMat then StepParamERP('Remark', 'Faradflex Core, Panel Leader Taping needed');
+
+    if ( SandwichCore ) and ( not Fnc.SysGetAttrValueTopLevel('Alt_PEP_Process') ) then // 1470
       StepParamERP('4 Hole Alignment', 'X: ' + FloatToStr(Fnc.SysGetAttrValue('FourHoleAlign_X')) + 'mm / Y: ' +
                                                FloatToStr(Fnc.SysGetAttrValue('FourHoleAlign_Y')) + 'mm' );
-                                                                
+
     // 2367 Additional Attribute
     StepParamERP('CAD File Name', Fnc.SysGetAttrValue('CADFileName'));
 
@@ -93,10 +101,10 @@ begin
   begin
 
     StepDeptERP('EXPIL-D');
-    StepWCERP('EXPIL-N0');            
+    StepWCERP('EXPIL-D'); // // 2624 Obsolete Resource Code           
     StepParamERP('Alt Line', 'G2');
 
-  end;                                                                                                  
+  end;
                                                           
   Material := TStringList.Create;
   Material.add('Core');

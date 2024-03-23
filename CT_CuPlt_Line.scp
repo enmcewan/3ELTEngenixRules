@@ -98,17 +98,18 @@ begin
   end
   else
   begin
+
     bCont := (Thickness >= 0.1) and
              (Thickness <= 2) and
              (Fnc.SysGetAttrValue('ConfMask_Size') <= 100) and
              (Fnc.SysGetAttrValue('Blind_AspectRatio') <= 0.8);
 
-    if bCont then
-      LineList.Add('LineE');
+    if bCont then LineList.Add('LineE');
     else
       errMsg := 'Error: Condition not meet for FILL VIA PLATING LINE(BT<=2|CMK<=100|VALUE_BL<=0.8)'
         + #13 + '[' + FloatToStr(PressThickness) + ' | ' + FloatToStr(Fnc.SysGetAttrValue('ConfMask_Size')) + ' | ' + FloatToStr(Fnc.SysGetAttrValue('Blind_AspectRatio')) + '].'
         + #13 + 'PLS DISCUSS WITH PE.';
+
   end;
 
   if bCont then
@@ -153,7 +154,7 @@ end;
 var
   Plating_Line_Selected: string;
   Plating_Line_Alternative: string;
-begin
+begin                   
   InitGlobalVariables;
 
   Plating_Line_Selected := '';

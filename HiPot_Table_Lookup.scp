@@ -2,7 +2,7 @@
 //SiteId=0
 //Enterprise=True
 //ScriptType=0
-//ScriptGroup=
+//ScriptGroup=HCS
 //HeaderImportExport<--
 procedure SetHiPotValues(MfgPartType: string; reset: boolean);
 var

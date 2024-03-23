@@ -1,0 +1,64 @@
+//HeaderImportExport-->
+//SiteId=0
+//Enterprise=True
+//ScriptType=0
+//ScriptGroup=
+//HeaderImportExport<--
+function GetVal(AttrName: string): variant
+begin
+
+  result := Fnc.SysAttrEditGetAttrValue(AttrName);
+
+end;
+
+procedure SetVal(AttrName: string; Value: variant);
+begin
+
+  Fnc.SysAttrEditSetAttrValue(AttrName, Value, false);
+
+end;
+
+procedure SetECValues;  // 1255 EC Parameter Attributes
+var
+
+  ECTable: TSysTable;
+  JobData: TStringList;
+  CustCode,
+  tableFilter: string;
+  
+begin
+
+  JobData := Fnc.GetJobData;
+  CustCode := JobData.Values['CustomerName'];
+  tableFilter := '([Customer] = ' + QuotedStr(CustCode) + ')';
+  ECTable := Fnc.CustomTableGet('Electrical_Check');
+
+  ECTable.Filtered := False;
+  ECTable.Filter := tableFilter;
+  ECTable.Filtered := true;
+
+  if not ECTable.isEmpty then
+  begin
+
+    ECTable.First;
+
+    if ( GetVal('EC_Test_Voltage') = 0 ) or GetVal('EC_AutoUpdate') then
+      SetVal('EC_Test_Voltage', ECTable.FieldByName('Test_Voltage').AsInteger);
+    
+    if ( GetVal('EC_Cont_Res') = 0 ) or GetVal('EC_AutoUpdate') then
+      SetVal('EC_Cont_Res', ECTable.FieldByName('Cont_Resistance').AsInteger);
+      
+    if ( GetVal('EC_Isol_Res') = 0 ) or GetVal('EC_AutoUpdate') then
+      SetVal('EC_Isol_Res', ECTable.FieldByName('Iso_Resistance').AsInteger);
+    
+    //if GetVal('EC_Current') = 0 then   1309
+    //SetVal('EC_Current', ECTable.FieldByName('Current').AsInteger);
+
+  end
+  else
+    MessageDlg('Customer Code ' + CustCode + ' not found in Electrical Check Table. EC Parameters not set', mtWarning, Setof([mbOK]), 0);
+
+  ECTable.Filtered := False;
+  ECTable.Filter := '';         
+
+end;

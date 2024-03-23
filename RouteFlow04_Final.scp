@@ -46,9 +46,9 @@ begin
   if Fnc.SysGetAttrValue('BackDrillStubSpec') <= 6.0 then  // 2385 Backdrill with 6 mil stub
   begin
 
-    if BKDRTop then AddStep('Back_Drill_B_SP', 'Back_Drill_SPB01');
-
     if BKDRBot then AddStep('Back_Drill_A_SP', 'Back_Drill_SPA01');
+
+    if BKDRTop then AddStep('Back_Drill_B_SP', 'Back_Drill_SPB01');
 
   end
   else
@@ -493,17 +493,19 @@ begin
      ( Fnc.SysGetAttrValue('BackDrill_EC') ) and 
      ( not GetsHiPot )
   then
-    AddStep('BackDrill_EC', 'BackDrill_EC01');
+    AddStep('Silver_Inspection', 'Silver_Inspection-01');
 
   if Fnc.SysGetAttrValue('FourWireMsm') then
     AddStep('EC_FlyingProbe', 'EC_FlyingProbe01');
                     
   if GetsHiPot then // 1310 Additiona Backdrill EC
   begin
+
     AddStep('HiPotTest', 'HiPotTest01');
                                    
     if ( Fnc.SysGetAttrValue('BackDrill') ) and ( Fnc.SysGetAttrValue('BackDrill_EC') ) then
-      AddStep('BackDrill_EC', 'BackDrill_EC01');  
+      AddStep('Silver_Inspection', 'Silver_Inspection-01');
+
   end;
 
   if Fnc.SysGetAttrValue('TwoDBarcode') = true then
