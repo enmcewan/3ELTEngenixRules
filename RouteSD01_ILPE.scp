@@ -116,7 +116,7 @@ end;
 procedure IL_Exposure_NonEtched_SD;
 begin
   IL_Exposure_SD;
-end
+end;
 
 procedure IL_DES_SD;
 var

@@ -374,10 +374,12 @@ begin
         AddStep('Electroless_SP', 'Electroless_SP' + '0' + IntToStr(MetalizationRun));
 
       end
-      else
+      else // (MaxBlindViaDepthSkpVia > 0.280) 
         AddStep('Electroless', 'Electroless' + '0' + IntToStr(MetalizationRun));
 
-    end;
+    end
+    else
+      AddStep('Electroless', 'Electroless' + '0' + IntToStr(MetalizationRun));
 
   end
   else
@@ -409,9 +411,9 @@ end;
 procedure NonUVMicroEtch; // 1138 Microetch for Laser Via
 begin
                                   
-  if ( BaseCuTopUM > 9 ) and
-     ( BaseCuBotUM > 9 ) and 
-     ( CustCode_Rule('Customer') <> 'FA' ) and
+  if (( BaseCuTopUM > 9 ) and
+      ( BaseCuBotUM > 9 ) and
+      ( CustCode_Rule('Customer') <> 'FA' )) or
      Fnc.SysGetAttrValue('ConfMask_UEtch_OvR')  // 1112 Micro-etch for thick board
   then
   begin

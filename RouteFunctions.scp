@@ -3426,15 +3426,14 @@ end;
 function ParentIsSequential : boolean;  // Thin Core Remarks
 var
   SubList : TStringList;
+
 begin
+
   result := false;   // No Sub-Assemblies
 
-  SubList := Fnc.SysGetItemAttrValueList('ItemMatrlDesc', cStackupMfgSubAssy, -1, false);
-  //ShowMessage(SubList.Text);
-  if SubList.Count >= 2 then
-    Result := true;
+  SubList := Fnc.SysGetItemAttrValueList('ItemMatrlDesc', cStackupMfgSubAssy, -1, true); // Was incorrectly 'false'. fixed for 2614
 
-  //ShowMessage(Result);                            
+  if SubList.Count >= 2 then result := true;
 
 end;                  
 
@@ -4680,7 +4679,7 @@ function MCP(aspectRatio : float; minDrill : float; conformal : integer; blindAs
 begin
   result := false;
 
-  if NCRun = 1 then // Consider blind vias   // 1138
+  if NCRun <= 1 then // Consider blind vias   // 1138
   begin
 
     if ( aspectRatio <= 6.4 ) and
@@ -4723,7 +4722,7 @@ begin
       result := true;
 
   end
-  else if ( NCRun = 1 ) then // ( And No Blind Vias ) Blind Vias are NCRun 1 only
+  else if ( NCRun <= 1 ) then // ( And No Blind Vias ) Blind Vias are NCRun 1 only
   begin
 
     if ( aspectRatio <= 16 ) and
@@ -4774,7 +4773,7 @@ begin
 
   result := false;
 
-  if NCRun = 1 then // Consider blind vias //1138
+  if NCRun <= 1 then // Consider blind vias //1138
   begin
 
     if NoBlindVias then conformal :=  100; // make conformal value pass condition (will be 0 for non-laser). Other Blind values will be 0 and pass the conditions

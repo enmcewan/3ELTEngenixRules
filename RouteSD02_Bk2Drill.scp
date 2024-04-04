@@ -1973,7 +1973,7 @@ begin
   if ( MechBlindViaSide <> 'None' ) and ( NCRun = 1 ) then //2295
   begin
 
-    StepWCERP('METAL-C0');  // 2616 VELCP Updated Flow
+    StepWCERP('METAL-D0');  // 2616 VELCP Updated Flow
     StepParamERP('VELCP Line', 'V2 Only');
     StepInstructionERP('METAL041');
     StepParamERP('Remark', 'With Mech Blind Vias');
@@ -1982,7 +1982,7 @@ begin
   else
   begin
 
-    StepWCERP('METAL-D0');  // 2616 VELCP Updated Flow
+    StepWCERP('METAL-C0');  // 2616 VELCP Updated Flow
     StepParamERP('VELCP Line', 'V1 or V2');
 
   end;
@@ -2762,7 +2762,7 @@ begin
        ( Plating_Line = 'P6 / P7' ) then  // 2467 'PAL6 / PAL7'
     begin
       //StepDeptERP('COPPL-C');
-      StepWCERP('COPPL-C22'); // Plating Line PAL5 change to PAL6
+      StepWCERP('COPPL-C2'); // Plating Line PAL5 change to PAL6
     end;
 
     StepParamERP('Plating Line', Plating_Line);  // Include the Electrolytic Machine Name on the process step.

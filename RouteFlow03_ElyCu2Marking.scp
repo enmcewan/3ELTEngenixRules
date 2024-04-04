@@ -376,11 +376,20 @@ begin
     UpdateInProcessCuThk(Cu_Thk_After_EP);
 
     // 2618 Additional Hole Check Step after Epoxy Plug
-    if Fnc.SysGetAttrValue('Min_Drill_Size_NP') <= 0.5 then
-      AddStep('OffLine_PreTreat_USR', 'OffLine_PreTreat_USR-01');
+    if MfgPartType = 'Top' then
+    begin
 
-    if Fnc.SysGetAttrValue('EpoxyPlug_PlugToNonPlugSpacing') < 0.8 then
-      AddStep('Hole_Check_Plug', 'Hole_Check_Plug-01');
+      if Fnc.SysGetAttrValue('Min_Drill_Size_NP') <= 0.5 then
+      begin
+
+        AddStep('OffLine_PreTreat_USR', 'OffLine_PreTreat_USR-01');
+        AddStep('Hole_Check_Plug', 'Hole_Check_Plug-01');
+
+      end
+      else if Fnc.SysGetAttrValue('EpoxyPlug_PlugToNonPlugSpacing') < 0.8 then
+        AddStep('Hole_Check_Plug', 'Hole_Check_Plug-01');
+
+    end;
 
 end;
 

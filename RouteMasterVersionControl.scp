@@ -6,6 +6,20 @@
 //HeaderImportExport<--
 procedure SetRulesVersion;
 begin
+
+  Fnc.SysSetAttrValue('Rules_Version', 3.60);  // 2614 Vertical Buffing Rule
+                                               // 2615 Micro-Etch HAL
+                                               // 2616 // VELCP Updated Flow
+                                               // 2617 Additional Hitalex Lamination
+                                               // 2618 Addtional Hole Check After Eoxy Plug
+                                               // 2619 Electrlytic Copper Plating update
+                                               // 2620 @nd Drill Side Attribute
+                                               // 2621 Remove Washing Step after Edge Plate Rout
+                                               // 2622 Update Backdrill EC Name
+                                               // 2623 Top (Side B) and Botto (Side A) Backdrill SP
+                                               // 2624 Obsolete Resource Code
+                                               // 2632 Electrical Check not updating
+
   //Fnc.SysSetAttrValue('Rules_Version', 1.01);
   //Fnc.SysSetAttrValue('Rules_Version', 1.10); // Blind Via Changes
   //Fnc.SysSetAttrValue('Rules_Version', 1.11); // Photo Sequence
@@ -182,6 +196,6 @@ begin
                                                    // 2472 Pre-Book Flow Updte
                                                    // 2525 4oz Copper
                                                    // 2524 White Marking Ink Replacement
-        Fnc.SysSetAttrValue('Rules_Version', 3.51);// 2466 NC, Desmear & Plating Stge
+        //Fnc.SysSetAttrValue('Rules_Version', 3.51);// 2466 NC, Desmear & Plating Stge
 
 end;

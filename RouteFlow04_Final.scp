@@ -493,7 +493,7 @@ begin
      ( Fnc.SysGetAttrValue('BackDrill_EC') ) and 
      ( not GetsHiPot )
   then
-    AddStep('Silver_Inspection', 'Silver_Inspection-01');
+    AddStep('Silver_Inspection', 'Silver_Inspection-01'); // 2622
 
   if Fnc.SysGetAttrValue('FourWireMsm') then
     AddStep('EC_FlyingProbe', 'EC_FlyingProbe01');
@@ -504,7 +504,7 @@ begin
     AddStep('HiPotTest', 'HiPotTest01');
                                    
     if ( Fnc.SysGetAttrValue('BackDrill') ) and ( Fnc.SysGetAttrValue('BackDrill_EC') ) then
-      AddStep('Silver_Inspection', 'Silver_Inspection-01');
+      AddStep('Silver_Inspection', 'Silver_Inspection-01'); // 2622  
 
   end;
 

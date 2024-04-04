@@ -2,7 +2,7 @@
 //SiteId=0
 //Enterprise=True
 //ScriptType=0
-//ScriptGroup=
+//ScriptGroup=HCS
 //HeaderImportExport<--
 function GetVal(AttrName: string): variant
 begin
