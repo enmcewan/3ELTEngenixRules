@@ -1982,7 +1982,7 @@ begin
   else
   begin
 
-    StepWCERP('METAL-C0');  // 2616 VELCP Updated Flow
+    StepWCERP('METAL-C');  // 2616 VELCP Updated Flow  // Mod rquest Herole 240409
     StepParamERP('VELCP Line', 'V1 or V2');
 
   end;
