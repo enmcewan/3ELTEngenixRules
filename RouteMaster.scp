@@ -608,8 +608,8 @@ end;
 procedure RoutePreProcess;
 begin
 
-  if ( not Fnc.SysRouteGenIsInsertingManualStep ) and
-     ( not Fnc.SysRouteGenIsDeletingStep )
+  if ( not Fnc.SysRouteGenIsInsertingManualStep ) //and
+     //( not Fnc.SysRouteGenIsDeletingStep ) ---Waiting for 5.2.0 RC1 release upgrade.
   then
     CheckAndGenPartData;
 
@@ -630,8 +630,7 @@ begin
 
     InProcessCuThk := GetSuborCoreIPCT;
     
-    if InProcessCuThk = 0 then
-      InProcessCuThk := BaseCuTopUM;
+    if InProcessCuThk = 0 then InProcessCuThk := BaseCuTopUM;
 
   end                                           
   else            

@@ -2587,7 +2587,11 @@ begin
     begin
 
       StepParamERP('2nd DE Cu Thickness', vDE_Cu_Thk);
-      Fnc.SysSetAttrValue('DE_Cu_Thk_2', vDE_Cu_Thk); //2649
+
+      if process <> 'CappedVia' then
+        Fnc.SysSetAttrValue('DE_Cu_Thk_2', vDE_Cu_Thk) //2649
+      else
+        Fnc.SysSetAttrValue('DE_Cu_Thk_Cap', vDE_Cu_Thk);
 
     end;
 
