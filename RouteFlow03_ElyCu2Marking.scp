@@ -615,7 +615,7 @@ begin
   HoleCheckDone := false; //ENIG Changes
   
   {Electrolytic Copper Steps}
-  if (( Fnc.SysGetAttrValue('CuFilledVias')) and ( NCRun = 1 )) then 
+  if (( Fnc.SysGetAttrValue('CuFilledVias')) and ( NCRun = 1 )) then
   begin
 
     if Fnc.SysGetAttrValue('Aspect_Ratio_Val') > 5.333333 then  // 2616
@@ -640,12 +640,12 @@ begin
   if (RequiredPlatingThk > 41) and (Fnc.SysGetAttrValue('CuFilledVias') = false) then
     AddStep('Electrolytic_Cu_2', 'Electrolytic_Cu_201');
 
-                                                      
+
   if  (( Plating_Line = 'P4' ) or  // 2467 'PAL4' then
        ( Plating_Line = 'PAL4' ) or
        ( Plating_Line = 'PAL5' ) or
        ( Plating_Line = 'PAL6' ) or
-       ( Plating_Line = 'PAL7' ) or 
+       ( Plating_Line = 'PAL7' ) or
        ( Plating_Line = 'P6 / P7' ))  // '2467 PAL6 / PAL7'
     or
       ( Fnc.SysGetAttrValue('Min_Drill_Size') <= 0.25 ) and ( Plating_Line = 'MCP' )
@@ -653,9 +653,9 @@ begin
       ( Fnc.SysGetAttrValue('NCRunX2') = false ) and ( Fnc.SysGetAttrValue('EpoxySide') <> 'None' )
   then
     AddStep('CuHoleCheck', 'CuHoleCheck' + '0' + IntToStr(MetalizationRun));
-    
+
   if ( Fnc.SysGetAttrValue('Pre_Photo_CuThin') ) then
-  begin 
+  begin
     if ( Fnc.SysGetAttrValue('NCRunX2') = true ) or ( Fnc.SysGetAttrValue('EpoxyPlug_CuThin_Process') = 'None' ) then  // 1196 Pre-Photo Cu Thinning
     begin
       AddStep('Pre_Photo_Cu_Thin', 'Pre_Photo_Cu_Thin01');
@@ -669,9 +669,9 @@ begin
   if (
       (
        ( Fnc.SysGetAttrValue('CappedVia') = true ) or
-       ( Fnc.SysGetAttrValue('EpoxySide') <> 'None' ) or                                                                                            
+       ( Fnc.SysGetAttrValue('EpoxySide') <> 'None' ) or
        ( Fnc.SysGetAttrValue('BackDrill_Epoxy') = true ) // 844 Backdrill after Electrolytic Cu
-      )                     
+      )
       and ( Fnc.SysGetAttrValue('NCRunX2') = false )
      )
   then

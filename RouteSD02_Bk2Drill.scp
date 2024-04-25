@@ -2546,28 +2546,53 @@ begin
   begin
     if Fnc.SysGetAttrValue('User_DE_Cu_Thk') <> '' then
     begin
+
       StepParamERP('User DE Cu Thickness', Fnc.SysGetAttrValue('User_DE_Cu_Thk'))
       //InProcessCuThk := Conver_UserDE_Cu(Fnc.SysGetAttrValue('User_DE_Cu_Thk'));
       UpdateInProcessCuThk(Conver_UserDE_Cu(Fnc.SysGetAttrValue('User_DE_Cu_Thk')));
       //ShowMessage('User DE Cu Thickness After Plating: ' + IntToStr(InProcessCuThk));
+
+      if process <> 'CappedVia' then
+        Fnc.SysSetAttrValue('DE_Cu_Thk_1', Fnc.SysGetAttrValue('User_DE_Cu_Thk')) //2649
+      //else
+      //  Fnc.SysSetAttrValue('DE_Cu_Thk_Cap', Fnc.SysGetAttrValue('User_DE_Cu_Thk'))
+      // There's no user DE Cu Thickness for Capped Via...
     end
     else
+    begin
+
       StepParamERP('DE Cu Thickness', vDE_Cu_Thk);
+
+      if process <> 'CappedVia' then
+        Fnc.SysSetAttrValue('DE_Cu_Thk_1', vDE_Cu_Thk) //2649
+      else
+        Fnc.SysSetAttrValue('DE_Cu_Thk_Cap', vDE_Cu_Thk);
+
+    end;
   end
   else  // NC RUN must = 2
   begin
+
     if Fnc.SysGetAttrValue('User_DE_Cu_Thk_2') <> '' then
     begin
+
       StepParamERP('2nd User DE Cu Thick.', Fnc.SysGetAttrValue('User_DE_Cu_Thk_2'));
       //InProcessCuThk := Conver_UserDE_Cu(Fnc.SysGetAttrValue('User_DE_Cu_Thk_2'));
       UpdateInProcessCuThk(Conver_UserDE_Cu(Fnc.SysGetAttrValue('User_DE_Cu_Thk_2')));
       //ShowMessage('2nd User DE Cu Thickness After Plating: ' + IntToStr(InProcessCuThk));
+      Fnc.SysSetAttrValue('DE_Cu_Thk_2', Fnc.SysGetAttrValue('User_DE_Cu_Thk_2')); //2649
+
     end
     else
+    begin
+
       StepParamERP('2nd DE Cu Thickness', vDE_Cu_Thk);
+      Fnc.SysSetAttrValue('DE_Cu_Thk_2', vDE_Cu_Thk); //2649
+
+    end;
+
   end;
 
-  //ShowMessage( 'After Plating Cu Thk ' + IntToStr(InProcessCuThk) + 'um'  );
 End;
 
 procedure Electrolytic_Cu_SD(Extra_Plt_Step : boolean);

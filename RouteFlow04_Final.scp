@@ -490,7 +490,7 @@ begin
 
   // 1310 Additiona Backdrill EC
   if ( Fnc.SysGetAttrValue('BackDrill') ) and
-     ( Fnc.SysGetAttrValue('BackDrill_EC')e ) and 
+     ( Fnc.SysGetAttrValue('BackDrill_EC') ) and 
      ( not GetsHiPot )
   then
     AddStep('Silver_Inspection', 'Silver_Inspection-01'); // 2622

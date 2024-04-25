@@ -6,8 +6,8 @@
 //HeaderImportExport<--
 procedure SetRulesVersion;
 begin
-
-  Fnc.SysSetAttrValue('Rules_Version', 3.60);  // 2614 Vertical Buffing Rule
+   Fnc.SysSetAttrValue('Rules_Version', 3.61); // 2649 Additional attribute under Route Assignment
+  //Fnc.SysSetAttrValue('Rules_Version', 3.60);  // 2614 Vertical Buffing Rule
                                                // 2615 Micro-Etch HAL
                                                // 2616 // VELCP Updated Flow
                                                // 2617 Additional Hitalex Lamination
@@ -24,10 +24,10 @@ begin
   //Fnc.SysSetAttrValue('Rules_Version', 1.10); // Blind Via Changes
   //Fnc.SysSetAttrValue('Rules_Version', 1.11); // Photo Sequence
   //Fnc.SysSetAttrValue('Rules_Version', 1.12); // Resist Printing Step with dual info
-                                              // New Drill Bit Instruction for Faradflex Material
-                                              // Include the Electrolytic Machine name on the process step
+                                                // New Drill Bit Instruction for Faradflex Material
+                                                // Include the Electrolytic Machine name on the process step
   //Fnc.SysSetAttrValue('Rules_Version', 1.13); // Desmear for Hybrid builds.
-  //Fnc.SysSetAttrValue('Rules_Version', 1.14);  // Updated Photo Sequence to exclude Conformal Mask
+  //Fnc.SysSetAttrValue('Rules_Version', 1.14); // Updated Photo Sequence to exclude Conformal Mask
   //Fnc.SysSetAttrValue('Rules_Version', 1.15); // New Rules for Pre/Post Oxide Bake. Oxide line now accepts 0.012 min for Faradflex Rules
   //Fnc.SysSetAttrValue('Rules_Version', 1.20); // Mech Blind Vias
   //Fnc.SysSetAttrValue('Rules_Version', 1.30); // 2 Layer Fixes
@@ -50,28 +50,28 @@ begin
                                                 //  784 - Scope Drill remarks for HDI jobs (multiple press or jobs with laser via
   //Fnc.SysSetAttrValue('Rules_Version', 1.60); // (364) Surface Cu thickness calculation correction
   //Fnc.SysSetAttrValue('Rules_Version', 1.61); // 797 Pulse Bond
-                                              // 795 Tight Press Fit Tolerance
-                                              // 793 Update Photo Process
-                                              // 802 Additional Special PRocess Info
-                                              // 803 Add Remarks for IL runcard for Faradflex
-                                              // 804 UV Process Step after resist for ENIG
+                                                // 795 Tight Press Fit Tolerance
+                                                // 793 Update Photo Process
+                                                // 802 Additional Special PRocess Info
+                                                // 803 Add Remarks for IL runcard for Faradflex
+                                                // 804 UV Process Step after resist for ENIG
   // Fnc.SysSetAttrValue('Rules_Version', 1.62); // 836 Instruction Code update
-                                               // 837 Mechanical drill should show A and B format the same as Backdrill format.
-                                               // 838 Core Build buffing remarks
-                                               // 839 Electrolytic Cu - Capped Via / 2nd Plating DE Cu Thickness Tolerance
-                                               // 840 Additional Baking step for EM888 material 
-                                               // 842 Baking additional Parameter for BC and BF job
-                                               // 843 Process Override Rule
+                                                 // 837 Mechanical drill should show A and B format the same as Backdrill format.
+                                                 // 838 Core Build buffing remarks
+                                                 // 839 Electrolytic Cu - Capped Via / 2nd Plating DE Cu Thickness Tolerance
+                                                 // 840 Additional Baking step for EM888 material
+                                                 // 842 Baking additional Parameter for BC and BF job
+                                                 // 843 Process Override Rule
    // Fnc.SysSetAttrValue('Rules_Version', 1.63); // 756 Update Aspect Ratio Calc for OL Photo PRocess
-                                               // 854, 856 New Job Attribute for Finished Thickness
+                                                 // 854, 856 New Job Attribute for Finished Thickness
    //Fnc.SysSetAttrValue('Rules_Version', 1.64); // 841 Primary Plug Before Pattern Cu Thinning Step
    //Fnc.SysSetAttrValue('Rules_Version', 1.65); // 844 Back Drill After Electrolytic Cu
    //Fnc.SysSetAttrValue('Rules_Version', 1.70); // 409 Paradigm Part Number Coding 
-                                               // 867 Update Back Drill After Mask Board Thickness
-                                               // 881 Limit Step Parameter name & Value Length
+                                                 // 867 Update Back Drill After Mask Board Thickness
+                                                 // 881 Limit Step Parameter name & Value Length
   //Fnc.SysSetAttrValue('Rules_Version', 1.71); // 887 Backdrill After Plate (Fix thickness values at various steps
   //Fnc.SysSetAttrValue('Rules_Version', 1.72); // 799 Surface Cu Thickness Value Format
-                                              // 845 ENEPIG finish with DSR330S-50-99R mask
+                                                // 845 ENEPIG finish with DSR330S-50-99R mask
    // Fnc.SysSetAttrValue('Rules_Version', 1.73); // 911 Change Chamfer B4 Res (Sel) to After Pattern Sel
                                                 // 910 Addition of Ultrasonic and After VELCP Hole Check
                                                 // 918 Backdrill at Sublam stage

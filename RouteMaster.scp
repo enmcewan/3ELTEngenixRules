@@ -598,6 +598,11 @@ begin
   // 2565 Add the Job Name Attribute to Route Step Assignment
   Fnc.SysSetAttrValue('JobNameAttribute', Fnc.GetJobData.Values['JobName']);
 
+  // 2649 - Initialize
+  Fnc.SysSetAttrValue('DE_Cu_Thk_1','');
+  Fnc.SysSetAttrValue('DE_Cu_Thk_2','');
+  Fnc.SysSetAttrValue('DE_Cu_Thk_Cap','');
+
 end;
 
 procedure RoutePreProcess;
