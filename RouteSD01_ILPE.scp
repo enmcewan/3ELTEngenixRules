@@ -94,7 +94,13 @@ begin
                                                FloatToStr(Fnc.SysGetAttrValue('FourHoleAlign_Y')) + 'mm' );
 
     // 2367 Additional Attribute
-    StepParamERP('CAD File Name', Fnc.SysGetAttrValue('CADFileName'));
+    StepParamERP('CAD File Name', MfgAttr('CADFileName'));
+
+    // 2659 CAD File for additional steps.
+    // CAD File Name was originally only assigned to Inner Layers. Copying the Inner value to Top Level
+    //ShowMessage(MfgAttrTL('CADFileName'));
+    if MfgAttrTL('CADFileName') = '' then
+      Fnc.SysSetAttrValueTopLevel('CADFileName', MfgAttr('CADFileName'));
 
   end
   else //Dummy Core

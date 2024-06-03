@@ -514,7 +514,11 @@ begin
   StepDeptERP('ELCHK-A');
   StepWCERP('ELCHK-A');
   
-  InsertECParameters;  // 1255 EC Parameter Attributes 
+  InsertECParameters;  // 1255 EC Parameter Attributes
+
+  // 2659
+  StepParamERP('CAD File Name', Fnc.SysGetAttrValue('CADFileName'));
+  
 end;
 
 procedure EC_FlyingProbe_SD;

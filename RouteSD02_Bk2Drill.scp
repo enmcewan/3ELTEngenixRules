@@ -246,9 +246,10 @@ var
   PBookLine: string;
   AltLine: string;
 begin
-  Prod_Res := '';
-  PBookLine:= '';
-  AltLine:= '';
+
+  Prod_Res  := '';
+  PBookLine := '';
+  AltLine   := '';
 
   StepDeptERP('PBOOK-A');
   StepWCERP('PBOOK-C0');               
@@ -262,6 +263,10 @@ begin
   
   // 2367 Additional Engenix Attribute
   StepParamERP('PCB Orientation', MfgAttrTL('PCBOrientation'));
+
+  // 2656
+  if TwoOrMoreSubsPressed then StepInstructionERP('PBOOK046');
+
 end;
 
 procedure Riveting_Common; // 2472
@@ -286,7 +291,7 @@ begin
   if NumOfCores > 8 then           
     StepInstructionERP('PBOOK013'); // 4 Rivet
   else
-    StepInstructionERP('PBOOK012'); // 2 Rivet 
+    StepInstructionERP('PBOOK012'); // 2 Rivet
   
 end;}
 
@@ -353,6 +358,7 @@ begin
     ShowMessage('Error!!! : No Resource Selected for Pin Bond. Check Panel Length & Thickness for each Inner/Sub');
 
   Fnc.SysSetAttrValue('Pin_Lam', false);
+
 end;
 
 procedure Hot_Press_SD;  
@@ -364,6 +370,7 @@ var
   SecondPlating : string;
 
 begin
+
   StepDeptERP('PRESS-A');
 
   if PinLamination then    // 2472
@@ -373,19 +380,8 @@ begin
 
   StepParamERP('Press Thickness', FormatFloat('0.000', PressThickness));
 
-  if Fnc.SysGetAttrValue('NCRunX2') = true then
+  if Fnc.SysGetAttrValue('NCRunX2') then
     StepInstructionERP('2NC_KRAFT'); // REMARK: PUT KRAFT PAPER IN BETWEEN PANEL
-
-  // 1246 Remove PBOOK008 Instruction
-  {if (
-      (BaseCuTopUM = 12) and
-      (
-       (CustCodeFirstChar = 'W') or      // Use of this needs to be confirmed
-       (CustCodeFirstChar = 'S')
-      )
-     )
-  then
-    StepInstructionERP('PBOOK008'); // =- USE COPPER FOIL - MWG FOIL }
 
   Material := TStringList.Create;
   Material.add('Foil');
@@ -404,6 +400,10 @@ begin
     StepMaterialsERP(Material, 1);
   else
     StepMaterialsERP(Material, FoilWtinKG);
+
+  // 2656
+  if TwoOrMoreSubsPressed then StepInstructionERP('PBOOK046');
+
 end;
 
 function IsLaserDrilled: boolean;
@@ -1107,12 +1107,16 @@ begin
   OL_AOI_Common_SD(false);
 
   case Fnc.SysGetAttrValueTopLevel('Circ_Repair') of
+
     'INSOL001' : StepInstructionERP('INSOL001'); // CIRCUIT REPAIR :REPAIR PER TRACE NOT EXCEEDING 2,BREAKS NOT EXCEEDING 3mm
     'INSOL002' : StepInstructionERP('INSOL002'); // CIRCUIT REPAIR :NOT ALLOWED
     'INSOL003' : StepInstructionERP('INSOL003'); // CIRCUIT REPAIR :A=3,B=3,SZ=3
     'INSOL004' : StepInstructionERP('INSOL004'); // CIRCUIT REPAIR :TRACE WELD MAX 2 PER PCB ADHESIVE TESTCIPC-7M-650 METHOD 2-4.28.1
     'INSOL005' : StepInstructionERP('INSOL005'); // CIRCUIT REPAIR :REPAIR TRACE NOT EXCEEDING 3MM,LENGTH NOT EXCEEDING 3MM
-    else         ShowMessage('Error!!! : Circuit Repair Value Out of Range');
+
+  else
+    ShowMessage('Error!!! : Circuit Repair Value Out of Range');
+
   end;
 
   StepParamERP('Land Area', Fnc.SysGetAttrValue('Land_Area'));
@@ -1122,12 +1126,11 @@ begin
   if CustCode_Rule('Customer') = 'FA' then
     StepInstructionERP('INSOL030'); //REMARK : Sampling cu pad scale measurement smart scope”
 
-  if (
-      ((BoardFinish = 'Immersion Tin') or (ProdCodeLX)) and
-      (LayupThickness <= 3.0)
-     )
-  then
+  if  ((BoardFinish = 'Immersion Tin') or (ProdCodeLX)) and (LayupThickness <= 3.0) then
     StepInstructionERP('IMTIN002'); // REMARK: Manual masking of resist alignment pads.”
+
+  if ( MechBlindViaSide <> 'None' ) and ( NCRun = 1 ) then    // MEch Blind Vias 2657
+    StepParamERP('Remark', 'With Mech Blind Vias');
 
 end;
 
@@ -1727,7 +1730,7 @@ begin
     StepParamERP('Entry Sheet Material', Entry_Sheet_Mat);
 
     StepParamERP('NC Stage', 'First NC'); // 2466
-    
+
     if Fnc.SysGetAttrValue('NCRunX2') then
     begin
       StepInstructionERP('DRILL010');  // REMARK : 1st Drilling
@@ -2547,26 +2550,22 @@ begin
     if Fnc.SysGetAttrValue('User_DE_Cu_Thk') <> '' then
     begin
 
-      StepParamERP('User DE Cu Thickness', Fnc.SysGetAttrValue('User_DE_Cu_Thk'))
-      //InProcessCuThk := Conver_UserDE_Cu(Fnc.SysGetAttrValue('User_DE_Cu_Thk'));
+      StepParamERP('User DE Cu Thickness', Fnc.SysGetAttrValue('User_DE_Cu_Thk'));
+
       UpdateInProcessCuThk(Conver_UserDE_Cu(Fnc.SysGetAttrValue('User_DE_Cu_Thk')));
-      //ShowMessage('User DE Cu Thickness After Plating: ' + IntToStr(InProcessCuThk));
 
       if process <> 'CappedVia' then
-        Fnc.SysSetAttrValue('DE_Cu_Thk_1', Fnc.SysGetAttrValue('User_DE_Cu_Thk')) //2649
-      //else
-      //  Fnc.SysSetAttrValue('DE_Cu_Thk_Cap', Fnc.SysGetAttrValue('User_DE_Cu_Thk'))
-      // There's no user DE Cu Thickness for Capped Via...
+        StepParamERP('DE_Cu_Thk_1', Fnc.SysGetAttrValue('User_DE_Cu_Thk')) //2649
+      else
+        StepParamERP('DE_Cu_Thk_1', '') //2649
     end
     else
     begin
 
       StepParamERP('DE Cu Thickness', vDE_Cu_Thk);
 
-      if process <> 'CappedVia' then
-        Fnc.SysSetAttrValue('DE_Cu_Thk_1', vDE_Cu_Thk) //2649
-      else
-        Fnc.SysSetAttrValue('DE_Cu_Thk_Cap', vDE_Cu_Thk);
+      // Fake Step Param used in QR Info. this gets deleted Post Process.
+      StepParamERP('DE_Cu_Thk_1', vDE_Cu_Thk);
 
     end;
   end
@@ -2577,10 +2576,10 @@ begin
     begin
 
       StepParamERP('2nd User DE Cu Thick.', Fnc.SysGetAttrValue('User_DE_Cu_Thk_2'));
-      //InProcessCuThk := Conver_UserDE_Cu(Fnc.SysGetAttrValue('User_DE_Cu_Thk_2'));
+
       UpdateInProcessCuThk(Conver_UserDE_Cu(Fnc.SysGetAttrValue('User_DE_Cu_Thk_2')));
-      //ShowMessage('2nd User DE Cu Thickness After Plating: ' + IntToStr(InProcessCuThk));
-      Fnc.SysSetAttrValue('DE_Cu_Thk_2', Fnc.SysGetAttrValue('User_DE_Cu_Thk_2')); //2649
+
+      StepParamERP('DE_Cu_Thk_1', Fnc.SysGetAttrValue('User_DE_Cu_Thk_2')) //2649
 
     end
     else
@@ -2588,10 +2587,7 @@ begin
 
       StepParamERP('2nd DE Cu Thickness', vDE_Cu_Thk);
 
-      if process <> 'CappedVia' then
-        Fnc.SysSetAttrValue('DE_Cu_Thk_2', vDE_Cu_Thk) //2649
-      else
-        Fnc.SysSetAttrValue('DE_Cu_Thk_Cap', vDE_Cu_Thk);
+      StepParamERP('DE_Cu_Thk_1', vDE_Cu_Thk);
 
     end;
 

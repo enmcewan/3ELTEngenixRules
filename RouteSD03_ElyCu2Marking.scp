@@ -11,7 +11,8 @@
   CT_CuPlt_GM,
   CT_CuPlt_Line,
   CT_OLPhoto,                                                                                                     
-  CT_SearchLibrary;
+  CT_SearchLibrary,
+  RouteFunctions_Drilling;
 
 var
   PhotoLine: string;                                    
@@ -28,7 +29,7 @@ begin
   UpdateInProcessCuThk(InProcessCuThk + 10);
   
   // 1107 Additional Run Card info - Note sequential build
-  if ( Fnc.SysGetAttrValue('Seq_Build') = true ) or ( SubParentIsSequential ) then 
+  if ( Fnc.SysGetAttrValue('Seq_Build') = true ) or ( SubParentIsSequential ) then
     StepParamERP('Remark', 'Sequential Build'); 
 end;                                     
 
@@ -228,9 +229,12 @@ begin
 
       if ((Fnc.SysGetAttrValue('Design_Type') = 'Flip Chip') or (ProdCodeLX)) then
         StepInstructionERP('EXPOL001'); // REMARK : OFF BUFFING
-    //end;
+
+      // 2659
+      StepParamERP('CAD File Name', Fnc.SysGetAttrValue('CADFileName'));
+
   end;
-end;                     
+end;
 
 procedure OL_Photo_FSF; // 1114 Fixed Scale Factor Info
 var
@@ -790,6 +794,10 @@ begin
 
   // 2389 Addtional Remark under Resist Spry Coat
   if SequentialAndSubLamFormsOuterLayer then StepInstructionERP('RESCO061');
+
+  // 2659
+  StepParamERP('CAD File Name', Fnc.SysGetAttrValue('CADFileName'));
+
 end;
                
 procedure ResSprayCoatPT_SD;

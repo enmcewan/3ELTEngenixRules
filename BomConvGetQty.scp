@@ -28,7 +28,7 @@ begin
   PrimeQty := 0;
   AltQty := 0;
   StepNum := 0;            
-                                   
+
   // Foils always get standard qty for the BOM
   if Fnc.SysErpBomTable.FieldByName('GenMatrlType').AsString = 'Foil' then
   begin
@@ -45,7 +45,8 @@ begin
     else if Fnc.SysErpBomTable.FieldByName('ErpMatrlUom').AsString = 'SHEET' then
       PrimeQty := 1;
     else
-      MessageDlg('Unknown BOM Unit ' + Fnc.SysErpBomTable.FieldByName('ErpMatrlUom').AsString + ' for Cu Foil', mtWarning, SetOf([mbOK]), 0 ); 
+      PrimeQty := 1;
+      //MessageDlg('Unknown BOM Unit ' + Fnc.SysErpBomTable.FieldByName('ErpMatrlUom').AsString + ' for Cu Foil', mtWarning, SetOf([mbOK]), 0 ); 
   end
   else // PPG & Core get 0.0 qty per BOM for sample Jobs.
   begin
@@ -55,7 +56,7 @@ begin
       PrimeQty := 1;
       
       // 1183 Wrong Thin Core BOM Unit
-      if Fnc.SysErpBomTable.FieldByName('ErpMatrlUom').AsString <> 'PANEL' then
+      if Fnc.SysErpBomTable.FieldByName('ErpMatrlUom').AsString <> 'PART' then
         MessageDlg('BOM material Unit for ' +
                    Fnc.SysErpBomTable.FieldByName('ErpMatrlNum').AsString + ' is ' +
                    Fnc.SysErpBomTable.FieldByName('ErpMatrlUom').AsString + ' not PANEL. ' +

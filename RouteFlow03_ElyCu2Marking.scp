@@ -625,6 +625,12 @@ begin
             ( Fnc.SysGetAttrValue('Ave_Min_Th') > 20 )) and  //
          ( Fnc.SysGetAttrValue('Aspect_Ratio_Val') > 6 ))// or  // 2401 // 2616
          //( CustCode_Rule('Customer') = 'FA' )  // // 1260 Updated Cu Via Filling Rule
+         or  // Request from Herole 24/05/15
+           (
+             CustCode_Rule('Customer') = 'FA' and
+             Fnc.SysGetAttrValue('Min_Drill_Size') >= 0.20 and
+             Fnc.SysGetAttrValue('Min_Drill_Size') <= 0.35
+           )
       then
         AddStep('Strike_Plating_FV', 'Strike_Plating-CFV'); // 2469
 

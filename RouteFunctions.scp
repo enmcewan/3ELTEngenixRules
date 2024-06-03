@@ -3435,6 +3435,8 @@ begin
 
   if SubList.Count >= 2 then result := true;
 
+  SubList.Free;
+
 end;                  
 
 function SubParentIsSequential : boolean;  // Thin Core Remarks
@@ -3452,7 +3454,51 @@ begin
   else
     if SubList.Count >= 2 then result := true 
                                                           
-  //ShowMessage(ParentIsSequential);   
+  //ShowMessage(ParentIsSequential);
+  SubList.Free;
+
+end;
+
+function TwoOrMoreSubsPressed: boolean;
+var
+
+  SubList : TStringList;
+
+  i,
+  SubCount: integer;
+
+  LastMfgPartType: string;
+
+begin
+
+  result := false;
+  SubCount := 0;
+  LastMfgPartType := '';
+
+  SubList := Fnc.SysGetItemAttrValueList('ItemMatrlDesc', cStackupMfgSubAssy + ';' + cStackupMfgSubLevel, 0, false);
+
+  if SubList.Count > 0 then
+  begin
+
+    for i := 0 to SubList.Count -1 do
+    begin
+
+      if pos('SubAssembly', SubList.Strings[i]) > 0 then
+      begin
+
+         if LastMfgPartType = 'SubAssembly' then result := true;
+
+         LastMfgPartType := 'SubAssembly';
+
+      end
+      else // InnerLayer
+        LastMfgPartType := 'InnerLayer';
+
+    end;
+
+    SubList.Free;
+
+  end;
 
 end;
 
@@ -3470,7 +3516,7 @@ begin
       result := true;                                     
   end;
   //ShowMessage(Result);
-
+  SubList.Free;
 end;
 
 function SandwichCore : boolean;  // 1229 PEP Flow option for Sub-assembly build.

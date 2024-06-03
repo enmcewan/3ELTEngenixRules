@@ -25,11 +25,11 @@ begin
   GetPartPPGFamilies;
   SetTopBotLayerNames;
   TotalThickestCuUM;
-  LayupThickness := Fnc.SysGetAttrValue('LayupThickness');
-  SetThicknessRequirements;
+  //LayupThickness := Fnc.SysGetAttrValue('LayupThickness');
+  //SetThicknessRequirements;
   GET_VCUT_TYPE;
   GetCopperInfo;
-  CheckProdPartUsesQualMats;             
+  CheckProdPartUsesQualMats;
   Find2milorlessCores; // Special Process Description
   SetMatTGClass;   // CNC Entry Sheet updated Rule (613)
 
@@ -599,17 +599,36 @@ begin
   Fnc.SysSetAttrValue('JobNameAttribute', Fnc.GetJobData.Values['JobName']);
 
   // 2649 - Initialize
-  Fnc.SysSetAttrValue('DE_Cu_Thk_1','');
-  Fnc.SysSetAttrValue('DE_Cu_Thk_2','');
-  Fnc.SysSetAttrValue('DE_Cu_Thk_Cap','');
+  //Fnc.SysSetAttrValue('ARSP_DE_Cu_Thk_1','');
+  //Fnc.SysSetAttrValue('ARSP_DE_Cu_Thk_2','');
+  //Fnc.SysSetAttrValue('ARSP_DE_Cu_Thk_Cap','');
+
+  // 2659 CAD File for additional steps.
+  // CAD File Name was originally only assigned to Inner Layers.
+  // Inner Layers Set the Top-Level Attribute for old Jobs (Or the value has to be manually entered or copied in)
+  // Sub-Assemblies need to get the value from the Top Level (Or the value has to be manually entered or copied in)
+  // For New Jobs, only need to use the Top-Level Attribute
+  if MfgPartType <> 'Top' then
+  begin
+
+    if (MfgAttrTL('CADFileName') <> '') and (MfgAttr('CADFileName') = '') then
+      Fnc.SysSetAttrValue('CADFileName', MfgAttrTL('CADFileName'));
+
+  end;
+
+  ShowMessage(MfgAttr('CADFileName'));
 
 end;
 
 procedure RoutePreProcess;
 begin
 
-  if ( not Fnc.SysRouteGenIsInsertingManualStep ) //and
-     //( not Fnc.SysRouteGenIsDeletingStep ) ---Waiting for 5.2.0 RC1 release upgrade.
+  // Awlays init vars used in Manual route Steps & 
+  LayupThickness := Fnc.SysGetAttrValue('LayupThickness');
+  SetThicknessRequirements;
+
+  if ( not Fnc.SysRouteGenIsInsertingManualStep ) and
+     ( not Fnc.SysRouteGenIsDeletingStep )
   then
     CheckAndGenPartData;
 
@@ -654,7 +673,7 @@ begin
   if ((MfgPartType = 'Inn') or (MfgPartType = 'DmC')) then  //Simple Inner or Dummy Core
   begin
 
-    if FindNumberOfDrillFiles = 0 then                       
+    if FindNumberOfDrillFiles = 0 then
       InnerLayerPE;
     else                  
       RouteFlow02;
@@ -673,6 +692,9 @@ var
   i,
   routeStep : integer;
   photoSeqStr : string;
+
+  aTable: TSysTable;
+  NumSteps: integer;
 
 begin
 
@@ -703,9 +725,26 @@ begin
       Fnc.SysRouteGenInsAddlParam(routeStep, 'Erp', 'Photo Sequence', photoSeqStr, '', '', false, '', '', '');
 
     end;
-    
+
   end;                                                            
   
   SetRulesVersion;
+
+  // Delete "fake" Step Param used for QR-Info Only
+  aTable := Fnc.SysRouteGenGetStatusMfgParts;
+
+  if aTable.Locate('MfgPartName', Fnc.SysGetAttrValue('ItemMatrlDesc'), SetOf([])) then
+  begin
+
+      NumSteps := aTable.FieldByName('NumRouteSteps').AsInteger;
+
+      for i := 1 to NumSteps do
+      begin
+
+         Fnc.SysRouteGenDelAddlParam(i, 'DE_Cu_Thk_1');
+
+      end;
+
+  end;
 
 end;
