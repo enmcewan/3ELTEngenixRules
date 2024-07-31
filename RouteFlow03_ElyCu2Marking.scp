@@ -312,7 +312,7 @@ begin
   begin
     // Determine if process is Standard or Side-by-Side 1463
     if Epoxy_Plug_Process = 'Standard' then 
-    begin        
+    begin
       User_Seq := Fnc.SysGetAttrValue('EpoxyPlug_US');
   
       if User_Seq = 'Default' then
@@ -376,7 +376,7 @@ begin
     UpdateInProcessCuThk(Cu_Thk_After_EP);
 
     // 2618 Additional Hole Check Step after Epoxy Plug
-    if MfgPartType = 'Top' then
+    if ( MfgPartType = 'Top' ) and ( not Fnc.SysGetAttrValue('NCRunX2') ) then // + and Not 2X NC - request from Herole 10/6/24
     begin
 
       if Fnc.SysGetAttrValue('Min_Drill_Size_NP') <= 0.5 then
@@ -643,49 +643,68 @@ begin
 
   if NCRun = 2 then AddStep('Electrolytic_Cu_2XNC', 'Electrolytic_Cu_2XNC' + '0' + IntToStr(MetalizationRun));
 
-  if (RequiredPlatingThk > 41) and (Fnc.SysGetAttrValue('CuFilledVias') = false) then
+  if (RequiredPlatingThk > 41) and ( not Fnc.SysGetAttrValue('CuFilledVias')) then
     AddStep('Electrolytic_Cu_2', 'Electrolytic_Cu_201');
 
+  if NCRun = 1 then // 2671
+  begin
 
-  if  (( Plating_Line = 'P4' ) or  // 2467 'PAL4' then
-       ( Plating_Line = 'PAL4' ) or
-       ( Plating_Line = 'PAL5' ) or
-       ( Plating_Line = 'PAL6' ) or
-       ( Plating_Line = 'PAL7' ) or
-       ( Plating_Line = 'P6 / P7' ))  // '2467 PAL6 / PAL7'
-    or
-      ( Fnc.SysGetAttrValue('Min_Drill_Size') <= 0.25 ) and ( Plating_Line = 'MCP' )
-    or
-      ( Fnc.SysGetAttrValue('NCRunX2') = false ) and ( Fnc.SysGetAttrValue('EpoxySide') <> 'None' )
-  then
-    AddStep('CuHoleCheck', 'CuHoleCheck' + '0' + IntToStr(MetalizationRun));
+    if PlatingLineP4orP6orP7 or
+       (( Plating_Line = 'MCP' ) and (( Fnc.SysGetAttrValue('Min_Drill_Size') <= 0.25 ) or ( Fnc.SysGetAttrValue('EpoxySide') <> 'None' )))
+      //( Fnc.SysGetAttrValue('NCRunX2') = false ) and ( Fnc.SysGetAttrValue('EpoxySide') <> 'None' ) // Commented out NCRunX2 = false. If it's false then NCRun will always = 1
+    then
+    begin
+
+      AddStep('CuHoleCheck', 'CuHoleCheck' + '0' + IntToStr(MetalizationRun));
+
+      StepInstructionERP('HOLCP007');
+
+    end;
+
+  end
+  else // NC Run = 2
+  begin
+
+    if PlatingLineP4orP6orP7 then
+    begin
+
+      AddStep('CuHoleCheck', 'CuHoleCheck' + '0' + IntToStr(MetalizationRun));
+      StepInstructionERP('HOLCP008');
+
+    end;
+
+  end;
 
   if ( Fnc.SysGetAttrValue('Pre_Photo_CuThin') ) then
   begin
-    if ( Fnc.SysGetAttrValue('NCRunX2') = true ) or ( Fnc.SysGetAttrValue('EpoxyPlug_CuThin_Process') = 'None' ) then  // 1196 Pre-Photo Cu Thinning
+
+    if ( Fnc.SysGetAttrValue('NCRunX2') ) or ( Fnc.SysGetAttrValue('EpoxyPlug_CuThin_Process') = 'None' ) then  // 1196 Pre-Photo Cu Thinning
     begin
+
       AddStep('Pre_Photo_Cu_Thin', 'Pre_Photo_Cu_Thin01');
       UpdateInProcessCuThk(ConvertStrtoInt( Fnc.SysGetAttrValue('Pre_Photo_CuThin_Spec') ));
-    end;                                  
+
+    end;
+
   end;
 
   if (( Fnc.SysGetAttrValue('BackDrill_Epoxy') ) and ( Fnc.SysGetAttrValue('NCRunX2') = false )) then // 844 Backdrill after Electrolytic Cu
     Back_Drill_Epoxy;                
                           
-  if (
+  if //(
       (
-       ( Fnc.SysGetAttrValue('CappedVia') = true ) or
+       ( Fnc.SysGetAttrValue('CappedVia') ) or
        ( Fnc.SysGetAttrValue('EpoxySide') <> 'None' ) or
-       ( Fnc.SysGetAttrValue('BackDrill_Epoxy') = true ) // 844 Backdrill after Electrolytic Cu
+       ( Fnc.SysGetAttrValue('BackDrill_Epoxy') ) // 844 Backdrill after Electrolytic Cu
       )
-      and ( Fnc.SysGetAttrValue('NCRunX2') = false )
-     )
+      and ( not Fnc.SysGetAttrValue('NCRunX2') )
+     //)
   then
   begin                                    
     if (( Fnc.SysGetAttrValue('EpoxySide') <> 'None' ) or ( Fnc.SysGetAttrValue('BackDrill_Epoxy') = true  )) then
       Epoxy_Plugging;
 
-    if Fnc.SysGetAttrValue('CappedVia') = true then
+    if Fnc.SysGetAttrValue('CappedVia') then
     begin
     {Ink Plug with Flash Steps}
     // Specific Instructions and Route step parames required. Add Here instead of step rule

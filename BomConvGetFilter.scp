@@ -4,7 +4,7 @@
 //ScriptType=1
 //ScriptGroup=BOM Conversion
 //HeaderImportExport<--
-function Df : float;                                                                                                                                                                                                                                                                                                                                                                                                                                                                    
+function Df : float;
 begin
   result := 0.0;
 
@@ -99,7 +99,7 @@ begin
   case PPG_Style of
     '1080' : result := 'A';            
     '106 ' : result := 'B';
-    '106' : result := 'B';
+    '106'  : result := 'B';
     '106S' : result := 'B';
     '106L' : result := 'B'; 
     '2116' : result := 'C';
@@ -317,8 +317,8 @@ begin
     // Convert Engenix Material Family to Paradigm Inventory Family Code
     case Fnc.GetStackupMaterialValue('Family') of
       '185HR' : begin PDM_Mat_Type := 'N'; Isola := true end; //Multiple Supplier Codes, handled below
-      'FR370HR' : begin if Get_Core_CuType = 'RTF' then PDM_Mat_Type := 'S' else PDM_Mat_Type := 'R' ;  Isola := true end; //Multiple Supplier Codes, handled below 
-      'FR408HR' : begin PDM_Mat_Type := '5'; Isola := true end;//Multiple Supplier Codes, handled below          
+      'FR370HR' : begin if Get_Core_CuType = 'RTF' then PDM_Mat_Type := 'S' else PDM_Mat_Type := 'R' ;  Isola := true end; //Multiple Supplier Codes, handled below
+      'FR408HR' : begin PDM_Mat_Type := '5'; Isola := true end;//Multiple Supplier Codes, handled below
       'IS415' : begin PDM_Mat_Type := '3'; PDM_Supplier := 'AS'; end; 
       'MCL-E-679F' : begin PDM_Mat_Type := 'C'; PDM_Supplier := 'HL'; end;
       'MCL-E-679FG(S)' : begin PDM_Mat_Type := 'V'; PDM_Supplier := 'HL'; end; 
@@ -349,8 +349,8 @@ begin
       'TU-933' : begin PDM_Mat_Type := 'B'; PDM_Supplier := 'TU' end;                                      
       'S7439' :  begin PDM_Mat_Type := '5'; PDM_Supplier := 'SY'; end;
       'S1141KF' : begin PDM_Mat_Type := 'A'; PDM_Supplier := 'SY'; end; 
-      'S1000-2M' : begin PDM_Mat_Type := 'H'; PDM_Supplier := 'SY'; end;                     
-      'S7335' : begin PDM_Mat_Type := 'C'; PDM_Supplier := 'SY'; end;   
+      'S1000-2M' : begin PDM_Mat_Type := 'H'; PDM_Supplier := 'SY'; end;
+      'S7335' : begin PDM_Mat_Type := 'C'; PDM_Supplier := 'SY'; end;
       'S7338' : begin PDM_Mat_Type := 'P'; PDM_Supplier := 'SY'; end;
       'Megtron 6G' : begin PDM_Mat_Type := 'C'; PDM_Supplier := 'PN'; end;                        
       'R1566' : begin end;  // Qualified, no code for purchase yet. 
@@ -398,12 +398,12 @@ begin
       'MCL-E-67' : begin end; // Not in material sheet
       'Megtron 6N': begin PDM_Mat_Type := 'H'; PDM_Supplier := 'PN' end; 
       'Megtron 7': begin PDM_Mat_Type := 'I'; PDM_Supplier := 'PN' end;                         
-      'NPG-170N' : begin PDM_Mat_Type := 'H' PDM_Supplier := 'NY' end;                
+      'NPG-170N' : begin PDM_Mat_Type := 'H' PDM_Supplier := 'NY' end;
       'TU-863' : begin PDM_Mat_Type := 'H'; PDM_Supplier := 'TU' end;
       'TU-863+' : begin PDM_Mat_Type := 'J'; PDM_Supplier := 'TU' end; 
       'TU-865' : begin PDM_Mat_Type := 'I'; PDM_Supplier := 'TU' end;
       'TU-883 SP' : begin PDM_Mat_Type := 'G'; PDM_Supplier := 'TU' end;
-      'TU-933+' : begin PDM_Mat_Type := 'P'; PDM_Supplier := 'TU' end;  
+      'TU-933+' : begin PDM_Mat_Type := 'P'; PDM_Supplier := 'TU' end;
       
     End; // End Case 
   
@@ -542,7 +542,7 @@ begin
           + QuotedStr('**' + CoreGrpSearchTextI1)
           + ' or Item LIKE '                 
           + QuotedStr('**' + CoreGrpSearchTextI2)
-          
+                                                                                   
         TightFilter := 
         'Item LIKE ' 
         + QuotedStr('**' + CorePrtSearchTextI1)                    
@@ -601,15 +601,15 @@ begin
     case Fnc.GetStackupMaterialValue('Family') of
       '185HR' : begin PDM_Mat_Type := 'N'; Isola := true end; //Multiple Supplier Codes, handled below
       'FR370HR' : begin PDM_Mat_Type := 'R' ;  Isola := true end; //Multiple Supplier Codes, handled below 
-      'FR408HR' : begin PDM_Mat_Type := '5'; Isola := true end;//Multiple Supplier Codes, handled below          
+      'FR408HR' : begin PDM_Mat_Type := '5'; Isola := true end;//Multiple Supplier Codes, handled below
       'IS415' : begin PDM_Mat_Type := '3'; PDM_Supplier := 'AS'; end; 
       'MCL-E-679F' : begin PDM_Mat_Type := 'C'; PDM_Supplier := 'HL'; end;                
       'MCL-E-679FG(S)' : begin PDM_Mat_Type := 'V'; PDM_Supplier := 'HL'; end; 
       'MCL-E-700G(R)' : PDM_Mat_Type := 'N';  //There is another 700G option in Not Qualified List  //Multiple Supplier Codes, handled below
-      'MCL-HE-679G' : PDM_Mat_Type := '1'; //Multiple Supplier Codes, handled below 
+      'MCL-HE-679G' : PDM_Mat_Type := '1'; //Multiple Supplier Codes, handled below
       'Megtron 4' : begin PDM_Mat_Type := '5'; PDM_Supplier := 'PN'; end;
       //'Megtron 6(K)' : begin PDM_Mat_Type := 'P'; PDM_Supplier := 'PN'; end;
-      'Megtron 6' : begin PDM_Mat_Type := 'P'; PDM_Supplier := 'PN'; end; 
+      'Megtron 6' : begin PDM_Mat_Type := 'P'; PDM_Supplier := 'PN'; end;
       'N4000-11' : begin PDM_Mat_Type := 'T' ; PDM_Supplier := 'NL'; end;
       'N4000-12' : begin PDM_Mat_Type := 'Y'; PDM_Supplier := 'NL'; end;
       'N4000-12SI' : begin PDM_Mat_Type := '8'; PDM_Supplier := 'NL'; end;
@@ -632,7 +632,7 @@ begin
       'TU-933' : begin PDM_Mat_Type := 'B'; PDM_Supplier := 'TU' end;                                      
       'S7439' :  begin PDM_Mat_Type := '5'; PDM_Supplier := 'SY'; end;
       'S1141KF' : begin PDM_Mat_Type := 'A'; PDM_Supplier := 'SY'; end; 
-      'S1000-2M' : begin PDM_Mat_Type := 'R'; PDM_Supplier := 'SY'; end; 
+      'S1000-2M' : begin PDM_Mat_Type := 'R'; PDM_Supplier := 'SY'; end;
       'S7335' : begin PDM_Mat_Type := 'C'; PDM_Supplier := 'SY'; end;
       'S7338' : begin PDM_Mat_Type := 'P'; PDM_Supplier := 'SY'; end;
       'Megtron 6' : begin PDM_Mat_Type := 'P'; PDM_Supplier := 'PN'; end;
@@ -652,7 +652,7 @@ begin
       'GA-170-LL' : begin PDM_Mat_Type := 'R'; PDM_Supplier := 'GE'; end;
       'IT-150DA' : begin PDM_Mat_Type := 'P'; PDM_Supplier := 'IT'; end;
       'IT-158' : begin PDM_Mat_Type := 'L'; PDM_Supplier := 'IT'; end; 
-      'IT-180A' : begin PDM_Mat_Type := 'R'; PDM_Supplier := 'IT'; end; 
+      'IT-180A' : begin PDM_Mat_Type := 'R'; PDM_Supplier := 'IT'; end;
       'IT-170GRA1' : begin end; //Evaluation, no code 
       'IT-180I' : begin end;  //Evaluation, no code                        
       'NP-140TL' : begin PDM_Mat_Type := 'A'; PDM_Supplier := 'NY'; end;
@@ -672,7 +672,7 @@ begin
       'LW-910G' : begin PDM_Mat_Type := 'H'; PDM_Supplier := 'HL'; end;
       'MCL-E-679F(J)' : begin PDM_Mat_Type := 'R'; PDM_Supplier := 'HK'; end;
       'NP-155F' : begin PDM_Mat_Type := 'C'; PDM_Supplier := 'NY'; end; 
-      'FR402' : begin PDM_Mat_Type := 'A' ;  Isola := true end;     
+      'FR402' : begin PDM_Mat_Type := 'A' ;  Isola := true end;
       'FR406' : begin PDM_Mat_Type := 'B' ;  Isola := true end; 
       'MCL-E-75G' : begin PDM_Mat_Type := 'N' end;
       'Megtron 6N': begin PDM_Mat_Type := 'H'; PDM_Supplier := 'PN' end;
@@ -680,9 +680,9 @@ begin
       'NPG-170N' : begin PDM_Mat_Type := 'H' PDM_Supplier := 'NY' end; 
       'TU-863' : begin PDM_Mat_Type := 'H'; PDM_Supplier := 'TU' end;
       'TU-863+' : begin PDM_Mat_Type := 'J'; PDM_Supplier := 'TU' end; 
-      'TU-865' : begin PDM_Mat_Type := 'I'; PDM_Supplier := 'TU' end;   
+      'TU-865' : begin PDM_Mat_Type := 'I'; PDM_Supplier := 'TU' end;
       'TU-883 SP' : begin PDM_Mat_Type := 'G'; PDM_Supplier := 'TU' end;
-      'TU-933+' : begin PDM_Mat_Type := 'P'; PDM_Supplier := 'TU' end;  
+      'TU-933+' : begin PDM_Mat_Type := 'P'; PDM_Supplier := 'TU' end;
     End; // End Case     
                       
     PDM_PPGStyle := GetPPGStyle(Fnc.GetStackupMaterialValue('Description'));

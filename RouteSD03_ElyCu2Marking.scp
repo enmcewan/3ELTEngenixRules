@@ -23,7 +23,7 @@ var
 procedure Flash_Plating_SD;
 begin
   StepDeptERP('COPPL-E');
-  StepWCERP('COPPL-E');
+  StepWCERP('COPPL-E');          
   StepParamERP('Process', 'Flash Plating');
   //InProcessCuThk := InProcessCuThk + 10;
   UpdateInProcessCuThk(InProcessCuThk + 10);

@@ -4998,7 +4998,7 @@ end;
 
 procedure AddBoardFinishAsAttribute; // 1223 Additional Surface Finish info under Electrolytic Cu step  // 1257 Add to SM
 begin
-
+                        
   if MfgPartType = 'Top' then
   begin
 
@@ -5341,5 +5341,22 @@ begin
     CoreList.Free;
 
   end;
+
+end;
+
+function PlatingLineP4orP6orP7 : boolean;
+begin
+
+  result := false;
+
+  if
+    ( Plating_Line = 'P4' ) or  // 2467 'PAL4' then
+    ( Plating_Line = 'PAL4' ) or
+    ( Plating_Line = 'PAL5' ) or
+    ( Plating_Line = 'PAL6' ) or
+    ( Plating_Line = 'PAL7' ) or
+    ( Plating_Line = 'P6 / P7' ) // '2467 PAL6 / PAL7'
+   then
+     result := true;
 
 end;

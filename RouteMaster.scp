@@ -616,8 +616,6 @@ begin
 
   end;
 
-  ShowMessage(MfgAttr('CADFileName'));
-
 end;
 
 procedure RoutePreProcess;

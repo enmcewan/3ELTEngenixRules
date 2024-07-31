@@ -545,7 +545,19 @@ begin
     
   Metalization;
   AddStep('Electrolytic_Cu_1', 'Electrolytic_Cu_101');
-  AddStep('CuHoleCheck', 'CuHoleCheck01');
+  //AddStep('CuHoleCheck', 'CuHoleCheck01');
+
+  if PlatingLineP4orP6orP7 or
+   (( Plating_Line = 'MCP' ) and (( Fnc.SysGetAttrValue('Min_Drill_Size') <= 0.25 ) or ( Fnc.SysGetAttrValue('EpoxySide') <> 'None' )))
+  //( Fnc.SysGetAttrValue('NCRunX2') = false ) and ( Fnc.SysGetAttrValue('EpoxySide') <> 'None' ) // Commented out NCRunX2 = false. If it's false then NCRun will always = 1
+  then
+  begin
+
+    AddStep('CuHoleCheck', 'CuHoleCheck' + '0' + IntToStr(MetalizationRun));
+
+    StepInstructionERP('HOLCP007');
+
+  end;
   
   if ( ( Fnc.SysGetAttrValue('BackDrill_Epoxy') ) and ( Fnc.SysGetAttrValue('NCRunX2') = true )) then // 844 Backdrill after Electrolytic Cu
     Back_Drill_Epoxy;

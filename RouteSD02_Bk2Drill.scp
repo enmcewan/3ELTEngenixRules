@@ -908,7 +908,7 @@ begin
 
   if ((Fnc.SysGetAttrValue('NCRunX2') = true) and (NCRun = 0)) then
     StepInstructionERP('2NC_PESHET'); // REMARK: PUT PE SHEET IN BETWEEN PANEL
-    
+
 end;
 
 procedure MicroEtch_SD;
@@ -1855,43 +1855,45 @@ end;
 
 procedure InsertPressFitRemarks;
 var
-  pressFitSpec1 : string;
-  pressFitSpec2 : string;
+  pressFitSpec1,
+  pressFitSpec2,
   pressFitSpec3 : string;
 begin
+
   StepParamERP('Remark', 'With Tight Press Fit Tolerance');
 
   pressFitSpec1 := Fnc.SysGetAttrValue('Tight_PressFit_Spec');
   pressFitSpec2 := Fnc.SysGetAttrValue('Tight_PressFit_Spec_2');
   pressFitSpec3 := Fnc.SysGetAttrValue('Tight_PressFit_Spec_3');
 
-  if pressFitSpec1 <> '' then
-    StepParamERP('Press Fit Spec 1', pressFitSpec1);
+  if pressFitSpec1 <> '' then StepParamERP('Press Fit Spec 1', pressFitSpec1);
 
-  if pressFitSpec2 <> '' then
-    StepParamERP('Press Fit Spec 2', pressFitSpec2);
+  if pressFitSpec2 <> '' then StepParamERP('Press Fit Spec 2', pressFitSpec2);
 
-  if pressFitSpec3 <> '' then
-    StepParamERP('Press Fit Spec 3', pressFitSpec3);
-
+  if pressFitSpec3 <> '' then StepParamERP('Press Fit Spec 3', pressFitSpec3);
 
 end;
 
 procedure CuHoleCheck_SD;
 begin
+
   StepDeptERP('HOLCP-A');
   StepWCERP('HOLCP-A');
 
-  if Fnc.SysGetAttrValue('Tight_PressFit_Tol') = true then  // 795 Tight Press Fit Tolerance rule
+  if Fnc.SysGetAttrValue('Tight_PressFit_Tol') then  // 795 Tight Press Fit Tolerance rule
+  begin
+
+    if Fnc.SysGetAttrValue('NCRunX2') then
     begin
-      if Fnc.SysGetAttrValue('NCRunX2') = true then
-      begin
-        if NCRun = 2 then
-          InsertPressFitRemarks;
-      end
-      else
-        InsertPressFitRemarks;
-    end;
+
+      if NCRun = 2 then InsertPressFitRemarks;
+
+    end
+    else
+      InsertPressFitRemarks;
+
+  end;
+
 end;
 
 procedure PLCountersink_SD;
@@ -2079,6 +2081,8 @@ begin
   StepInstructionERP('COPPL085'); //REMARK: Strike Plating Program
 
   StepParamERP('Plating Stage', 'Strike Plating'); // 2466
+
+  UpdateInProcessCuThk(InProcessCuThk + 10); // 2690
 
 end;
 
