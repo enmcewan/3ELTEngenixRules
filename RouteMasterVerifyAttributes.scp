@@ -57,7 +57,10 @@ begin
     if Fnc.SysGetAttrValue('CoreBuild_CuThin_Process') = 'Buffing + Mirco-Etch + Buffing' then
       Fnc.SysSetAttrValue('CoreBuild_CuThin_Process', 'Buffing + Micro-Etch + Buffing');
 
-    if Fnc.SysGetAttrValue('CoreBuild_CuThin_Process') = 'None' then  // Core Build Cu Thinning
+    // 2769 Vertical Buffinng for 1/2oz+ Cu
+    if (MfgAttr('CoreBuild_CuThin_Process') = 'None') and (MfgAttr('CoreBuild_CuThin_Mode') = 'Override') then
+      InputAttributeErrorHandler('Core Build Cu Thinning Mode is set to "Override" but the process is set to "None".')
+    else if Fnc.SysGetAttrValue('CoreBuild_CuThin_Process') = 'None' then  // Core Build Cu Thinning
       InputAttributeErrorHandler('Cu Thinning Process for Core Build')
     else
     begin

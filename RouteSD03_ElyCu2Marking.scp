@@ -496,6 +496,9 @@ begin
   StepParamERP('Thickness', FormatFloat('0.000', LayupThickness));
   StepParamERP('Panel Size', Fnc.SysGetAttrValue('Panel_Size'));
   Insert_MinHole_Aspect('Epoxy');
+
+  // 2741 Addtional Via Type Plugging Info
+  if PlugViaTypeNote <> '' then StepParamERP('Plug Via Type', PlugViaTypeNote); 
 end;
 
 procedure Epoxy_PlugA_SD;
@@ -533,7 +536,7 @@ begin
   StepParamERP('Epoxy Side', 'B side');
 
   if not Fnc.SysGetAttrValue('BackDrill_Epoxy') then // 1504
-  StepInstructionERP('EPXPL071'); // Pre-Bake using Blue Box Oven' 
+  StepInstructionERP('EPXPL071'); // Pre-Bake using Blue Box Oven'
 end;
 
 procedure EpoxyPlug_Buffing_Common;                          
@@ -586,6 +589,15 @@ begin
   StepInstructionERP('COPPL001');
 end;
 
+Procedure EpoxyPlug_CT_Vertical_Buffing;
+begin
+
+  StepDeptERP('EPBUF-B0');
+  StepWCERP('EPBUF-B0');
+  StepParamERP('Vertical Buffing Spec', formatCuThinValue('EpoxyPlug_CuThin_1stBuff', 'EpoxyPlug'));
+
+end;
+                                 
 procedure Pre_Photo_Cu_Thin_SD;  // 1196 Pre-Photo Cu Thinning 
 begin
   EpoxyPlug_Buffing_Common;
@@ -1378,9 +1390,11 @@ end;
 
 procedure DM2_Buff_SD;
 begin
-  StepDeptERP('DMEAR-C0');
-  StepWCERP('DMEAR-C0');
+
+  StepDeptERP('DBURR-BO'); // 2754
+  StepWCERP('DBURR-BO');
   StepParamERP('Remark', 'Buffing Only');
+
 end;
 
 procedure Clean_Room_Oven_SD; // 793 Update Photo process rule
@@ -1478,4 +1492,3 @@ begin
                                                   );
   StepParamERP('Entry Sheet Material', 'Aluminum');
 end;
-

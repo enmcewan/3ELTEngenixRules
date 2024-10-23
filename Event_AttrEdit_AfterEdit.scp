@@ -320,7 +320,7 @@ begin
     ShowAttr('Drill_Offset_Y_2');
 
     ShowAttr('Drill_Side_2'); // 2620 2nd Drill
-
+                       
   end;
 
   //Initialize Epoxy Plugging Cu Thinning
@@ -329,10 +329,12 @@ begin
   HideAttr('EpoxyPlug_CuThin_MEtch');
   HideAttr('EpoxyPlug_CuThin_Tol');  // 799 Surface Cu Thickness Value Format
 
-  if GetVal('EpoxyPlug_CuThin_Process') <> 'None' then
+  if (GetVal('EpoxyPlug_CuThin_Process') <> 'None') or (GetVal('EpoxyPlug_CuThin_Mode') = 'Auto') then  // 2769
   begin
 
-    if GetVal('EpoxyPlug_CuThin_Process') = 'Buffing' then
+
+
+    if ( GetVal('EpoxyPlug_CuThin_Process') = 'Buffing') or (GetVal('EpoxyPlug_CuThin_Mode') = 'Auto') then
        ShowAttr('EpoxyPlug_CuThin_1stBuff');
 
     else if GetVal('EpoxyPlug_CuThin_Process') = 'Micro-Etch + Buffing' then
@@ -392,7 +394,7 @@ begin
         ShowAttr('CoreBuild_CuThin_MEtch');
 
       end;
-    end
+    end;
 
     // 1473 - Fix Attribute Typo
     if GetVal('CoreBuild_CuThin_Process') = 'Buffing + Mirco-Etch + Buffing' then
@@ -402,7 +404,8 @@ begin
     ShowAttr('CoreBuild_CuThin_Tol'); // 799 Surface Cu Thickness value format
 
     if ( GetVal('CoreBuild_CuThin_Process') = 'Buffing' ) or
-       ( GetVal('CoreBuild_CuThin_Process') = 'Vertical Buffing' ) // 1473
+       ( GetVal('CoreBuild_CuThin_Process') = 'Vertical Buffing' ) or// 1473
+       ( GetVal('CoreBuild_CuThin_Mode') = 'Auto' )  // 2769
     then
       ShowAttr('CoreBuild_CuThin_1stBuff');
     else if GetVal('CoreBuild_CuThin_Process') = 'Buffing + Micro-Etch + Buffing' then // 1473 Fix Attr Value

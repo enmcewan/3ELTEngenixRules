@@ -1,0 +1,71 @@
+//HeaderImportExport-->
+//SiteId=0
+//Enterprise=True
+//ScriptType=0
+//ScriptGroup=HCS
+//HeaderImportExport<--
+
+procedure StepParam(Source: string; ParamCode: string; ParamValue: string) // Added with 2269
+begin
+  Fnc.SysRouteGenInsAddlParam(Fnc.SysRouteInsGetStepNum, Source, ParamCode, ParamValue, '', '', false, '', '', '' );
+end;                                    
+
+procedure StepParamERP(ParamCode: string; ParamValue: string)
+begin
+  Fnc.SysRouteGenInsAddlParam(Fnc.SysRouteInsGetStepNum, 'Erp', ParamCode, ParamValue, '', '', false, '', '', '' );
+end;
+
+procedure StepDeptERP(DeptCode: string);
+begin         
+  Fnc.SysRouteGenInsDepartment(Fnc.SysRouteInsGetStepNum, 'Erp', DeptCode, '');
+end;
+
+procedure StepWC(Source: string; WCCode: string);
+begin
+  Fnc.SysRouteGenInsWorkCenter(Fnc.SysRouteInsGetStepNum, Source, WCCode, '');
+end;
+
+procedure StepWCERP(WCCode: string);
+begin
+  Fnc.SysRouteGenInsWorkCenter(Fnc.SysRouteInsGetStepNum, 'Erp', WCCode, '');
+end;
+
+procedure StepMaterials(Source: string; MaterialTypeList: TStringList; MaterialQty: double);
+begin           
+  Fnc.SysRouteGenInsMaterials(Fnc.SysRouteInsGetStepNum, Source, MaterialTypeList, MaterialQty, '');
+end;
+
+procedure StepMaterialsERP(MaterialTypeList: TStringList; MaterialQty: double);
+begin
+  Fnc.SysRouteGenInsMaterials(Fnc.SysRouteInsGetStepNum, 'Engx', MaterialTypeList, MaterialQty, '');
+end;
+
+procedure StepInstructionERP(InstrCode: string);
+begin
+  Fnc.SysRouteGenInsInstruction(Fnc.SysRouteInsGetStepNum, 'Erp', InstrCode, '');
+end;
+
+function MfgAttr(AttributeName: string) : variant;
+begin
+  result := Fnc.SysGetAttrValue(AttributeName);
+end;
+
+procedure SetMfgAttr(AttributeName: string; AttributeValue: variant);                
+begin
+  Fnc.SysSetAttrValue(AttributeName, AttributeValue);
+end;
+                           
+function MfgAttrTL(AttributeName: string) : variant;
+begin
+  result := Fnc.SysGetAttrValueTopLevel(AttributeName);
+end;                 
+
+function MfgAttrParent(AttributeName: string) : variant;
+begin
+  result := Fnc.SysGetAttrValueParent(AttributeName);
+end;
+
+function LayerAttrTop(AttrName: string; TopLayer: boolean; ItemType: string; ItemSequence: integer) : variant;
+begin                              
+  result := Fnc.SysGetItemAttrValue(AttrName, TopLayer, ItemType, ItemSequence);   
+end;

@@ -1357,7 +1357,7 @@ begin
   DeSmear_Params('Hollmuller Desmear');
 end;
 
-procedure Desmear_Holl2_1_SD;
+procedure Desmear_Holl2_1_SD;                      
 begin
   Desmear_Common('HM');
   DeSmear_Params('Hollmuller Desmear2-1');
@@ -1488,7 +1488,7 @@ begin
       ((NCRun = 2) and (Fnc.SysGetAttrValue('Drill_Entry_Sht_2') = 'Auto'))
      )
   then
-  begin
+  begin      
     if Fnc.SysGetAttrValueTopLevel('Wicking_Max') <> 'None' then
       Entry_Sheet_Mode := 's';
     else if Fnc.SysGetAttrValueTopLevel('Cust_Spec') = '192192' then
@@ -2047,7 +2047,7 @@ begin
     SysRouteInsWorkCenter('Erp', 'METAL-C0', '');
     SysRouteInsAddlParameter('Erp', 'VELCP Line', 'V1 or V2', '', '', false, '', '', ''); 
   end;
-  
+                                                      
   // 1107 Additional Run Card info - Note sequential build
   if Fnc.SysGetAttrValueTopLevel('Seq_Build') = true then
     SysRouteInsAddlParameter('Erp', 'Remark', 'Sequential Build', '', '', false, '', '', ''); 
@@ -3150,12 +3150,21 @@ begin
   if Fnc.SysGetAttrValue('CoreBuild_CuThin_Process') = 'Vertical Buffing' then
     StepInstructionERP('EPBUF028'); // Use Vertical Buffing Machine Only  // 1473
   else if Fnc.SysGetAttrValue('CoreBuild_CuThin_Process') <> 'Micro-Etch + Buffing' then
-  begin
+  begin                                  
     if CoreBuild then // 838 Core Build Buffing Remarks
       StepInstructionERP('EPXPL014'); //Non-Woven Buffing Only
     else if SubAssemblyCoreBuild then
       StepInstructionERP('EPXPL015'); //Ceramic Buffing
   end;
+end;
+
+procedure CoreBuild_GTHOC_Vertical_Buffing; // 2769 Cu Thinning
+begin
+
+  StepDeptERP('EPBUF-B0');
+  StepWCERP('EPBUF-B0');
+  StepParamERP('Buffing Spec', formatCuThinValue('CoreBuild_CuThin_1stBuff','CoreBuild'));
+
 end;
 
 procedure CoreBuild_MicroEtch_SD; // Core Build Cu Thinning

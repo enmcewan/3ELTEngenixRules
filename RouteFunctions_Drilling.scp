@@ -25,7 +25,7 @@ begin
   // Check if valid tools found
   if DrillRouteDetails.IsEmpty then
     result := 99.0
-  else
+  else                                              
   begin                                    
     // Loop through the table to find the smallest drillsize
     with DrillRouteDetails do

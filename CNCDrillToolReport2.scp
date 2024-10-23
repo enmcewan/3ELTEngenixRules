@@ -4,7 +4,7 @@
 //ScriptType=0
 //ScriptGroup=
 //HeaderImportExport<--
-uses                                                                                                                                                              
+uses
   RouteFunctions,
   Eng_DrillFunctions;
 const
@@ -26,7 +26,7 @@ begin
   begin
     if not (FileExists(FileTemplateDir + ExcelTemplate)) then
     begin                                
-      ErrFound := True;
+      ErrFound := True;                   
       ErrMsg := 'Template file ' + FileTemplateDir + ExcelTemplate + ' not found';
     end;
   end

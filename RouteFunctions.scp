@@ -6,7 +6,9 @@
 //HeaderImportExport<--
 Uses
   Eng_RouteFunctions,
-  Event_RouteGenLibrary;
+  Event_RouteGenLibrary,
+  RouteMasterRGShortcuts;
+
 
 Var
   CurrentCuThkUM : integer;         
@@ -14,7 +16,7 @@ Var
   ENIG_NFluxDone : boolean;
   BKDRTop : boolean;
   BKDRBot : boolean;
-  BKDRwEpoxyTop : boolean;  // 844 Backdrill after Electrolytic Cu
+  BKDRwEpoxyTop : boolean;  // 844 Backdrill after Electrolytic Cu       
   BKDRwEpoxyBot : boolean;
   PANEL_VCUT_DONE : boolean;
   BackDrillDone : boolean;         
@@ -32,7 +34,7 @@ Var
   BotFirstPlatingUM : float;             
   Baking_Mtl : string;                       
   OLPhotoLineforDES : string;            
-                                              
+
   GLB_NC_Thickness: double;
   GLB_Ave_CuThk: double;
   GLB_Abs_CuThk: double;
@@ -72,81 +74,23 @@ Var
   Plating_Line : string;
 
   LayupThickness: float;
-  
+
+  PlugViaTypeNote: string;
+
 procedure ErrorMessageGenAndLog(ErrorMsg, ErrorType: variant);
-var              
+var
   ErrorTypeStr,
   ErrorMsgStr: String;
 begin
   ErrorMsgStr := Fnc.SysGetAttrValue('ItemMatrlDesc') + #13#13 + ErrorMsg;
   MessageDlg(ErrorMsgStr, ErrorType, Setof([mbOK]), 0);
-                                        
-  if ErrorType = mtWarning then ErrorTypeStr := 'Warning' else  
+
+  if ErrorType = mtWarning then ErrorTypeStr := 'Warning' else
   if ErrorType = mtError then ErrorTypeStr := 'Error' else
   if ErrorType = mtInformation then ErrorTypeStr := 'Information'
-  
-  Fnc.JobJournalUpdate(Fnc.JobID, ErrorMsg, ErrorTypeStr, 'Route GenX' ); 
+
+  Fnc.JobJournalUpdate(Fnc.JobID, ErrorMsg, ErrorTypeStr, 'Route GenX' );
 end;
-
-procedure StepParam(Source: string; ParamCode: string; ParamValue: string) // Added with 2269
-begin
-  Fnc.SysRouteGenInsAddlParam(Fnc.SysRouteInsGetStepNum, Source, ParamCode, ParamValue, '', '', false, '', '', '' );
-end;                                    
-
-procedure StepParamERP(ParamCode: string; ParamValue: string)
-begin
-  Fnc.SysRouteGenInsAddlParam(Fnc.SysRouteInsGetStepNum, 'Erp', ParamCode, ParamValue, '', '', false, '', '', '' );
-end;
-
-procedure StepDeptERP(DeptCode: string);
-begin         
-  Fnc.SysRouteGenInsDepartment(Fnc.SysRouteInsGetStepNum, 'Erp', DeptCode, '');
-end;
-
-procedure StepWC(Source: string; WCCode: string);
-begin
-  Fnc.SysRouteGenInsWorkCenter(Fnc.SysRouteInsGetStepNum, Source, WCCode, '');
-end;
-
-procedure StepWCERP(WCCode: string);
-begin
-  Fnc.SysRouteGenInsWorkCenter(Fnc.SysRouteInsGetStepNum, 'Erp', WCCode, '');
-end;
-
-procedure StepMaterials(Source: string; MaterialTypeList: TStringList; MaterialQty: double);
-begin           
-  Fnc.SysRouteGenInsMaterials(Fnc.SysRouteInsGetStepNum, Source, MaterialTypeList, MaterialQty, '');
-end;
-
-procedure StepMaterialsERP(MaterialTypeList: TStringList; MaterialQty: double);
-begin
-  Fnc.SysRouteGenInsMaterials(Fnc.SysRouteInsGetStepNum, 'Engx', MaterialTypeList, MaterialQty, '');
-end;
-
-procedure StepInstructionERP(InstrCode: string);
-begin
-  Fnc.SysRouteGenInsInstruction(Fnc.SysRouteInsGetStepNum, 'Erp', InstrCode, '');
-end;
-
-function MfgAttr(AttributeName: string) : variant;
-begin
-  result := Fnc.SysGetAttrValue(AttributeName);
-end;
-                           
-function MfgAttrTL(AttributeName: string) : variant;
-begin                         
-  result := Fnc.SysGetAttrValueTopLevel(AttributeName);
-end;                 
-
-function MfgAttrParent(AttributeName: string) : variant;
-begin
-  result := Fnc.SysGetAttrValueParent(AttributeName);
-end;      
-
-function LayerAttrTop(AttrName: string; TopLayer: boolean; ItemType: string; ItemSequence: integer) : variant;
-begin                              
-  result := Fnc.SysGetItemAttrValue(AttrName, TopLayer, ItemType, ItemSequence);   
-end; 
 
 procedure GET_VCUT_TYPE;
 begin
@@ -188,7 +132,7 @@ begin
   then
   begin
     result := true;
-    ShowMessage('Core or Sub on Top');
+    //ShowMessage('Core or Sub on Top');
   end
   else
   begin
@@ -196,7 +140,7 @@ begin
     if copy(MfgPartName, Length(MfgPartName), 1) = 'x' then
     begin
       ShowMessage('Core or Sub on Bottom');
-      result := true;
+      //result := true;
     end
   end;
 
@@ -914,14 +858,21 @@ begin
 
 end;
 
+function DrillID(i: integer): integer;
+begin
+
+  result := Fnc.SysGetItemAttrValue('DrillDefId', True, cStackupDrill, i);
+
+end;
+
 procedure SetDrillTypes;  // 1191 Drill Side for Countersink/bore & milling
 var
 
   NumDrillFiles: integer;
   I: integer;
-  LayerTop: string;
-  LayerBot: string;
-  MaskTop: string;
+  LayerTop,
+  LayerBot,
+  MaskTop,
   MaskBot: string;
   LayerCount: integer;
   DrillStartLayer: string;
@@ -931,42 +882,49 @@ var
   X2_wEpoxy_Count: integer;
   checkBD_StartLayer: boolean;
 
+  // 2741 Additional Plugging Info
+  BlindViaEpxPlugging,
+  PTHEpxPlugging: boolean;
+
 begin
 
   Fnc.SysSetAttrValue('CuFilledVias', false);
   Fnc.SysSetAttrValue('NPCountersink', false);
   Fnc.SysSetAttrValue('PLCountersink', false);
-  Fnc.SysSetAttrValue('CappedVia', false);            
+  Fnc.SysSetAttrValue('CappedVia', false);
   Fnc.SysSetAttrValue('BackDrill', false);
   Fnc.SysSetAttrValue('BackDrill_Epoxy', false); // 844 Backdrill after electrolytic Cu
   Fnc.SysSetAttrValue('Counterbore', false);
   Fnc.SysSetAttrValue('EpoxySide', 'None');
   Fnc.SysSetAttrValue('SMPlugType', 'None');
   //Fnc.SysSetAttrValue('NCRunX2', false);
-  
+
   Fnc.SysSetAttrValue('PLCountersink_Side', 'None');
   Fnc.SysSetAttrValue('NPCountersink_Side', 'None');
   Fnc.SysSetAttrValue('Counterbore_Side', 'None');
-  Fnc.SysSetAttrValue('Milling', false); 
+  Fnc.SysSetAttrValue('Milling', false);
 
   LayerTop := '';
   LayerBot := '';
   MaskTop := '';
   MaskBot := '';
   BKDRTop := false;
-  BKDRBot := false;                 
+  BKDRBot := false;
   BKDRwEpoxyTop := false;
   BKDRwEpoxyBot := false;
   DrillStartLayer := '';
   DrillEndLayer := '';
-  Plated := false;      
+  Plated := false;
   MechBVHTop := false;
   MechBVHBot := false;
 
   Std_PTH_Count := 0;
-  X2_wEpoxy_Count := 0;                          
+  X2_wEpoxy_Count := 0;
 
   checkBD_StartLayer := true;
+
+  BlindViaEpxPlugging := false
+  PTHEpxPlugging := false;
 
   NumDrillFiles := FindNumberOfDrillFiles;
 
@@ -994,17 +952,9 @@ begin
       MaskTop := trim(MaskTop);
       MaskBot := trim(MaskBot);     
                              
-      if (
-          (Fnc.SysGetItemAttrValue('DrillDefId', True, cStackupDrill, I) = 2)
-          and
-          (Fnc.SysGetItemAttrValue('DrillFilledID', True, cStackupDrill, I) = 28)  // 28 = Cu Filled
-         )
-      then
-      begin              
-        //ShowMessage('Cu Filled Vias Found');
-        Fnc.SysSetAttrValue('CuFilledVias', true);
-      end;
-                                    
+      if (Fnc.SysGetItemAttrValue('DrillDefId', True, cStackupDrill, I) = 2) and
+         (Fnc.SysGetItemAttrValue('DrillFilledID', True, cStackupDrill, I) = 28) then // 28 = Cu Fille
+            Fnc.SysSetAttrValue('CuFilledVias', true)
       else if Fnc.SysGetItemAttrValue('DrillDefId', True, cStackupDrill, I) = 4 then
       begin
         //ShowMessage('Countersink Found');
@@ -1020,12 +970,7 @@ begin
         end;
       end;
 
-      if Fnc.SysGetItemAttrValue('DrillCapped', True, cStackupDrill, I) = true then
-      begin
-        //ShowMessage('Capped Via Found');
-        Fnc.SysSetAttrValue('CappedVia', true);
-      end;
-
+      if Fnc.SysGetItemAttrValue('DrillCapped', True, cStackupDrill, I) = true then Fnc.SysSetAttrValue('CappedVia', true);
       else if Fnc.SysGetItemAttrValue('DrillDefId', True, cStackupDrill, I) = 6 then  // back drill
       begin  // 844  Backdrill after electrolyic Cu
 
@@ -1035,7 +980,7 @@ begin
           begin
             if (( DrillStartLayer <> MaskTop ) and ( DrillStartLayer <> MaskBot )) then
             begin              
-              MessageDlg('Error!!! Back Drill Start Layer must be a Top or Bottom Soldermask', mtWarning, SetOf([mbOK]), 0); 
+              MessageDlg('Error!!! Back Drill Start Layer must be a Top or Bottom Soldermask', mtWarning, SetOf([mbOK]), 0);
               checkBD_StartLayer := false;
             end;
           end
@@ -1061,12 +1006,10 @@ begin
         end
         else                                           
         begin
-          if (
-              ( Fnc.SysGetItemAttrValue('DrillFilledID', True, cStackupDrill, I) = 18 ) or // Epoxy Plugging
-              ( Fnc.SysGetItemAttrValue('DrillFilledID', True, cStackupDrill, I) = 29 ) or
-              ( Fnc.SysGetItemAttrValue('DrillFilledID', True, cStackupDrill, I) = 30 ) or
-              ( Fnc.SysGetItemAttrValue('DrillFilledID', True, cStackupDrill, I) = 31 )
-             )
+          if ( Fnc.SysGetItemAttrValue('DrillFilledID', True, cStackupDrill, I) = 18 ) or // Epoxy Plugging
+             ( Fnc.SysGetItemAttrValue('DrillFilledID', True, cStackupDrill, I) = 29 ) or
+             ( Fnc.SysGetItemAttrValue('DrillFilledID', True, cStackupDrill, I) = 30 ) or
+             ( Fnc.SysGetItemAttrValue('DrillFilledID', True, cStackupDrill, I) = 31 )
           then
           begin
             if (( DrillStartLayer <> LayerTop ) and ( DrillStartLayer <> LayerBot )) then
@@ -1102,8 +1045,7 @@ begin
         //ShowMessage('Counterbore Found');
         Fnc.SysSetAttrValue('Milling', true);
         Fnc.SysSetAttrValue('Milling_Side', DrillProcessSide(DrillStartLayer, LayerTop, LayerBot, MaskTop, MaskBot));
-      end;                             
-      
+      end;
 
       if Fnc.SysGetItemAttrValue('DrillDefId', True, cStackupDrill, I) <> 6 then
       begin
@@ -1140,17 +1082,31 @@ begin
       if Fnc.SysGetItemAttrValue('DrillDefId', True, cStackupDrill, I) = 9 then
         X2_wEpoxy_Count := X2_wEpoxy_Count + 1;
 
+      if Fnc.SysGetAttrValue('EpoxySide') <> 'None' then
+      begin
+
+        if ( DrillID(I) = 2 ) or ( DrillID(I) = 8 ) then BlindViaEpxPlugging := true;
+        else if ( DrillID(I) = 1 ) then PTHEpxPlugging := true;
+  
+      end;
+
+      PlugViaTypeNote := '';
+      if ( BlindViaEpxPlugging and (not PTHEpxPlugging) ) then PlugViaTypeNote := 'Blind';
+      if ( BlindViaEpxPlugging and PTHEpxPlugging ) then PlugViaTypeNote := 'Blind + PTH';
+      if ((not BlindViaEpxPlugging) and PTHEpxPlugging ) then PlugViaTypeNote := 'PTH';
+
+
     end; // End Drill List Cycle
 
   end;
 
-  if ((Std_PTH_Count = 1) and (X2_wEpoxy_Count =1)) then
+  if ((Std_PTH_Count = 1) and (X2_wEpoxy_Count = 1)) then
   begin
 
     if Fnc.SysGetAttrValue('NCRunX2') = false then
     begin
 
-      ShowMessage('Error!!! - 2x NC Run attributes not set, enter the values before continuing');
+      MessageDlg('Error!!! - 2x NC Run attributes not set, enter the values before continuing', mtError, Setof([mbOK]), 0);
       Fnc.UserRouteGenAbort := true;
 
     end;
@@ -1163,7 +1119,7 @@ begin
     if NOT ((Std_PTH_Count >= 1) and (X2_wEpoxy_Count >= 1)) then
     begin
 
-      ShowMessage('Error!!! - 2x NC Run Attribute set but not defined in Create/Edit Layers. Define one standard PTH drill and one 2X Drill w/Epoxy before continuing');
+      MessageDlg('Error!!! - 2x NC Run Attribute set but not defined in Create/Edit Layers. Define one standard PTH drill and one 2X Drill w/Epoxy before continuing', mtError, Setof([mbOK]), 0);
       Fnc.UserRouteGenAbort := true;
 
     end;
@@ -2787,6 +2743,9 @@ begin
     end;
 
   end;
+
+  Fnc.SysTableDestroy(PDM_PCodeTbl);
+
 end;
 
 function PDM_LdTime;
@@ -2815,6 +2774,8 @@ begin
     end;
 
   end;
+
+  Fnc.SysTableDestroy(PDM_PCodeTbl);
 
 end;
 
@@ -3000,9 +2961,11 @@ begin
              'USER_LOGIN_NAME = ' + QuotedStr(user);
                      
   user_Table := Fnc.AstaExecuteSql(SqlStr);
-  
+
   if user_Table.RecordCount = 1 then
     result := true;
+
+  Fnc.SysTableDestroy(user_Table);
 
 end;
 
@@ -3892,9 +3855,7 @@ begin
      ( Fnc.SysGetAttrValue('CoreBuild_CuThin_Process') = 'Vertical Buffing' ) then // 1473
     result := ConvertCuThinStrtoInt(Fnc.SysGetAttrValue('CoreBuild_CuThin_1stBuff'))
   else if Fnc.SysGetAttrValue('CoreBuild_CuThin_Process') = 'Buffing + Micro-Etch + Buffing' then // 1473 Fix Attribute
-  begin
     result := ConvertCuThinStrtoInt(Fnc.SysGetAttrValue('CoreBuild_CuThin_2ndBuff'));
-  end
   else if Fnc.SysGetAttrValue('CoreBuild_CuThin_Process') = 'Micro-Etch + Buffing' then
     result := ConvertCuThinStrtoInt(Fnc.SysGetAttrValue('CoreBuild_CuThin_1stBuff'));
 
@@ -5063,7 +5024,7 @@ begin
   
   // Get Table Max X Scare
   DrillXOffsetTable.Last;
-  TableXScaleMax := DrillXOffsetTable.FieldByName('XScaleHigh').AsFloat; 
+  TableXScaleMax := DrillXOffsetTable.FieldByName('XScaleHigh').AsFloat;
        
   // Need to convert DrillFSFX MFG PArt Value to X Scale Range in table
   DrillFSFX := DrillFSFX - 100;

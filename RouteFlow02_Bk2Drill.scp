@@ -307,10 +307,10 @@ begin
     Thickness := PressThickness
   else
     Thickness := DSThicknessB4Plating;
-                                     
+
   StepList := GetDesmearStepList(Material, Thickness);
 
-  if StepList.Count > 0 then                                                               
+  if StepList.Count > 0 then
   begin
 
     Rte_Step := '';
@@ -504,7 +504,7 @@ begin
           AddStep('Shearing_Laser', 'Shearing_Laser01');
           
       end;
-                                    
+                                                                          
       if (SelectPlatingLine <> 'FILL_VIA') then NonUVMicroEtch
 
       // CO2 Laser
@@ -568,58 +568,91 @@ begin
 
 end;
 
-procedure RouteFlow02;
+procedure PressThkWarning;
 begin
+
+   if PressThickness > 4.0 then // 1112 Micro-etch for thick board
+     MessageDlg('Board too thick for Core Build Cu Thinning standard Micro-etch process.', mtWarning, Setof([mbOK]), 0);
+
+end;
+
+procedure RouteFlow02;
+begin                                                                                                                                  
+
   NCRun := 0;
 
-  if ((Fnc.SysGetAttrValue('LayerCount') > 2) or (Fnc.SysGetAttrValue('MfgPartType') = 'Sub')) then
+  if ((MfgAttr('LayerCount') > 2) or (MfgAttr('MfgPartType') = 'Sub')) then
   begin
+
     Booking;
 
     if (( CoreBuild ) or ( SubAssemblyCoreBuild )) then
     begin
-      // Core Build Cu Thinning
-      if Fnc.SysGetAttrValue('CoreBuild_CuThin_Process') <> 'None' then
-      begin                                          
-        if Fnc.SysGetAttrValue('CoreBuild_CuThin_Process') = 'Buffing' then
-          AddStep('CoreBuild_CT_Buffing1', 'CoreBuild_CT_Buffing101')
-        else if Fnc.SysGetAttrValue('CoreBuild_CuThin_Process') = 'Buffing + Micro-Etch + Buffing' then  // 1473 fix attribute
-        begin
-          AddStep('CoreBuild_CT_Buffing1', 'CoreBuild_CT_Buffing101');
-          AddStep('CoreBuild_MicroEtch', 'CoreBuild_MicroEtch01');
-          AddStep('CoreBuild_CT_Buffing2', 'CoreBuild_CT_Buffing201');
-          
-          if PressThickness > 4.0 then // 1112 Micro-etch for thick board 
-            MessageDlg('Board too thick for Core Build Cu Thining standard Micro-etch process.', mtWarning, Setof([mbOK]), 0); 
-        end
-        else if Fnc.SysGetAttrValue('CoreBuild_CuThin_Process') = 'Micro-Etch + Buffing' then // 1473
-        begin
-          AddStep('CoreBuild_MicroEtch', 'CoreBuild_MicroEtch01');
-          AddStep('CoreBuild_CT_Buffing1', 'CoreBuild_CT_Buffing101');
-                  
-          if PressThickness > 4.0 then // 1112 Micro-etch for thick board 
-            MessageDlg('Board too thick for Core Build Cu Thining standard Micro-etch process.', mtWarning, Setof([mbOK]), 0); 
-        end
-        else if Fnc.SysGetAttrValue('CoreBuild_CuThin_Process') = 'Vertical Buffing' then // 1473
-        begin               
-          AddStep('CoreBuild_CT_Buffing1', 'CoreBuild_CT_Buffing101');
-                  
-          if PressThickness > 4.0 then // 1112 Micro-etch for thick board 
-            MessageDlg('Board too thick for Core Build Cu Thining standard Micro-etch process.', mtWarning, Setof([mbOK]), 0); 
-        end
 
-        //InProcessCuThk := Cu_Thk_After_CuThin; // (364) Surface Cu thickness calculation correction
-        UpdateInProcessCuThk(Cu_Thk_After_CuThin);
+      // 2769 Vertical Buffing Auto-Mode
+      if MfgAttr('CoreBuild_CuThin_Mode') = 'Auto' then
+      begin
+
+        // Core Build & Cu Thk >= 1/2oz. Sub-Assemblies assumed to always have > 1/2oz Cu as they are plated.
+        if (CoreBuild and ((BaseCuTopUM >= 18) or (BaseCuTopUM >= 18))) or SubAssemblyCoreBuild then
+        begin
+
+          AddStep('CoreBuild_GTHOC_Vertical_Buffing', 'CoreBuild_GTHOC_Vertical_Buffing01');
+          SetMfgAttr('CoreBuild_CuThin_Process', 'Vertical Buffing');
+          
+        end;
+
+      end
+      else
+      begin
+        // Core Build Cu Thinning
+        if MfgAttr('CoreBuild_CuThin_Process') <> 'None' then
+        begin
+
+          if MfgAttr('CoreBuild_CuThin_Process') = 'Buffing' then
+            AddStep('CoreBuild_CT_Buffing1', 'CoreBuild_CT_Buffing101')
+          else if MfgAttr('CoreBuild_CuThin_Process') = 'Buffing + Micro-Etch + Buffing' then  // 1473 fix attribute
+          begin
+
+            AddStep('CoreBuild_CT_Buffing1', 'CoreBuild_CT_Buffing101');
+            AddStep('CoreBuild_MicroEtch', 'CoreBuild_MicroEtch01');
+            AddStep('CoreBuild_CT_Buffing2', 'CoreBuild_CT_Buffing201');
+
+            PressThkWarning;
+
+          end
+          else if MfgAttr('CoreBuild_CuThin_Process') = 'Micro-Etch + Buffing' then // 1473
+          begin
+
+            AddStep('CoreBuild_MicroEtch', 'CoreBuild_MicroEtch01');
+            AddStep('CoreBuild_CT_Buffing1', 'CoreBuild_CT_Buffing101');
+  
+            PressThkWarning;
+  
+          end
+          else if MfgAttr('CoreBuild_CuThin_Process') = 'Vertical Buffing' then // 1473
+          begin
+  
+            AddStep('CoreBuild_CT_Buffing1', 'CoreBuild_CT_Buffing101');
+  
+            PressThkWarning;
+  
+          end
+  
+          UpdateInProcessCuThk(Cu_Thk_After_CuThin);
+  
+        end;
       end;
+
     end;      
 
-    if Fnc.SysGetAttrValue('BlindVias') then BlindVia;
+    if MfgAttr('BlindVias') then BlindVia;
          
   end
   else
   begin
 
-    if Fnc.SysGetAttrValue('PanelsPerSheet') = 0 then
+    if MfgAttr('PanelsPerSheet') = 0 then
     begin
 
       AddStep('KK_Drill', 'KK_Drill01');
@@ -642,7 +675,7 @@ begin
 
   end;
 
-  if ( not Fnc.SysGetAttrValue('BlindVias') ) and MicroEtchReqd then  // 1112 Micro-etch for thick board
+  if ( not MfgAttr('BlindVias') ) and MicroEtchReqd then  // 1112 Micro-etch for thick board
   begin
 
     if ( PressThickness <= 4.0 ) then  // 2615 Micro-Etch HAL
@@ -653,7 +686,7 @@ begin
   end;
 
 
-  if Fnc.SysGetAttrValue('NCRunX2') and Fnc.SysGetAttrValue('CappedVia') then // 2386
+  if MfgAttr('NCRunX2') and MfgAttr('CappedVia') then // 2386
   begin
 
     NC_EpxPlug_wFlash;
@@ -677,9 +710,9 @@ begin
   // 1144 Additional AZ Blower Step after CNC Drill
   if GetsExtraAZBlowerStep then AddStep('HighPressAirBlow', 'HighPressAirBlow-1');
 
-  if Fnc.SysGetAttrValue('PLCountersink') then AddStep('PLCountersink', 'PLCountersink01');
+  if MfgAttr('PLCountersink') then AddStep('PLCountersink', 'PLCountersink01');
 
-  if Fnc.SysGetAttrValue('EdgePlating') then
+  if MfgAttr('EdgePlating') then
   begin
     AddStep('EdgePlateRoute', 'EdgePlateRoute01');
     // AddStep('WashingStd', 'WashingStd01');   // 2621 Remove Washing Step after the Edge Plate Rout Step

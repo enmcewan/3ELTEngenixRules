@@ -39,11 +39,11 @@ begin
   result := '';
   PPG_Style := '';
   
-  if CodeNumber = 'FirstCode' then 
+  if CodeNumber = 'FirstCode' then
     PPG_Style := Copy(Fnc.GetStackupMaterialValue('Construction'), 3, 4);
   else // SecondCode
     PPG_Style := Copy(Fnc.GetStackupMaterialValue('Construction'), 12, 4);
-   
+
   case PPG_Style of
 
     '1017' : result := 'N';
@@ -53,24 +53,24 @@ begin
     '106 ' : result := 'B';
     '106'  : result := 'B';
     '1065' : result := 'S';
-    '1067' : result := 'W';                                           
+    '1067' : result := 'W';
     '106L' : result := 'B';
     '106S' : result := 'B';
     '1078' : result := 'T';
-    '1080' : result := 'A';            
+    '1080' : result := 'A';                                                                                    
     '1086' : result := 'V';
-    '1500' : result := 'E';                             
-    '1501' : result := 'F';                             
-    '1504' : result := 'G';        
-    '1506' : result := 'K';           
+    '1500' : result := 'E';
+    '1501' : result := 'F';
+    '1504' : result := 'G';
+    '1506' : result := 'K';
     '1652' : result := 'J';
     '2013' : result := 'X';
-    '2112' : result := 'Q';        
+    '2112' : result := 'Q';
     '2113' : result := 'H';
     '2116' : result := 'C';
-    '2313' : result := 'P';           
+    '2313' : result := 'P';
     '3313' : result := 'D';
-    '7628' : result := 'L';                     
+    '7628' : result := 'L';
     '7629' : result := 'M';
 
   end;
@@ -79,9 +79,11 @@ end;
 
 Function AssignCuLabel(CuWt: string): string;
 begin
+
   Result := CuWt;
 
   case CuWt of
+
     '5um' : Result := '05';     // 1200 5um Cu Foil 
     '1/4oz' : Result := '--';  //unknown
     '1/3oz'  : Result := '12';
@@ -89,22 +91,26 @@ begin
     '1oz'   : Result := '35';
     '2oz'   : Result := '70';
     '3oz'   : Result := '03';
+
   end;
 
 end;
 
 function GetPPGStyle(PPG_Name : string) : string;
 begin
+
   result := '';
   
   if length(PPG_Name) <= 7 then
     result := '0' + Copy(PPG_Name, 1, 3)  // to handle 106 glass
   else
-    result := Copy(PPG_Name, 1, 4)
+    result := Copy(PPG_Name, 1, 4);
+
 end;
 
 function GetResinPercent(PPG_Name : string) : string;
 begin
+
   result := '';
   
   if length(PPG_Name) <= 7 then
@@ -112,7 +118,8 @@ begin
   else
     result := Copy(PPG_Name, 1, 4);
                             
-  result :=  copy(PPG_Name, length(PPG_Name) - 1, 2);   
+  result :=  copy(PPG_Name, length(PPG_Name) - 1, 2);
+  
 end; 
 
 function GetPDBMatAndSupplierCode(var PDM_Mat_Type: string; var PDM_Supplier: string; var Isola: boolean) : string;
@@ -127,7 +134,7 @@ begin
   PDM_Supplier := '';
   Isola := false;
 
-  if UpperCase(Fnc.GetStackupMaterialValue('ItemDesc')) = 'CORE' then
+  if Fnc.GetStackupMaterialValue('ItemDesc') = 'Core' then
     Core_CuType := Get_Core_CuType
   else Core_CuType := '';
 
@@ -278,28 +285,34 @@ begin
 
 end;
 
+
+
 function BomConvSetFiltersForMaterial(FilterList: TStringList; MatrlRecId: integer);
 var
-  GroupFilter: string;
-  TightFilter: string;
+  GroupFilter,
+  TightFilter,
+  PDM_Qualify,
+  PDM_Mat_Type,
+  PDM_Supplier,
+  PDM_CoreThk,
+  egx_CoreThk,
+  PDM_Foil_P,
+  PDM_Constr1,
+  PDM_Constr2,
+  PDM_Constr3,
+  CoreCWTop,
+  CoreCWBot,
+  PDM_CuWt : string;
+
   PanelWidth: integer;
   PanelLength: integer;
-  PDM_Qualify: string;
-  PDM_Mat_Type : string;
-  PDM_Supplier : string;
-  PDM_CoreThk : string;
-  egx_CoreThk : string;
+
   CoreThk1000 : float;
-  PDM_Foil_P : string;
-  PDM_Constr1 : string;
-  PDM_Constr2 : string;
-  PDM_Constr3 : string;
-  CoreCWTop : string;
-  CoreCWBot : string;
-  PDM_CuWt : string;
   CoreCuThkTop : float;
   CoreCuThkBot : float;
+
   Isola : boolean;
+  
   CoreGrpSearchText,
   CoreGrpSearchTextI1,
   CoreGrpSearchTextI2,

@@ -284,7 +284,7 @@ begin
           result := 'Standard';
       end              
       else           
-      begin                                                                          
+      begin
         if LayupThickness > 3.0 then
           result := 'Side-by-Side'
         else
@@ -296,28 +296,34 @@ end;
                                                                       
 procedure Epoxy_Plugging;
 var                                                                
-  User_Seq : string;
-  User_Seq_Length : integer;      
-  i : integer;
-  Process : string;
+
+  User_Seq_Length,
+  i: integer;
+
+  User_Seq,
+  Process: string;
+
+  VBuffOverride: boolean;
 begin
+
   Process := '';
+  VBuffOverride := false;
   
-  if Fnc.SysGetAttrValue('BackDrill_Epoxy') then  // 1258 Additional pre-baking b4 Epoxy Plugging 
+  if MfgAttr('BackDrill_Epoxy') then  // 1258 Additional pre-baking b4 Epoxy Plugging
     AddStep('Epoxy_Plug_PreBake_BackDrill', 'Epoxy_Plug_PreBake_BackDrill01'); 
     
-  if  ( Fnc.SysGetAttrValue('BackDrill_Epoxy') = false ) or
-      (( Fnc.SysGetAttrValue('EpoxySide') <> 'None' ) and ( Fnc.SysGetAttrValue('BackDrill_Epoxy') = true  ))
+  if  ( MfgAttr('BackDrill_Epoxy') = false ) or
+      (( MfgAttr('EpoxySide') <> 'None' ) and ( MfgAttr('BackDrill_Epoxy') = true  ))
   then // 844 Back Drill After Electrolytic Cu
   begin
     // Determine if process is Standard or Side-by-Side 1463
     if Epoxy_Plug_Process = 'Standard' then 
     begin
-      User_Seq := Fnc.SysGetAttrValue('EpoxyPlug_US');
+      User_Seq := MfgAttr('EpoxyPlug_US');
   
       if User_Seq = 'Default' then
       begin             
-        case Fnc.SysGetAttrValue('EpoxySide') of                      
+        case MfgAttr('EpoxySide') of
           'Epoxy Side A' : AddStep('Epoxy_PlugA', 'Epoxy_PlugA01');
           'Epoxy Side AB' : begin AddStep('Epoxy_PlugA', 'Epoxy_PlugA01'); AddStep('Epoxy_PlugB', 'Epoxy_PlugB'); end;
           'Epoxy Side B' : AddStep('Epoxy_PlugB', 'Epoxy_PlugB01');
@@ -338,7 +344,7 @@ begin
       AddStep('Epoxy_PlugB_SS', 'Epoxy_PlugBSS01');
     end;
   end
-  else if Fnc.SysGetAttrValue('EpoxySide') = 'None' then // 844 Back Drill with Epoxy Only
+  else if MfgAttr('EpoxySide') = 'None' then // 844 Back Drill with Epoxy Only
   begin
     if BKDRwEpoxyBot then
       AddStep('Epoxy_PlugA', 'Epoxy_PlugA01');
@@ -346,47 +352,69 @@ begin
     if BKDRwEpoxyTop then
       AddStep('Epoxy_PlugB', 'Epoxy_PlugB01');
   end;
-  
-  if Fnc.SysGetAttrValue('EpoxyPlug_CuThin_Process') <> 'None' then
+
+  if MfgAttr('EpoxyPlug_CuThin_Mode') = 'Auto' then
+  begin
+
+    if (
+         (MfgPartType = 'Sub') and
+         (not SubLayersAreOnTopMfgPart) and
+         (LayupThickness > 1.0 ) and
+         (not MfgAttr('CappedVia'))
+       )
+       or
+       (
+         (MfgPartType = 'Top') and
+         (MfgAttr('NCRunX2'))
+       )
+    then
     begin
-      if Fnc.SysGetAttrValue('EpoxyPlug_CuThin_Process') = 'Buffing' then
-        AddStep('EpoxyPlug_CT_Buffing1', 'EpoxyPlug_CT_Buffing101')
-      else if Fnc.SysGetAttrValue('EpoxyPlug_CuThin_Process') = 'Micro-Etch + Buffing' then
+
+      VBuffOverride := true;
+      AddStep('EpoxyPlug_CT_Vertical_Buffing', 'EpoxyPlug_CT_Vertical_Buffing01')
+
+    end;
+
+  end;
+  
+  if MfgAttr('EpoxyPlug_CuThin_Process') <> 'None' then
+    begin
+      if MfgAttr('EpoxyPlug_CuThin_Process') = 'Buffing' then
+        if not VBuffOverride then AddStep('EpoxyPlug_CT_Buffing1', 'EpoxyPlug_CT_Buffing101');
+
+      else if MfgAttr('EpoxyPlug_CuThin_Process') = 'Micro-Etch + Buffing' then
       begin
         AddStep('EpoxyPlug_MicroEtch', 'EpoxyPlug_MicroEtch01');
         AddStep('EpoxyPlug_CT_Buffing1', 'EpoxyPlug_CT_Buffing101');
       end
-      else if Fnc.SysGetAttrValue('EpoxyPlug_CuThin_Process') = 'Buffing + Mirco-Etch + Buffing' then
-      begin
-        AddStep('EpoxyPlug_CT_Buffing1', 'EpoxyPlug_CT_Buffing101');
+      else if MfgAttr('EpoxyPlug_CuThin_Process') = 'Buffing + Mirco-Etch + Buffing' then
+      begin                          
+        if not VBuffOverride then AddStep('EpoxyPlug_CT_Buffing1', 'EpoxyPlug_CT_Buffing101');
         AddStep('EpoxyPlug_MicroEtch', 'EpoxyPlug_MicroEtch01');
         AddStep('EpoxyPlug_CT_Buffing2', 'EpoxyPlug_CT_Buffing201');
       end;
       
-      if ( Fnc.SysGetAttrValue('EpoxyPlug_CuThin_Process') = 'Micro-Etch + Buffing' ) or 
-         ( Fnc.SysGetAttrValue('EpoxyPlug_CuThin_Process') = 'Buffing + Mirco-Etch + Buffing' )
+      if ( MfgAttr('EpoxyPlug_CuThin_Process') = 'Micro-Etch + Buffing' ) or
+         ( MfgAttr('EpoxyPlug_CuThin_Process') = 'Buffing + Mirco-Etch + Buffing' )
       then
-      begin
-        if LayupThickness > 4.0 then // 1112 Micro-etch for thick board 
-          MessageDlg('Board too thick for Epoxy Plug standard Micro-etch process.', mtWarning, Setof([mbOK]), 0); 
-      end;
+      if LayupThickness > 4.0 then // 1112 Micro-etch for thick board
+        MessageDlg('Board too thick for Epoxy Plug standard Micro-etch process.', mtWarning, Setof([mbOK]), 0);
     end;
-    
-    // InProcessCuThk := Cu_Thk_After_EP; // (364) Surface Cu thickness calculation correction 
+
     UpdateInProcessCuThk(Cu_Thk_After_EP);
 
     // 2618 Additional Hole Check Step after Epoxy Plug
-    if ( MfgPartType = 'Top' ) and ( not Fnc.SysGetAttrValue('NCRunX2') ) then // + and Not 2X NC - request from Herole 10/6/24
+    if ( MfgPartType = 'Top' ) and ( not MfgAttr('NCRunX2') ) then // + and Not 2X NC - request from Herole 10/6/24
     begin
 
-      if Fnc.SysGetAttrValue('Min_Drill_Size_NP') <= 0.5 then
+      if MfgAttr('Min_Drill_Size_NP') <= 0.5 then
       begin
 
         AddStep('OffLine_PreTreat_USR', 'OffLine_PreTreat_USR-01');
         AddStep('Hole_Check_Plug', 'Hole_Check_Plug-01');
 
       end
-      else if Fnc.SysGetAttrValue('EpoxyPlug_PlugToNonPlugSpacing') < 0.8 then
+      else if MfgAttr('EpoxyPlug_PlugToNonPlugSpacing') < 0.8 then
         AddStep('Hole_Check_Plug', 'Hole_Check_Plug-01');
 
     end;

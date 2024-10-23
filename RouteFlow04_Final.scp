@@ -43,7 +43,7 @@ end;
 procedure Back_Drill;
 begin
 
-  if Fnc.SysGetAttrValue('BackDrillStubSpec') <= 6.0 then  // 2385 Backdrill with 6 mil stub
+  if Fnc.SysGetAttrValue('BackDrillStubSpec') <= 7.0 then  // 2755 Backdrill SP, EC & FI Update
   begin
 
     if BKDRBot then AddStep('Back_Drill_A_SP', 'Back_Drill_SPA01');
@@ -489,11 +489,17 @@ begin
     AddStep('Part_EC', 'Part_EC01');
 
   // 1310 Additiona Backdrill EC
-  if ( Fnc.SysGetAttrValue('BackDrill') ) and
-     ( Fnc.SysGetAttrValue('BackDrill_EC') ) and 
-     ( not GetsHiPot )
+  if ( Fnc.SysGetAttrValue('BackDrill') and Fnc.SysGetAttrValue('BackDrill_EC') ) OR
+     // ( not GetsHiPot )  // 2755 Backdrill SP, EC & FI Update
+     ( Fnc.SysGetAttrValue('BackDrillStubSpec') <= 7.0 )
   then
+  begin
+
     AddStep('Silver_Inspection', 'Silver_Inspection-01'); // 2622
+
+    if Fnc.SysGetAttrValue('BackDrillStubSpec') <= 7.0 then AddStep('Back_Drill4WireTest', 'Back_Drill4WireTest01');
+
+  end;
 
   if Fnc.SysGetAttrValue('FourWireMsm') then
     AddStep('EC_FlyingProbe', 'EC_FlyingProbe01');
@@ -503,8 +509,9 @@ begin
 
     AddStep('HiPotTest', 'HiPotTest01');
                                    
-    if ( Fnc.SysGetAttrValue('BackDrill') ) and ( Fnc.SysGetAttrValue('BackDrill_EC') ) then
-      AddStep('Silver_Inspection', 'Silver_Inspection-01'); // 2622
+    // 2755 Backdrill SP, EC & FI Update
+    //if ( Fnc.SysGetAttrValue('BackDrill') ) and ( Fnc.SysGetAttrValue('BackDrill_EC') ) then
+    //  AddStep('Silver_Inspection', 'Silver_Inspection-01'); // 2622
 
   end;
 
@@ -557,17 +564,14 @@ begin
   else
     AddStep('Final_Insp', 'Final_Insp01');
 
+  // 2755 Backdrill SP, EC & FI Update
+  if Fnc.SysGetAttrValue('BackDrillStubSpec') <= 7.0 then AddStep('Back_Drill_Inspection', 'Back_Drill_Inspection01');
+
   if (
-      (                                             
-       //(GoldFingerType = 'Lead Line Etching B4 Res (Sel)') or  1256
+      (
        (GoldFingerType = 'Lead Line Etching') or
        (GoldFingerType = 'No Horn - Lead Line Etching B4 Res (Sel)') or
-       //(GoldFingerType = 'Chamfer B4 Res (Sel)') or  911
-       // (GoldFingerType = 'After Pattern (Sel)') or 1256
        (GoldFingerType = 'NO Lead Line Etching') or
-       //(GoldFingerType = 'Thin/Thick - Lead Line Etching B4 Res (Sel)') or 1256
-       //(GoldFingerType = 'Thin/Thick - Chamfer B4 Res (Sel)') or 
-       //(GoldFingerType = 'Thin/Thick - After Pattern (Sel)') or  1256
        (SelectiveGoldType<> 'None')
       )                                                                       
       or

@@ -2,7 +2,7 @@
 //SiteId=0
 //Enterprise=True
 //ScriptType=0
-//ScriptGroup=
+//ScriptGroup=HCS
 //HeaderImportExport<--
 uses
   Event_RouteGenLibrary, //Route System Scripts
@@ -14,7 +14,7 @@ begin
 
   AddStep('Scope_Drilling_BDEP', 'Scope_Drilling_BDEP01');
 
-  if Fnc.SysGetAttrValue('BackDrillStubSpec') <= 6.0 then  // 2385 Backdrill with 6 mil stub
+  if Fnc.SysGetAttrValue('BackDrillStubSpec') <= 7.0 then  // 2755 Backdrill SP, EC & FI Update
   begin
 
     if BKDRwEpoxyTop then AddStep('Back_Drill_B_Epoxy_SP', 'Back_Drill_SPB00');

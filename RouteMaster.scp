@@ -27,7 +27,7 @@ begin
   TotalThickestCuUM;
   //LayupThickness := Fnc.SysGetAttrValue('LayupThickness');
   //SetThicknessRequirements;
-  GET_VCUT_TYPE;
+  GET_VCUT_TYPE;                          
   GetCopperInfo;
   CheckProdPartUsesQualMats;
   Find2milorlessCores; // Special Process Description
@@ -116,10 +116,12 @@ begin
 
     if Fnc.SysGetAttrValue('NCRunX2') = true then
     begin
+
       if Fnc.SysGetAttrValue('Min_Drill_Size_2') > 0 then
         fnc.SysSetAttrValue('Aspect_Ratio_Val_2', Round1000(PressThickness/Fnc.SysGetAttrValue('Min_Drill_Size_2')))
       else
-        ShowMessage('Warning! : 2nd Min_Drill_Size = 0.0');
+        MessageDlg('2nd Min_Drill_Size = 0.0', mtWarning, Setof([mbOK]), 0);
+
     end;             
     
     if Fnc.SysGetAttrValue('BlindVias') then
@@ -219,19 +221,19 @@ begin
       if Fnc.SysGetAttrValue('Min_Drill_Size') > 0 then
         fnc.SysSetAttrValue('Aspect_Ratio_Val', Round1000(PressThickness/Fnc.SysGetAttrValue('Min_Drill_Size')))
       else
-        ShowMessage('Warning! : Min_Drill_Size = 0.0');
+        MessageDlg('Min_Drill_Size = 0.0', mtWarning, SetOf([mbOK]), 0);
     end
     else   
     begin
       if Fnc.SysGetAttrValue('Min_Drill_Size') > 0 then
         fnc.SysSetAttrValue('Aspect_Ratio_Val', Round1000(LayupThickness/Fnc.SysGetAttrValue('Min_Drill_Size')))
-      else        
-        ShowMessage('Warning! : Min_Drill_Size = 0.0');
+      else
+        MessageDlg('Min_Drill_Size = 0.0', mtWarning, SetOf([mbOK]), 0);
     end;                       
   end;                                        
-  
+
   SetHCSPartType;  // 408 Paradigm Part Number Coding - Internal Part number
-  
+
   if Fnc.SysGetAttrValue('MfgPartType') = 'Top' then   
     Get_SO_Unit; // 408 Paradigm Part Number Coding - Internal Part number 
 
@@ -391,7 +393,7 @@ begin
   // Max Epoxy Plugging = 5mm
   if ((Fnc.SysGetAttrValue('EpoxySide') <> 'None') and (LayupThickness > 8.00)) then  // 2573  
     MessageDlg('Max Thickness for Epoxy Plugging is 5.00 MM.', mtWarning, Setof([mbOK]), 0);
-                          
+
   // 757 - Job Type Checking  
   if MfgPartType = 'Top' then CheckJobType;
     
@@ -557,7 +559,7 @@ begin
     Fnc.SysSetItemAttrValue('Layer_Min_Line', Fnc.SysGetAttrValue('Line_Width'), true, cStackupLayer, 1);
   if Fnc.SysGetItemAttrValue('Layer_Min_Line', false, cStackupLayer, 1) = 0.0 then
     Fnc.SysSetItemAttrValue('Layer_Min_Line', Fnc.SysGetAttrValue('Line_Width'), false, cStackupLayer, 1);
-    
+
   if Fnc.SysGetItemAttrValue('Layer_Min_Air_Gap', true, cStackupLayer, 1) = 0.0 then
     Fnc.SysSetItemAttrValue('Layer_Min_Air_Gap', Fnc.SysGetAttrValue('Air_Gap'), true, cStackupLayer, 1);
   if Fnc.SysGetItemAttrValue('Layer_Min_Air_Gap', false, cStackupLayer, 1) = 0.0 then
@@ -642,7 +644,7 @@ begin
   Fnc.SysSetAttrValue('UEtch_Spec', '');
 
   InProcessCuThk := 0;
-  if (( CoreBuild or SubAssemblyCoreBuild ) and ( Fnc.SysGetAttrValue('LayerCount') > 2 )) then 
+  if (( CoreBuild or SubAssemblyCoreBuild ) and ( Fnc.SysGetAttrValue('LayerCount') > 2 )) then
   begin
 
     InProcessCuThk := GetSuborCoreIPCT;
@@ -744,5 +746,7 @@ begin
       end;
 
   end;
+
+  Fnc.SysTableDestroy(aTable);
 
 end;

@@ -58,10 +58,10 @@ begin
   StepDeptERP('BACKD-A');
   
   // 2366 Additional Attribute for Backdrill stub length Spec
-  if Fnc.SysGetAttrValue('BackDrillStubSpec') <= 6.0 then // Same logic as adding the 'SP' type steps
+  // 2755 Backdrill SP, EC & FI Update
+  if Fnc.SysGetAttrValue('BackDrillStubSpec') <= 7.0 then // Same logic as adding the 'SP' type steps
   begin
 
-    //StepDeptERP('BACKD-B');  Not sure if this should be -B or not...doesn't really matter
     StepWCERP('BACKD-B0');
 
     if process = 'aftermask' then StepInstructionERP('BACKD039'); // 2385 Add remarks for Backdrill
@@ -151,6 +151,23 @@ begin
 
 end;
 
+procedure Back_Drill4WireTest_SD; // 2755 Backdrill SP, EC & FI Update
+begin
+
+  StepDeptERP('ECMSM-A');
+  StepWCERP('ECMSM-A');
+
+end;
+
+procedure Back_Drill_Inspection_SD; // 2755 Backdrill SP, EC & FI Update
+begin
+
+  StepDeptERP('FINAL-B0');
+  StepWCERP('FINAL-B0');
+
+  StepParamERP('Remarks', '100% Visual Inspection');
+
+end;
 
 procedure Gold_Tab_Plating_SD;
 begin
@@ -856,4 +873,3 @@ begin
   StepDeptERP('TAPNG-A');
   StepWCERP('TAPNG-A');
 end;
-

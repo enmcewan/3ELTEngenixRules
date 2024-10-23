@@ -4,7 +4,7 @@
 //ScriptType=0
 //ScriptGroup=HCS
 //HeaderImportExport<--
-       uses
+uses
   CT_SearchLibrary;
 
 const
@@ -14,6 +14,9 @@ const
   cDesmear_Material = '2-material';
   cDesmear_Thickness = 'thickness';
   cDesmear_DeepBlindVia = 'deepblindvia';
+
+var
+  DesmearTab: TSysTable;
 
 procedure Desmear_AppendError(var errMsg: string; newMsg: string);
 begin
@@ -27,7 +30,7 @@ var
   i: integer;
   Material: string;
   TempList: TStringList;
-begin                                                                      
+begin
   Result := False;
 
   Material := '';
@@ -41,25 +44,36 @@ begin
   DesmearTab.Filter := Format('(Type=%s) and (Seq=1)', [QuotedStr('3-Material')]);
   DesmearTab.Filtered := True;
 
+  //ShowMessage(DeSmearTab.tag);
+
   // pass-1, search for 100% match
   DesmearTab.First;
   while not DesmearTab.Eof do
   begin
+
     TempList.Text := StringReplace(DesmearTab.FieldByName('Material').AsString, ';', #13, SetOf([rfReplaceAll]));
 
     if (MaterialList.Count = 1) or DesmearTab.FieldByName('Hybrid').AsBoolean then
     begin
 
-      Result := LowerCase(MaterialList.Text) = LowerCase(TempList.Text);
+      if DesmearTab.tag = 1 then
+        Result := LowerCase(MaterialList.Text) = LowerCase(TempList.Text)
+      else if DesmearTab.FieldByName('NCX2').AsBoolean then
+        Result := LowerCase(MaterialList.Text) = LowerCase(TempList.Text)
 
       if Result then
       begin
+
         Material := DesmearTab.FieldByName('Material').AsString;
+
         break;
+
       end;
+
     end;
 
     DesmearTab.Next;
+
   end;
 
   // pass-2, search for any combination
@@ -141,32 +155,49 @@ begin
 
 end;
 
-function GetDesmearStepList(Material: string; Thickness: float): TStringList;
-var                                                                      
-  i: integer;
-  errMsg: string;
-  FieldName: string;
-  FieldValue: string;
-  TempList: TStringList;
-  MaterialList: TStringList;
-  DesmearTab: TSysTable;
-  colList : TstringList;
+function GetDesmearTable: TSysTable;
 begin
+
+  if NCRun = 1 then
+    DesmearTab := Fnc.CustomTableGet('Desmear_2466'); //  2466  Updated Desmear Table Column
+  else if NCRUN = 2 then
+    DesmearTab := Fnc.CustomTableGet('Desmear_2XNC'); // Only  Materials with 2XNC Desmear activated.
+    
+  DesmearTab.tag := NCRun;
+
+end;
+
+
+function GetDesmearStepList(Material: string; Thickness: float): TStringList;
+var
+
+  i: integer;
+
+  errMsg,
+  FieldName,
+  FieldValue: string;
+
+  TempList,
+  MaterialList,
+  colList : TstringList;
+
+begin
+
   Result := TStringList.Create;
-                                          
-  if Trim(Material) = '' then
-    exit;
+
+  if Trim(Material) = '' then exit;
 
   errMsg := '';
 
   MaterialList := TStringList.Create;
-  MaterialList.Duplicates := dupIgnore
+  MaterialList.Duplicates := dupIgnore                                              
   MaterialList.Sorted := True;
   MaterialList.CaseSensitive := False;
 
   MaterialList.Text := StringReplace(Material, '/', #13, SetOf([rfReplaceAll]));
 
-  DesmearTab := Fnc.CustomTableGet('Desmear_2466'); //  2466  Updated Desmear Table Column
+  GetDesmearTable;
+
   DesmearTab.Filtered := False;
   DesmearTab.Filter := '';
   DesmearTab.FilterOptions := SetOf([foCaseInsensitive]);
@@ -186,46 +217,55 @@ begin
           begin
 
               FieldName := Format('Data_%d', [i]);
-    //-->        SpreadsheetColumnList;
-  
-            if not assigned(DesmearTab.FindField(FieldName)) then
-              i := -1
+              // SpreadsheetColumnList;
+
+            if not assigned(DesmearTab.FindField(FieldName)) then i := -1
             else
             begin
 
               FieldValue := LowerCase(DesmearTab.FieldByName(FieldName).AsString);
-  
+
               if (FieldValue <> 'none') and (FieldValue <> '') then
                 TempList.Add(FieldName);
 
             end;
 
           end;
+
       until i < 0;
 
       DesmearTab.Filtered := False;
 
       if TempList.Count < 1 then
       begin
+
         errMsg := 'Search Desmear table, no valid entry found for ' +
                   'Material: ' + Material +
                   ', Thickness: ' + FloatToStr(Thickness);
       end
       else
       begin
+
         if DesmearTab.Locate('Type', cDesmear_Header1, SetOf([loCaseInsensitive])) then
         begin
           for i := 0 to TempList.Count - 1 do
           begin
+
             FieldValue := DesmearTab.FieldByName(TempList.Strings[i]).AsString;
+
             if Result.IndexOf(FieldValue) < 0 then
               Result.Add(FieldValue);
+
           end;
+
         end;
+
       end;
 
       TempList.Free;
+
     end;
+
   end;
 
   MaterialList.Free;
@@ -238,16 +278,17 @@ begin
 
   if errMsg <> '' then
     MessageDlg(errMsg, mtWarning, SetOf([mbCancel]), 0);
+
 end;
 
 function GetDesmearStepParameters(Material: string; Thickness: float; ProdStep: string): TStringList;
 var
   i: integer;
-  errMsg: string;           
+  errMsg: string;
   FieldName: string;
   FieldList: TStringList;
   MaterialList: TStringList;
-  DesmearTab: TSysTable;
+
 begin
   Result := TStringList.Create;
 
@@ -263,7 +304,9 @@ begin
 
   errMsg := '';
 
-  DesmearTab := Fnc.CustomTableGet('Desmear_2466'); // 2466  Updated Desmear Table Column
+  GetDesmearTable;
+
+  DesmearTab.tag := NCRun;
   DesmearTab.Filtered := False;
   DesmearTab.Filter := '';
   DesmearTab.FilterOptions := SetOf([foCaseInsensitive]);
@@ -281,7 +324,7 @@ begin
       begin
 
         FieldName := Format('Data_%d', [i]);
-  
+
         if not assigned(DesmearTab.FindField(FieldName)) then
           i := -1
         else
@@ -325,4 +368,3 @@ begin
   if errMsg <> '' then
     MessageDlg(errMsg, mtWarning, SetOf([mbCancel]), 0);
 end;
-
