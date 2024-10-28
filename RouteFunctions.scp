@@ -18,7 +18,7 @@ Var
   BKDRBot : boolean;
   BKDRwEpoxyTop : boolean;  // 844 Backdrill after Electrolytic Cu       
   BKDRwEpoxyBot : boolean;
-  PANEL_VCUT_DONE : boolean;
+  PANEL_VCUT_DONE : boolean;  
   BackDrillDone : boolean;         
   ImpedanceDone : boolean;
   PressThickness : float;
@@ -30,7 +30,7 @@ Var
   AOIforCMK : boolean;                         
   NCRun : integer;                                                                                 
   MicroEtchDone : boolean;
-  TopFirstPlatingUM : float;       
+  TopFirstPlatingUM : float;
   BotFirstPlatingUM : float;             
   Baking_Mtl : string;                       
   OLPhotoLineforDES : string;            

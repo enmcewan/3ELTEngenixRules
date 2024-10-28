@@ -589,7 +589,7 @@ begin
   StepInstructionERP('COPPL001');
 end;
 
-Procedure EpoxyPlug_CT_Vertical_Buffing;
+Procedure EpoxyPlug_CT_Vertical_Buffing; // 2769
 begin
 
   StepDeptERP('EPBUF-B0');
@@ -1391,8 +1391,8 @@ end;
 procedure DM2_Buff_SD;
 begin
 
-  StepDeptERP('DBURR-BO'); // 2754
-  StepWCERP('DBURR-BO');
+  StepDeptERP('DBURR-B0'); // 2754
+  StepWCERP('DBURR-B0');
   StepParamERP('Remark', 'Buffing Only');
 
 end;

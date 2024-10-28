@@ -110,7 +110,7 @@ begin
   begin
 
     StepDeptERP('EXPIL-D');
-    StepWCERP('EXPIL-D'); // // 2624 Obsolete Resource Code           
+    StepWCERP('EXPIL-D'); // // 2624 Obsolete Resource Code
     StepParamERP('Alt Line', 'G2');
 
   end;

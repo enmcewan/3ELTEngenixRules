@@ -353,7 +353,7 @@ begin
       AddStep('Epoxy_PlugB', 'Epoxy_PlugB01');
   end;
 
-  if MfgAttr('EpoxyPlug_CuThin_Mode') = 'Auto' then
+  if MfgAttr('EpoxyPlug_CuThin_Mode') = 'Auto' then  // 2769
   begin
 
     if (

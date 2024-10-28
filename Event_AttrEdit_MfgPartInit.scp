@@ -33,6 +33,13 @@ begin
 
 end;
 
+procedure ShowAttr(AttrName: string);
+begin
+
+  SetVal(AttrName, '');
+
+end;
+
 // Not currently needed, table data is using numerci values
 function ConvertTableData(Data: string; parameter: string) : variant;
 begin
@@ -79,6 +86,10 @@ begin
         SetVal('Wait', (GetVal('Volt') / GetVal('Ramp')) * 1000);
 
     end;
+
+    // 2769
+    if GetVal('CoreBuild_CuThin_Mode') = 'Auto' then ShowAttr('CoreBuild_CuThin_FirstBuff');
+    if GetVal('EpoxyPlug_CuThin_Mode') = 'Auto' then ShowAttr('EpoxyPlug_CuThin_FirstBuff');
 
   end;
                                         
@@ -130,7 +141,7 @@ begin
       MessageDlg('Gold Finger type: "' + GetVal('Gold_Fgr_Type') + '" is no longer valid. Value set to "Lead Line Etching"', mtInformation, Setof([mbOK]), 0);
       SetVal('Gold_Fgr_Type', 'Lead Line Etching');
     end;
-    
+
     if GetVal('Gold_Fgr_Type') = 'Lead Line Etching Af Res (Sel)' then
     begin 
       MessageDlg('Gold Finger type: "' + GetVal('Gold_Fgr_Type') + '" is no longer valid. Value set to "Au Finger Plate after SM"', mtInformation, Setof([mbOK]), 0);

@@ -332,8 +332,6 @@ begin
   if (GetVal('EpoxyPlug_CuThin_Process') <> 'None') or (GetVal('EpoxyPlug_CuThin_Mode') = 'Auto') then  // 2769
   begin
 
-
-
     if ( GetVal('EpoxyPlug_CuThin_Process') = 'Buffing') or (GetVal('EpoxyPlug_CuThin_Mode') = 'Auto') then
        ShowAttr('EpoxyPlug_CuThin_1stBuff');
 

@@ -35,7 +35,7 @@ begin
       AddStep('Hole_Check', 'Hole_CheckSP01');  //This step is independent from the other hole check steps
 
     end        
-    else                                               
+    else
       ShowMessage('Warning!!! Secondary Plug Ink Type not selected, process steps will be missing.');
   end;
 end;                  
@@ -486,7 +486,7 @@ begin
   AddStep('InkJet', 'InkJet01');
 
   if Fnc.SysGetAttrValue('EC_Type') = 'Part' then
-    AddStep('Part_EC', 'Part_EC01');
+    AddStep('Part_EC', 'Part_EC01');     
 
   // 1310 Additiona Backdrill EC
   if ( Fnc.SysGetAttrValue('BackDrill') and Fnc.SysGetAttrValue('BackDrill_EC') ) OR
@@ -508,7 +508,7 @@ begin
   begin
 
     AddStep('HiPotTest', 'HiPotTest01');
-                                   
+
     // 2755 Backdrill SP, EC & FI Update
     //if ( Fnc.SysGetAttrValue('BackDrill') ) and ( Fnc.SysGetAttrValue('BackDrill_EC') ) then
     //  AddStep('Silver_Inspection', 'Silver_Inspection-01'); // 2622

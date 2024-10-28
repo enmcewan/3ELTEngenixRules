@@ -24,7 +24,7 @@ begin
     errMsg := errMsg + #13;
   errMsg := errMsg + newMsg;
 end;
-
+                                        
 function Desmear_RestrictToMaterial(DesmearTab: TSysTable; MaterialList: TStringList; var errMsg: string): boolean;
 var
   i: integer;
@@ -56,9 +56,9 @@ begin
     if (MaterialList.Count = 1) or DesmearTab.FieldByName('Hybrid').AsBoolean then
     begin
 
-      if DesmearTab.tag = 1 then
+      {if DesmearTab.tag = 1 then
         Result := LowerCase(MaterialList.Text) = LowerCase(TempList.Text)
-      else if DesmearTab.FieldByName('NCX2').AsBoolean then
+      else if DesmearTab.FieldByName('NCX2').AsBoolean then }  // Removed this condition. The NCX2
         Result := LowerCase(MaterialList.Text) = LowerCase(TempList.Text)
 
       if Result then
@@ -155,7 +155,7 @@ begin
 
 end;
 
-function GetDesmearTable: TSysTable;
+function GetDesmearTable: TSysTable;  // 2742
 begin
 
   if NCRun = 1 then
