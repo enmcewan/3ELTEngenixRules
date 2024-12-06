@@ -418,7 +418,7 @@ begin
   then
   begin
 
-    if ( PressThickness <= 4.0 ) then  // 2615 Micro-Etch HAL
+    if ( PressThickness <= 4.3 ) then  // 2615 Micro-Etch HAL
       AddStep('MicroEtch', 'MicroEtch01')
     else
       AddStep('MicroEtchHAL', 'MicroEtchHAL01');
@@ -449,7 +449,7 @@ begin
   if ( BaseCuTopUM > 9 ) and ( BaseCuBotUM > 9 ) then // 2615 Micro-Etch HAL
   begin
 
-    if ( PressThickness <= 4.0 ) then
+    if ( PressThickness <= 4.3 ) then
       AddStep('MicroEtch', 'MicroEtch01')
     else
       AddStep('MicroEtchHAL', 'MicroEtchHAL01')
@@ -521,7 +521,7 @@ begin
     if LaserABotHits > 0 then AddStep('Dir_LaserA', 'Dir_LaserA01');
     if LaserBTopHits > 0 then AddStep('Dir_LaserB', 'Dir_LaserB01');
 
-    if PressThickness <= 4.0 then  //  2615
+    if PressThickness <= 4.3 then  //  2615
       AddStep('MicroEtch_DirLaser', 'MicroEtch_DirLaser01')
     else
       AddStep('MicroEtch_DirLaserHAL', 'MicroEtch_DirLaserHAL01');
@@ -547,7 +547,7 @@ begin
   AddStep('Electrolytic_Cu_1', 'Electrolytic_Cu_101');
   //AddStep('CuHoleCheck', 'CuHoleCheck01');
 
-  if PlatingLineP4orP6orP7 or
+  if (PlatingLineP4orP6orP7) or
    (( Plating_Line = 'MCP' ) and (( Fnc.SysGetAttrValue('Min_Drill_Size') <= 0.25 ) or ( Fnc.SysGetAttrValue('EpoxySide') <> 'None' )))
   //( Fnc.SysGetAttrValue('NCRunX2') = false ) and ( Fnc.SysGetAttrValue('EpoxySide') <> 'None' ) // Commented out NCRunX2 = false. If it's false then NCRun will always = 1
   then
@@ -568,16 +568,8 @@ begin
 
 end;
 
-procedure PressThkWarning;
-begin
-
-   if PressThickness > 4.0 then // 1112 Micro-etch for thick board
-     MessageDlg('Board too thick for Core Build Cu Thinning standard Micro-etch process.', mtWarning, Setof([mbOK]), 0);
-
-end;
-
 procedure RouteFlow02;
-begin                                                                                                                                  
+begin
 
   NCRun := 0;
 
@@ -590,16 +582,21 @@ begin
     begin
 
       // 2769 Vertical Buffing Auto-Mode
-      if MfgAttr('CoreBuild_CuThin_Mode') = 'Auto' then
+     if ( MfgAttr('CoreBuild_CuThin_Mode') = 'Auto' ) and ( not SubAssemblyCoreBuild ) then
       begin
 
         // Core Build & Cu Thk >= 1/2oz. Sub-Assemblies assumed to always have > 1/2oz Cu as they are plated.
-        if (CoreBuild and ((BaseCuTopUM >= 18) or (BaseCuTopUM >= 18))) or SubAssemblyCoreBuild then
+        //if (CoreBuild and ((BaseCuTopUM >= 18) or (BaseCuTopUM >= 18))) or SubAssemblyCoreBuild then
+        // Testing comment from Herol 24-11-07 - Base Cu check doesnt apply to final stage...so then it applies to nothing??
+        //begin
+       // end;
+        if CoreBuild and ((BaseCuTopUM >= 18) or (BaseCuTopUM >= 18)) then
         begin
-
+  
           AddStep('CoreBuild_GTHOC_Vertical_Buffing', 'CoreBuild_GTHOC_Vertical_Buffing01');
           SetMfgAttr('CoreBuild_CuThin_Process', 'Vertical Buffing');
-          
+          UpdateInProcessCuThk(Cu_Thk_After_CuThin);
+  
         end;
 
       end
@@ -607,7 +604,7 @@ begin
       begin
         // Core Build Cu Thinning
         if MfgAttr('CoreBuild_CuThin_Process') <> 'None' then
-        begin
+        begin             
 
           if MfgAttr('CoreBuild_CuThin_Process') = 'Buffing' then
             AddStep('CoreBuild_CT_Buffing1', 'CoreBuild_CT_Buffing101')
@@ -615,39 +612,37 @@ begin
           begin
 
             AddStep('CoreBuild_CT_Buffing1', 'CoreBuild_CT_Buffing101');
-            AddStep('CoreBuild_MicroEtch', 'CoreBuild_MicroEtch01');
+            if PressThickness <= 4.30 then AddStep('CoreBuild_MicroEtch', 'CoreBuild_MicroEtch01') else AddStep('CoreBuild_MicroEtch_HAL', 'CoreBuild_MicroEtchHAL01');
             AddStep('CoreBuild_CT_Buffing2', 'CoreBuild_CT_Buffing201');
-
-            PressThkWarning;
 
           end
           else if MfgAttr('CoreBuild_CuThin_Process') = 'Micro-Etch + Buffing' then // 1473
           begin
 
-            AddStep('CoreBuild_MicroEtch', 'CoreBuild_MicroEtch01');
+            if PressThickness <= 4.30 then AddStep('CoreBuild_MicroEtch', 'CoreBuild_MicroEtch01') else AddStep('CoreBuild_MicroEtch_HAL', 'CoreBuild_MicroEtchHAL01');
             AddStep('CoreBuild_CT_Buffing1', 'CoreBuild_CT_Buffing101');
-  
-            PressThkWarning;
-  
+
+
           end
           else if MfgAttr('CoreBuild_CuThin_Process') = 'Vertical Buffing' then // 1473
           begin
   
             AddStep('CoreBuild_CT_Buffing1', 'CoreBuild_CT_Buffing101');
   
-            PressThkWarning;
+            //PressThkWarning;
   
           end
-  
+
           UpdateInProcessCuThk(Cu_Thk_After_CuThin);
   
         end;
+
       end;
 
     end;      
 
     if MfgAttr('BlindVias') then BlindVia;
-         
+
   end
   else
   begin
@@ -678,7 +673,7 @@ begin
   if ( not MfgAttr('BlindVias') ) and MicroEtchReqd then  // 1112 Micro-etch for thick board
   begin
 
-    if ( PressThickness <= 4.0 ) then  // 2615 Micro-Etch HAL
+    if ( PressThickness <= 4.3 ) then  // 2615 Micro-Etch HAL
       AddStep('MicroEtch', 'MicroEtch01');
     else
       AddStep('MicroEtchHAL', 'MicroEtchHAL01')

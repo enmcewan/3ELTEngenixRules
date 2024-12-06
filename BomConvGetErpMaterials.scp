@@ -4,7 +4,7 @@
 //ScriptType=1
 //ScriptGroup=BOM Conversion
 //HeaderImportExport<--
-function GetErpMaterials(ErpMaterials: TSysTable);
+function GetErpMaterials(ErpMaterials: TSysTable);          
 var
   SqlStr: string;
   InvTable: TSysTable;
@@ -36,10 +36,7 @@ begin
             ' and Data0017.Active_Flag = ' + QuotedStr('Y') +
             ' ORDER BY Data0017.Inv_Part_Number';
 
-
-
   InvTable  := Fnc.AstaExecuteSql(SqlStr);
-
   {
   // Get the Purchase Part Ies Parameters from Paradigm               
   SqlStr := 'SELECT' +

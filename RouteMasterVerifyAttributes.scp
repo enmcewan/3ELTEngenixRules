@@ -62,7 +62,7 @@ begin
       InputAttributeErrorHandler('Core Build Cu Thinning Mode is set to "Override" but the process is set to "None".')
     //else if Fnc.SysGetAttrValue('CoreBuild_CuThin_Process') = 'None' then  // Core Build Cu Thinning
     //  InputAttributeErrorHandler('Cu Thinning Process for Core Build')
-    else if Fnc.SysGetAttrValue('CoreBuild_CuThin_Process') = 'None' then
+    else if MfgAttr('CoreBuild_CuThin_Process') <> 'None' then
     begin
 
       if ( Fnc.SysGetAttrValue('CoreBuild_CuThin_Process') = 'Buffing' ) or
@@ -210,7 +210,7 @@ begin
 
   if Fnc.SysGetAttrValueTopLevel('Panel_Cavity') = 0 then
     InputAttributeErrorHandler('Panel Cavity for Top Level Part cannot be 0');
-
+                             
   if Fnc.SysGetAttrValueTopLevel('SO_Unit') <> 'Part'  then
     if Fnc.SysGetAttrValueTopLevel('Part_Cavity') = 0 then
       InputAttributeErrorHandler('Part Cavity for Top Level Part cannot be 0');
@@ -238,5 +238,9 @@ begin
   if GreaterThan1CoreorSequential then  // 2472
    if Not (Fnc.SysGetAttrValue('Panel_Width_Press') >= 358) then
      InputAttributeErrorHandler('Press Panel Width must be >= 358MM');
+
+  // 2741
+  if MfgAttr('EpoxyPlug_CuThin_Process') = 'Micro-Etch + Buffing' then
+    InputAttributeErrorHandler('Epoxy Plug Thinning Process cannot be Micro-Etch + Buffing, choose another option.');
 
 end;

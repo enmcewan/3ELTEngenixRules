@@ -28,7 +28,7 @@ begin
   PrimeQty := 0;
   AltQty := 0;
   StepNum := 0;            
-
+                                   
   // Foils always get standard qty for the BOM
   if Fnc.SysErpBomTable.FieldByName('GenMatrlType').AsString = 'Foil' then
   begin
@@ -45,8 +45,7 @@ begin
     else if Fnc.SysErpBomTable.FieldByName('ErpMatrlUom').AsString = 'SHEET' then
       PrimeQty := 1;
     else
-      PrimeQty := 1;
-      //MessageDlg('Unknown BOM Unit ' + Fnc.SysErpBomTable.FieldByName('ErpMatrlUom').AsString + ' for Cu Foil', mtWarning, SetOf([mbOK]), 0 ); 
+      MessageDlg('Unknown BOM Unit ' + Fnc.SysErpBomTable.FieldByName('ErpMatrlUom').AsString + ' for Cu Foil', mtWarning, SetOf([mbOK]), 0 ); 
   end
   else // PPG & Core get 0.0 qty per BOM for sample Jobs.
   begin

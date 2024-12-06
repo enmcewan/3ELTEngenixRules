@@ -497,8 +497,81 @@ begin
   StepParamERP('Panel Size', Fnc.SysGetAttrValue('Panel_Size'));
   Insert_MinHole_Aspect('Epoxy');
 
-  // 2741 Addtional Via Type Plugging Info
-  if PlugViaTypeNote <> '' then StepParamERP('Plug Via Type', PlugViaTypeNote); 
+end;
+
+function GenPlugViaTypeNote(side: string) : string; // 2741
+begin
+
+   result := '';
+
+   if side = 'Top' then
+   begin
+
+     if LaserViaEpoxyTop then
+     begin
+
+       if Length(result) > 0 then result := result +' + Blind' else result := 'Blind';
+
+     end;
+
+     if MechViaEpoxyTop then
+     begin
+
+       if Length(result) > 0 then result := result +' + Mech_Blind' else result := 'Mech_Blind';
+
+     end;
+
+     if BKDRwEpoxyTop then
+     begin
+
+       if Length(result) > 0 then result := result +' + Backdrill' else result := 'Backdrill';
+
+     end;
+
+     if PTHEpoxyTop or PTHEpoxyBot then
+     begin
+
+       if Length(result) > 0 then result := result +' + PTH' else result := 'PTH';
+
+     end;
+
+   end;
+
+   if side = 'Bot' then
+   begin
+
+     if LaserViaEpoxyBot then
+     begin
+
+       if Length(result) > 0 then result := result +' + Blind' else result := 'Blind';
+
+     end;
+
+     if MechViaEpoxyBot then
+     begin
+
+       if Length(result) > 0 then result := result +' + Mech_Blind' else result := 'Mech_Blind';
+
+     end;
+
+     if BKDRwEpoxyBot then
+     begin                    
+
+       if Length(result) > 0 then result := result +' + Backdrill' else result := 'Backdrill';
+
+     end;
+
+     if PTHEpoxyBot or PTHEpoxyTop then
+     begin
+
+       if Length(result) > 0 then result := result +' + PTH' else result := 'PTH';
+
+     end;
+
+   end;
+
+   if Length(result) > 0 then StepParamERP('Plug Via Type', result);
+
 end;
 
 procedure Epoxy_PlugA_SD;
@@ -508,7 +581,10 @@ begin
   
   if ( not Fnc.SysGetAttrValue('BackDrill_Epoxy') ) and  // 1258 Additional pre-baking b4 Epoxy Plugging 
      (( Fnc.SysGetAttrValue('EpoxySide') = 'Epoxy Side A' ) or ( Fnc.SysGetAttrValue('EpoxySide') = 'Epoxy Side AB' )) then
-    StepParamERP('Remarks', 'Pre-Bake using Blue Box Oven'); 
+    StepParamERP('Remarks', 'Pre-Bake using Blue Box Oven');
+
+  GenPlugViaTypeNote('Bot');
+
 end;
 
 procedure Epoxy_PlugB_SD;
@@ -519,15 +595,21 @@ begin
   if ( not Fnc.SysGetAttrValue('BackDrill_Epoxy') ) and  // 1258 Additional pre-baking b4 Epoxy Plugging   
      (( Fnc.SysGetAttrValue('EpoxySide') = 'Epoxy Side B' ) or ( Fnc.SysGetAttrValue('EpoxySide') = 'Epoxy Side BA' )) then
     StepParamERP('Remarks', 'Pre-Bake using Blue Box Oven');
+
+  GenPlugViaTypeNote('Top');
+
 end;
 
 procedure Epoxy_PlugA_SS_SD;   // 1463
 begin
   Epoxy_Plug_Common;
   StepParamERP('Epoxy Side', 'A side');
-  
+
   if not Fnc.SysGetAttrValue('BackDrill_Epoxy') then // 1504
-  StepInstructionERP('EPXPL071'); // Pre-Bake using Blue Box Oven' 
+  StepInstructionERP('EPXPL071'); // Pre-Bake using Blue Box Oven'
+
+  GenPlugViaTypeNote('Bot');
+
 end;
                                      
 procedure Epoxy_PlugB_SS_SD;  // 1463
@@ -537,12 +619,17 @@ begin
 
   if not Fnc.SysGetAttrValue('BackDrill_Epoxy') then // 1504
   StepInstructionERP('EPXPL071'); // Pre-Bake using Blue Box Oven'
+
+  GenPlugViaTypeNote('Top');
+
 end;
 
 procedure EpoxyPlug_Buffing_Common;                          
 begin
 
-  if ( Fnc.SysGetAttrValue('NCRunX2') and ( NCRun = 1 ) ) or  // 2614 Vertical Buffin Rule
+
+  // Comment from Herole in 2769 
+  {if ( Fnc.SysGetAttrValue('NCRunX2') and ( NCRun = 1 ) ) or  // 2614 Vertical Buffin Rule
      ( ( MfgPartType = 'Sub' ) and ( ParentIsSequential ) )
   then
   begin
@@ -552,12 +639,12 @@ begin
 
   end
   else
-  begin
+  begin}
 
     StepDeptERP('EPBUF-A');
     StepWCERP('EPBUF-A');
 
-  end;
+  //end;
 
 end;
 
@@ -580,13 +667,30 @@ begin
   StepInstructionERP('COPPL001');
 end;
 
-procedure EpoxyPlug_MicroEtch_SD;
+procedure EpoxyPlug_MicroEtch_Common
 begin
-  StepDeptERP('METCH-A');
-  StepWCERP('METCH-A');
-  //StepParamERP('NOTE', 'Metch for Cu Thin'); Removed per request by Jenny 11/11/15
+
   StepParamERP('Micro-Etch Spec', formatCuThinValue('EpoxyPlug_CuThin_MEtch', 'EpoxyPlug'));  //Added per request by Jenny 11/11/15
   StepInstructionERP('COPPL001');
+
+end;
+
+procedure EpoxyPlug_MicroEtch_SD;
+begin
+
+  StepDeptERP('METCH-A');
+  StepWCERP('METCH-A');
+  EpoxyPlug_MicroEtch_Common;
+
+end;
+
+procedure EpoxyPlug_MicroEtch_HAL_SD;
+begin
+
+  StepDeptERP('HALPT-A0');
+  StepWCERP('HALPT-A0');
+  EpoxyPlug_MicroEtch_Common;
+
 end;
 
 Procedure EpoxyPlug_CT_Vertical_Buffing; // 2769
@@ -595,7 +699,8 @@ begin
   StepDeptERP('EPBUF-B0');
   StepWCERP('EPBUF-B0');
   StepParamERP('Vertical Buffing Spec', formatCuThinValue('EpoxyPlug_CuThin_1stBuff', 'EpoxyPlug'));
-
+  StepInstructionERP('COPPL001');
+  
 end;
                                  
 procedure Pre_Photo_Cu_Thin_SD;  // 1196 Pre-Photo Cu Thinning 
@@ -1484,7 +1589,7 @@ begin
 end;
 
 procedure NC_Drill_PEP_IL_SD; // 1470
-begin
+begin                                                                                       
   StepDeptERP('DRILL-E');
   StepWCERP('DRILL-E');
   StepParamERP('Hole to Edge', 'X: ' + FloatToStr(Fnc.SysGetAttrValue('HoleToEdge_X')) + 'mm / ' +

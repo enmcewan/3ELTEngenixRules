@@ -4,7 +4,7 @@
 //ScriptType=0
 //ScriptGroup=HCS
 //HeaderImportExport<--
-uses
+ uses
   Event_RouteGenLibrary,
   Eng_RouteFunctions,
   RouteFunctions,
@@ -1395,6 +1395,24 @@ begin
   //DeSmear_Params('Alkaline Rinse');
 end;
 
+procedure Vertical_Desmear_EpxyThin_SD; // 2808
+begin
+
+  StepDeptERP('DMEAR-V01');
+  StepWCERP('DMEAR-V01');
+  StepInstructionERP('DMEAR076');
+
+end;
+
+procedure Desmear_Holl_EpxyThin_SD; // 2808
+begin
+
+  StepDeptERP('DMEAR-A0');
+  StepWCERP('DMEAR-A0');
+  StepInstructionERP('DMEAR077');
+
+end;
+
 procedure Plasma_SD;
 begin
   StepDeptERP('PLASM-A');
@@ -2051,6 +2069,15 @@ begin
   // 1107 Additional Run Card info - Note sequential build
   if Fnc.SysGetAttrValueTopLevel('Seq_Build') = true then
     SysRouteInsAddlParameter('Erp', 'Remark', 'Sequential Build', '', '', false, '', '', ''); 
+end;
+
+procedure Vertical_Desmear_CappedVia_SD; // 2807
+begin
+
+   StepDeptERP('DMEAR-V01');
+   StepWCERP('DMEAR-V01');
+   StepInstructionERP('CURIN-U');
+
 end;
 
 procedure CappedAndStrikePlatingResource; // 2616 VELCP Update Flow
@@ -3137,6 +3164,7 @@ end;
 
 procedure CoreBuild_CT_Buffing1_SD;   // Core Build Cu Thinning
 begin
+
   StepDeptERP('EPBUF-A');
   StepWCERP('EPBUF-A');
   StepParamERP('1st Buffing Spec', formatCuThinValue('CoreBuild_CuThin_1stBuff','CoreBuild')); // 799 Surface Cu Thickness value format in runcard
@@ -3150,12 +3178,15 @@ begin
   if Fnc.SysGetAttrValue('CoreBuild_CuThin_Process') = 'Vertical Buffing' then
     StepInstructionERP('EPBUF028'); // Use Vertical Buffing Machine Only  // 1473
   else if Fnc.SysGetAttrValue('CoreBuild_CuThin_Process') <> 'Micro-Etch + Buffing' then
-  begin                                  
+  begin
     if CoreBuild then // 838 Core Build Buffing Remarks
       StepInstructionERP('EPXPL014'); //Non-Woven Buffing Only
     else if SubAssemblyCoreBuild then
       StepInstructionERP('EPXPL015'); //Ceramic Buffing
   end;
+
+  StepInstructionERP('COPPL001');
+
 end;
 
 procedure CoreBuild_GTHOC_Vertical_Buffing; // 2769 Cu Thinning
@@ -3164,15 +3195,34 @@ begin
   StepDeptERP('EPBUF-B0');
   StepWCERP('EPBUF-B0');
   StepParamERP('Buffing Spec', formatCuThinValue('CoreBuild_CuThin_1stBuff','CoreBuild'));
+  StepInstructionERP('COPPL001');
+
+end;
+
+procedure CoreBuild_MicroEtch_Common;
+begin
+
+  StepParamERP('Micro-Etch Spec', formatCuThinValue('CoreBuild_CuThin_MEtch', 'CoreBuild')); // Buff-Etch-Buff  // 799 Surface Cu Thickness value format in runcard
+  StepInstructionERP('COPPL001');
 
 end;
 
 procedure CoreBuild_MicroEtch_SD; // Core Build Cu Thinning
 begin
+
   StepDeptERP('METCH-A');
   StepWCERP('METCH-A');
-  StepParamERP('Note', 'Metch for Cu Thin');
-  StepParamERP('Micro-Etch Spec', formatCuThinValue('CoreBuild_CuThin_MEtch', 'CoreBuild')); // Buff-Etch-Buff  // 799 Surface Cu Thickness value format in runcard
+  CoreBuild_MicroEtch_Common;
+
+end;
+
+procedure CoreBuild_MicroEtch_HAL_SD; // Core Build Cu Thinning
+begin
+
+  StepDeptERP('HALPT-A0');
+  StepWCERP('HALPT-A0');
+  CoreBuild_MicroEtch_Common;
+
 end;
 
 procedure CoreBuild_CT_Buffing2_SD;  // Core Build Cu Thinning
@@ -3186,6 +3236,9 @@ begin
     StepInstructionERP('EPXPL014'); //Non-Woven Buffing Only
   else if SubAssemblyCoreBuild then
     StepInstructionERP('EPXPL015'); //Ceramic Buffing
+
+  StepInstructionERP('COPPL001');
+
 end;
 
 procedure Baking_After_HP_SD;

@@ -29,9 +29,9 @@ begin
 
     if BKDRwEpoxyBot then AddStep('Back_Drill_A_Epoxy', 'Back_Drill_A00');
 
-  end;                                                                                    
+  end;
 
   AddStep('HighPressAirBlow', 'HighPressAirBlow00');
   AddStep('Hole_Check_BDB4M', 'Hole_Check_BD00');
 
-end;
+end;                              

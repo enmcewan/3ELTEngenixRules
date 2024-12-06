@@ -58,7 +58,7 @@ begin
 
       {if DesmearTab.tag = 1 then
         Result := LowerCase(MaterialList.Text) = LowerCase(TempList.Text)
-      else if DesmearTab.FieldByName('NCX2').AsBoolean then }  // Removed this condition. The NCX2
+      else if DesmearTab.FieldByName('NCX2').AsBoolean then}
         Result := LowerCase(MaterialList.Text) = LowerCase(TempList.Text)
 
       if Result then
@@ -155,7 +155,7 @@ begin
 
 end;
 
-function GetDesmearTable: TSysTable;  // 2742
+function GetDesmearTable: TSysTable;
 begin
 
   if NCRun = 1 then

@@ -491,11 +491,11 @@ begin
   // 1310 Additiona Backdrill EC
   if ( Fnc.SysGetAttrValue('BackDrill') and Fnc.SysGetAttrValue('BackDrill_EC') ) OR
      // ( not GetsHiPot )  // 2755 Backdrill SP, EC & FI Update
-     ( Fnc.SysGetAttrValue('BackDrillStubSpec') <= 7.0 )
+     ( Fnc.SysGetAttrValue('BackDrill') and ( Fnc.SysGetAttrValue('BackDrillStubSpec') <= 7.0) )
   then
   begin
 
-    AddStep('Silver_Inspection', 'Silver_Inspection-01'); // 2622
+    AddStep('Sliver_Inspection', 'Sliver_Inspection-01'); // 2622
 
     if Fnc.SysGetAttrValue('BackDrillStubSpec') <= 7.0 then AddStep('Back_Drill4WireTest', 'Back_Drill4WireTest01');
 
@@ -565,7 +565,7 @@ begin
     AddStep('Final_Insp', 'Final_Insp01');
 
   // 2755 Backdrill SP, EC & FI Update
-  if Fnc.SysGetAttrValue('BackDrillStubSpec') <= 7.0 then AddStep('Back_Drill_Inspection', 'Back_Drill_Inspection01');
+  if ( Fnc.SysGetAttrValue('BackDrill') and ( Fnc.SysGetAttrValue('BackDrillStubSpec') <= 7.0) ) then AddStep('Back_Drill_Inspection', 'Back_Drill_Inspection01');
 
   if (
       (
