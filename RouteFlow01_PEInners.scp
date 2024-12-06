@@ -28,7 +28,7 @@ begin
 
   if Fnc.SysGetAttrValue('MfgPartType') = 'Inn' then
   begin
-    if (( CoreGetsHiPot ) or ( Fnc.SysGetAttrValue('HiPotTest') )) then
+    if (( CoreGetsHiPot = true ) or ( Fnc.SysGetAttrValue('HiPotTest') = true )) then
       AddStep('HiPotTest', 'HiPotTest01');
 
     AddStep('IL_AOI', 'IL_AOI01');       

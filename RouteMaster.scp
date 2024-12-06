@@ -25,9 +25,9 @@ begin
   GetPartPPGFamilies;
   SetTopBotLayerNames;
   TotalThickestCuUM;
-  //LayupThickness := Fnc.SysGetAttrValue('LayupThickness');
+  // LayupThickness := Fnc.SysGetAttrValue('LayupThickness');
   //SetThicknessRequirements;
-  GET_VCUT_TYPE;                          
+  GET_VCUT_TYPE;
   GetCopperInfo;
   CheckProdPartUsesQualMats;
   Find2milorlessCores; // Special Process Description
@@ -116,12 +116,10 @@ begin
 
     if Fnc.SysGetAttrValue('NCRunX2') = true then
     begin
-
       if Fnc.SysGetAttrValue('Min_Drill_Size_2') > 0 then
         fnc.SysSetAttrValue('Aspect_Ratio_Val_2', Round1000(PressThickness/Fnc.SysGetAttrValue('Min_Drill_Size_2')))
       else
-        MessageDlg('2nd Min_Drill_Size = 0.0', mtWarning, Setof([mbOK]), 0);
-
+        ShowMessage('Warning! : 2nd Min_Drill_Size = 0.0');
     end;             
     
     if Fnc.SysGetAttrValue('BlindVias') then
@@ -221,19 +219,19 @@ begin
       if Fnc.SysGetAttrValue('Min_Drill_Size') > 0 then
         fnc.SysSetAttrValue('Aspect_Ratio_Val', Round1000(PressThickness/Fnc.SysGetAttrValue('Min_Drill_Size')))
       else
-        MessageDlg('Min_Drill_Size = 0.0', mtWarning, SetOf([mbOK]), 0);
+        ShowMessage('Warning! : Min_Drill_Size = 0.0');
     end
     else   
     begin
       if Fnc.SysGetAttrValue('Min_Drill_Size') > 0 then
         fnc.SysSetAttrValue('Aspect_Ratio_Val', Round1000(LayupThickness/Fnc.SysGetAttrValue('Min_Drill_Size')))
-      else
-        MessageDlg('Min_Drill_Size = 0.0', mtWarning, SetOf([mbOK]), 0);
+      else        
+        ShowMessage('Warning! : Min_Drill_Size = 0.0');
     end;                       
   end;                                        
-
+  
   SetHCSPartType;  // 408 Paradigm Part Number Coding - Internal Part number
-
+  
   if Fnc.SysGetAttrValue('MfgPartType') = 'Top' then   
     Get_SO_Unit; // 408 Paradigm Part Number Coding - Internal Part number 
 
@@ -393,7 +391,7 @@ begin
   // Max Epoxy Plugging = 5mm
   if ((Fnc.SysGetAttrValue('EpoxySide') <> 'None') and (LayupThickness > 8.00)) then  // 2573  
     MessageDlg('Max Thickness for Epoxy Plugging is 5.00 MM.', mtWarning, Setof([mbOK]), 0);
-
+                          
   // 757 - Job Type Checking  
   if MfgPartType = 'Top' then CheckJobType;
     
@@ -559,7 +557,7 @@ begin
     Fnc.SysSetItemAttrValue('Layer_Min_Line', Fnc.SysGetAttrValue('Line_Width'), true, cStackupLayer, 1);
   if Fnc.SysGetItemAttrValue('Layer_Min_Line', false, cStackupLayer, 1) = 0.0 then
     Fnc.SysSetItemAttrValue('Layer_Min_Line', Fnc.SysGetAttrValue('Line_Width'), false, cStackupLayer, 1);
-
+    
   if Fnc.SysGetItemAttrValue('Layer_Min_Air_Gap', true, cStackupLayer, 1) = 0.0 then
     Fnc.SysSetItemAttrValue('Layer_Min_Air_Gap', Fnc.SysGetAttrValue('Air_Gap'), true, cStackupLayer, 1);
   if Fnc.SysGetItemAttrValue('Layer_Min_Air_Gap', false, cStackupLayer, 1) = 0.0 then
@@ -600,11 +598,6 @@ begin
   // 2565 Add the Job Name Attribute to Route Step Assignment
   Fnc.SysSetAttrValue('JobNameAttribute', Fnc.GetJobData.Values['JobName']);
 
-  // 2649 - Initialize
-  //Fnc.SysSetAttrValue('ARSP_DE_Cu_Thk_1','');
-  //Fnc.SysSetAttrValue('ARSP_DE_Cu_Thk_2','');
-  //Fnc.SysSetAttrValue('ARSP_DE_Cu_Thk_Cap','');
-
   // 2659 CAD File for additional steps.
   // CAD File Name was originally only assigned to Inner Layers.
   // Inner Layers Set the Top-Level Attribute for old Jobs (Or the value has to be manually entered or copied in)
@@ -623,14 +616,17 @@ end;
 procedure RoutePreProcess;
 begin
 
-  // Awlays init vars used in Manual route Steps & 
+  // Always init vars used in Manual route Steps & Calculations of other attribute values
   LayupThickness := Fnc.SysGetAttrValue('LayupThickness');
   SetThicknessRequirements;
 
-  if ( not Fnc.SysRouteGenIsInsertingManualStep ) and
-     ( not Fnc.SysRouteGenIsDeletingStep )
+  if ( not Fnc.SysRouteGenIsInsertingManualStep )// and
+     // ( not Fnc.SysRouteGenIsDeletingStep )  --- WAITING FOR 5.2.0 Upgrade
   then
+  begin
     CheckAndGenPartData;
+    //showmessage('Checking Part Data');
+  end;
 
   // Always init photoStepList as it is used in the RoutePostProcess procedure
   photoStepList := TStringList.Create;
@@ -644,12 +640,13 @@ begin
   Fnc.SysSetAttrValue('UEtch_Spec', '');
 
   InProcessCuThk := 0;
-  if (( CoreBuild or SubAssemblyCoreBuild ) and ( Fnc.SysGetAttrValue('LayerCount') > 2 )) then
+  if (( CoreBuild or SubAssemblyCoreBuild ) and ( Fnc.SysGetAttrValue('LayerCount') > 2 )) then 
   begin
 
     InProcessCuThk := GetSuborCoreIPCT;
     
-    if InProcessCuThk = 0 then InProcessCuThk := BaseCuTopUM;
+    if InProcessCuThk = 0 then
+      InProcessCuThk := BaseCuTopUM;
 
   end                                           
   else            
@@ -673,7 +670,7 @@ begin
   if ((MfgPartType = 'Inn') or (MfgPartType = 'DmC')) then  //Simple Inner or Dummy Core
   begin
 
-    if FindNumberOfDrillFiles = 0 then
+    if FindNumberOfDrillFiles = 0 then                       
       InnerLayerPE;
     else                  
       RouteFlow02;
@@ -725,12 +722,12 @@ begin
       Fnc.SysRouteGenInsAddlParam(routeStep, 'Erp', 'Photo Sequence', photoSeqStr, '', '', false, '', '', '');
 
     end;
-
+    
   end;                                                            
   
   SetRulesVersion;
 
-  // Delete "fake" Step Param used for QR-Info Only
+    // Delete "fake" Step Param used for QR-Info Only
   aTable := Fnc.SysRouteGenGetStatusMfgParts;
 
   if aTable.Locate('MfgPartName', Fnc.SysGetAttrValue('ItemMatrlDesc'), SetOf([])) then
@@ -746,7 +743,5 @@ begin
       end;
 
   end;
-
-  Fnc.SysTableDestroy(aTable);
 
 end;

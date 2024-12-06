@@ -36,7 +36,7 @@ end;
 procedure ShowAttr(AttrName: string);
 begin
 
-  SetVal(AttrName, '');
+  SetVal( AttrName, '');
 
 end;
 
@@ -64,7 +64,7 @@ begin
   begin
 
     // 1308 Update Hi-Pot table Value Units
-    // For new Jobs, get values from new table                                                     
+    // For new Jobs, get values from new table
     // For existing Jobs with Data, recalculate Test Voltage & Leakage Values
     // Make sure only to convert once - old values are in the 100's
     if (GetVal('Volt') > 0) and (GetVal('Volt') > 100) then
@@ -72,7 +72,7 @@ begin
 
     if (GetVal('Leak') > 0) and (GetVal('Leak_New') = 0) then // Don't need to check for converting more than once since we use a new attribute
       SetVal('Leak_New', GetVal('Leak') * 1000);
-                                           
+
     // 1230 Auto Add Hi-Pot Spec
     if (GetVal('Volt') = 0.0) or
        (GetVal('Ramp') = 0) or
@@ -88,54 +88,54 @@ begin
     end;
 
     // 2769
-    if GetVal('CoreBuild_CuThin_Mode') = 'Auto' then ShowAttr('CoreBuild_CuThin_FirstBuff');
-    if GetVal('EpoxyPlug_CuThin_Mode') = 'Auto' then ShowAttr('EpoxyPlug_CuThin_FirstBuff');
-
+    if GetVal('CoreBuild_CuThin_Mode') = 'Auto' then ShowAttr('CoreBuild_CuThin_1stBuff');
+    if GetVal('EpoxyPlug_CuThin_Mode') = 'Auto' then ShowAttr('EpoxyPlug_CuThin_1stBuff');
+    
   end;
-                                        
-   if (ParamList.values['ItemType'] = 'MFGTP') and 
+
+   if (ParamList.values['ItemType'] = 'MFGTP') and
       (( GetVal('EC_Test_Voltage') = 0 ) or
       ( GetVal('EC_Cont_Res') = 0 ) or
       ( GetVal('EC_Isol_Res') = 0 ) or
       ( GetVal('EC_AutoUpdate') )) // 2632  Electrical Check Spec not updating
    then // 1255 EC Parameter Attributes
      SetECValues;
-     
+
    // Check or Update Finish, Selective Gold & Gold Finger Type
   // Item 1256
   if ParamList.values['ItemType'] = 'MFGTP'then
-  begin                                     
+  begin
     if GetVal('Board_Finish') = 'Full Body Gold + LGA' then
-    begin                                 
-      MessageDlg('The board finish "Full Body Gold + LGA" is no longer valid. Select another option', mtError, Setof([mbOK]), 0); 
+    begin
+      MessageDlg('The board finish "Full Body Gold + LGA" is no longer valid. Select another option', mtError, Setof([mbOK]), 0);
     end;
-    
+
     if GetVal('Board_Finish') = 'ENIG + OSP' then
     begin
       MessageDlg('The board finish "ENIG + OSP" is no longer valid. Board Finish set to "OSP" and Selective Gold set to "ENIG"', mtInformation, Setof([mbOK]), 0);
       SetVal('Board_Finish', 'OSP');
-                                                      
+
       if GetVal('Sel_Gold_Type') = 'None' then
         SetVal('Sel_Gold_Type', 'ENIG');
-      else              
-      begin       
+      else
+      begin
         MessageDlg('ENIG + OSP cannot have another Selective Gold Type. Select another option', mtError, Setof([mbOK]), 0);
       end;
     end;
-    
-    if ( GetVal('Sel_Gold_Type') = 'BGA, Encapsulation' ) or 
+
+    if ( GetVal('Sel_Gold_Type') = 'BGA, Encapsulation' ) or
        ( GetVal('Sel_Gold_Type') = 'Thin/Thick Encapsulated Pattern' ) then
-    begin                    
+    begin
       MessageDlg(GetVal('Sel_Gold_Type') + ' is no longer valid. Select another Selective Gold Type', mtError, Setof([mbOK]), 0);
-    end;                     
-    
-    if ( GetVal('Sel_Gold_Type') = 'Pattern (Overhang)' ) or 
+    end;
+
+    if ( GetVal('Sel_Gold_Type') = 'Pattern (Overhang)' ) or
        ( GetVal('Sel_Gold_Type') = 'PTH' ) then
     begin
-      MessageDlg('Selective Gold type: "' + GetVal('Sel_Gold_Type') + '" is no longer valid. Value set to "Pattern Overhang / PTH"', mtInformation, Setof([mbOK]), 0); 
-      SetVal('Sel_Gold_Type', 'Pattern Overhang / PTH'); 
+      MessageDlg('Selective Gold type: "' + GetVal('Sel_Gold_Type') + '" is no longer valid. Value set to "Pattern Overhang / PTH"', mtInformation, Setof([mbOK]), 0);
+      SetVal('Sel_Gold_Type', 'Pattern Overhang / PTH');
     end;
-                                  
+
     if GetVal('Gold_Fgr_Type') = 'Lead Line Etching B4 Res (Sel)' then
     begin
       MessageDlg('Gold Finger type: "' + GetVal('Gold_Fgr_Type') + '" is no longer valid. Value set to "Lead Line Etching"', mtInformation, Setof([mbOK]), 0);
@@ -143,7 +143,7 @@ begin
     end;
 
     if GetVal('Gold_Fgr_Type') = 'Lead Line Etching Af Res (Sel)' then
-    begin 
+    begin
       MessageDlg('Gold Finger type: "' + GetVal('Gold_Fgr_Type') + '" is no longer valid. Value set to "Au Finger Plate after SM"', mtInformation, Setof([mbOK]), 0);
       SetVal('Gold_Fgr_Type', 'Au Finger Plate after SM');
     end;
@@ -152,12 +152,14 @@ begin
        ( GetVal('Gold_Fgr_Type') = 'Thin/Thick - Lead Line Etching B4 Res (Sel)' ) or
        ( GetVal('Gold_Fgr_Type') = 'Thin/Thick - After Pattern (Sel)' ) or // Rename of rename - see above
        ( GetVal('Gold_Fgr_Type') = 'No Horn - Lead Line Etching B4 Res (Sel)' )
-    then                             
+    then
     begin
-      MessageDlg('"' + GetVal('Gold_Fgr_Type') + '"' + ' is no longer valid. Select another Gold Finger Type', mtError, Setof([mbOK]), 0);     
+      MessageDlg('"' + GetVal('Gold_Fgr_Type') + '"' + ' is no longer valid. Select another Gold Finger Type', mtError, Setof([mbOK]), 0);
       SetVal('Gold_Fgr_Type', 'None');
     end;
-    
+
+
+
   end;
   //ShowMessage('End of Mfg Part Init');
 end;

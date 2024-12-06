@@ -4,7 +4,7 @@
 //ScriptType=0
 //ScriptGroup=
 //HeaderImportExport<--
-var
+var                                                     
   Qry : TADOQuery;
   tbl : TSysTable;
 
@@ -14,24 +14,59 @@ var
   jobAttributes : TSysTable;
 
   ParamList: TStringList;
+  
+  //BOM Conv Vars
+  SqlStr: string;           
 
 begin
-
+                    
   Qry := TAdoQuery.Create(nil);
   Qry.Connection := Fnc.DbConnection;
 
   //Qry.SQL.Add('SELECT * from JobAttributes ORDER BY Seq');
-  //Qry.SQL.Add('SELECT COUNT(*) from Cust_JobPartAttributes'); 
+  Qry.SQL.Add('SELECT * from Cust_JobPartAttributes WHERE ATTRIBUTEID = ' + QuotedStr('599') + ' ORDER BY JOBID'); 
   // Qry.SQL.Add('SELECT * from JobAnswers WHERE JobID = 2022');
   // Qry.SQL.Add('SELECT JobName from Jobs WHERE JobID = 2022');
   //Qry.SQL.Add('SELECT * from CUST_JOBPARTATTRIBUTES ');
   //Qry.SQL.Add('WHERE PARTTYPE = ' + QuotedStr('MFGTP') + ' AND ATTRIBUTENAME LIKE ' + QuotedStr('CoreBuild_CuThin%') );
   //Qry.SQL.Add(' ORDER BY ' + QuotedStr('JobID') + ' DESC' );
-  Qry.SQL.Add('SELECT * FROM SRNInputs')
-
+  //Qry.SQL.Add('SELECT * FROM SRNInputs')
+  //Qry.SQL.Add('SELECT * FROM PartAttributes WHERE TreeName LIKE ' + QuotedStr('ToolMod%'));
+  Qry.SQL.Add('SELECT * FROM PartAttributes ORDER BY ' + QuotedStr('PartAttributeID'));
+  
+  // Insert Tooling Attributes
+  
+  
   Qry.Open 
                                         
   tbl := qry;
+
+{SqlStr := 'SELECT' +
+            ' CAST(Data0017.RKey AS Integer) as ErpId' +
+            ' ,Data0017.Inv_Part_Number as InvPartNum' +
+            ' ,Data0017.Inv_Part_Description as InvPartDesc' +
+            ' ,Data0017.Quan_On_Hand as OnHand' +
+            ' ,Data0017.Quan_Allocated as Allocated' +
+            ' ,Data0017.Quan_On_Order as OnOrder' +
+            ' ,Data0017.Quan_In_Insp as InInspection' +
+            ' ,Data0017.Alternate_Part_Ptr as AltErpId' +
+            ' ,Data0002.Unit_Code as UOM' +
+            ' ,Data0008.Prod_Code as ProdCode' +
+            ' FROM Data0017, Data0002, Data0008' +
+            ' WHERE' +
+            ' Data0017.P_M = ' + QuotedStr('P') +
+            ' and Data0002.RKey = Data0017.Stock_Unit_Ptr' +
+            ' and Data0008.RKey = Data0017.Prod_Code_Sell_Ptr' +
+            ' and (Data0008.Prod_Code = ' +  QuotedStr('LAM') + 
+            ' or Data0008.Prod_Code = ' +  QuotedStr('PPG') + 
+            ' or Data0008.Prod_Code = ' +  QuotedStr('CFL') +  
+            ')' +  
+            ' and Data0017.Active_Flag = ' + QuotedStr('Y') +
+            ' ORDER BY Data0017.Inv_Part_Number';
+
+  tbl  := Fnc.AstaExecuteSql(SqlStr);}
+  
+
 
   ParamList := TStringList.Create;
   ParamList.Values['ShowExportToCSV'] := 'True';

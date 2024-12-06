@@ -57,6 +57,7 @@ var
   EC_Isol_Res: integer;
 
 begin
+
   // Check for incompatible finish combinations
   if ( ParamList.values['ItemType'] = 'MFGTP' ) and ( ParamList.values['Sender'] = 'EditValue' ) then
   begin
@@ -297,7 +298,7 @@ begin
   HideAttr('Drill_Offset_Y_2');
   HideAttr('Drill_Side_2'); // 2620 2nd Drill
 
-  if GetVal('NCRunX2') = true then
+  if GetVal('NCRunX2') then
   begin
     ShowAttr('Aspect_Ratio_Val_2');
     ShowAttr('Drill_Entry_Sht_2');
@@ -335,17 +336,21 @@ begin
     if ( GetVal('EpoxyPlug_CuThin_Process') = 'Buffing') or (GetVal('EpoxyPlug_CuThin_Mode') = 'Auto') then
        ShowAttr('EpoxyPlug_CuThin_1stBuff');
 
-    else if GetVal('EpoxyPlug_CuThin_Process') = 'Micro-Etch + Buffing' then
+    if GetVal('EpoxyPlug_CuThin_Process') = 'Micro-Etch + Buffing' then
     begin
+
       ShowAttr('EpoxyPlug_CuThin_MEtch');
       ShowAttr('EpoxyPlug_CuThin_1stBuff');
+
     end;
 
-    else if GetVal('EpoxyPlug_CuThin_Process') = 'Buffing + Mirco-Etch + Buffing' then
+    if GetVal('EpoxyPlug_CuThin_Process') = 'Buffing + Mirco-Etch + Buffing' then
     begin
+
       ShowAttr('EpoxyPlug_CuThin_1stBuff');
       ShowAttr('EpoxyPlug_CuThin_MEtch');
       ShowAttr('EpoxyPlug_CuThin_2ndBuff');
+      
     end;
 
     ShowAttr('EpoxyPlug_CuThin_Tol');
@@ -404,17 +409,19 @@ begin
     if ( GetVal('CoreBuild_CuThin_Process') = 'Buffing' ) or
        ( GetVal('CoreBuild_CuThin_Process') = 'Vertical Buffing' ) or// 1473
        ( GetVal('CoreBuild_CuThin_Mode') = 'Auto' )  // 2769
-    then
+    then                                                         
       ShowAttr('CoreBuild_CuThin_1stBuff');
-    else if GetVal('CoreBuild_CuThin_Process') = 'Buffing + Micro-Etch + Buffing' then // 1473 Fix Attr Value
+
+    if GetVal('CoreBuild_CuThin_Process') = 'Buffing + Micro-Etch + Buffing' then // 1473 Fix Attr Value
     begin
 
       ShowAttr('CoreBuild_CuThin_1stBuff');
       ShowAttr('CoreBuild_CuThin_2ndBuff');
       ShowAttr('CoreBuild_CuThin_MEtch');
 
-    end
-    else if GetVal('CoreBuild_CuThin_Process') = 'Micro-Etch + Buffing' then // 1473
+    end;
+
+    if GetVal('CoreBuild_CuThin_Process') = 'Micro-Etch + Buffing' then // 1473
     begin
 
       ShowAttr('CoreBuild_CuThin_1stBuff');
