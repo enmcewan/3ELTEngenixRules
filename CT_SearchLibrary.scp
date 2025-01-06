@@ -446,7 +446,9 @@ begin
   //---
   if VarNames = 'ASPECT_' then
   begin
-    VarValueList.Add(FloatToStr(Fnc.SysGetAttrValue('Aspect_Ratio_Val')));
+
+    //VarValueList.Add(FloatToStr(Fnc.SysGetAttrValue('Aspect_Ratio_Val')));
+    VarValueList.Add(FloatToStr(Insert_MinHole_Aspect('OLPhotoTable')));
 
     Result := CheckConditionsAndValues('N', Condition, VarValueList);
     bDone := True;
@@ -454,7 +456,7 @@ begin
 
   //-----
   if VarNames = 'BLIND_ASPECT' then
-  begin
+  begin                                        
     if (Fnc.SysGetAttrValue('ConfMask_Size') > 0) and (Fnc.SysGetAttrValue('Blind_Via_Depth') > 0) then
       VarValueList.Add(FloatToStr(Fnc.SysGetAttrValue('Blind_AspectRatio')))
     else

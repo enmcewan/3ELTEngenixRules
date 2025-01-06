@@ -5,9 +5,9 @@
 //ScriptGroup=Job List Screen
 //HeaderImportExport<--
 const
-  ExcelFile = 'EngenixJobAttributes3.xlsx';
-  FileTemplateDir = '\\engenix2\Engenix2_apps\Report_Template\';
-  //FileTemplateDir = 'C:\Engenix\Report\Template\';
+  ExcelFile = 'EngenixJobAttributes4.xlsx';
+  //FileTemplateDir = '\\engenix2\Engenix2_apps\Report_Template\';
+  FileTemplateDir = 'C:\Engenix\Report\Template\';
   WorkingDir = 'C:\Engenix\Report\';
 
 var
@@ -36,14 +36,14 @@ function FileCopy(Source,Dest : String): Boolean;
 var
   SourceStream,DestStream : TFileStream;
 begin
-  try
+  try                                                                       
     SourceStream:=TFileStream.Create(Source,fmOpenRead);
     DestStream:=TFileStream.Create(Dest,fmCreate);
     DestStream.CopyFrom(SourceStream,SourceStream.Size);
     SourceStream.Free;
     DestStream.Free;
     Result := True;
-  except
+  except                                                                                                                                                                
     Result := False;
   end;
 end;
@@ -68,44 +68,62 @@ end;
 function ExcelColumnMap(jobAttributeID : integer) : string
 begin
   result := '';
-  case jobAttributeID of
+  case jobAttributeID of                        
       1     : result := 'Rules Version';
       2     : result := 'Layer Count';
-      19    : result := 'Thick Board';
+      //19    : result := 'Thick Board';
       3     : result := 'Sequential Build';
       26    : result := 'Build-Up';
       4     : result := 'Core Capping';
       5     : result := 'Hybrid Construction';
-      27    : result := 'VIPPO';
-      28    : result := 'Cu Filled Via';
+      //27    : result := 'VIPPO';
+      6     : result := 'VIPPO'
+      //28    : result := 'Cu Filled Via';
+      10004 : result := 'Cu Filled Via';
       8     : result := 'Skip BVH';
       9     : result := 'Surface BVH';
       7     : result := 'Mech Blind Via';
-      29    : result := '2-mil Core';
-      30    : result := '1-mil or less Core';
+      //29    : result := '2-mil Core';
+      10005 : result := '2-mil Core';
+      //30    : result := '1-mil or less Core';
+      10006 : result := '1-mil or less Core';
       14    : result := 'Back Drill';
       11    : result := 'Back Drill VIP';
       10    : result := 'Dual Drilling';
       15    : result := 'Surface Finish';
       24    : result := 'Selective Gold';
       25    : result := 'Gold Finger';
-      12    : result := 'Stacked BVH over BVH';
-      13    : result := 'Stacked BVH over Buried Hole';
-      21    : result := 'PTH AR 1-15';
-      22    : result := 'BVH AR 1-075';
-      23    : result := 'New Customer';
-      16    : result := 'Application';
-      18    : result := 'Cavity Milling';
-      31    : result := 'Material Type';
-      32    : result := '065mm Drill Pitch';
-      33    : result := 'Nano Connector';
-      34    : result := 'Finished Thickness';
-      36    : result := 'Min PTH Drill';
-      37    : result := 'Max PTH Drill';
-      38    : result := 'Soldermask Type';
-      39    : result := 'Plug to Non-Plug';
-      40    : result := 'NC Drill Entry Mat';
-      42    : result := 'Plating Line';
+      //12    : result := 'Stacked BVH over BVH';
+      //13    : result := 'Stacked BVH over Buried Hole';
+      10002 : result := 'Stacked BVH over BVH';
+      10003 : result := 'Stacked BVH over Buried Hole';
+      //21    : result := 'PTH AR 1-15';
+      //22    : result := 'BVH AR 1-075';
+      //23    : result := 'New Customer';
+      //16    : result := 'Application';
+      //18    : result := 'Cavity Milling';
+      //31    : result := 'Material Type';
+      10009 : result := 'Material Type';
+      //32    : result := '065mm Drill Pitch';
+     // 33    : result := 'Nano Connector';
+      //34    : result := 'Finished Thickness';
+      10010 : result := 'Finished Thickness';
+      //36    : result := 'Min PTH Drill';
+      10012 : result := 'Min PTH Drill';
+      //37    : result := 'Max PTH Drill';
+      10013    : result := 'Max PTH Drill';
+      //38    : result := 'Soldermask Type';
+      10014 : result := 'Soldermask Type';
+      //39    : result := 'Plug to Non-Plug';
+      10016 : result := 'Plug to Non-Plug';
+      //40    : result := 'NC Drill Entry Mat';
+      10017    : result := 'NC Drill Entry Mat';
+      //42    : result := 'Plating Line';
+      10019 : result := 'Plating Line';
+      10020  : result := 'PTH Aspect Ratio';
+      10021 : result := 'Hot Press Cycles';
+      10022 : result := 'Non-Etched Line';
+      10023 : result := 'Backdrill Stub Spec';
 
   end;
   //showmessage(result);
@@ -332,7 +350,6 @@ begin
 
   end;
 end;
-
 
 procedure MainFormUserEvent2(ParamList: TStringList);
 begin

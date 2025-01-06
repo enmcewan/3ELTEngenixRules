@@ -4,7 +4,7 @@
 //ScriptType=0
 //ScriptGroup=HCS
 //HeaderImportExport<--
-         uses
+          uses
   Event_RouteGenLibrary, //Route System Scripts
   Eng_RouteFunctions, //Route System Functions
   RouteFlow04_Final,
@@ -35,7 +35,7 @@ begin
   end;                    
                      
   // 1108 OL Process Flow Update    
-  if LayupThickness < 0.60 then // 1198 
+  if LayupThickness < 0.60 then // 1198
   begin                                             
     AddStep('IL_Photo_OL_ThinPanel', 'IL_Photo_OL_ThinCore01');                              
     AddStep('IL_DES_OL_ThinPanel', 'IL_DES_OL_ThinPanel01');  
@@ -265,44 +265,16 @@ begin
     'b' : AddStep('EpoxyPlug_Buffing', 'EpoxyPlug_Buffing0' + IntToStr(seq_no));
   end;
 end;
-
-function Epoxy_Plug_Process : string;  // 1463
-begin
-  result := Fnc.SysGetAttrValue('EpoxyPlug_Process');
-  
-  if result = 'Auto' then
-  begin                      
-    if Fnc.SysGetAttrValue('MfgPartType') <> 'Top' then
-      result := 'Standard'   
-    else
-    begin
-      if Fnc.SysGetAttrValue('EpoxyPlug_PlugToNonPlugSpacing') < 1.0 then
-      begin     
-        if LayupThickness > 2.0 then
-          result := 'Side-by-Side'
-        else
-          result := 'Standard';
-      end              
-      else           
-      begin
-        if LayupThickness > 3.0 then
-          result := 'Side-by-Side'
-        else
-          result := 'Standard';
-      end;
-    end;
-  end;
-end;
                                                                       
 procedure Epoxy_Plugging;
-var                                                                
+var
 
   User_Seq_Length,
   i: integer;
 
   User_Seq,
   Process: string;
-
+                                                                   
   VBuffOverride: boolean;
 begin
 
@@ -311,7 +283,7 @@ begin
   
   if MfgAttr('BackDrill_Epoxy') then  // 1258 Additional pre-baking b4 Epoxy Plugging
     AddStep('Epoxy_Plug_PreBake_BackDrill', 'Epoxy_Plug_PreBake_BackDrill01'); 
-    
+
   if  ( MfgAttr('BackDrill_Epoxy') = false ) or
       (( MfgAttr('EpoxySide') <> 'None' ) and ( MfgAttr('BackDrill_Epoxy') = true  ))
   then // 844 Back Drill After Electrolytic Cu
@@ -376,46 +348,70 @@ begin
     end;
 
   end;
-  
+
   if MfgAttr('EpoxyPlug_CuThin_Process') <> 'None' then
     begin
       if MfgAttr('EpoxyPlug_CuThin_Process') = 'Buffing' then
-        if not VBuffOverride then AddStep('EpoxyPlug_CT_Buffing1', 'EpoxyPlug_CT_Buffing101');
+      begin
 
+        if not VBuffOverride then AddStep('EpoxyPlug_CT_Buffing1', 'EpoxyPlug_CT_Buffing101'); // 2769
+
+      end
       else if MfgAttr('EpoxyPlug_CuThin_Process') = 'Micro-Etch + Buffing' then
       begin
-        AddStep('EpoxyPlug_MicroEtch', 'EpoxyPlug_MicroEtch01');
+
+        if PressThickness <= 4.30 then AddStep('EpoxyPlug_MicroEtch', 'EpoxyPlug_MicroEtch01') else AddStep('EpoxyPlug_MicroEtch_HAL', 'EpoxyPlug_MicroEtchHAL01');
         AddStep('EpoxyPlug_CT_Buffing1', 'EpoxyPlug_CT_Buffing101');
+
       end
       else if MfgAttr('EpoxyPlug_CuThin_Process') = 'Buffing + Mirco-Etch + Buffing' then
-      begin                          
+      begin
+
         if not VBuffOverride then AddStep('EpoxyPlug_CT_Buffing1', 'EpoxyPlug_CT_Buffing101');
-        AddStep('EpoxyPlug_MicroEtch', 'EpoxyPlug_MicroEtch01');
+        if PressThickness <= 4.30 then AddStep('EpoxyPlug_MicroEtch', 'EpoxyPlug_MicroEtch01') else AddStep('EpoxyPlug_MicroEtch_HAL', 'EpoxyPlug_MicroEtchHAL01');
         AddStep('EpoxyPlug_CT_Buffing2', 'EpoxyPlug_CT_Buffing201');
+
       end;
-      
-      if ( MfgAttr('EpoxyPlug_CuThin_Process') = 'Micro-Etch + Buffing' ) or
+
+      // 2769 - Thickness warning no longer needed - thick board get a spcial step now.
+      {if ( MfgAttr('EpoxyPlug_CuThin_Process') = 'Micro-Etch + Buffing' ) or
          ( MfgAttr('EpoxyPlug_CuThin_Process') = 'Buffing + Mirco-Etch + Buffing' )
       then
       if LayupThickness > 4.0 then // 1112 Micro-etch for thick board
-        MessageDlg('Board too thick for Epoxy Plug standard Micro-etch process.', mtWarning, Setof([mbOK]), 0);
+        MessageDlg('Board too thick for Epoxy Plug standard Micro-etch process.', mtWarning, Setof([mbOK]), 0);}
+
     end;
 
     UpdateInProcessCuThk(Cu_Thk_After_EP);
 
     // 2618 Additional Hole Check Step after Epoxy Plug
-    if ( MfgPartType = 'Top' ) and ( not MfgAttr('NCRunX2') ) then // + and Not 2X NC - request from Herole 10/6/24
+    if ( MfgPartType = 'Top' ) then // + and Not 2X NC - request from Herole 10/6/24
     begin
 
-      if MfgAttr('Min_Drill_Size_NP') <= 0.5 then
+      if not MfgAttr('NCRunX2') then
       begin
 
-        AddStep('OffLine_PreTreat_USR', 'OffLine_PreTreat_USR-01');
-        AddStep('Hole_Check_Plug', 'Hole_Check_Plug-01');
+        if MfgAttr('Min_Drill_Size_NP') <= 0.5 then
+        begin
+  
+          AddStep('OffLine_PreTreat_USR', 'OffLine_PreTreat_USR-01');
+          AddStep('Hole_Check_Plug', 'Hole_Check_Plug-01');
+  
+        end
+        else if MfgAttr('EpoxyPlug_PlugToNonPlugSpacing') < 0.8 then
+          AddStep('Hole_Check_Plug', 'Hole_Check_Plug-01');
+  
+      end;
 
-      end
-      else if MfgAttr('EpoxyPlug_PlugToNonPlugSpacing') < 0.8 then
-        AddStep('Hole_Check_Plug', 'Hole_Check_Plug-01');
+    end
+    else
+    if not MfgAttr('CappedVia') then  // 2808
+    begin
+
+      if PressThickness > 4.0 then
+        AddStep('Vertical_Desmear_EpxyThin', 'Vertical_Desmear-EpxyThin01')
+      else
+        AddStep('Desmear_Holl_EpxyThin', 'Desmear_Holl_EpxyThin-EpxyThin01');
 
     end;
 
@@ -655,9 +651,9 @@ begin
          //( CustCode_Rule('Customer') = 'FA' )  // // 1260 Updated Cu Via Filling Rule
          or  // Request from Herole 24/05/15
            (
-             CustCode_Rule('Customer') = 'FA' and
-             Fnc.SysGetAttrValue('Min_Drill_Size') >= 0.20 and
-             Fnc.SysGetAttrValue('Min_Drill_Size') <= 0.35
+             (CustCode_Rule('Customer') = 'FA') and
+             (Fnc.SysGetAttrValue('Min_Drill_Size') >= 0.20) and
+             (Fnc.SysGetAttrValue('Min_Drill_Size') <= 0.35)
            )
       then
         AddStep('Strike_Plating_FV', 'Strike_Plating-CFV'); // 2469
@@ -717,7 +713,7 @@ begin
   end;
 
   if (( Fnc.SysGetAttrValue('BackDrill_Epoxy') ) and ( Fnc.SysGetAttrValue('NCRunX2') = false )) then // 844 Backdrill after Electrolytic Cu
-    Back_Drill_Epoxy;                
+    Back_Drill_Epoxy;
                           
   if //(
       (
@@ -729,17 +725,35 @@ begin
      //)
   then
   begin                                    
+
     if (( Fnc.SysGetAttrValue('EpoxySide') <> 'None' ) or ( Fnc.SysGetAttrValue('BackDrill_Epoxy') = true  )) then
       Epoxy_Plugging;
 
     if Fnc.SysGetAttrValue('CappedVia') then
     begin
-    {Ink Plug with Flash Steps}
-    // Specific Instructions and Route step parames required. Add Here instead of step rule
-      AddStep('Desmear_CappedVia', 'Desmear_CappedVia01');
+
+      {Ink Plug with Flash Steps}
+      // Specific Instructions and Route step parames required. Add Here instead of step rule
+      // 2807 Capped Plating Update
+      if (PressThickness > 4.0) or
+         ((Fnc.SysGetAttrValue('EpoxyPlugInk') <> 'TAIYO THP-100 Z2') and
+         ( Fnc.SysGetAttrValue('EpoxySide') <> 'None' ) and
+         (Fnc.SysGetAttrValue('Board_Finish') = 'Immersion Silver'))
+      then
+      begin
+
+         AddStep('Vertical_Desmear_CappedVia', 'Vertical_Desmear_CappedVia01');
+         AddStep('UltraSonicStep', 'Ultrasonic-VDSm01');
+
+      end
+      else
+        AddStep('Desmear_CappedVia', 'Desmear_CappedVia01');
+        
       AddStep('Electroless_CappedVia', 'Electroless_CappedVia01');
       AddStep('Electrolytic_CappedVia', 'Electrolytic_CappedVia01');
+
     end;
+
   end
   else
   begin
@@ -753,7 +767,7 @@ begin
     then
       ElectrolyticGoldPlatingB4Resist
     else
-      OL_Pattern_Formation(false);     
+      OL_Pattern_Formation(false);
   end                 
   else
     OL_Pattern_Formation(false);

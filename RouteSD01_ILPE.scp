@@ -4,7 +4,7 @@
 //ScriptType=0
 //ScriptGroup=HCS
 //HeaderImportExport<--
-                                 uses
+uses
   Event_RouteGenLibrary,
   Eng_RouteFunctions,
   RouteFunctions,
@@ -19,11 +19,11 @@ procedure IL_Exposure_SD; // 2197
 var
   Dept_Erp,
   Group_Erp,
-  DesLine,                                              
+  DesLine,
   AltLine: string;
-  Material : TStringlist;                    
+  Material : TStringlist;
 begin
-                              
+
   if MfgAttr('MfgPartType') = 'Inn' then
   begin
 
@@ -114,7 +114,7 @@ begin
     StepParamERP('Alt Line', 'G2');
 
   end;
-                                                          
+
   Material := TStringList.Create;
   Material.add('Core');
   StepMaterialsERP(Material, 1);
@@ -147,8 +147,8 @@ begin
     if ( FindImpedanceSides = 'Outer' ) or ( FindImpedanceSides = 'Both' ) then    // 962 - Impedance Info
       StepParamERP('Impedance', 'Yes');
     else
-      StepParamERP('Impedance', 'No'); 
-      
+      StepParamERP('Impedance', 'No');
+
     if  (CustCode_Rule('Customer') = 'FA') and
         ((MfgAttr('Line_Width') > 0.0) or (MfgAttr('Air_Gap') > 0.0))
     then
@@ -164,7 +164,7 @@ begin
   end;
 
   // 2743
-  if MfgAttr('TightLineWidth') then StepParamERP('Remark', 'TIGHT LINEWIDTH CONTROL');                          
+  if MfgAttr('TightLineWidth') then StepParamERP('Remark', 'TIGHT LINEWIDTH CONTROL');
 
 end;
                                                                                                                               
@@ -180,37 +180,37 @@ begin
     StepDeptERP('HIPOL-A');
     StepWCERP('HIPOL-A');
   end;
-  
-  
+
+
   // 1391 Add unit Name for Hi Pot Parameters
   if ((MfgAttr('Volt') > 0) and (MfgAttr('Ramp') > 0)) then
   begin
     StepParamERP('Volt', FloatToStr(MfgAttr('Volt')) + ' KV');
     StepParamERP('Ramp', IntToStr(MfgAttr('Ramp')) + ' V/sec');
-                                                                                                                       
+
     Fnc.SysSetAttrValue('Wait', (MfgAttr('Volt') / MfgAttr('Ramp')) * 1000 ); // 1308
     StepParamERP('Wait', FloatToStr(MfgAttr('Wait')) + ' sec');
 
     if MfgAttr('Hold') > 0 then
-      StepParamERP('Hold', IntToStr(MfgAttr('Hold')) + ' sec');                            
-                                     
+      StepParamERP('Hold', IntToStr(MfgAttr('Hold')) + ' sec');
+
     if MfgAttr('Leak_New') > 0 then
       StepParamERP('Leak', IntToStr(MfgAttr('Leak_New')) + ' uA'); // 1308
   end;
 
-end;                                                                                                                    
+end;
 
 procedure IL_AOI_SD;
-begin                         
+begin
   StepDeptERP('INSIL-A');
   StepWCERP('INSIL-A');
 
   if CustCode_Rule('Customer') = 'FA' then
     StepInstructionERP('INSIL004'); // "CROSS_OUT : NOT ALLOWED"
-    
+
   // 2199 IL AOI Step Additional Info
   StepParamERP('Min Air Gap', MfgAttr('Air_Gap'));
-  StepParamERP('Min Line Width', MfgAttr('Line_Width')); 
+  StepParamERP('Min Line Width', MfgAttr('Line_Width'));
   StepParamERP('Thickness', FormatFloat('0.000',LayupThickness));
 end;
 
@@ -218,13 +218,13 @@ procedure IL_PEP_SD;  // 1229 PEP Flow option for Sub-assembly build.
 begin
   StepDeptERP('PEPOL-A');
   StepWCERP('PEPOL-A');
-                                                                          
+
   //if CustCode_Rule('Customer') = 'FA' then
   //  StepInstructionERP('PEPOL010'); // “Check OPE location off-set”
-    
+
   StepInstructionERP('PEPOL011');  // Remark PEP Sandwich cores only
 
-end; 
+end;
 
 procedure IL_SSP_SD;  // 1229 PEP Flow option for Sub-assembly build.
 begin
@@ -232,7 +232,7 @@ begin
   StepWCERP('EXPSM-A');
   StepInstructionERP('EXPSM012'); // Remarks: Measure PEP OffSet Value
   StepInstructionERP('EXPSM013'); // Send back panels to IL AOI for matching
-  StepParamERP('Panel Size',MfgAttr('Panel_Size')); 
+  StepParamERP('Panel Size',MfgAttr('Panel_Size'));
 end;
 
 procedure Core_Matching_SD;

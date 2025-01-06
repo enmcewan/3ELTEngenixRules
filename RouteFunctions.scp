@@ -18,6 +18,14 @@ Var
   BKDRBot : boolean;
   BKDRwEpoxyTop : boolean;  // 844 Backdrill after Electrolytic Cu       
   BKDRwEpoxyBot : boolean;
+
+  LaserViaEpoxyTop,  // 2741
+  LaserViaEpoxyBot,
+  PTHEpoxyTop,
+  PTHEpoxyBot,
+  MechViaEpoxyTop,
+  MechViaEpoxyBot: boolean;
+
   PANEL_VCUT_DONE : boolean;  
   BackDrillDone : boolean;         
   ImpedanceDone : boolean;
@@ -192,7 +200,7 @@ begin
 
     if MatList.Strings[MatList.Count - 1] = 'Core' then
     begin
-      //ShowMessage('Material at bottom is a ' + MatList.Strings(0));
+      //ShowMessage('Material at bottom is a ' + MatList.Strings(0));                                                    
       Result := true;
     end;
   end;
@@ -865,6 +873,51 @@ begin
 
 end;
 
+function DrillFillID(i: integer): integer;
+begin
+
+  result := Fnc.SysGetItemAttrValue('DrillFilledID', True, cStackupDrill, i);
+
+end;
+
+function Epoxy_Plug_Process : string;  // 1463
+begin
+
+  result := Fnc.SysGetAttrValue('EpoxyPlug_Process');
+
+  if result = 'Auto' then
+  begin
+
+    if Fnc.SysGetAttrValue('MfgPartType') <> 'Top' then
+      result := 'Standard'
+    else
+    begin
+
+      if Fnc.SysGetAttrValue('EpoxyPlug_PlugToNonPlugSpacing') < 1.0 then
+      begin
+
+        if LayupThickness > 2.0 then
+          result := 'Side-by-Side'
+        else
+          result := 'Standard';
+
+      end
+      else
+      begin
+
+        if LayupThickness > 3.0 then
+          result := 'Side-by-Side'
+        else
+          result := 'Standard';
+
+      end;
+
+    end;
+
+  end;
+
+end;
+
 procedure SetDrillTypes;  // 1191 Drill Side for Countersink/bore & milling
 var
 
@@ -884,7 +937,9 @@ var
 
   // 2741 Additional Plugging Info
   BlindViaEpxPlugging,
-  PTHEpxPlugging: boolean;
+  PTHEpxPlugging,
+  MechViaEpxPlugging,
+  BDEpxPlugging: boolean;
 
 begin
 
@@ -912,6 +967,14 @@ begin
   BKDRBot := false;
   BKDRwEpoxyTop := false;
   BKDRwEpoxyBot := false;
+
+  LaserViaEpoxyTop := false;  // 2741
+  LaserViaEpoxyBot := false;
+  PTHEpoxyTop := false;
+  PTHEpoxyBot := false;
+  MechViaEpoxyTop := false;
+  MechViaEpoxyBot := false;
+
   DrillStartLayer := '';
   DrillEndLayer := '';
   Plated := false;
@@ -923,8 +986,9 @@ begin
 
   checkBD_StartLayer := true;
 
-  BlindViaEpxPlugging := false
+  {BlindViaEpxPlugging := false
   PTHEpxPlugging := false;
+  MechViaEpxPlugging := false;}
 
   NumDrillFiles := FindNumberOfDrillFiles;
 
@@ -937,21 +1001,21 @@ begin
       DrillStartLayer := Fnc.SysGetItemAttrValue('START_NAME', True, cStackupDrill, I);
       DrillEndLayer := Fnc.SysGetItemAttrValue('END_NAME', True, cStackupDrill, I);
       Plated := Fnc.SysGetItemAttrValue('DrillPlated', True, cStackupDrill, I);
-      //ShowMessage(Fnc.SysGetItemAttrValue('ItemLayerName', True, cStackupDrill, I)); 
-                                                       
+      //ShowMessage(Fnc.SysGetItemAttrValue('ItemLayerName', True, cStackupDrill, I));
+
       LayerTop := Fnc.SysGetAttrValue('TopLayer');
       LayerBot := Fnc.SysGetAttrValue('BotLayer');
-      
+
       Fnc.SysStackupItemTypeCount(cStackupSolderMask, true, LayerCount, MaskTop, MaskBot);
       MaskTop := trim(MaskTop);
       MaskBot := trim(MaskBot);
-      
+
       //ShowMessage('Start: ' + '|'+DrillStartLayer+'|'+LayerTop+'|');
-                                         
+
       Fnc.SysStackupItemTypeCount(cStackupSolderMask, true, LayerCount, MaskTop, MaskBot);
       MaskTop := trim(MaskTop);
-      MaskBot := trim(MaskBot);     
-                             
+      MaskBot := trim(MaskBot);
+
       if (Fnc.SysGetItemAttrValue('DrillDefId', True, cStackupDrill, I) = 2) and
          (Fnc.SysGetItemAttrValue('DrillFilledID', True, cStackupDrill, I) = 28) then // 28 = Cu Fille
             Fnc.SysSetAttrValue('CuFilledVias', true)
@@ -979,7 +1043,7 @@ begin
           if Fnc.SysGetAttrValue('MfgPartType') = 'Top' then
           begin
             if (( DrillStartLayer <> MaskTop ) and ( DrillStartLayer <> MaskBot )) then
-            begin              
+            begin
               MessageDlg('Error!!! Back Drill Start Layer must be a Top or Bottom Soldermask', mtWarning, SetOf([mbOK]), 0);
               checkBD_StartLayer := false;
             end;
@@ -989,22 +1053,22 @@ begin
             if (( DrillStartLayer <> LayerTop ) and ( DrillStartLayer <> LayerBot )) then
             begin
               MessageDlg('Error!!! Back Drill Start Layer must be a Top or Bottom Layer', mtWarning, SetOf([mbOK]), 0);
-              checkBD_StartLayer := false;                    
+              checkBD_StartLayer := false;
             end
-          end;                           
+          end;
 
           if checkBD_StartLayer then
-          begin           
+          begin
             Fnc.SysSetAttrValue('BackDrill', true);
 
             if (( DrillStartLayer = MaskTop ) or ( DrillStartLayer = LayerTop )) then
               BKDRTop := true;
 
             if (( DrillStartLayer = MaskBot ) or ( DrillStartLayer = LayerBot )) then
-              BKDRBot := true; 
+              BKDRBot := true;
           end;
         end
-        else                                           
+        else
         begin
           if ( Fnc.SysGetItemAttrValue('DrillFilledID', True, cStackupDrill, I) = 18 ) or // Epoxy Plugging
              ( Fnc.SysGetItemAttrValue('DrillFilledID', True, cStackupDrill, I) = 29 ) or
@@ -1016,22 +1080,22 @@ begin
               MessageDlg('Error!!! Back Drill Start Layer must be a Top or Bottom Layer', mtWarning, SetOf([mbOK]), 0)
             else
             begin
+
               Fnc.SysSetAttrValue('BackDrill_Epoxy', true);
 
-              if DrillStartLayer = LayerTop then
-                BKDRwEpoxyTop := true;
+              if DrillStartLayer = LayerTop then BKDRwEpoxyTop := true;
 
-              if DrillStartLayer = LayerBot then
-                BKDRwEpoxyBot := true;
+              if DrillStartLayer = LayerBot then BKDRwEpoxyBot := true;
+
             end;
           end
           else
           begin
             MessageDlg('Error!!! Back Drill Ink is not Epoxy', mtWarning, SetOf([mbOK]), 0)
             Fnc.UserRouteGenAbort := true;
-          end;    
-        end;                                                              
-      end;                  
+          end;
+        end;
+      end;
 
       else if Fnc.SysGetItemAttrValue('DrillDefId', True, cStackupDrill, I) = 5 then
       begin
@@ -1039,7 +1103,7 @@ begin
         Fnc.SysSetAttrValue('Counterbore', true);
         Fnc.SysSetAttrValue('Counterbore_Side', DrillProcessSide(DrillStartLayer, LayerTop, LayerBot, MaskTop, MaskBot));
       end;
-      
+
       else if Fnc.SysGetItemAttrValue('DrillDefId', True, cStackupDrill, I) = 7 then
       begin
         //ShowMessage('Counterbore Found');
@@ -1047,7 +1111,7 @@ begin
         Fnc.SysSetAttrValue('Milling_Side', DrillProcessSide(DrillStartLayer, LayerTop, LayerBot, MaskTop, MaskBot));
       end;
 
-      if Fnc.SysGetItemAttrValue('DrillDefId', True, cStackupDrill, I) <> 6 then
+      if Fnc.SysGetItemAttrValue('DrillDefId', True, cStackupDrill, I) <> 6 then // Not Backdrill
       begin
         case Fnc.SysGetItemAttrValue('DrillFilledID', True, cStackupDrill, I) of
           18 : Fnc.SysSetAttrValue('EpoxySide', 'Epoxy Side A');
@@ -1063,17 +1127,16 @@ begin
           35 : Fnc.SysSetAttrValue('SMPlugType', 'Secondary SM Plug AB');
           36 : Fnc.SysSetAttrValue('SMPlugType', 'Secondary SM Plug BA');
         end;
-      end;           
+      end;
 
-      //Conditions for Mevh BVH - to be completed. Needs have Depth, Aspect Ratio etc added to the drill layer. Values for multiple blind vias need to be condidered for
+      //Conditions for Mech BVH - to be completed. Needs have Depth, Aspect Ratio etc added to the drill layer. Values for multiple blind vias need to be condidered for
       else if Fnc.SysGetItemAttrValue('DrillDefId', True, cStackupDrill, I) = 8 then //Mech BVH
       begin
 
-        if DrillStartLayer = LayerTop then
-          MechBVHTop := true;
+        if DrillStartLayer = LayerTop then MechBVHTop := true;
 
-        if DrillStartLayer = LayerBot then
-          MechBVHBot := true;
+        if DrillStartLayer = LayerBot then MechBVHBot := true;
+
       end;
 
       //Routine to Detect 2X Drill with Epoxy
@@ -1082,19 +1145,61 @@ begin
       if Fnc.SysGetItemAttrValue('DrillDefId', True, cStackupDrill, I) = 9 then
         X2_wEpoxy_Count := X2_wEpoxy_Count + 1;
 
-      if Fnc.SysGetAttrValue('EpoxySide') <> 'None' then
+      {LaserViaEpoxyTop := false;  // 2741
+      LaserViaEpoxyBot := false;
+      PTHEpoxyTop := false;
+      PTHEpoxyBot := false;
+      MechViaEpoxyTop := false;
+      MechViaEpoxyBot := false; }
+
+      if Fnc.SysGetAttrValue('EpoxySide') <> 'None' then  // 2741
       begin
 
-        if ( DrillID(I) = 2 ) or ( DrillID(I) = 8 ) then BlindViaEpxPlugging := true;
-        else if ( DrillID(I) = 1 ) then PTHEpxPlugging := true;
-  
+        if (DrillStartLayer = LayerTop) or (DrillStartLayer = '') then
+        begin
+
+          if (DrillID(I) = 1) or (DrillID(I) = 9) then
+          begin
+
+            if (DrillFillID(I) = 18) or (DrillFillID(I) = 30) then PTHEpoxyTop := true;
+            if (DrillFillID(I) = 29) or (DrillFillID(I) = 31) then PTHEpoxyBot := true;
+
+            //if DrillFillID(I) = 31 then PTHEpoxyBot := true;  // Epoxy Side BA
+
+            if Epoxy_Plug_Process = 'Side-By-Side' then PTHEpoxyTop :=  true;
+
+          end;
+
+          if DrillID(I) = 2 then LaserViaEpoxyTop := true;
+          if DrillID(I) = 8 then MechViaEpoxyTop := true;
+          // BKDRwEpoxyTop is set above
+
+        end;
+
+        if (DrillStartLayer = LayerBot) or (DrillEndLayer = '') then
+        begin
+
+          // For PTH, take into account AB / BA. Second side is the Epoxy side.
+          // 'A' is Botton; 'B' is Top
+          if (DrillID(I) = 1) or (DrillID(I) = 9) then
+          begin
+
+             if (DrillFillID(I) = 29) or (DrillFillID(I) = 31) then PTHEpoxyBot := true;
+             if (DrillFillID(I) = 18) or (DrillFillID(I) = 30) then PTHEpoxyTop := true;
+
+             //if DrillFillID(I) = 30 then PTHEpoxyTop := true;  // Epoxy Side AB
+
+             if Epoxy_Plug_Process = 'Side-by-Side' then PTHEpoxyBot :=  true;
+
+          end
+
+          if DrillID(I) = 2 then LaserViaEpoxyBot := true;
+          if DrillID(I) = 8 then MechViaEpoxyBot := true;
+          // BKDRwEpoxyBot is set above
+
+        end;
+
       end;
-
-      PlugViaTypeNote := '';
-      if ( BlindViaEpxPlugging and (not PTHEpxPlugging) ) then PlugViaTypeNote := 'Blind';
-      if ( BlindViaEpxPlugging and PTHEpxPlugging ) then PlugViaTypeNote := 'Blind + PTH';
-      if ((not BlindViaEpxPlugging) and PTHEpxPlugging ) then PlugViaTypeNote := 'PTH';
-
 
     end; // End Drill List Cycle
 
@@ -3441,7 +3546,7 @@ begin
   SubList := Fnc.SysGetItemAttrValueList('ItemMatrlDesc', cStackupMfgSubAssy + ';' + cStackupMfgSubLevel, 0, false);
 
   if SubList.Count > 0 then
-  begin
+  begin                                                
 
     for i := 0 to SubList.Count -1 do
     begin
@@ -3512,8 +3617,8 @@ function SubIsSandwich : boolean;  // 1229 PEP Flow option for Sub-assembly buil
 var                  
   SubList : TStringList;
 begin                 
-  result := false;                          
-  SubList := Fnc.SysGetItemAttrValueList('ItemMatrlDesc', cStackupMfgSubAssy  + ';' + cStackupMfgSubLevel, -1, true);                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         
+  result := false;
+  SubList := Fnc.SysGetItemAttrValueList('ItemMatrlDesc', cStackupMfgSubAssy  + ';' + cStackupMfgSubLevel, -1, true);
   //ShowMessage(SubList.Text);
   if SubList.Count > 1 then                                                                                   
   begin
@@ -3655,6 +3760,20 @@ begin
   end;
  // ShowMessage(Result);
   SubList.Free;
+end;
+
+function CalcHotLams: integer; // 2809
+var
+  MfgPartList: TStringList;
+  i: integer;
+begin
+
+  // The Item level of the last Inner (SubLevel) will be the number of press cycles - list is returned in structurasl order.
+   MfgPartList := Fnc.SysGetItemAttrValueList('ItemLevel', cStackupMfgTopLevel + ';' + cStackupMfgSubAssy  + ';' + cStackupMfgSubLevel, 99, true);
+
+   Fnc.SysSetAttrValue('HotPressCycles', (MfgPartList.strings[MfgPartList.count - 1]));
+
+   MfgPartList.Free
 end;
 
 function CheckJobType : string;
@@ -4719,7 +4838,7 @@ begin
   result := false;
 
   // NCRun 1 or NCRun 2 AND No Blind Vias  // 2619
-  if NoBlindVias then
+  if NoBlindVias or ( NCRun = 2 ) then // 2768
   begin
 
     if ( aspectRatio <= 16 ) and
@@ -5294,14 +5413,9 @@ begin
   CoreList := TStringList.Create;
   CoreList := Fnc.SysStackupGetMaterialList(1, false, 'Core', 'ItemMatrlDesc');
 
-  if CoreList.Count > 0 then
-  begin
-
-    Fnc.SysSetAttrValue('CoreThickness', copy(CoreList.Text, 1, 5));
-
-    CoreList.Free;
-
-  end;
+  if CoreList.Count > 0 then Fnc.SysSetAttrValue('CoreThickness', copy(CoreList.Text, 1, 5));
+                     
+  CoreList.Free;
 
 end;
 
@@ -5310,14 +5424,82 @@ begin
 
   result := false;
 
-  if
+  result :=
+
+  //if
     ( Plating_Line = 'P4' ) or  // 2467 'PAL4' then
     ( Plating_Line = 'PAL4' ) or
     ( Plating_Line = 'PAL5' ) or
     ( Plating_Line = 'PAL6' ) or
     ( Plating_Line = 'PAL7' ) or
     ( Plating_Line = 'P6 / P7' ) // '2467 PAL6 / PAL7'
-   then
-     result := true;
+ //  then
+ //    result := true;
+
+end;
+
+// 2820 - Made this procedure a function to get the correct Aspect Value for OLPHOTO_1A table lookup
+function Insert_MinHole_Aspect(process: string): float;
+var
+
+  thicknessAfterPlating,
+  minHoleSize_NP : float;
+
+begin
+
+  result := 0.0;
+
+  thicknessAfterPlating := PressThickness +
+                           ( InProcessCuThk/1000 * 2 ) -
+                           ( StrToFloat(GetBaseCuInMicrons(true, false)) / 1000 );
+
+  if ( not PluggedFilledB4Photo ) or ( process = 'Epoxy' ) then  // Subs "should always be" Plugged or Filled
+  begin
+               
+    result := thicknessAfterPlating / MfgAttr('Min_Hole_Size');
+
+    if process <> 'OLPhotoTable' then
+    begin
+
+      StepParamERP('Min Hole Size', MfgAttr('Min_Hole_Size'));
+      StepParamERP('Aspect Ratio', formatFloat('0.0', result));
+
+    end;
+
+  end
+  else
+  begin
+
+    if MfgAttr('Abs_Min_Th') > 0 then
+      minHoleSize_NP := MfgAttr('Min_Drill_Size_NP') - (MfgAttr('Abs_Min_Th') / 1000*2 )
+    else
+      minHoleSize_NP := MfgAttr('Min_Drill_Size_NP') - (MfgAttr('Ave_Min_Th') / 1000*2 );
+                                                                                                                                          
+    if MfgAttr('MfgPartType') = 'Top' then // 961 - removal of NP Holes from subs
+    begin
+
+      result := thicknessAfterPlating / minHoleSize_NP;
+
+      // Don't insert params for OL PHOTO Table lookup
+      if process <> 'OLPhotoTable' then
+      begin
+
+        StepParamERP('Min Hole Size NP', minHoleSize_NP );
+        StepParamERP('Aspect Ratio', formatFloat('0.0', result));
+  
+      end
+
+    end
+    else // 2820 Wrong OL Photo Aspect Ratio
+    begin
+
+      result := 1.0;
+
+      // Don't insert params for OL PHOTO Table lookup
+      if process <> 'OLPhotoTable' then StepParamERP('Aspect Ratio', formatFloat('0.0', result));
+
+    end;
+
+  end;
 
 end;

@@ -4,7 +4,7 @@
 //ScriptType=0
 //ScriptGroup=
 //HeaderImportExport<--
-uses                                                          
+uses
   RouteFunctions;
   
 procedure AppendJobAttribute(jbID : integer; attVal : variant);
@@ -63,7 +63,7 @@ begin
                                           
   Qry.Close;                                             
   Qry.Free; 
-end;
+end;                                              
                                 
 procedure getJobAnswers;
 var

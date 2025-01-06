@@ -31,7 +31,7 @@ begin
                                                            
   CoreThk := Engx_CoreThickness;                   
   CuTop := StrToInt(GetBaseCuInMicrons('True', 'False'));
-  CuBot := StrToInt(GetBaseCuInMicrons('False', 'False'));
+  CuBot := StrToInt(GetBaseCuInMicrons('False', 'False')); 
 
   //LayerTypeTop := copy(Dummy_SysGetAttrValue('LAYER_DESC'), 1, 1);
  // LayerTypeBot := copy(Dummy_SysGetAttrValue('LAYER_DESC'), 2, 1);

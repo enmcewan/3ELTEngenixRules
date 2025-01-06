@@ -24,7 +24,7 @@ begin
 
   showmessage(IntToStr(Fnc.SysItemTypeAttrLinkTable.RecordCount));
 
-  Fnc.SysItemTypeAttrLinkTable.Filtered := False;                                                  
+  Fnc.SysItemTypeAttrLinkTable.Filtered := False;
 
                                                                                  
 

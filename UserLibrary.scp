@@ -338,10 +338,10 @@ begin
   JobAttrList.Add('Rules Version=' +  Fnc.SysGetAttrValueTopLevel('Rules_Version'));
   JobAttrList.Add('Layer Count=' +  IntToStr(Fnc.SysGetAttrValueTopLevel('LayerCount')));
 
-  if Fnc.SysGetAttrValueTopLevel('LayupThickness') >= 3.6 then
+  {if Fnc.SysGetAttrValueTopLevel('LayupThickness') >= 3.6 then 2809
     JobAttrList.Add('Thick Board=' + 'true')
   else
-    JobAttrList.Add('Thick Board=' + 'false');
+    JobAttrList.Add('Thick Board=' + 'false');}
 
   if Fnc.SysGetAttrValueTopLevel('Seq_Build') = true then
     JobAttrList.Add('Sequential Build=' + 'true')
@@ -386,11 +386,6 @@ begin
     JobAttrList.Add('Surface BVH=' + 'true')
   else
     JobAttrList.Add('Surface BVH=' + 'false');
-
-  {if Fnc.SysGetAttrValueTopLevel('Mech_BlindVias') = true then
-    JobAttrList.Add('Mech Blind Via=' + 'true')
-  else
-    JobAttrList.Add('Mech Blind Via=' + 'false');}
   
   // 917 Correct of Seq Lam w. Mech Blind Vias 
   if (( Fnc.SysGetAttrValueTopLevel('Mech_BlindVias') = true ) or ( Fnc.SysGetAttrValueTopLevel('Sfc_Sub_Mech_BlindVias') = true )) then
@@ -440,21 +435,20 @@ begin
   else
     JobAttrList.Add('Stacked BVH over Buried Hole=' + 'false'); 
 
-
   JobAttrList.Add('Surface Finish=' +  Fnc.SysGetAttrValueTopLevel('Board_Finish'));
 
   JobAttrList.Add('Selective Gold=' +  Fnc.SysGetAttrValueTopLevel('Sel_Gold_Type'));
 
   JobAttrList.Add('Gold Finger=' +  Fnc.SysGetAttrValueTopLevel('Gold_Fgr_Type'));
 
-  JobAttrList.Add('Application=' +  Fnc.SysGetAttrValueTopLevel('Application'));
+  //JobAttrList.Add('Application=' +  Fnc.SysGetAttrValueTopLevel('Application'));
 
-  if Fnc.SysGetAttrValueTopLevel('Milling_Type') = 'Milling' then
+  {if Fnc.SysGetAttrValueTopLevel('Milling_Type') = 'Milling' then   2809
     JobAttrList.Add('Cavity Milling=' + 'true')
   else
-    JobAttrList.Add('Cavity Milling=' + 'false');
+    JobAttrList.Add('Cavity Milling=' + 'false');}
 
-  if Fnc.SysGetAttrValueTopLevel('Aspect_Ratio_Val') > 15 then
+  {if Fnc.SysGetAttrValueTopLevel('Aspect_Ratio_Val') > 15 then
     JobAttrList.Add('PTH A/R > 1:15=' + 'true')
   else
     JobAttrList.Add('PTH A/R > 1:15=' + 'false'); 
@@ -462,7 +456,7 @@ begin
   if Fnc.SysGetAttrValueTopLevel('Blind_AspectRatio') > 0.75 then
     JobAttrList.Add('BVH A/R > 1:0.75=' + 'true')
   else
-    JobAttrList.Add('BVH A/R > 1:0.75=' + 'false');
+    JobAttrList.Add('BVH A/R > 1:0.75=' + 'false');}
     
   material := '';
   if Fnc.SysGetAttrValueTopLevel('CoreMat') <> '' then  // 802 Additional Process Info
@@ -476,15 +470,15 @@ begin
 
   JobAttrList.Add('Material Type=' + material); 
       
-  if Fnc.SysGetAttrValueTopLevel('Drill_Pitch_065') = true then  // 802 Additional Process Info
+  {if Fnc.SysGetAttrValueTopLevel('Drill_Pitch_065') = true then  // 802 Additional Process Info 2809
     JobAttrList.Add('0.65mm Drill Pitch=' + 'true')
   else
     JobAttrList.Add('0.65mm Drill Pitch=' + 'false');
     
-  if Fnc.SysGetAttrValueTopLevel('Nano_Connector') = true then  // 802 Additional Process Info 
+  if Fnc.SysGetAttrValueTopLevel('Nano_Connector') = true then  // 802 Additional Process Info  2809
     JobAttrList.Add('Nano Connector=' + 'true')
   else              
-    JobAttrList.Add('Nano Connector=' + 'false'); 
+    JobAttrList.Add('Nano Connector=' + 'false');}
     
   // 854 New Attribute for Finished Thickness
   JobAttrList.Add('Finished Thickness=' +  formatFloat('0.00', ThicknessOverMask));
@@ -498,7 +492,18 @@ begin
   JobAttrList.Add('NC Drill Entry Mat=' +  Fnc.SysGetAttrValueTopLevel('NC_Drill_1_EntryMat'));
   //JobAttrList.Add('NC Drill 2 Entry Mat=' +  Fnc.SysGetAttrValueTopLevel('NC_Drill_2_EntryMat'));
   JobAttrList.Add('Plating Line=' +  Fnc.SysGetAttrValueTopLevel('Plating_Line'));
-                                       
+
+  //2809 Job Attribute Report Updates
+  JobAttrList.Add('PTH Aspect Ratio=' + FloatToStr(Fnc.SysGetAttrValueTopLevel('Aspect_Ratio_Val')));
+  JobAttrList.Add('Hot Press Cycles=' + IntToStr(Fnc.SysGetAttrValueTopLevel('HotPressCycles')));
+
+  if Fnc.SysGetAttrValueTopLevel('NonEtchPreTreatment') then
+    JobAttrList.Add('Non-Etched Line=' + 'true')
+  else
+    JobAttrList.Add('Non-Etched Line=' + 'false');
+
+  JobAttrList.Add('Backdrill Stub Spec=' + IntToStr(Fnc.SysGetAttrValueTopLevel('BackDrillStubSpec')));
+
   // Update the Job Attributes
   //ShowMessage(JobAttrList.Text);
   SysEngnxUpdateJobAttribute(JobAttrList);
@@ -513,7 +518,7 @@ end;
 procedure UserProcSaveRouteToTree;
 begin
 end;
-                    
+
 {
 ===== Create Erp MfgPart Number & Names
 ParamList.Values['JobId']
@@ -620,4 +625,3 @@ end;
 begin
   UpdateJobAttributes;
 end;
-
