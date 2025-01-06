@@ -3546,7 +3546,7 @@ begin
   SubList := Fnc.SysGetItemAttrValueList('ItemMatrlDesc', cStackupMfgSubAssy + ';' + cStackupMfgSubLevel, 0, false);
 
   if SubList.Count > 0 then
-  begin
+  begin                                                
 
     for i := 0 to SubList.Count -1 do
     begin
@@ -3617,8 +3617,8 @@ function SubIsSandwich : boolean;  // 1229 PEP Flow option for Sub-assembly buil
 var                  
   SubList : TStringList;
 begin                 
-  result := false;                          
-  SubList := Fnc.SysGetItemAttrValueList('ItemMatrlDesc', cStackupMfgSubAssy  + ';' + cStackupMfgSubLevel, -1, true);                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         
+  result := false;
+  SubList := Fnc.SysGetItemAttrValueList('ItemMatrlDesc', cStackupMfgSubAssy  + ';' + cStackupMfgSubLevel, -1, true);
   //ShowMessage(SubList.Text);
   if SubList.Count > 1 then                                                                                   
   begin
@@ -3760,6 +3760,20 @@ begin
   end;
  // ShowMessage(Result);
   SubList.Free;
+end;
+
+function CalcHotLams: integer; // 2809
+var
+  MfgPartList: TStringList;
+  i: integer;
+begin
+
+  // The Item level of the last Inner (SubLevel) will be the number of press cycles - list is returned in structurasl order.
+   MfgPartList := Fnc.SysGetItemAttrValueList('ItemLevel', cStackupMfgTopLevel + ';' + cStackupMfgSubAssy  + ';' + cStackupMfgSubLevel, 99, true);
+
+   Fnc.SysSetAttrValue('HotPressCycles', (MfgPartList.strings[MfgPartList.count - 1]));
+
+   MfgPartList.Free
 end;
 
 function CheckJobType : string;
@@ -5421,5 +5435,71 @@ begin
     ( Plating_Line = 'P6 / P7' ) // '2467 PAL6 / PAL7'
  //  then
  //    result := true;
+
+end;
+
+// 2820 - Made this procedure a function to get the correct Aspect Value for OLPHOTO_1A table lookup
+function Insert_MinHole_Aspect(process: string): float;
+var
+
+  thicknessAfterPlating,
+  minHoleSize_NP : float;
+
+begin
+
+  result := 0.0;
+
+  thicknessAfterPlating := PressThickness +
+                           ( InProcessCuThk/1000 * 2 ) -
+                           ( StrToFloat(GetBaseCuInMicrons(true, false)) / 1000 );
+
+  if ( not PluggedFilledB4Photo ) or ( process = 'Epoxy' ) then  // Subs "should always be" Plugged or Filled
+  begin
+               
+    result := thicknessAfterPlating / MfgAttr('Min_Hole_Size');
+
+    if process <> 'OLPhotoTable' then
+    begin
+
+      StepParamERP('Min Hole Size', MfgAttr('Min_Hole_Size'));
+      StepParamERP('Aspect Ratio', formatFloat('0.0', result));
+
+    end;
+
+  end
+  else
+  begin
+
+    if MfgAttr('Abs_Min_Th') > 0 then
+      minHoleSize_NP := MfgAttr('Min_Drill_Size_NP') - (MfgAttr('Abs_Min_Th') / 1000*2 )
+    else
+      minHoleSize_NP := MfgAttr('Min_Drill_Size_NP') - (MfgAttr('Ave_Min_Th') / 1000*2 );
+                                                                                                                                          
+    if MfgAttr('MfgPartType') = 'Top' then // 961 - removal of NP Holes from subs
+    begin
+
+      result := thicknessAfterPlating / minHoleSize_NP;
+
+      // Don't insert params for OL PHOTO Table lookup
+      if process <> 'OLPhotoTable' then
+      begin
+
+        StepParamERP('Min Hole Size NP', minHoleSize_NP );
+        StepParamERP('Aspect Ratio', formatFloat('0.0', result));
+  
+      end
+
+    end
+    else // 2820 Wrong OL Photo Aspect Ratio
+    begin
+
+      result := 1.0;
+
+      // Don't insert params for OL PHOTO Table lookup
+      if process <> 'OLPhotoTable' then StepParamERP('Aspect Ratio', formatFloat('0.0', result));
+
+    end;
+
+  end;
 
 end;

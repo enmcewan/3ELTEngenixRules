@@ -88,7 +88,7 @@ begin
       Fnc.SysSetAttrValue('FinIL_Stk', Fnc.SysGetAttrValue('FinIL_Stk_User'));
       StepParamERP('Stack Height', Fnc.SysGetAttrValue('FinIL_Stk_User'));
     end
-    else                                       
+    else                                                                                                                                                     
       MessageDlg('IL Finish Route Stack Height user override selected but value is 0', mtWarning, Setof([mbOK]) , 0);
   end;
 end;
@@ -2076,7 +2076,7 @@ begin
 
    StepDeptERP('DMEAR-V01');
    StepWCERP('DMEAR-V01');
-   StepInstructionERP('CURIN-U');
+   StepInstructionERP('DMEAR075');
 
 end;
 
@@ -2118,7 +2118,7 @@ begin
 
     Strike_Plating_SD;
     //StepParamERP('Remarks', '1.0 asd 58 minutes');  // Removed per Herole 2469 comment
-
+                                                        
 end;
 
 procedure Electroless_SP_SD; // 2616 VELCP Updated Flow

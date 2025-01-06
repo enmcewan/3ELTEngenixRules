@@ -4,7 +4,7 @@
 //ScriptType=0
 //ScriptGroup=
 //HeaderImportExport<--
-uses                                                
+uses
   RouteFunctions;
 
 procedure updateJobAttribute(jbID : integer; att : string; attVal : variant);
@@ -16,13 +16,13 @@ begin
   Qry := TAdoQuery.Create(nil);
   Qry.Connection := Fnc.DbConnection;
   Qry.SQL.Clear;
-                  
+
   Qry.SQL.Add('SELECT * from JobAnswers');
   Qry.SQL.Add('WHERE JobID = ' + jbID + ' AND JobAttributeID = 7');
-  Qry.Open                 
+  Qry.Open
   Fnc.OpenDataGrid(Qry);
-  Qry.first; 
-  
+  Qry.first;
+
   if Qry.IsEmpty then //no record exists
     // Do nothing. Can't think why this would happen
     ShowMessage('Attribute does not exist for ' + IntToStr(jbID));
@@ -61,14 +61,14 @@ begin
   Qry.Open;
   Fnc.OpenDataGrid(Qry);
   Qry.First;
-                                                                                      
+
   While not Qry.EOF do
   begin
     if Qry.FieldByName('VALUE').AsString = 'True' then
       //ShowMessage('Found TL Sub with MBV');
       updateJobAttribute(Qry.FieldByName('JobID').AsString, Qry.FieldByName('ATTRIBUTENAME').AsString, Qry.FieldByName('VALUE').AsString);
-    Qry.Next;               
-  end;                      
+    Qry.Next;
+  end;
 
   Qry.Close;
   Qry.Free;

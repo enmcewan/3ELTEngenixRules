@@ -4,7 +4,7 @@
 //ScriptType=0
 //ScriptGroup=HCS
 //HeaderImportExport<--
-   uses
+uses
   Event_RouteGenLibrary,
   Eng_RouteFunctions,
   RouteFunctions,
@@ -31,41 +31,9 @@ begin
   // 1107 Additional Run Card info - Note sequential build
   if ( Fnc.SysGetAttrValue('Seq_Build') = true ) or ( SubParentIsSequential ) then
     StepParamERP('Remark', 'Sequential Build'); 
-end;                                     
-
-procedure Insert_MinHole_Aspect(process: string);
-var
-  thicknessAfterPlating,
-  minHoleSize_NP : float;                          
-begin
-  thicknessAfterPlating := PressThickness + 
-                           ( InProcessCuThk/1000 * 2 ) - 
-                           ( StrToFloat(GetBaseCuInMicrons(true, false)) / 1000 );
-                           
-  if ( not PluggedFilledB4Photo ) or ( process = 'Epoxy' ) then  
-  begin
-    StepParamERP('Min Hole Size', Fnc.SysGetAttrValue('Min_Hole_Size'));
-    StepParamERP('Aspect Ratio', formatFloat('0.0', thicknessAfterPlating / Fnc.SysGetAttrValue('Min_Hole_Size')));
-  end
-  else                              
-  begin
-    if Fnc.SysGetAttrValue('Abs_Min_Th') > 0 then
-      minHoleSize_NP := Fnc.SysGetAttrValue('Min_Drill_Size_NP') - (Fnc.SysGetAttrValue('Abs_Min_Th') / 1000*2 )
-    else       
-      minHoleSize_NP := Fnc.SysGetAttrValue('Min_Drill_Size_NP') - (Fnc.SysGetAttrValue('Ave_Min_Th') / 1000*2 );   
-                                                                                                                                          
-    if Fnc.SysGetAttrValue('MfgPartType') = 'Top' then // 961 - removal of NP Holes from subs
-    begin
-      StepParamERP('Min Hole Size NP', minHoleSize_NP );
-      StepParamERP('Aspect Ratio', formatFloat('0.0', thicknessAfterPlating / minHoleSize_NP));
-    end                        
-    else                                     
-      StepParamERP('Aspect Ratio', formatFloat('0.0', thicknessAfterPlating / Fnc.SysGetAttrValue('Min_Hole_Size')));
-  
-  end;
 end;
 
-procedure OL_Photo_Common_SD(PhotoProcess : string);
+procedure OL_Photo_Common_SD(PhotoProcess : string);                                                        
 var
   ProcessLabel : string;
   Au_Thk1 : float;
@@ -74,11 +42,11 @@ var
   photoAspectRatio : float;             
   minHoleSize_NP : float;
 
-begin                               
+begin
   ProcessLabel := '';
   Au_Thk1 := 0.0;                      
   Au_Thk2 := 0.0;
-  PhotoLine := '';                
+  PhotoLine := '';
   AltLine := '';
   ProdResource := '';
   DesLine := '';
@@ -156,29 +124,6 @@ begin
       Fnc.SysSetAttrValue('Min_Hole_Size', Round100(Fnc.SysGetAttrValue('Min_Hole_Size')));
 
       thicknessAfterPlating := PressThickness + ( InProcessCuThk/1000 * 2 ) - ( StrToFloat(GetBaseCuInMicrons(true, false)) / 1000 );
-
-      // 756 Update Aspect ratio calculation for OL layer photo process
-      {if not PluggedFilledB4Photo then
-      begin
-        StepParamERP('Min Hole Size', Fnc.SysGetAttrValue('Min_Hole_Size'));
-        StepParamERP('Aspect Ratio', formatFloat('0.0', thicknessAfterPlating / Fnc.SysGetAttrValue('Min_Hole_Size')));
-      end
-      else
-      begin
-        if Fnc.SysGetAttrValue('Abs_Min_Th') > 0 then
-          minHoleSize_NP := Fnc.SysGetAttrValue('Min_Drill_Size_NP') - (Fnc.SysGetAttrValue('Abs_Min_Th') / 1000*2 )
-        else
-          minHoleSize_NP := Fnc.SysGetAttrValue('Min_Drill_Size_NP') - (Fnc.SysGetAttrValue('Ave_Min_Th') / 1000*2 );   
-
-        if Fnc.SysGetAttrValue('MfgPartType') = 'Top' then // 961 - removal of NP Holes from subs
-        begin
-          StepParamERP('Min Hole Size NP', minHoleSize_NP );
-          StepParamERP('Aspect Ratio', formatFloat('0.0', thicknessAfterPlating / minHoleSize_NP));
-        end                        
-        else                                     
-          StepParamERP('Aspect Ratio', formatFloat('0.0', thicknessAfterPlating / Fnc.SysGetAttrValue('Min_Hole_Size')));
-      
-      end;}
       
       // 2203 Epoxy Pluggin Additional Information - Common with OL Photo so made the above a sub routine
       Insert_MinHole_Aspect('OLPhoto');
@@ -194,10 +139,10 @@ begin
       //if Fnc.SysGetAttrValue('Slot_Length_PTH') > 6.0 then // 793 Update Photo Process 
       if MfgPartType = 'Top' then 
         StepParamERP('Max Slot Length', Fnc.SysGetAttrValue('Slot_Length_PTH'));
-                      
+
       if Fnc.SysGetAttrValue('Design_Type') = 'Flip Chip' then
         StepParamERP('Design', Fnc.SysGetAttrValue('Design_Type'));
-                                                           
+
       // 919 Add MLB or HDI remarks under OL Photo Step
       if PhotoBoardType <> '' then
          StepParamERP('Board Type', PhotoBoardType);
@@ -578,7 +523,7 @@ procedure Epoxy_PlugA_SD;
 begin
   Epoxy_Plug_Common;
   StepParamERP('Bottom A Layer', Fnc.SysGetAttrValue('BotLayer'));
-  
+
   if ( not Fnc.SysGetAttrValue('BackDrill_Epoxy') ) and  // 1258 Additional pre-baking b4 Epoxy Plugging 
      (( Fnc.SysGetAttrValue('EpoxySide') = 'Epoxy Side A' ) or ( Fnc.SysGetAttrValue('EpoxySide') = 'Epoxy Side AB' )) then
     StepParamERP('Remarks', 'Pre-Bake using Blue Box Oven');
@@ -613,7 +558,7 @@ begin
 end;
                                      
 procedure Epoxy_PlugB_SS_SD;  // 1463
-begin
+begin    
   Epoxy_Plug_Common;
   StepParamERP('Epoxy Side', 'B side');
 

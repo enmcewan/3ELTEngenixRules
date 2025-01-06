@@ -1,0 +1,95 @@
+//HeaderImportExport-->
+//SiteId=0
+//Enterprise=True
+//ScriptType=0
+//ScriptGroup=
+//HeaderImportExport<--
+procedure updateJobAttribute(jbID : integer; att : string; attVal : variant);
+var
+  Qry : TADOQuery;
+  JobAttrID: integer;
+
+begin
+
+  JobAttrID := 10020;
+  //ShowMessage(IntToStr(jbID) + ' ' + att + ' ' + attVal);
+  Qry := TAdoQuery.Create(nil);
+  Qry.Connection := Fnc.DbConnection;
+  Qry.SQL.Clear;
+
+  Qry.SQL.Add('SELECT * from JobAnswers');
+  Qry.SQL.Add('WHERE JobID = ' + IntToStr(jbID) + ' AND JobAttributeID = ' + IntToStr(JobAttrID));
+  Qry.Open
+  //Fnc.OpenDataGrid(Qry);
+  Qry.first;
+
+  if Qry.IsEmpty then //no record exists
+  begin
+    Qry.Append;
+    Qry.FieldByName('JobAttributeID').AsInteger := JobAttrID;                                      
+    Qry.FieldByName('JobID').AsInteger := jbID;
+    Qry.FieldByName('EntryValue').AsString := attVal;
+    Qry.Post;
+  end
+  else
+  begin
+    Qry.Edit;
+    Qry.FieldByName('JobAttributeID').AsInteger := JobAttrID;
+    Qry.FieldByName('JobID').AsInteger := jbID;
+    Qry.FieldByName('EntryValue').AsString := attVal;
+    Qry.Post;
+  end;
+
+  Qry.Close;
+  Qry.Free;
+end;
+                           
+procedure getJobAnswers;
+var
+  Qry : TADOQuery;
+  tbl : TSysTable;
+
+  jobAttributes : TSysTable;
+
+begin
+
+  Qry := TAdoQuery.Create(nil);
+  Qry.Connection := Fnc.DbConnection;
+  Qry.SQL.Clear;
+
+  Qry.SQL.Add('SELECT * from CUST_JOBPARTATTRIBUTES ');
+  Qry.SQL.Add('WHERE PARTTYPE = ' + QuotedStr('MFGTP') + ' AND ATTRIBUTENAME = ' + QuotedStr('Aspect_Ratio_Val') );
+  //Qry.SQL.Add('WHERE ((PARTNAME LIKE ' + QuotedStr('SubAssembly x%') + ') or (PARTNAME LIKE ' + QuotedStr('%/ x') + ')) AND ')
+  //Qry.SQL.Add('ATTRIBUTENAME = ' + QuotedStr('Mech_BlindVias') );
+  //Qry.SQL.Add(' ORDER BY ' + QuotedStr('JobID') );
+  //Qry.SQL.SaveToFile('c:\temp\sql.txt');
+  Qry.SQL.Add('SELECT * FROM CUST_JOBSTACKUP WHERE ItemType LIKE ' + QuotedStr('MFG%') + ' ORDER BY JOBID, ItemSeq');
+  // Cleanup Old Job Attribute Data
+  // 'Thick Board', 'PTH A/R > 1:15','BVH A/R > 1:0.75', 'New Customer', 'Application', 'Cavity Milling', '0.65mm Drill Pitch', 'Nano Connector'
+  //Qry.SQL.Add('SELECT * FROM JobAttributes WHERE AttributeName = ' + QuotedStr('Thick Board'));
+  //Fnc.SqlExec(Qry, 'DELETE FROM JobAnswers WHERE JobAttributeID = 22' )
+  Qry.Open;
+  Fnc.OpenDataGrid(Qry);
+  Qry.First;
+
+  // Just go through ordered table. Each job can have multiple subs...
+  // The last INNER record will have the highest Item Level (Press Cycles)
+  // For single/double-sided, there will only by one Mfg Part (Top-Level) at ItemLevel: 0. Which is correct for the number of Hot Press Cycles
+
+  While not Qry.EOF do
+  begin
+
+    updateJobAttribute(Qry.FieldByName('JobID').AsInteger, Qry.FieldByName('ATTRIBUTENAME').AsString, Qry.FieldByName('VALUE').AsString);
+    //updateJobAttribute(Qry.FieldByName('JOBID').AsInteger, 'Hot Press Cycles', Qry.FieldByName('ItemLevel').AsString);
+    Qry.Next;
+
+  end;
+
+  Qry.Close;
+  Qry.Free;
+
+end;
+
+begin
+  getJobAnswers;
+end;

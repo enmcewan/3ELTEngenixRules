@@ -745,9 +745,10 @@ begin
          AddStep('Vertical_Desmear_CappedVia', 'Vertical_Desmear_CappedVia01');
          AddStep('UltraSonicStep', 'Ultrasonic-VDSm01');
 
-      end;
-
-      AddStep('Desmear_CappedVia', 'Desmear_CappedVia01');
+      end
+      else
+        AddStep('Desmear_CappedVia', 'Desmear_CappedVia01');
+        
       AddStep('Electroless_CappedVia', 'Electroless_CappedVia01');
       AddStep('Electrolytic_CappedVia', 'Electrolytic_CappedVia01');
 
