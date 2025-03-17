@@ -4,7 +4,7 @@
 //ScriptType=1
 //ScriptGroup=Engenix Startup
 //HeaderImportExport<--
-{
+{                                          
 procedure LoadExcelFile(FileName: string; SheetName: string; CustTableName: string; CustTable: TSysTable);
 var
   aQry: TAdoQuery;

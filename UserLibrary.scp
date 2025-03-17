@@ -33,7 +33,7 @@ uses
   RouteFunctions;
 function ErpNewMfgPartNumberParadigmOk(MfgPartNum: string; CustCode: string;
                                        CustPartNum: string; CustPartRev: string): boolean;
-var
+var                                                  
    D17: TSysTable;
    D25: TSysTable;
    D50: TSysTable;
@@ -507,18 +507,18 @@ begin
   // Update the Job Attributes
   //ShowMessage(JobAttrList.Text);
   SysEngnxUpdateJobAttribute(JobAttrList);
-
+                             
   JobAttrList.Free;
 
   Fnc.MouseNormal;
-end;
+end;    
 
 
 {===== After Route is saved }
 procedure UserProcSaveRouteToTree;
 begin
 end;
-
+                    
 {
 ===== Create Erp MfgPart Number & Names
 ParamList.Values['JobId']

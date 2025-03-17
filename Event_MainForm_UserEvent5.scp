@@ -6,13 +6,5 @@
 //HeaderImportExport<--
 procedure MainFormUserEvent5(ParamList: TStringList);
 begin
-
+  //
 end;
-
-function GetExportFileName(ParamList: TStringList) : string;
-begin
-  // return a string containing a path to a .xlsx file that is writeable by the Engenix User
-  result := 'c:\Engenix\out.xlsx';
-
-end;
-

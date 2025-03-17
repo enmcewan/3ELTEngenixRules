@@ -4,16 +4,20 @@
 //ScriptType=0
 //ScriptGroup=HCS
 //HeaderImportExport<--
-
 procedure StepParam(Source: string; ParamCode: string; ParamValue: string) // Added with 2269
 begin
   Fnc.SysRouteGenInsAddlParam(Fnc.SysRouteInsGetStepNum, Source, ParamCode, ParamValue, '', '', false, '', '', '' );
-end;                                    
+end;
 
 procedure StepParamERP(ParamCode: string; ParamValue: string)
 begin
   Fnc.SysRouteGenInsAddlParam(Fnc.SysRouteInsGetStepNum, 'Erp', ParamCode, ParamValue, '', '', false, '', '', '' );
 end;
+
+procedure StepMemoERP(ParamCode: string; MemoValue: string)
+begin
+  Fnc.SysRouteGenInsAddlParam(Fnc.SysRouteInsGetStepNum, 'Erp', ParamCode, '', '', '', false, MemoValue, '', '' );
+end
 
 procedure StepDeptERP(DeptCode: string);
 begin         
@@ -31,7 +35,7 @@ begin
 end;
 
 procedure StepMaterials(Source: string; MaterialTypeList: TStringList; MaterialQty: double);
-begin           
+begin
   Fnc.SysRouteGenInsMaterials(Fnc.SysRouteInsGetStepNum, Source, MaterialTypeList, MaterialQty, '');
 end;
 

@@ -182,7 +182,7 @@ procedure Gold_Finger_Taping_SD;
 begin
   StepDeptERP('TAPNG-A');
   StepWCERP('TAPNG-A');
-end;                              
+end;                                  
 
 procedure Impedance_SD;
 begin
@@ -202,7 +202,7 @@ end;
 
 procedure Hole_Check_SD;
 begin
-                                     
+
   StepDeptERP('HOLCH-A');
   StepWCERP('HOLCH-A');
 

@@ -29,7 +29,7 @@ begin
     Qry.FieldByName('JobID').AsInteger := jbID;
     Qry.FieldByName('EntryValue').AsString := attVal;
     Qry.Post;
-  end                                                            
+  end
   else
   begin
     Qry.Edit;

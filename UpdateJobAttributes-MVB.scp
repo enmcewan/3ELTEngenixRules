@@ -28,7 +28,7 @@ begin
     ShowMessage('Attribute does not exist for ' + IntToStr(jbID));
   else
   begin                               
-    Qry.Edit;                                        
+    Qry.Edit;
     //Qry.FieldByName('JobAttributeID').AsInteger := 7;
     //Qry.FieldByName('JobID').AsInteger := StrToInt(jbID);
     Qry.FieldByName('EntryValue').AsString := AnsiLowerCase(attVal);

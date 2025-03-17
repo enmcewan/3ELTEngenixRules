@@ -274,55 +274,57 @@ begin
 
     end;
 
+    //Initialize 2X Drill Options to be Hidden. Moved this checked inside the Top-Level routine as itr only applies here. 25/01/07
+    // In preparation for 6.0. GetVal('NCRunX2') is not assigned to subs and gets a null value back. 5.x was OK but that was just luck.
+    HideAttr('Aspect_Ratio_Val_2');
+    HideAttr('Drill_Entry_Sht_2');
+    HideAttr('Flute_Len_2');       // 843 Process Override Rule
+    HideAttr('Flute_Len_2_User');
+    HideAttr('Flute_Len_Ovr_2');
+    HideAttr('Min_Drill_Size_2');
+    HideAttr('Min_Slot_Size_2');
+  
+    HideAttr('Stack_Hgt_2');
+    HideAttr('Stack_Hgt_2_Ovr');
+    HideAttr('Stack_Hgt_2_User');
+  
+    HideAttr('Drill_FSF_X_2');
+    HideAttr('Drill_FSF_X_Tol_2');
+    HideAttr('Drill_FSF_Y_2');
+    HideAttr('Drill_FSF_Y_Tol_2');
+  
+    HideAttr('Drill_Offset_X_2');  // 1259 Additional attributes for NC Drill
+    HideAttr('Drill_Offset_Y_2');
+    HideAttr('Drill_Side_2'); // 2620 2nd Drill
+  
+    if GetVal('NCRunX2') then
+    begin
+      ShowAttr('Aspect_Ratio_Val_2');
+      ShowAttr('Drill_Entry_Sht_2');
+      ShowAttr('Flute_Len_2');       // 843 Process Override Rule
+      ShowAttr('Flute_Len_2_User');
+      ShowAttr('Flute_Len_Ovr_2');
+      ShowAttr('Min_Drill_Size_2');
+      ShowAttr('Min_Slot_Size_2');
+  
+      ShowAttr('Stack_Hgt_2');
+      ShowAttr('Stack_Hgt_2_Ovr');
+      ShowAttr('Stack_Hgt_2_User');
+  
+      ShowAttr('Drill_FSF_X_2');
+      ShowAttr('Drill_FSF_X_Tol_2');
+      ShowAttr('Drill_FSF_Y_2');
+      ShowAttr('Drill_FSF_Y_Tol_2');
+  
+      ShowAttr('Drill_Offset_X_2');  // 1259 Additional attributes for NC Drill
+      ShowAttr('Drill_Offset_Y_2');
+  
+      ShowAttr('Drill_Side_2'); // 2620 2nd Drill
+  
+    end;
+
   end;
 
-  //Initialize 2X Drill Options to be Hidden
-  HideAttr('Aspect_Ratio_Val_2');
-  HideAttr('Drill_Entry_Sht_2');
-  HideAttr('Flute_Len_2');       // 843 Process Override Rule
-  HideAttr('Flute_Len_2_User');
-  HideAttr('Flute_Len_Ovr_2');
-  HideAttr('Min_Drill_Size_2');
-  HideAttr('Min_Slot_Size_2');
-
-  HideAttr('Stack_Hgt_2');
-  HideAttr('Stack_Hgt_2_Ovr');
-  HideAttr('Stack_Hgt_2_User');
-
-  HideAttr('Drill_FSF_X_2');
-  HideAttr('Drill_FSF_X_Tol_2');
-  HideAttr('Drill_FSF_Y_2');
-  HideAttr('Drill_FSF_Y_Tol_2');
-
-  HideAttr('Drill_Offset_X_2');  // 1259 Additional attributes for NC Drill
-  HideAttr('Drill_Offset_Y_2');
-  HideAttr('Drill_Side_2'); // 2620 2nd Drill
-
-  if GetVal('NCRunX2') then
-  begin
-    ShowAttr('Aspect_Ratio_Val_2');
-    ShowAttr('Drill_Entry_Sht_2');
-    ShowAttr('Flute_Len_2');       // 843 Process Override Rule
-    ShowAttr('Flute_Len_2_User');
-    ShowAttr('Flute_Len_Ovr_2');
-    ShowAttr('Min_Drill_Size_2');
-    ShowAttr('Min_Slot_Size_2');
-
-    ShowAttr('Stack_Hgt_2');
-    ShowAttr('Stack_Hgt_2_Ovr');
-    ShowAttr('Stack_Hgt_2_User');
-
-    ShowAttr('Drill_FSF_X_2');
-    ShowAttr('Drill_FSF_X_Tol_2');
-    ShowAttr('Drill_FSF_Y_2');
-    ShowAttr('Drill_FSF_Y_Tol_2');
-
-    ShowAttr('Drill_Offset_X_2');  // 1259 Additional attributes for NC Drill
-    ShowAttr('Drill_Offset_Y_2');
-
-    ShowAttr('Drill_Side_2'); // 2620 2nd Drill
-                       
-  end;
 
   //Initialize Epoxy Plugging Cu Thinning
   HideAttr('EpoxyPlug_CuThin_1stBuff');

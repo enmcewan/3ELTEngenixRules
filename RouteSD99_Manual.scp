@@ -41,7 +41,7 @@ end;
 procedure OL_Photo_Ledia_SD;
 begin                                                                                                              
   StepDeptERP('EXPOL-A');
-  StepWCERP('EXPOL-A7');
+  StepWCERP('EXPOL-A');
 end;                                                          
 
 procedure Electrolytic_Cu_MCP_SD;
@@ -1279,7 +1279,6 @@ procedure Epoxy_MicroEtch_HAL_Man_SD;     // Herole added on 13-May-2024
 begin
   StepDeptERP('HALPT-A');
   StepWCERP('HALPT-A0');
-  StepParamERP('Micro-Etch Spec', Fnc.SysGetAttrValue('EpoxyPlug_CuThin_MEtch'));
   StepInstructionERP('COPPL001');
 end;
 
@@ -1310,5 +1309,19 @@ begin
   StepDeptERP('OXBAK-A');
   StepWCERP('OXBAK-A');
   StepParamERP('Bake Reason', 'SP Material');
-  StepParamERP('Condition', '190deg, 2hrs');                    
+  StepParamERP('Condition', '190deg, 2hrs');
 end;
+
+procedure Core_Vertical_Buff_Man_SD;     // Herole added on 18-Dec-2024
+begin
+  StepDeptERP('EPBUF-B');
+  StepWCERP('EPBUF-B0');
+  StepInstructionERP('COPPL001');
+ end;
+
+ procedure OL_DES_Man_SD;     // Herole added on 26-Dec-2024
+begin
+  StepDeptERP('DESOL-A');
+  StepWCERP('DESOL-A');
+  StepParamERP('Impedance', Fnc.SysGetAttrValue('Has_Impedance'));
+ end;

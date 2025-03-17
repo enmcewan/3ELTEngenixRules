@@ -4,7 +4,7 @@
 //ScriptType=0
 //ScriptGroup=HCS
 //HeaderImportExport<--
-uses
+ uses
   Event_RouteGenLibrary, //Route System Scripts
   Eng_RouteFunctions, //Route System Functions
   RouteFunctions, //Custom Functions for HCS
@@ -49,7 +49,7 @@ begin
 end;}
 
 procedure Booking;
-var
+var                                        
 
   PBookLine,
   AltLine,
@@ -74,14 +74,18 @@ begin
     if not TopLevelGetsPEP then AddSubsAndInnersAtStep
     else if LayupCoreCount < 2 then AddSubsAndInnersAtStep;
       
-    if MfgAttrTL('NonEtchPreTreatment') then AddStep('NonEtchPreTreatment', 'NonEtchPreTreatment01') // 2470
+    //if MfgAttrTL('NonEtchPreTreatment') then
+    if MfgAttr('NonEtchPreTreatment') then  // 2864 - Top-Level & Subs Looks at their own attribute.
+      AddStep('NonEtchPreTreatment', 'NonEtchPreTreatment01') // 2470
     else AddStep('Oxide', 'Oxide01');
 
   end
   else             
   begin
 
-    if MfgAttrTL('NonEtchPreTreatment') then AddStep('NonEtchPreTreatment', 'NonEtchPreTreatment01')// 2470
+    //if MfgAttrTL('NonEtchPreTreatment') then
+    if MfgAttr('NonEtchPreTreatment') then  // 2864 - Top-Level & Subs Looks at their own attribute.
+      AddStep('NonEtchPreTreatment', 'NonEtchPreTreatment01')// 2470
     else AddStep('Oxide', 'Oxide01');
 
     if not TopLevelGetsPEP then AddSubsAndInnersAtStep
@@ -437,7 +441,7 @@ begin
        ( UVLaserB_Top + UVLaserA_Bot < 3500 ) and
        ( PinLamination )   // Definition changed with 2472 - check how this decision should be updated.
       )                     
-        or Fnc.SysGetAttrValue('ForceUVLaser')}
+        or Fnc.SysGetAttrValue('ForceUVLaser')}           
 
   if Fnc.SysGetAttrValue('ForceUVLaser') then result := true else result := false;
 
@@ -674,9 +678,9 @@ begin
   begin
 
     if ( PressThickness <= 4.3 ) then  // 2615 Micro-Etch HAL
-      AddStep('MicroEtch', 'MicroEtch01');
+      AddStep('MicroEtch', 'MicroEtch01')
     else
-      AddStep('MicroEtchHAL', 'MicroEtchHAL01')
+      AddStep('MicroEtchHAL', 'MicroEtchHAL01');
 
   end;
 

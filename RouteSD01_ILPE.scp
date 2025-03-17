@@ -56,7 +56,8 @@ begin
 
     // 2470 Non-Etch Pre-treatment Line
     //Use the rules above to get the correct AltLine value. Override the Dept & Group Value
-    if MfgAttrTL('NonEtchPreTreatment') then
+    //if MfgAttrTL('NonEtchPreTreatment') then
+    if MfgAttrParent('NonEtchPreTreatment') then  // 2864
     begin
 
       Dept_Erp := 'EXPIL-T';

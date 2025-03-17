@@ -88,7 +88,7 @@ begin
       Fnc.SysSetAttrValue('FinIL_Stk', Fnc.SysGetAttrValue('FinIL_Stk_User'));
       StepParamERP('Stack Height', Fnc.SysGetAttrValue('FinIL_Stk_User'));
     end
-    else                                                                                                                                                     
+    else                                       
       MessageDlg('IL Finish Route Stack Height user override selected but value is 0', mtWarning, Setof([mbOK]) , 0);
   end;
 end;
@@ -931,13 +931,6 @@ begin
 
 end;
 
-{procedure MicroEtchCuThin_SD;  Not in use.
-begin
-  StepDeptERP('METCH-A');
-  StepWCERP('METCH-A');
-  StepParamERP('Note', 'Micro-Etch for Cu Thin');
-end;}
-
 procedure MicroEtch_DirLaser_Common; // 2615
 begin
 
@@ -1060,6 +1053,8 @@ begin
     StepParamERP('Fixed Scale Factor', fixedDim);
     StepParamERP('Control Range', controlRange);
   end;
+
+  StepParamERP('CAD File Name', MfgAttrTL('CADFileName')); // 2863 Add CAD File Name to Conf Mask
 
 end;
 
@@ -1407,8 +1402,8 @@ end;
 procedure Desmear_Holl_EpxyThin_SD; // 2808
 begin
 
-  StepDeptERP('DMEAR-A0');
-  StepWCERP('DMEAR-A0');
+  StepDeptERP('DMEAR-A');
+  StepWCERP('DMEAR-A');
   StepInstructionERP('DMEAR077');
 
 end;
@@ -2025,6 +2020,8 @@ begin
   // 1107 Additional Run Card info - Note sequential build
   if Fnc.SysGetAttrValue('Seq_Build') or SubParentIsSequential then StepParamERP('Remark', 'Sequential Build');
 
+  StepParamERP('Panel Weight', Fnc.SysGetAttrValue('Panel_Weight')); // 2589 Add Panel weight to eless
+
 end;
 
 procedure Electroless_CappedVia_SD;
@@ -2058,7 +2055,7 @@ begin
   end            
   else 
   begin
-                        
+                                                       
     //if LaserG30KMechOrSkipBVH then  Note required for Capped Via OneDesk 1087
     //  SysRouteInsAddlParameter('Erp', 'Remark', 'Off-Line Vacuum', '', '', false, '', '', ''); 
       
@@ -2118,7 +2115,7 @@ begin
 
     Strike_Plating_SD;
     //StepParamERP('Remarks', '1.0 asd 58 minutes');  // Removed per Herole 2469 comment
-                                                        
+
 end;
 
 procedure Electroless_SP_SD; // 2616 VELCP Updated Flow
@@ -3213,6 +3210,7 @@ begin
   StepDeptERP('METCH-A');
   StepWCERP('METCH-A');
   CoreBuild_MicroEtch_Common;
+  StepParamERP('Micro-Etch Cycle', MfgAttr('CBuild_CThin_MEtch_Cycle')); // 2861
 
 end;
 
@@ -3222,6 +3220,7 @@ begin
   StepDeptERP('HALPT-A0');
   StepWCERP('HALPT-A0');
   CoreBuild_MicroEtch_Common;
+  StepParamERP('Micro-Etch Cycle', MfgAttr('CBuild_CThin_MEtch_Cycle')); // 2861
 
 end;
 

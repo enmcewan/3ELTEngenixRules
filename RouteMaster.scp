@@ -21,6 +21,7 @@ var
   Cu_Density_Top,
   Cu_Density_Bot,
   Panel_Area_DM2: float;
+
 begin
 
   GetPartType;
@@ -77,6 +78,7 @@ begin
   epoxyPlugDone := false;  //978 
   verticalDesmear :=false;
 
+
   Cu_Area := 0.0;
   Etch_Area := 0.0;
   Panel_Area_DM2 := 0.0;
@@ -132,7 +134,7 @@ begin
         fnc.SysSetAttrValue('Aspect_Ratio_Val_2', Round1000(PressThickness/Fnc.SysGetAttrValue('Min_Drill_Size_2')))
       else
         ShowMessage('Warning! : 2nd Min_Drill_Size = 0.0');
-    end;
+    end;             
     
     if Fnc.SysGetAttrValue('BlindVias') then
     begin
@@ -241,10 +243,10 @@ begin
         ShowMessage('Warning! : Min_Drill_Size = 0.0');
     end;                       
   end;                                        
-
+  
   SetHCSPartType;  // 408 Paradigm Part Number Coding - Internal Part number
   
-  if Fnc.SysGetAttrValue('MfgPartType') = 'Top' then
+  if Fnc.SysGetAttrValue('MfgPartType') = 'Top' then   
     Get_SO_Unit; // 408 Paradigm Part Number Coding - Internal Part number 
 
   // 977 Automate attribute 'Product Code' by rule
@@ -269,8 +271,6 @@ begin
 
   InputAttributesOK := true; 
   InputAttributesErrorList := TStringList.Create;
-
-  if MfgAttr('MfgPartType') = 'Top' then CalcHotLams; // 2809
 
   VerifyKeyAttributesOK;
 
@@ -581,7 +581,7 @@ begin
     Fnc.SysSetItemAttrValue('Layer_Min_PadTo', Fnc.SysGetAttrValue('Min_PTrace_Gap'), true, cStackupLayer, 1);
   if Fnc.SysGetItemAttrValue('Layer_Min_PadTo', false, cStackupLayer, 1) = 0.0 then
     Fnc.SysSetItemAttrValue('Layer_Min_PadTo', Fnc.SysGetAttrValue('Min_PTrace_Gap'), false, cStackupLayer, 1);
-
+  
   if Fnc.SysGetItemAttrValue('Layer_Land_Area', true, cStackupLayer, 1) = 0.0 then
     Fnc.SysSetItemAttrValue('Layer_Land_Area', Fnc.SysGetAttrValue('Land_Area'), true, cStackupLayer, 1);
   if Fnc.SysGetItemAttrValue('Layer_Land_Area', false, cStackupLayer, 1) = 0.0 then
@@ -601,7 +601,7 @@ begin
   SetMfgAttr('Layer_Etch_Area', '0.000/0.000');
   if Cu_Area <> '0.000/0.000' then SetMfgAttr('Layer_Etch_Area', Etch_Area);
   // Not bothering to set Layer attributes - not really needed
-  
+    
   // 2363 Remove PAL 3
   if Fnc.SysGetAttrValue('Electrolytic_Cu_Line') = 'PAL3' then
   begin
@@ -640,11 +640,28 @@ begin
 
   end;
 
+  if MfgAttr('EpoxyPlugInk') = 'TAIYO THP-100 Z2 ' then Fnc.SysSetAttrValue('EpoxyPlugInk', 'TAIYO THP-100 Z2');
+  
+  if Fnc.SysGetAttrValue('MfgPartType') = 'Top' then CalcHotLams; // 2809
+
+  // 2830 NC Processor not Capturing Non-Etch Pre-Treatment
+  // Attribute was at the Top-Level only as it applies to the whole job but the NC Processor Needs it assigned
+  // 2864 Top-Level * Suib will be set manualkly, then the inners shoulf follow suit.
+  if MfgPartType = 'Inn' then
+  begin
+
+    if MfgAttrParent('NonEtchPreTreatment') then  // 2864
+      SetMfgAttr('NonEtchPreTreatment', true)
+    else
+      SetMfgAttr('NonEtchPreTreatment', false);
+
+  end;
+
 end;
 
 procedure RoutePreProcess;
 begin
-
+                                                           
   // Always init vars used in Manual route Steps & Calculations of other attribute values
   LayupThickness := Fnc.SysGetAttrValue('LayupThickness');
   SetThicknessRequirements;

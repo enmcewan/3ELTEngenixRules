@@ -19,7 +19,8 @@ begin
     AddStep('NC_Drill_PEP_IL', 'NC_Drill_PEP_IL01');
 
 
-  if MfgAttrTL('NonEtchPreTreatment') then // 2470
+  //if MfgAttrTL('NonEtchPreTreatment') then // 2470
+  if MfgAttrParent('NonEtchPreTreatment') then  // 2864
     AddStep('IL_Exposure_NonEtched', 'IL_Exposure_NonEtched')
   else
     AddStep('IL_Exposure', 'IL_Exposure01');

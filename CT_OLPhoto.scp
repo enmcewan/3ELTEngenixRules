@@ -6,7 +6,7 @@
 //HeaderImportExport<--
 uses
   CT_SearchLibrary;
-         
+
 const
   cOLPhoto_TypeHeader = '1-Header';
   cOLPhoto_TypePhoto = '2-Photo';
@@ -211,3 +211,7 @@ begin
 // DesLine := Search_Table_PhotoLine_DesLine('PattFormation');
   //showmessage('DesLine: ' + DesLine);
 end;
+
+
+
+
