@@ -8,7 +8,13 @@ procedure SetRulesVersion;
 begin
 
   // Putting new entries at the top now for easier access
-  Fnc.SysSetAttrValue('Rules_Version', 3.71);   // 2807 Capped Plating Rule Update
+  Fnc.SysSetAttrValue('Rules_Version', 3.72); // 2858 Additional Instruction Code on OL DES Step
+                                              // 2859 Additional Panel Weight Attribute
+                                              // 2861 Addtional Micro-Etch Cycle Attribute
+                                              // 2863 Add CAD file name under Conformal Mask
+                                              // 2864 Fix the rule of Non-Etch Pre-Treatment
+                                              // 2865 KK Distance info on Scope Drilling
+  //Fnc.SysSetAttrValue('Rules_Version', 3.71);   // 2807 Capped Plating Rule Update
                                                 // 2808 Additional Desmear on Sub-Assembly
                                                 // 2810 Additional Attribute for Impedance Step
   //Fnc.SysSetAttrValue('Rules_Version', 3.70);   // 2741 Additional Via Plug Info
@@ -22,7 +28,7 @@ begin
   //Fnc.SysSetAttrValue('Rules_Version', 3.63); // 2615 Mirco-Etch HAL update 4.0 to 4.3
   //Fnc.SysSetAttrValue('Rules_Version', 3.62); // 2618 Updated for new 2XNC rule
                                                 // 2671 Hole Check after Cu Plating
-  //Fnc.SysSetAttrValue('Rules_Version', 3.61); // 2656 Additional Remarks Under Pre-Book & Hot Press                                
+  //Fnc.SysSetAttrValue('Rules_Version', 3.61); // 2656 Additional Remarks Under Pre-Book & Hot Press
                                                 // 2657 Mech Blind Via Remarks at OL AOI
                                                 // 2659 CADFileName for additional steps
   //Fnc.SysSetAttrValue('Rules_Version', 3.60); // 2614 Vertical Buffing Rule

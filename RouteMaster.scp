@@ -26,7 +26,7 @@ begin
 
   GetPartType;
   Engx_MfgPartLayerCount;
-  Engx_ScanBOM; 
+  Engx_ScanBOM;
   Engx_ScanDrill;
   GetPartCoreFamilies;
   GetPartPPGFamilies;
@@ -46,7 +46,7 @@ begin
   begin
     BaseCuTopUM := ConvertBaseCuLabelToMicrons('True', 'False');
     BaseCuBotUM := ConvertBaseCuLabelToMicrons('False', 'False');
-  end;                        
+  end;
 
   NCRun := 0;
   BakingDone := false;
@@ -56,7 +56,7 @@ begin
   ImpedanceDone := false;
   VCutDone := false;
   //ImmersionSilverDone := false; 1256
-  AOIforCMK := false;            
+  AOIforCMK := false;
   MicroEtchDone := false;
   OLPhotoLineforDES := '';
 
@@ -72,10 +72,10 @@ begin
   Au_Plt_Count := 0;
 
   CU_RATIO_WARNING := 0;
-          
+
   MetalizationRun := 0;
 
-  epoxyPlugDone := false;  //978 
+  epoxyPlugDone := false;  //978
   verticalDesmear :=false;
 
 
@@ -86,12 +86,12 @@ begin
   Cu_Density_Bot := 0.0;
 
   Fnc.SysSetAttrValue('MfgPartType', MfgPartType);
-               
+
   if Fnc.SysGetAttrValue('MfgPartType') = 'Sub' then
     Fnc.SysSetAttrValue('LayerCount', GetCopperLayerCount)
-  else                          
+  else
     Fnc.SysSetAttrValue('LayerCount', Engx_TotLayerCount);
-                            
+
   if Fnc.HasImpedance = true then
     Fnc.SysSetAttrValue('Has_Impedance', true)
   else
@@ -661,21 +661,24 @@ end;
 
 procedure RoutePreProcess;
 begin
-                                                           
+
   // Always init vars used in Manual route Steps & Calculations of other attribute values
   LayupThickness := Fnc.SysGetAttrValue('LayupThickness');
-  SetThicknessRequirements;
+
+
 
   if ( not Fnc.SysRouteGenIsInsertingManualStep ) and
      ( not Fnc.SysRouteGenIsDeletingStep )
   then
   begin
+    SetThicknessRequirements; 
     CheckAndGenPartData;
     //showmessage('Checking Part Data');
   end;
 
   // Always init photoStepList as it is used in the RoutePostProcess procedure
   photoStepList := TStringList.Create;
+
 
 end;
 
@@ -690,12 +693,12 @@ begin
   begin
 
     InProcessCuThk := GetSuborCoreIPCT;
-    
+
     if InProcessCuThk = 0 then
       InProcessCuThk := BaseCuTopUM;
 
   end                                           
-  else            
+  else
   begin
 
     if Fnc.SysGetAttrValue('MfgPartType') <> 'DmC' then

@@ -4,114 +4,121 @@
 //ScriptType=1
 //ScriptGroup=Tool Management
 //HeaderImportExport<--
+uses
+  RouteFunctions;
+
 const
+
   OwnerCAMArtwork = 'CAM / Artwork';
   OwnerCAM = 'CAM';
   OwnerDoc = 'DOC Staff';
 
+  PTHPrimaryDrill  = 1;
+  LaserVia         = 2;
+  Rout             = 3;
+  CounterSink      = 4;
+  CounterBore      = 5;
+  Backdrill        = 6;
+  Mill             = 7;
+  MechBlindVia     = 8;
+  NCDrilling2X     = 9;
+
+  NotADrill        = -1;
+
 procedure AddToolForThisLayer(ToolTable: TSysTable; ToolName, LayerName, MfgPartName, Owner: string);
 var
+
   doInsert: boolean;
 
 begin
- { if (LayerName <> '') and (ToolTable.Locate('Layer;Deleted', [LayerName, false], SetOf([loCaseInsensitive]))) then
-    ToolTable.Edit
-  else if ToolTable.Locate('ToolName;Deleted', [ToolName, false], SetOf([loCaseInsensitive])) then
-    ToolTable.Edit
-  else }
+
   if LayerName <> '' then
   begin
-    doInsert := not ToolTable.Locate('Layer;Deleted;Inactive', [LayerName, False, False], SetOf([loCaseInsensitive]));
-    if doInsert then doInsert := not ToolTable.Locate('Layer;Deleted;Inactive', [LayerName, False, True], SetOf([loCaseInsensitive]));
-    if doInsert then doInsert := not ToolTable.Locate('Layer;Deleted;Inactive', [LayerName, True, False], SetOf([loCaseInsensitive]));
-    if doInsert then doInsert := not ToolTable.Locate('Layer;Deleted;Inactive', [LayerName, True, True], SetOf([loCaseInsensitive]));
+
+    doInsert := not ToolTable.Locate('ToolName;Layer;Deleted;Inactive', [ToolName, LayerName, False, False], SetOf([loCaseInsensitive]));
+    if doInsert then doInsert := not ToolTable.Locate('ToolName;Layer;Deleted;Inactive', [ToolName, LayerName, False, True], SetOf([loCaseInsensitive]));
+    if doInsert then doInsert := not ToolTable.Locate('ToolName;Layer;Deleted;Inactive', [ToolName, LayerName, True, False], SetOf([loCaseInsensitive]));
+    if doInsert then doInsert := not ToolTable.Locate('ToolName;Layer;Deleted;Inactive', [ToolName, LayerName, True, True], SetOf([loCaseInsensitive]));
+
   end
-  else
+  else                          
   begin
+
     doInsert := not ToolTable.Locate('ToolName;Deleted;Inactive', [ToolName, False, False], SetOf([loCaseInsensitive]));
     if doInsert then doInsert := not ToolTable.Locate('ToolName;Deleted;Inactive', [ToolName, False, True], SetOf([loCaseInsensitive]));
     if doInsert then doInsert := not ToolTable.Locate('ToolName;Deleted;Inactive', [ToolName, True, False], SetOf([loCaseInsensitive]));
     if doInsert then doInsert := not ToolTable.Locate('ToolName;Deleted;Inactive', [ToolName, True, True], SetOf([loCaseInsensitive]));
+
   end;
 
-  if not doInsert then
-    ToolTable.Edit
-  else
+  if not ToolTable.Locate('Toolname;Deleted', [Toolname, false], SetOf([loCaseInsensitive]))then
   begin
-    ToolTable.Append;
-    ToolTable.FieldByName('Layer').AsString := LayerName;
-    ToolTable.FieldByName('ToolTypeId').AsInteger := 1;
+
+    if not doInsert then
+      ToolTable.Edit
+    else
+    begin
+  
+      ToolTable.Append;
+      ToolTable.FieldByName('Layer').AsString := LayerName;
+      ToolTable.FieldByName('ToolTypeId').AsInteger := 1;
+      ToolTable.FieldByName('Deleted').AsBoolean := False;
+      ToolTable.FieldByName('Inactive').AsBoolean := False;
+      ToolTable.FieldByName('Seq').AsInteger := 1;
+      ToolTable.FieldByName('ToolRev').AsString := '1';
+      ToolTable.FieldByName('ToolDate').AsDateTime := Date;
+      ToolTable.FieldByName('ToolTime').AsDateTime := Time;
+      ToolTable.FieldByName('ToolHeaderId').AsInteger := -1;
+  
+    end;
+  
+    ToolTable.FieldByName('ToolName').AsString := ToolName;
+    ToolTable.FieldByName('MfgPart').AsString := MfgPartName;
+    ToolTable.FieldByName('ToolModOwner').AsString := Owner;
     ToolTable.FieldByName('Deleted').AsBoolean := False;
     ToolTable.FieldByName('Inactive').AsBoolean := False;
-    ToolTable.FieldByName('Seq').AsInteger := 1;
-    ToolTable.FieldByName('ToolRev').AsString := '1';
-    ToolTable.FieldByName('ToolDate').AsDateTime := Date;
-    ToolTable.FieldByName('ToolTime').AsDateTime := Time;
-    ToolTable.FieldByName('ToolHeaderId').AsInteger := -1;
+  
+    if ToolTable.FieldByName('ToolRev').AsString = '' then ToolTable.FieldByName('ToolRev').AsString := '1';
+    ToolTable.FieldByName('ToolModEditable').AsBoolean := true;
+  
+    ToolTable.Post;
+
   end;
 
-  ToolTable.FieldByName('ToolName').AsString := ToolName;
-  ToolTable.FieldByName('MfgPart').AsString := MfgPartName;
-  ToolTable.FieldByName('ToolModOwner').AsString := Owner;
-  ToolTable.FieldByName('Deleted').AsBoolean := False;
-  ToolTable.FieldByName('Inactive').AsBoolean := False;
-  if ToolTable.FieldByName('ToolRev').AsString = '' then ToolTable.FieldByName('ToolRev').AsString := '1';
-  ToolTable.FieldByName('ToolModEditable').AsBoolean := true;
-
-  ToolTable.Post;
 end;
 
 function SearchParentMfgPart(ItemLayerPntr: integer): string;
 begin
+
   Result := '';
 
-  //Fnc.OpenDataGrid(Fnc.SysStackupTable)
   Fnc.SysStackupTable.Filtered := False;
+
   if Fnc.SysStackupTable.Locate('ItemLayerPntr', ItemLayerPntr, SetOf([])) then
   begin
+
     while Fnc.SysStackupTable.Locate('RecId', Fnc.SysStackupTable.FieldByName('RecIdParent').AsInteger, SetOf([])) do
     begin
+
       if (Fnc.SysStackupTable.FieldByName('ItemType').AsString = cStackupMfgTopLevel) or
          (Fnc.SysStackupTable.FieldByName('ItemType').AsString = cStackupMfgSubLevel) or // double check cStackupMfgSubLevel is correct in LCS test database
          (Fnc.SysStackupTable.FieldByName('ItemType').AsString = cStackupMfgSubAssy) then
       begin
+
         Result := Fnc.SysStackupTable.FieldByName('ItemMatrlDesc').AsString;
         break;
+
       end;
-    end;
-  end;
-end;
 
-function GetTopAndBotLayer(MfgPartName: string; var TopLayer: string; var BotLayer: string) : string;
-var
- StrList: TStringList;
-begin
-  StrList := TStringlist.Create;
-  try
-    StrList.Delimiter := '/';
-    StrList.DelimitedText := MfgPartName;
-
-    if StrList.Count = 3 then
-    begin
-      TopLayer := trim(StrList[1]);
-      BotLayer := trim(StrList[2]);
     end;
 
-  finally
-    StrList.Free;
   end;
-end;
 
-function GetDrillSide(StartName, TopLayerStr, BotLayerStr: string) : string;
-begin
-  result := '';
-  if ( StartName = TopLayerStr)  or ( StartName <> BotLayerStr ) then result := 'B'
-  else
-  if ( StartName <> TopLayerStr  ) or ( StartName = BotLayerStr ) then result := 'A'
 end;
 
 function GetDrillRoutToolName(LayerName: string; MfgPartName: string) : string;
 var
+
   TopLayerStr,
   BotLayerStr,
   MfgPartStr,
@@ -120,136 +127,116 @@ var
   side: string;
   i,
   DrillType: integer;
+
 begin
+
   Result := '';
   LayerName := UpperCase(LayerName);
   StartName := Fnc.SysGetLayerAttrValue(LayerName, 'Start_Name');
   EndName := Fnc.SysGetLayerAttrValue(LayerName, 'End_Name')
   DrillType :=  Fnc.SysGetLayerAttrValue(LayerName, 'DrillDefId');
 
-  // PTH Primary Drill  = 1
-  // 2X NC Drilling = 9
-  // BackDrill = 6
-  // Mech Blind Via = 8
-  // Laser Via = 2
-  // Rout = 3
-  if DrillType = 1 then result := 'NC';
+  if DrillType = PTHPrimaryDrill then result := 'NC'
 
-  if pos('Top', MfgPartName) = 1 then
-  begin
-    if DrillType = 9 then result := 'NC 2nd';
+  else if pos('Top', MfgPartName) = 1 then
+  begin                             
+
+    if DrillType = NCDrilling2X then result := 'NC 2nd';
+
   end
   else // Subs & drilled Inners
+    result := result + ' (' + StartName + '-' + EndName  + ')'
+
+  if DrillType = LaserVia then
   begin
-    result := result + ' (' + StartName + '-' + EndName  + ')';
-  end;
 
-  if DrillType = 2 then  // Laser
-  begin
-    GetTopAndBotLayer(MfgPartName, TopLayerStr, BotLayerStr)
-    side := GetDrillSide(StartName, TopLayerStr, BotLayerStr)
-    result := 'Laser Drill ' + side;
-  end;
+    if Fnc.SysGetMfgPartAttrValue(MfgPartName, 'Direct_Laser') then
+      result := 'Direct Laser ' + ' (' + StartName + '-' + EndName  + ')'
+    else
+      result := 'Laser ' + ' (' + StartName + '-' + EndName  + ')';
 
-  if DrillType = 6 then // Back Drill
-  begin
-    GetTopAndBotLayer(MfgPartName, TopLayerStr, BotLayerStr)
-    side := GetDrillSide(StartName, TopLayerStr, BotLayerStr)
-    result := 'BackDrill ' + side;
-  end;
-
-  if DrillType = 8 then // Mech Blind Via
-  begin
-    GetTopAndBotLayer(MfgPartName, TopLayerStr, BotLayerStr)
-    side := GetDrillSide(StartName, TopLayerStr, BotLayerStr)
-    result := 'Mech Drill ' + side;
-  end;
-
-  if DrillType = 3 then // Rout
-    result := 'Routing';
-
-  // if nothing fits, then make the toolname same as the layername
-  if result = '' then  Result := 'NO TOOL NAME';
-end;
-
-function ScreenPrintResistTM : boolean;
-Var
-  ResistList : TStringList;
-  i : integer;
-begin
-  result := false;
-
-  if Fnc.SysGetAttrValueTopLevel('SM_Process') = 'Screen Print' then    // 1110 Override Soldermask process
-    result := true
-  else if Fnc.SysGetAttrValueTopLevel('SM_Process') = 'Spray Coat' then
-    result := false
+  end
+  else if DrillType = Rout then result := 'Routing';
   else
   begin
-    ResistList := TStringList.Create;
-    ResistList := Fnc.SysGetItemAttrValueList('ItemFamily', cStackupSolderMask, 0, true);
 
-    for i := 0 to ResistList.Count - 1 do
-    begin
-      case ResistList.strings[i] of
-        'DSR330S-50-99R',
-        'PSR2000-KX700HF',
-        'PSR2000-ME8-160PS',
-        'PSR2000-YT03A',
-        'PSR4000-AM10',
-        'PSR4000-BL500',
-        'PSR2000-BL500', //Correct name for Mask Type above.
-        'PSR4000-BNDG',
-        'PSR4000-EG23',
-        'ES 2467 XM-DGGREEN',
-        'PSR4000 AUS308 GREEN',
-        'Greentec 600AA S70V(PUR)':  // AUS308 should be screen printed
-        result := true;
-      end;
+    // For Backdrill, Mech Drill, CounterSink, CounterBore, and Milling drilling tools, please use 'LYR-X' identification instead of 'A or B'.
+    // Note that for these tools, we only need to add the start layer; the end layer is irrelevant
+    Case DrillType of
+  
+      CounterSink:  result := 'CounterSink';
+      CounterBore:  result := 'CounterBore';
+      Backdrill:    result := 'Backdrill';
+      Mill:         result := 'Mill';
+      MechBlindVia: result := 'Mech Drill';
+  
     end;
-    ResistList.Free;
+
+    result := result + ' (' + StartName + ')';
+
   end;
+
+  if result = '' then  Result := 'NO TOOL NAME';
+
 end;
 
 function ToolNameFromLayerType(LayerType: string; TopLayerDSeq: integer; BotLayerDSeq: integer; LayerDSeq: integer ) : string;
 begin
+
   result := '';
 
   case LayerType of
+
     cStackupLegend : result := 'Marking';
-    cStackupSolderMask: if ScreenPrintResistTM then result := 'Resist Print' else result := 'Resist Image';
+    cStackupSolderMask: if ScreenPrintResist then result := 'Resist Print' else result := 'Resist Image';
+
   end;
 
   if result <> '' then
   begin
+
     if LayerDSeq < TopLayerDSeq then result := result + ' B' else
     if LayerDSeq > BotLayerDSeq then result := result + ' A';
+
   end;
+
 end;
 
 function getPlugOrFillType(DrillFillID: integer): string;
 var
+
   Qry: TAdoQuery;
+
 begin
+
   result := '';
   Qry := TAdoQuery.Create(nil);
   try
+
     Qry.Connection := Fnc.DBConnection;
     Qry.Sql.Add('SELECT DrillParamDesc FROM DrillFileParam WHERE DrillParamId = ' + QuotedStr(DrillFillID));
     Qry.Active := True;
 
     Qry.First;
     result := Qry.FieldByName('DrillParamDesc').AsString;
+
   finally
+
     Qry.Active := False;
     Qry.Free;
+
   end;
+
 end;
 
 function genPlugFillToolName(LayerName: string; MfgPartName: string; DrillFillID: integer) : string;
 var
+
   plugFillType,
   plugSide: string;
+
 begin
+
   result := '';
   plugFillType := getPlugOrFillType(DrillFillID);
 
@@ -260,19 +247,23 @@ begin
 
   if pos('Top', MfgPartName) = 1 then
   begin
+
     if pos(' A', plugFillType) > 0 then plugSide := 'A';
     if pos(' B', plugFillType) > 0 then plugSide := 'B';
     if pos(' AB', plugFillType) > 0 then plugSide := 'AB';
     if pos(' BA', plugFillType) > 0 then plugSide := 'BA';
+
   end
   else // Subs & drilled Inners
     plugSide := Fnc.SysGetLayerAttrValue(LayerName, 'Start_Name');
 
   result := result + ' ' + plugSide;
-end
+
+end;
 
 function getTopBotLayerDisplaySeq(var TopLayerDSeq: integer; var BotLayerDSeq: integer) : string;
 begin
+
   Fnc.SysLayerTable.Filtered := false;
   Fnc.SysLayerTable.Filter := 'LayerDesc = ' + QuotedStr('Layer');   // 'Type = ' + QuotedStr('PP/Filler');
   Fnc.SysLayerTable.Filtered := true;
@@ -282,35 +273,62 @@ begin
   BotLayerDSeq := Fnc.SysLayerTable.FieldByName('DisplaySeq').AsInteger;
   Fnc.SysLayerTable.Filter := '';
   Fnc.SysLayerTable.Filtered := false;
+
 end;
 
 procedure ToolManagementEvent1(ToolTable: TSysTable; ParamList: TStringList);
 var
+
   LayerName,
   ToolName,
   MfgPartName,
   LayerType,
-  Owner: string;
+  Owner,
+  TopLayer,
+  BotLayer,
+  PlugSide: string;
+
   TopLayerDSeq,
   BotLayerDSeq,
   LayerDSeq,
-  DrillFillID: integer;
+  DrillFillID,
+  DrillType,
+  MfgPartsWithCMKIdx,
+  i: integer;
+
   FilterStatus: boolean;
+
+  MfgPartsWithCMK,
+  DrillsWithCMK: TStringlist;
+
 begin
- // FilterStatus := Fnc.SysStackupTable.Filtered;
-//  Fnc.SysStackupTable.Filtered := False;
+
+  //Fnc.SysStackupTable.Filtered := False;
+  //Fnc.OpenDataGrid(ToolTable);
+  //ToolTable.FieldByName('RecID').Visible := true;
+  //Fnc.OpenDataGrid(ToolTable);
+  //ToolTable.FieldByName('RecID').Visible := false;
+
   try
+
     FilterStatus := Fnc.SysStackupTable.Filtered;
     Fnc.SysStackupTable.Filtered := False;
-    getTopBotLayerDisplaySeq(TopLayerDSeq, BotLayerDSeq)
+
+    getTopBotLayerDisplaySeq(TopLayerDSeq, BotLayerDSeq);
 
     //Fnc.OpenDataGrid(Fnc.SysLayerTable);
     //Fnc.OpenDataGrid(ToolTable);
     //Fnc.OpenDataGrid(Fnc.SysStackupTable);
 
+    MfgPartsWithCMK := TStringList.Create;
+    MfgPartsWithCMK.Duplicates := dupIgnore;
+    DrillsWithCMK := TStringList.Create;
+    DrillsWithCMK.Duplicates := dupIgnore;
+
     Fnc.SysLayerTable.First;
     while not Fnc.SysLayerTable.Eof do
     begin
+
       ToolName := '';
       LayerName := Fnc.SysLayerTable.FieldByName('LayerName').AsString;
       LayerDSeq := Fnc.SysLayerTable.FieldByName('DisplaySeq').AsInteger;
@@ -321,46 +339,134 @@ begin
       // Toolname will be determined by layer type primarily
       // Copper Layers get the Layer Name as the Tool Name
       case LayerType of
-        cStackupLayer : begin ToolName := LayerName; Owner := OwnerCAMArtwork; end;
+
+        cStackupLayer:       begin ToolName := LayerName; Owner := OwnerCAMArtwork; end;
         cStackupLegend,
-        cStackupSolderMask : begin
+        cStackupSolderMask:  begin
+
                                ToolName := ToolNameFromLayerType(LayerType, TopLayerDSeq, BotLayerDSeq, LayerDSeq);
                                Owner := OwnerCAMArtwork;
+
                              end;
         cStackUpDrill,
-        cStackUpRout : begin
-                         ToolName := GetDrillRoutToolName(LayerName, MfgPartName);
-                         Owner := OwnerCAM;
-                       end;
+        cStackUpRout:        begin
+
+                               ToolName := GetDrillRoutToolName(LayerName, MfgPartName);
+                               Owner := OwnerCAM;
+
+                             end;
       else
-        ToolName := 'NO TOOL NAME'
+        ToolName := 'NO TOOL NAME';
+
       end;
 
       if ToolName <> '' then
       begin
-        if MfgPartName <> '' then
-          AddToolForThisLayer(ToolTable, ToolName, LayerName, MfgPartName, Owner);
+
+        DrillType :=  Fnc.SysGetLayerAttrValue(LayerName, 'DrillDefId');
+
+        // All Drill Types Get Tools - Except Mech Via, Only One tool for all Layers
+        if pos('Mech Drill', ToolName) > 0 then LayerName := ''; // Layer names not applicable for Mech Vias
+
+        AddToolForThisLayer(ToolTable, ToolName, LayerName, MfgPartName, Owner);
+
+        // Lasers with Conformal Mask Get Additional CMK Tool
+        if (DrillType = LaserVia) and Fnc.SysGetMfgPartAttrValue(MfgPartName, 'Conf_Mask') then
+          MfgPartsWithCMK.Append(MfgPartName);
+                                          
       end;
 
-      if (DrillFillID <> 22) and (DrillFillID <> -1) then  // For Hole Fill we need to create to tool manually
-        AddToolForThisLayer(ToolTable, genPlugFillToolName(LayerName, MfgPartName, DrillFillID), '', MfgPartName, OwnerCAMArtwork);
+      if (DrillFillID <> 22) and (DrillFillID <> -1) then  // For Hole Fill we need to create the tools manually
+      begin
+
+        PlugSide := genPlugFillToolName(LayerName, MfgPartName, DrillFillID);
+
+        if (AnsiPos('AB', PlugSide) > 0) or (AnsiPos('BA', PlugSide) > 0) then // We need to add a Tool for each plug side.
+        begin
+
+          // Example Tool : 'Epoxy AB'
+          if AnsiPos('AB', PlugSide) > 0 then  // replace AB with A and create tool, replace AB with B
+          begin
+
+            AddToolForThisLayer(ToolTable, AnsiReplaceStr(PlugSide, 'AB', 'A'), '', MfgPartName, OwnerCAMArtwork);
+            AddToolForThisLayer(ToolTable, AnsiReplaceStr(PlugSide, 'AB', 'B'), '', MfgPartName, OwnerCAMArtwork);
+
+          end;
+
+          if AnsiPos('BA', PlugSide) > 0 then  // replace AB with A and create tool, replace AB with B
+          begin
+
+            AddToolForThisLayer(ToolTable, AnsiReplaceStr(PlugSide, 'BA', 'A'), '', MfgPartName, OwnerCAMArtwork);
+            AddToolForThisLayer(ToolTable, AnsiReplaceStr(PlugSide, 'BA', 'B'), '', MfgPartName, OwnerCAMArtwork);
+
+          end;
+
+        end
+        else
+          AddToolForThisLayer(ToolTable, PlugSide, '', MfgPartName, OwnerCAMArtwork);
+
+      end
 
       Fnc.SysLayerTable.Next;
+
+    end;
+
+    // Add CMK Tools - Always Top & Bottom, regardless of how many and where the lasers are
+    if MfgPartsWithCMK.Count > 0 then
+    begin
+
+      for i := 0 to MfgPartsWithCMK.Count -1 do
+      begin
+
+        Fnc.SysGetMfgPartLayerNames(MfgPartsWithCMK.Strings[i] , TopLayer, BotLayer);
+
+        AddToolForThisLayer(ToolTable, 'CMK (' + TopLayer + ')', '', MfgPartsWithCMK.Strings[i], OwnerCAM);
+        AddToolForThisLayer(ToolTable, 'CMK (' + BotLayer + ')', '', MfgPartsWithCMK.Strings[i], OwnerCAM);
+
+      end;
+
+    end;
+
+    // Rename Default Mfg Part Tools - used for scaling info
+    With ToolTable do
+    begin
+
+      ToolTable.First;
+      While not ToolTable.EOF do
+      begin
+
+        if pos('ToolName_',ToolTable.FieldByName('ToolName').AsString) > 0 then
+        begin            
+
+          ToolTable.Edit;
+          ToolTable.FieldByName('ToolName').AsString := 'Scale Factor';
+          ToolTable.Post;
+
+        end;
+
+        ToolTable.Next;
+
+      end;
+
     end;
 
     // Add Manual Tools (Not based on layers)
-    if Fnc.SysGetAttrValueTopLevel('Conf_Mask') then
-      AddToolForThisLayer(ToolTable, 'CONFMASK', '', MfgPartName, OwnerCAMArtwork);
-    AddToolForThisLayer(ToolTable, 'PDD', '', MfgPartName, OwnerDoc);
-    AddToolForThisLayer(ToolTable, 'IL CID', '', MfgPartName, OwnerDoc);
-    AddToolForThisLayer(ToolTable, 'OL CID', '', MfgPartName, OwnerDoc);
-    AddToolForThisLayer(ToolTable, 'TMD', '', MfgPartName, OwnerDoc);
-    AddToolForThisLayer(ToolTable, 'PID', '', MfgPartName, OwnerDoc);
-    AddToolForThisLayer(ToolTable, 'Product Spec', '', MfgPartName, OwnerDoc);
-    AddToolForThisLayer(ToolTable, 'EC Jig', '', MfgPartName, OwnerCAMArtwork);
+    AddToolForThisLayer(ToolTable, 'PDD', '', '', OwnerDoc);
+    AddToolForThisLayer(ToolTable, 'IL CID', '', '', OwnerDoc);
+    AddToolForThisLayer(ToolTable, 'OL CID', '', '', OwnerDoc);
+    AddToolForThisLayer(ToolTable, 'TMD', '', '', OwnerDoc);
+    AddToolForThisLayer(ToolTable, 'PID', '', '', OwnerDoc);
+    AddToolForThisLayer(ToolTable, 'Product Spec', '', '', OwnerDoc);
+    AddToolForThisLayer(ToolTable, 'EC Jig', '', '', OwnerCAMArtwork);
 
   finally
-    Fnc.SysStackupTable.Filtered := FilterStatus;
-  end;
-end;
 
+    Fnc.SysStackupTable.Filtered := FilterStatus;
+    //ToolTable.FieldByName('RecID').Visible := true;
+    //Fnc.OpenDataGrid(ToolTable);
+    //ToolTable.FieldByName('RecID').Visible := false;
+  end;
+
+  MfgPartsWithCMK.Free;
+
+end;

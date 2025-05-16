@@ -325,7 +325,8 @@ begin
 
   OL_DES_Common('PattFormation', false);
 
-  if ((MfgPartType = 'Top') and MfgAttr('TekTronixImpedance')) then StepParamERP('Remarks', 'Tuned to TEKTRONIX Impedance'); //
+  if ((MfgPartType = 'Top') and MfgAttr('TekTronixImpedance')) then StepParamERP('Remarks', 'Tuned to TEKTRONIX Impedance'); //  2858
+  
 end;
 
 procedure OL_DES_4EGoldB4Res_SD;
@@ -342,7 +343,7 @@ end;
 // 1108 OL Photo Process Update
 procedure OL_DES_TCI_SD;
 begin
-  OL_DES_Common('PattFormation', true);
+  OL_DES_Common('PattFormation', true); 
 end; 
 
 procedure OL_SbS_DES1_SD;
@@ -652,7 +653,6 @@ begin
   StepDeptERP('METCH-A');
   StepWCERP('METCH-A');
   EpoxyPlug_MicroEtch_Common;
-                          
   StepParamERP('Micro-Etch Cycle', MfgAttr('EPlug_CThin_MEtch_Cycle')); // 2861
 
 end;
@@ -663,7 +663,6 @@ begin
   StepDeptERP('HALPT-A0');
   StepWCERP('HALPT-A0');
   EpoxyPlug_MicroEtch_Common;
-
   StepParamERP('Micro-Etch Cycle', MfgAttr('EPlug_CThin_MEtch_Cycle')); // 2861
 
 end;
@@ -1260,11 +1259,12 @@ begin
 
 end;
 
-procedure ResistStrip_SF_SD;        
+procedure ResistStrip_SF_SD;
 begin
   StepDeptERP('AUSTR-A');
   StepWCERP('AUSTR-A');
-  StepParamERP('Remark', 'Strip Resist Ink (30min dipping time)'); 
+  //StepParamERP('Remark', 'Strip Resist Ink (30min dipping time)'); 2920
+  StepInstructionERP('AUSTR014');
 end;
 
 procedure ResSprayBaking_SF_SD;           
@@ -1528,11 +1528,13 @@ begin
   StepWCERP('INSOL-D0');
 end;
 
-procedure Scope_Drilling_BDEP_SD;
+procedure SCope_Drilling_BDEP_SD;
 begin
+
   StepDeptERP('SCPDR-A');
   StepWCERP('SCPDR-A');
   StepParamERP('Back Drill Cu KK Distance', MfgAttr('KK_Distance_BD')); // 2865 KK Info for Backdrill After Cu.
+
 end;
 
 procedure Scope_Drilling_PEP_SD;  // 1229 PEP Flow option for Sub-assembly build.          

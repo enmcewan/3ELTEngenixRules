@@ -2169,8 +2169,8 @@ begin
 
   ReqTable.First;
   while not ReqTable.EOF do
-  begin
-
+  begin                    
+                            
     if ReqTable.FieldByName('LayerNameTop').AsString = 'Incl.Mask' then
     begin
 

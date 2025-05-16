@@ -575,7 +575,7 @@ begin
   StepDeptERP('SCPDR-A');
   StepWCERP('SCPDR-A');
 
-  StepParamERP('KK Distance', Fnc.SysGetAttrValue('KK_Distance'));
+  StepParamERP('KK Distance', Fnc.SysGetAttrValue('KK_Distance_NC2')); // 2865 follow up email 25/04/02
 end;
 
 procedure IL_RoutShear_Common;
@@ -931,6 +931,13 @@ begin
 
 end;
 
+{procedure MicroEtchCuThin_SD;  Not in use.
+begin
+  StepDeptERP('METCH-A');
+  StepWCERP('METCH-A');
+  StepParamERP('Note', 'Micro-Etch for Cu Thin');
+end;}
+
 procedure MicroEtch_DirLaser_Common; // 2615
 begin
 
@@ -1042,6 +1049,7 @@ begin
   // 1114 Fixed Scale Factor Info
   if Fnc.SysGetAttrValue('ConfMask_FSF_X') > 0 then
   begin
+
     fixedDim := 'X = ' + FormatFloat('0.000', FloatToStr(Fnc.SysGetAttrValue('ConfMask_FSF_X'))) + '%; ' +
                 'Y = ' + FormatFloat('0.000', FloatToStr(Fnc.SysGetAttrValue('ConfMask_FSF_Y'))) + '%';
 
@@ -1052,6 +1060,7 @@ begin
 
     StepParamERP('Fixed Scale Factor', fixedDim);
     StepParamERP('Control Range', controlRange);
+
   end;
 
   StepParamERP('CAD File Name', MfgAttrTL('CADFileName')); // 2863 Add CAD File Name to Conf Mask
@@ -2020,7 +2029,7 @@ begin
   // 1107 Additional Run Card info - Note sequential build
   if Fnc.SysGetAttrValue('Seq_Build') or SubParentIsSequential then StepParamERP('Remark', 'Sequential Build');
 
-  StepParamERP('Panel Weight', Fnc.SysGetAttrValue('Panel_Weight')); // 2589 Add Panel weight to eless
+  StepParamERP('Panel Weight', Fnc.SysGetAttrValue('Panel_Weight')); // 2859 Add Panel weight to eless
 
 end;
 
@@ -2030,7 +2039,7 @@ var
 begin
   SysRouteInsDepartment('Erp', 'METAL-C', '');
   SysRouteInsWorkCenter('Erp', 'METAL-C', '');
-  
+                    
   epoxyThinningG7 := false;                            
   
   if ( Fnc.SysGetAttrValue('EpoxyPlug_CuThin_Process') <> 'None' ) and ( Fnc.SysGetAttrValue('EpoxyPlug_CuThin_Process') <> 'Buffing' ) then

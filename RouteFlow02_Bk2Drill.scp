@@ -73,7 +73,7 @@ begin
     
     if not TopLevelGetsPEP then AddSubsAndInnersAtStep
     else if LayupCoreCount < 2 then AddSubsAndInnersAtStep;
-      
+
     //if MfgAttrTL('NonEtchPreTreatment') then
     if MfgAttr('NonEtchPreTreatment') then  // 2864 - Top-Level & Subs Looks at their own attribute.
       AddStep('NonEtchPreTreatment', 'NonEtchPreTreatment01') // 2470
@@ -441,7 +441,7 @@ begin
        ( UVLaserB_Top + UVLaserA_Bot < 3500 ) and
        ( PinLamination )   // Definition changed with 2472 - check how this decision should be updated.
       )                     
-        or Fnc.SysGetAttrValue('ForceUVLaser')}           
+        or Fnc.SysGetAttrValue('ForceUVLaser')}
 
   if Fnc.SysGetAttrValue('ForceUVLaser') then result := true else result := false;
 
@@ -594,9 +594,9 @@ begin
         // Testing comment from Herol 24-11-07 - Base Cu check doesnt apply to final stage...so then it applies to nothing??
         //begin
        // end;
-        if CoreBuild and ((BaseCuTopUM >= 18) or (BaseCuTopUM >= 18)) then
+        if CoreBuild and ((BaseCuTopUM >= 18) or (BaseCuBotUM >= 18)) then
         begin
-  
+
           AddStep('CoreBuild_GTHOC_Vertical_Buffing', 'CoreBuild_GTHOC_Vertical_Buffing01');
           SetMfgAttr('CoreBuild_CuThin_Process', 'Vertical Buffing');
           UpdateInProcessCuThk(Cu_Thk_After_CuThin);
@@ -675,12 +675,12 @@ begin
   end;
 
   if ( not MfgAttr('BlindVias') ) and MicroEtchReqd then  // 1112 Micro-etch for thick board
-  begin
+  begin    
 
     if ( PressThickness <= 4.3 ) then  // 2615 Micro-Etch HAL
-      AddStep('MicroEtch', 'MicroEtch01')
+      AddStep('MicroEtch', 'MicroEtch01');
     else
-      AddStep('MicroEtchHAL', 'MicroEtchHAL01');
+      AddStep('MicroEtchHAL', 'MicroEtchHAL01')
 
   end;
 
