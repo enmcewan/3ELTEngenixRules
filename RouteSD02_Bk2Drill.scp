@@ -22,12 +22,20 @@
 Var
   PhotoLine: string;
   AltLine: string;
-  ProdResource: string                    
+  ProdResource: string
   DesLine: string;
+
+procedure AddPlatingStageParam; // 2965
+begin
+
+  if NCRun = 1 then StepParamERP('Plating Stage', 'First Plating'); // 2466
+  if NCRun = 2 then StepParamERP('Plating Stage', 'Second Plating'); // 2466
+
+end;
 
 procedure PEP_SD;
 begin
-  StepDeptERP('PEPOL-A');                                             
+  StepDeptERP('PEPOL-A');
   StepWCERP('PEPOL-A');
 
   if CustCode_Rule('Customer') = 'FA' then
@@ -43,13 +51,13 @@ end;
 procedure Pre_Oxide_Baking_SD;
 begin
   StepDeptERP('OXBAK-A');
-  StepWCERP('OXBAK-A');                                  
+  StepWCERP('OXBAK-A');
 
   if (( HasMultipleSubAssemblies ) and ( MatPreOxide24HrBake )) then
     StepParamERP('Remarks', '24 Hrs Baking');
 
   StepParamERP('Bake Reason', 'SP Material');
-                                     
+
   //if Fnc.SysRouteInsGetStepNum = 1 then  // 1471 QR Code information info update
   //  InsertQRInfoAtStep1;
 end;
@@ -82,13 +90,13 @@ begin
     StepParamERP('Stack Height', CalcStackHt);
   end
   else
-  begin                    
+  begin
     if Fnc.SysGetAttrValue('FinIL_Stk_User') > 0 then
     begin
       Fnc.SysSetAttrValue('FinIL_Stk', Fnc.SysGetAttrValue('FinIL_Stk_User'));
       StepParamERP('Stack Height', Fnc.SysGetAttrValue('FinIL_Stk_User'));
     end
-    else                                       
+    else
       MessageDlg('IL Finish Route Stack Height user override selected but value is 0', mtWarning, Setof([mbOK]) , 0);
   end;
 end;
@@ -99,7 +107,7 @@ begin
   StepWCERP('FINIL-B');
 
   IL_Rout_StackHeight; // 2289
-  
+
   StepParam('Erp', 'Shear To', LaserShearSize);
 end;
 
@@ -109,7 +117,7 @@ begin
 
   if PressThickness > 3.5 then
     StepWCERP('FINBE-B0');
-  else                      
+  else
     StepWCERP('FINBE-A0');
 end;
 
@@ -252,7 +260,7 @@ begin
   AltLine   := '';
 
   StepDeptERP('PBOOK-A');
-  StepWCERP('PBOOK-C0');               
+  StepWCERP('PBOOK-C0');
 
   Material := TStringList.Create;
   Material.add('Prepreg');
@@ -260,7 +268,7 @@ begin
   Material.add('Core');
 
   StepMaterialsERP(Material, 1);
-  
+
   // 2367 Additional Engenix Attribute
   StepParamERP('PCB Orientation', MfgAttrTL('PCBOrientation'));
 
@@ -288,17 +296,17 @@ begin
   if Fnc.SysGetAttrValue('Rivet_Thk') <> '' then
     StepParamERP('Rivet Thickness', Fnc.SysGetAttrValue('Rivet_Thk'));
 
-  if NumOfCores > 8 then           
+  if NumOfCores > 8 then
     StepInstructionERP('PBOOK013'); // 4 Rivet
   else
     StepInstructionERP('PBOOK012'); // 2 Rivet
-  
+
 end;}
 
 procedure RivetingX4_SD; // 2472
 begin
 
-  Riveting_Common;         
+  Riveting_Common;
   StepInstructionERP('PBOOK013'); // 4 Rivet
 
 end;
@@ -306,7 +314,7 @@ end;
 procedure RivetingX2_SD;  // 2472
 begin
 
-  Riveting_Common;         
+  Riveting_Common;
   StepInstructionERP('PBOOK012'); // 2 Rivet 
 
 end; 
@@ -542,7 +550,7 @@ begin
       // 784 - Scope Drill remarks for HDI jobs (multiple press or jobs with laser via)
       //or
       //(HasMultipleSubAssemblies = true)
-     )                                                   
+     )
   then
     if UsesDefaultXYPanelDistance then               // 1465
       StepInstructionERP('SCPDR054');
@@ -756,7 +764,7 @@ begin
 
   if Fnc.SysGetAttrValue('IL_Finish_Rout') = true then
     StepInstructionERP('FINIL010'); //  PLS USE SPECIFIC ROUTING TAPE (PROGRAME) FOR THIS MODEL ONLY.
-    
+
 end;                  
 
 procedure IL_Bevel_SD;               
@@ -942,7 +950,7 @@ procedure MicroEtch_DirLaser_Common; // 2615
 begin
 
   UpdateInProcessCuThk(InProcessCuThk - 3 ); // 1568 Micro-Etch after Direct Laser
-  
+
   Fnc.SysSetAttrValue('UEtch_Cu', InProcessCuThk);
 
   if InProcessCuThk <= 5 then StepInstructionERP('METCH012');
@@ -1188,12 +1196,12 @@ begin
   StepParamERP('Laser Hits', LaserABotHits);
 
   //SysRouteInsInstruction('', InsertBlindViaDrillDepth('A'));
-  InsertBlindViaInfo('A');              
+  InsertBlindViaInfo('A');
   //SysRouteInsInstruction('', GetLaseredMaterials(Fnc.SysGetAttrValue('BotLayer')));
 
   //if Fnc.SysGetAttrValue('SViaStp_PadCuThk_A') <> '' then
   //  StepParamERP('SKIPSTP_TA', Fnc.SysGetAttrValue('SViaStp_PadCuThk_A'));
-                                                                                                                          
+
 end;
 
 procedure CO2_LaserB_SD;
@@ -1419,16 +1427,22 @@ end;
 
 procedure Plasma_SD;
 begin
+
   StepDeptERP('PLASM-A');
   StepWCERP('PLASM-A0');
   DeSmear_Params('Plasma');
+  AddPlatingStageParam; // 2965
+
 end;
 
 procedure Plasma_2_SD;
 begin
+
   StepDeptERP('PLASM-A');
   StepWCERP('PLASM-A0');
   DeSmear_Params('Plasma2');
+  AddPlatingStageParam; // 2965
+
 end;
 
 procedure Plasma_3_SD;
@@ -1437,6 +1451,7 @@ begin
   StepWCERP('PLASM-A0');
 
   StepParamERP('Remark', 'Program 8');
+  AddPlatingStageParam; // 2965
 
 end;
 
@@ -1448,6 +1463,7 @@ begin
   StepDeptERP('DMEAR-V01');
   StepWCERP('DMEAR-V01');
   //DeSmear_Params('Vertical Desmear');
+  AddPlatingStageParam;
 end;
 
 procedure Vertical_Desmear_2_SD;
@@ -1457,6 +1473,7 @@ begin
   StepDeptERP('DMEAR-V01');
   StepWCERP('DMEAR-V01');
   DeSmear_Params('Vertical Desmear2');
+  AddPlatingStageParam;
 end;
 
 procedure Desmear_CappedVia_SD;
@@ -1479,6 +1496,7 @@ begin
   StepParamERP('HP Rinse', 'OFF');
   StepParamERP('Sweller', 'OFF');
   StepParamERP('Promoter / Neutralizer', '3.5m/min');
+  StepParamERP('Plating Stage', 'Capped Plating'); // 2965
 
 end;
 
@@ -1491,7 +1509,7 @@ begin
 end;
 
 procedure CuThinning_SD;
-begin                 
+begin
   StepDeptERP('EPBUF-A');
   StepWCERP('EPBUF-A');
   StepParamERP('Buffing Type', Fnc.SysGetAttrValue('CoreBuildCuThin'));
@@ -1698,7 +1716,7 @@ begin
       Min_Slot :=  Fnc.SysGetAttrValue('Min_Slot_Size');
     end
     else
-    begin                                            
+    begin
       Min_Drill := Fnc.SysGetAttrValue('Min_Drill_Size_2');
       Min_Slot :=  Fnc.SysGetAttrValue('Min_Slot_Size_2');
     end;
@@ -1756,9 +1774,9 @@ begin
     if Fnc.SysGetAttrValue('NCRunX2') then
     begin
       StepInstructionERP('DRILL010');  // REMARK : 1st Drilling
-      StepInstructionERP('2NC_PESHET'); // REMARK: Put PE Sheet In Between Panel 
+      StepInstructionERP('2NC_PESHET'); // REMARK: Put PE Sheet In Between Panel
     end;
-    
+
     // 1114 Fixed Scale Factor Info
     if Fnc.SysGetAttrValue('Drill_FSF_X') > 0 then
     begin
@@ -1856,7 +1874,7 @@ begin
 
   if HasFaradflexMat then                                    // Faradflex drill instruction
     StepInstructionERP('DRILL076'); // 836 Instruction Code Update
-                                                             
+
   if SubGetsNewPEP then StepInstructionERP('DRILL167'); //With Sub-Lam PEP Slot Drillin
 
 end;
@@ -2034,39 +2052,39 @@ begin
 end;
 
 procedure Electroless_CappedVia_SD;
-var                  
+var
   epoxyThinningG7 : boolean;
 begin
   SysRouteInsDepartment('Erp', 'METAL-C', '');
   SysRouteInsWorkCenter('Erp', 'METAL-C', '');
                     
-  epoxyThinningG7 := false;                            
+  epoxyThinningG7 := false;
   
   if ( Fnc.SysGetAttrValue('EpoxyPlug_CuThin_Process') <> 'None' ) and ( Fnc.SysGetAttrValue('EpoxyPlug_CuThin_Process') <> 'Buffing' ) then
     epoxyThinningG7 := true; 
-  
+
   if (( Get_Panel_Thickness >= 3.2 ) and ( Min_Drill <= 0.25 )) or (Fnc.SysGetAttrValue('Aspect_Ratio_Val') > 12.8)  // 1462
     {(  // 978 Updated Cu Rule - Metalization
       (( Get_Panel_Thickness >= 3.2 ) and ( Min_Drill <= 0.25 )) or
-      //( Fnc.SysGetAttrValue('Seq_Build') = true ) or 1306 Updated Electroless Plating Rule  
+      //( Fnc.SysGetAttrValue('Seq_Build') = true ) or 1306 Updated Electroless Plating Rule
       //( SubParentIsSequential ) or
       (( Fnc.SysGetAttrValue('EpoxySide') <> 'None') and ( epoxyThinningG7 ))
      )}
   then
   begin             
-                                                      
+
    // if LaserG30KMechOrSkipBVH then
-   //   SysRouteInsAddlParameter('Erp', 'Remark', 'On-Line Vacuum', '', '', false, '', '', ''); 
+   //   SysRouteInsAddlParameter('Erp', 'Remark', 'On-Line Vacuum', '', '', false, '', '', '');
                               
-    SysRouteInsWorkCenter('Erp', 'METAL-D0', '');            
+    SysRouteInsWorkCenter('Erp', 'METAL-D0', '');
     //SysRouteInsAddlParameter('Erp', 'VELCP Line', 'V2 Only', '', '', false, '', '', '');
     SysRouteInsAddlParameter('Erp', 'VELCP Line', 'V1 or V2', '', '', false, '', '', '');   // 1462
   end            
-  else 
+  else
   begin
-                                                       
+
     //if LaserG30KMechOrSkipBVH then  Note required for Capped Via OneDesk 1087
-    //  SysRouteInsAddlParameter('Erp', 'Remark', 'Off-Line Vacuum', '', '', false, '', '', ''); 
+    //  SysRouteInsAddlParameter('Erp', 'Remark', 'Off-Line Vacuum', '', '', false, '', '', '');
       
     SysRouteInsWorkCenter('Erp', 'METAL-C0', '');
     SysRouteInsAddlParameter('Erp', 'VELCP Line', 'V1 or V2', '', '', false, '', '', ''); 
@@ -2074,7 +2092,7 @@ begin
                                                       
   // 1107 Additional Run Card info - Note sequential build
   if Fnc.SysGetAttrValueTopLevel('Seq_Build') = true then
-    SysRouteInsAddlParameter('Erp', 'Remark', 'Sequential Build', '', '', false, '', '', ''); 
+    SysRouteInsAddlParameter('Erp', 'Remark', 'Sequential Build', '', '', false, '', '', '');
 end;
 
 procedure Vertical_Desmear_CappedVia_SD; // 2807
@@ -2083,6 +2101,7 @@ begin
    StepDeptERP('DMEAR-V01');
    StepWCERP('DMEAR-V01');
    StepInstructionERP('DMEAR075');
+   StepParamERP('Plating Stage', 'Capped Plating'); // 2965
 
 end;
 
@@ -2315,7 +2334,7 @@ begin
 
   GLB_Abs_CuThk := GLB_Ave_CuThk;
 
-  // cleanup               
+  // cleanup
   CuPlating_MCP.Filtered := False;
   CuPlating_MCP.Filter := '';
 
@@ -2645,7 +2664,7 @@ begin
   Plating_Line_Selected := '';
   Plating_Line_Alternative := '';
 
-  StepDeptERP('COPPL-C');                                                
+  StepDeptERP('COPPL-C');
 
   Set_CU_Ratio(false); // 2400
 
@@ -3055,8 +3074,9 @@ begin
   StepParamERP('Panel Size', Fnc.SysGetAttrValue('Panel_Size'));  // 2201 Electrolytic Cu Info
 
   // Email from Herole 23/11/08 - Bug Fix 23/11/16, If FILL_VIA line these next 2 lines were missed. Move to end of script
-  if NCRun = 1 then StepParamERP('Plating Stage', 'First Plating'); // 2466
-  if NCRun = 2 then StepParamERP('Plating Stage', 'Second Plating'); // 2466
+  //if NCRun = 1 then StepParamERP('Plating Stage', 'First Plating'); // 2466
+  //if NCRun = 2 then StepParamERP('Plating Stage', 'Second Plating'); // 2466
+  AddPlatingStageParam; // 2965
 
 End;
 
@@ -3148,7 +3168,7 @@ begin
     'Both'  : InsertMechBlindViaInfo('A');
   end;
 end;
-       
+
 procedure MechBlindVia2_SD;
 begin
   MechBlindVia_Common;

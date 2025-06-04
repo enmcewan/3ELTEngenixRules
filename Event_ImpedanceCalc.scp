@@ -29,7 +29,7 @@ var
   ImpCompTable : TSystable;
 begin
                                                    
-  {with Fnc.SysImpedanceModels do
+  with Fnc.SysImpedanceModels do
   begin
     //Fnc.OpenDataGrid(Fnc.SysImpedanceModels);
     ImpModelType := '';
@@ -94,5 +94,6 @@ begin
     if ImpCompFactor = 0.0 then
       ShowMessage('Warning - Impedance Compensation Factor Not Found');
 
-  end;}
+  end;
+  
 end;

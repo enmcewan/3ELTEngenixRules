@@ -4,18 +4,18 @@
 //ScriptType=0
 //ScriptGroup=HCS
 //HeaderImportExport<--
-   uses
+uses
   Event_RouteGenLibrary,
   Eng_RouteFunctions,
   RouteFunctions,
   CT_CuPlt_GM,
   CT_CuPlt_Line,
-  CT_OLPhoto,                                                                                                     
+  CT_OLPhoto,
   CT_SearchLibrary,
   RouteFunctions_Drilling;
 
 var
-  PhotoLine: string;                                    
+  PhotoLine: string;
   AltLine: string;
   ProdResource: string
   DesLine: string;

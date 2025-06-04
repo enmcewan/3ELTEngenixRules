@@ -10,7 +10,6 @@ uses
   RouteFunctions, //Route User Scripts
   RouteFunctions_Drilling;
 
-
 var
   InputAttributesOK: boolean;
   InputAttributesErrorList: TStringlist;

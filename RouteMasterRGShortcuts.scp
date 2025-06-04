@@ -54,22 +54,65 @@ begin
   result := Fnc.SysGetAttrValue(AttributeName);
 end;
 
-procedure SetMfgAttr(AttributeName: string; AttributeValue: variant);                
+procedure SetMfgAttr(AttributeName: string; AttributeValue: variant);
 begin
   Fnc.SysSetAttrValue(AttributeName, AttributeValue);
 end;
-                           
+
 function MfgAttrTL(AttributeName: string) : variant;
 begin
   result := Fnc.SysGetAttrValueTopLevel(AttributeName);
-end;                 
+end;
+
+procedure SetMfgAttrTL(AttributeName: string; AttributeValue: variant);
+begin
+  Fnc.SysSetAttrValueTopLevel(AttributeName, AttributeValue);
+end;
 
 function MfgAttrParent(AttributeName: string) : variant;
 begin
   result := Fnc.SysGetAttrValueParent(AttributeName);
 end;
 
-function LayerAttrTop(AttrName: string; TopLayer: boolean; ItemType: string; ItemSequence: integer) : variant;
-begin                              
-  result := Fnc.SysGetItemAttrValue(AttrName, TopLayer, ItemType, ItemSequence);   
+function GetLayerAttrSide(TopOrBot: string) : boolean;
+begin
+
+  if Lowercase(TopOrBot) = 'top' then result := true
+  else if Lowercase(TopOrBot) = 'bot' then result := false
+  else
+  begin
+
+    MessageDlg('Route Master RG Shortcuts MfgLayerAttr Function: Use only "Top" or "Bot" as TopOrBot parameter values', mtWarning, Setof([mbOK]), 0)
+    result := true;
+
+  end;
+
+end;
+
+function MfgLayerAttr(AttrName: string; TopOrBot: string): variant;
+begin
+
+  result := Fnc.SysGetItemAttrValue(AttrName, GetLayerAttrSide(TopOrBot), cStackupLayer, 1);
+
+end;
+
+procedure SetMfgLayerAttr(AttrName: string; AttrValue: variant; TopOrBot: string);
+begin
+
+  Fnc.SysSetItemAttrValue(AttrName, AttrValue, GetLayerAttrSide(TopOrBot), cStackupLayer, 1);
+
+end;
+
+function DrillAttr(AttrName: string; Index: integer): variant;
+begin
+
+  result := Fnc.SysGetItemAttrValue(AttrName, True, cStackupDrill, Index);
+
+end;
+
+function SetDrillAttr(AttrName: string; AttrValue: variant; Index: integer): variant;
+begin                   
+
+  result := Fnc.SysSetItemAttrValue(AttrName, AttrValue, True, cStackupDrill, Index);
+
 end;
